@@ -1,27 +1,23 @@
 FROM ubuntu:xenial
 
+ARG ESP8266_RTOS_SDK=8a05097c254a6762947ba0cbd3095e8d901965b7
+
 RUN apt-get update && apt-get install -y \
-  bash curl git wget unzip bzip2 \
-  make unrar-free autoconf automake libtool libtool-bin gcc g++ gperf \
-  gawk flex bison sed \
-  help2man texinfo \
-  ncurses-dev libexpat-dev \
-  python-dev python python-serial
+  bash curl git wget unzip bzip2 xz-utils \
+  make srecord bc gcc \
+  python python-serial
 
 RUN adduser --system --group --home /build build
-RUN chown build /opt && install -o build -d /esp
+RUN chown build /opt && install -o build -d /opt/bin
 USER build
 
-RUN git clone --recursive https://github.com/pfalcon/esp-open-sdk.git /opt/esp-open-sdk
-
-WORKDIR /opt/esp-open-sdk
-RUN make STANDALONE=n
-
-RUN curl -L https://github.com/espressif/ESP8266_RTOS_SDK/archive/v1.4.0.tar.gz | tar -C /opt -xzv
+RUN curl -L https://github.com/nodemcu/nodemcu-firmware/raw/2.1.0-master_20170811/tools/esp-open-sdk.tar.xz | tar -C /opt -xJv
+RUN curl -L https://github.com/espressif/ESP8266_RTOS_SDK/archive/${ESP8266_RTOS_SDK}.tar.gz | tar -C /opt -xzv
+RUN curl -L https://raw.githubusercontent.com/espressif/esptool/v2.0.1/esptool.py -o /opt/bin/esptool.py && chmod +x /opt/bin/esptool.py
 
 ENV \
-  PATH=/opt/esp-open-sdk/xtensa-lx106-elf/bin:$PATH \
-  SDK_PATH=/opt/ESP8266_RTOS_SDK-1.4.0 \
+  PATH=/opt/bin:/opt/esp-open-sdk/xtensa-lx106-elf/bin:$PATH \
+  SDK_PATH=/opt/ESP8266_RTOS_SDK-${ESP8266_RTOS_SDK} \
   BIN_PATH=/esp/bin
 
 ENV \

@@ -9,10 +9,10 @@
  * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the Software is furnished
  * to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -25,5 +25,19 @@
 #ifndef __USER_CONFIG_H__
 #define __USER_CONFIG_H__
 
-#endif
+#include <c_types.h>
+#include <spi_flash.h>
 
+#define SPIFFS_FLASH_SECTORS (1 * 1024 * 1024 / SPI_FLASH_SEC_SIZE) // 1MB at end of flash
+#define SPIFFS_BLOCK_SIZE (SPI_FLASH_SEC_SIZE)
+#define SPIFFS_PAGE_SIZE (SPI_FLASH_SEC_SIZE / 8)
+
+struct user_config {
+  char wifi_ssid[32];
+  char wifi_password[64];
+};
+
+#define USER_CONFIG_WIFI_SSID "qmsk-iot24"
+#define USER_CONFIG_WIFI_PASSWORD "..."
+
+#endif

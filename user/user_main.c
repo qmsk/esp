@@ -9,10 +9,10 @@
  * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the Software is furnished
  * to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -22,7 +22,8 @@
  *
  */
 
-#include "esp_common.h"
+#include <esp_common.h>
+#include "user_config.h"
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -72,6 +73,22 @@ uint32 user_rf_cal_sector_set(void)
 
     return rf_cal_sec;
 }
+
+void print_system()
+{
+  printf("SDK version %s\n", system_get_sdk_version());
+  printf("ESP8266	chip ID=0x%x\n",	system_get_chip_id());
+  printf("Reset cause=%d\n", system_get_rst_info()->reason);
+  printf("Boot version=%d mode=%d addr=%d\n", system_get_boot_version(), system_get_boot_mode(), system_get_userbin_addr());
+  printf("Flash id=%d size_map=%d\n", spi_flash_get_id(), system_get_flash_size_map());
+  printf("CPU freq=%d\n", system_get_cpu_freq());
+  printf("Heap free=%d\n", system_get_free_heap_size());
+
+  printf("Memory info:\n");
+  system_print_meminfo();
+  printf("\n");
+}
+
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
@@ -80,6 +97,22 @@ uint32 user_rf_cal_sector_set(void)
 *******************************************************************************/
 void user_init(void)
 {
-    printf("SDK version:%s\n", system_get_sdk_version());
-}
+  struct user_config config = {
+    .wifi_ssid = USER_CONFIG_WIFI_SSID,
+    .wifi_password = USER_CONFIG_WIFI_PASSWORD,
+  };
 
+  print_system();
+
+  if (init_spiffs()) {
+    printf("FATAL: spiffs init failed\n");
+    return;
+  }
+
+  if (init_wifi(&config)) {
+    printf("FATAL: wifi init failed\n");
+    return;
+  } else {
+    print_wifi();
+  }
+}

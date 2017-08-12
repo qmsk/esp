@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
   python-dev python python-serial
 
 RUN adduser --system --group --home /build build
-RUN chown build /opt
+RUN chown build /opt && install -o build -d /esp
 USER build
 
 RUN git clone --recursive https://github.com/pfalcon/esp-open-sdk.git /opt/esp-open-sdk
@@ -26,4 +26,4 @@ ENV \
 
 ENV \
   BOOT=none APP=0 \
-  SPI_SPEED=40 SPI_MODE=DIO SPI_SIZE_MAP=7
+  SPI_SPEED=40 SPI_MODE=DIO SPI_SIZE_MAP=6

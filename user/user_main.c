@@ -26,6 +26,7 @@
 #include "uart.h"
 #include "logging.h"
 #include "config.h"
+#include "cli.h"
 #include "spiffs.h"
 #include "wifi.h"
 
@@ -112,27 +113,32 @@ void user_init(void)
   print_system();
 
   if (init_uart(&user_config)) {
-    printf("FATAL: uart init failed\n");
+    printf("FATAL: init_uart\n");
     return;
   }
 
   if (init_logging(&user_config)) {
-    printf("FATAL: logging init failed\n");
+    printf("FATAL: init_logging\n");
     return;
   }
 
   if (init_spiffs()) {
-    printf("FATAL: spiffs init failed\n");
+    printf("FATAL: init_spiffs\n");
     return;
   }
 
   if (init_config(&user_config)) {
-    printf("FATAL: config init failed\n");
+    printf("FATAL: init_config\n");
+    return;
+  }
+
+  if (init_cli(&user_config)) {
+    printf("FATAL: init_cli\n");
     return;
   }
 
   if (init_wifi(&user_config)) {
-    printf("FATAL: wifi init failed\n");
+    printf("FATAL: init_wifi\n");
     return;
   } else {
     print_wifi();

@@ -1,7 +1,4 @@
 #include <drivers/uart.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
 #include <stdio.h>
 
 #include "uart.h"
@@ -9,24 +6,8 @@
 #include "logging.h"
 
 #define UART_RX_STACK 256
-#define UART_RX_QUEUE 8
-
-enum uart_rx_flags {
-  UART_RX_OVERFLOW = 1, // data was lost before this event
-};
-
-struct uart_rx_event {
-  uint16_t flags;
-  uint16_t len;
-  char buf[32];
-};
 
 struct uart {
-  xTaskHandle rx_task;
-  xQueueHandle rx_queue;
-
-  uint rx_overflow : 1; // owned by uart_intr_handler
-  char rx_buf[1024], *rx_ptr;
   char tx_buf[1024];
   size_t tx_off;
 } uart;
@@ -70,67 +51,33 @@ int uart_printf(const char *fmt, ...)
   return ret;
 }
 
-// hardware FIFO or uart->rx_queue overflowed
-static void uart_rx_overflow(struct uart *uart)
-{
-  *uart->rx_ptr = '\0';
-
-  LOG_WARN("%s", uart->rx_buf);
-
-  uart->rx_ptr = uart->rx_buf;
-}
-
-// uart->rx_buf contains a '\0'-terminated string
-// it either ends with a '\n', or it fills the entire buffer
-static void uart_rx_flush(struct uart *uart)
-{
-  LOG_DEBUG("%s", uart->rx_buf);
-
-  uart->rx_ptr = uart->rx_buf;
-}
-
-static void uart_rx_event(struct uart *uart, const struct uart_rx_event *rx)
-{
-  if (rx->flags & UART_RX_OVERFLOW) {
-      uart_rx_overflow(uart);
-  }
-
-  for (const char *in = rx->buf; in < rx->buf + rx->len; in++) {
-    *uart->rx_ptr++ = *in;
-
-    if (*in == '\n' || uart->rx_ptr + 1 >= uart->rx_buf + sizeof(uart->rx_buf)) {
-      *uart->rx_ptr = '\0';
-
-      uart_rx_flush(uart);
-    }
-  }
-}
-
 static void uart_intr_handler(void *arg)
 {
+  xQueueHandle rx_queue = arg;
+  static bool rx_overflow;
   uint32 intr_status = UART_GetIntrStatus(UART0);
   portBASE_TYPE task_woken;
 
   if (intr_status & (UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST)) {
     struct uart_rx_event rx_event = {.flags = 0};
 
-    if (uart.rx_overflow) {
+    if (rx_overflow) {
       rx_event.flags |= UART_RX_OVERFLOW;
     }
 
     // must read to clear the interrupt, even if queue overflow
     rx_event.len = UART_Read(UART0, rx_event.buf, sizeof(rx_event.buf));
 
-    if (xQueueSendFromISR(uart.rx_queue, &rx_event, &task_woken) <= 0) {
-      uart.rx_overflow = 1;
+    if (xQueueSendFromISR(rx_queue, &rx_event, &task_woken) <= 0) {
+      rx_overflow = true;
     } else {
-      uart.rx_overflow = 0;
+      rx_overflow = false;
     }
   }
 
   if (intr_status & (UART_RXFIFO_OVF_INT_ST)) {
     // lost data after last read
-    uart.rx_overflow = 1;
+    rx_overflow = true;
   }
 
   UART_ClearIntrStatus(UART0, UART_RXFIFO_OVF_INT_ST | UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST);
@@ -138,36 +85,8 @@ static void uart_intr_handler(void *arg)
   portEND_SWITCHING_ISR(task_woken);
 }
 
-static void uart_rx_task(void *arg)
-{
-  struct uart *uart = arg;
-  struct uart_rx_event rx_event;
-
-  LOG_INFO("init uart=%p", uart);
-
-  for (;;) {
-    if (xQueueReceive(uart->rx_queue, &rx_event, portMAX_DELAY)) {
-      if (rx_event.len < sizeof(rx_event.buf)) {
-        rx_event.buf[rx_event.len] = '\0';
-      }
-
-      LOG_DEBUG("read {overflow=%d} len=%d: %.32s",
-        rx_event.flags & UART_RX_OVERFLOW,
-        rx_event.len, rx_event.buf
-      );
-
-      uart_rx_event(uart, &rx_event);
-
-    } else {
-      LOG_ERROR("xQueueReceive");
-    }
-  }
-}
-
 int init_uart(struct user_config *config)
 {
-  int err;
-
   UART_Config uart_config = {
     .baud_rate  = USER_CONFIG_UART_BAUD_RATE,
     .data_bits  = UART_WordLength_8b,
@@ -177,32 +96,25 @@ int init_uart(struct user_config *config)
     .flow_rx_thresh = 0,
     .inverse_mask = UART_None_Inverse,
   };
+
+  UART_WaitTxFifoEmpty(UART0);
+  UART_Setup(UART0, &uart_config);
+
+  printf("INFO uart: setup baud=%u\n", uart_config.baud_rate);
+
+  return 0;
+}
+
+int uart_start_recv(xQueueHandle rx_queue)
+{
   UART_IntrConfig intr_config = {
     .enable_mask        = UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ST | UART_RXFIFO_TOUT_INT_ENA,
     .rx_full_thresh     = 32, // bytes
     .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
   };
-
-  uart.rx_ptr = uart.rx_buf;
-
-  ETS_UART_INTR_DISABLE();
-
-  UART_WaitTxFifoEmpty(UART0);
-  UART_Setup(UART0, &uart_config);
   UART_SetupIntr(UART0, &intr_config);
-  UART_RegisterIntrHandler(&uart_intr_handler, NULL);
 
-  printf("INFO uart: setup baud=%u\n", uart_config.baud_rate);
-
-  if ((uart.rx_queue = xQueueCreate(UART_RX_QUEUE, sizeof(struct uart_rx_event))) == NULL) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
-  }
-
-  if ((err = xTaskCreate(&uart_rx_task, (void *) "uart_rx", UART_RX_STACK, &uart, tskIDLE_PRIORITY + 2, &uart.rx_task)) <= 0) {
-    LOG_ERROR("xTaskCreate uart_rx_task: %d", err);
-    return -1;
-  }
+  UART_RegisterIntrHandler(&uart_intr_handler, rx_queue);
 
   ETS_UART_INTR_ENABLE();
 

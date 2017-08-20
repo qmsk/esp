@@ -104,6 +104,11 @@ void user_init(void)
 {
   print_system();
 
+  if (init_uart()) {
+    printf("FATAL: uart init failed\n");
+    return;
+  }
+
   if (init_spiffs()) {
     printf("FATAL: spiffs init failed\n");
     return;

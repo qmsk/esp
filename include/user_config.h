@@ -8,6 +8,8 @@
 #define SPIFFS_BLOCK_SIZE (SPI_FLASH_SEC_SIZE)
 #define SPIFFS_PAGE_SIZE (SPI_FLASH_SEC_SIZE / 8)
 
+#define USER_CONFIG_UART_BAUD_RATE 74880
+
 struct user_config {
   char wifi_ssid[32];
   char wifi_password[64];
@@ -15,7 +17,6 @@ struct user_config {
 
 #include "local/user_config.h"
 
-#define USER_CONFIG_UART_BAUD_RATE 74880
 #ifndef USER_CONFIG_WIFI_SSID
   #error "include/local/user_config.h: #define USER_CONFIG_WIFI_SSID"
 #endif

@@ -21,9 +21,10 @@ ifndef PDIR # {
 GEN_IMAGES= eagle.app.v6.out
 GEN_BINS= eagle.app.v6.bin
 SPECIAL_MKTARGETS=$(APP_MKTARGETS)
-SUBDIRS=    \
-	user    \
-	lib
+SUBDIRS=\
+	ext/drivers \
+	lib \
+	user
 
 endif # } PDIR
 
@@ -47,6 +48,7 @@ endif
 
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a  \
+	ext/drivers/libuart.a \
 	lib/libtest.a
 
 LINKFLAGS_eagle.app.v6 = \

@@ -113,10 +113,10 @@ typedef struct {
 } UART_Config;
 
 typedef struct {
-    uint32 UART_IntrEnMask;
-    uint8  UART_RX_TimeOutIntrThresh;
-    uint8  UART_TX_FifoEmptyIntrThresh;
-    uint8  UART_RX_FifoFullIntrThresh;
+    uint32 enable_mask;
+    uint8  rx_timeout_thresh;
+    uint8  rx_full_thresh;
+    uint8  tx_empty_thresh;
 } UART_IntrConfig;
 
 //=======================================

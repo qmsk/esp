@@ -175,18 +175,18 @@ void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf)
     UART_ClearIntrStatus(uart_no, UART_INTR_MASK);
     reg_val = READ_PERI_REG(UART_CONF1(uart_no)) & ((UART_RX_FLOW_THRHD << UART_RX_FLOW_THRHD_S) | UART_RX_FLOW_EN) ;
 
-    reg_val |= ((pUARTIntrConf->UART_IntrEnMask & UART_RXFIFO_TOUT_INT_ENA) ?
-                ((((pUARTIntrConf->UART_RX_TimeOutIntrThresh)&UART_RX_TOUT_THRHD) << UART_RX_TOUT_THRHD_S) | UART_RX_TOUT_EN) : 0);
+    reg_val |= ((pUARTIntrConf->enable_mask & UART_RXFIFO_TOUT_INT_ENA) ?
+                ((((pUARTIntrConf->rx_timeout_thresh)&UART_RX_TOUT_THRHD) << UART_RX_TOUT_THRHD_S) | UART_RX_TOUT_EN) : 0);
 
-    reg_val |= ((pUARTIntrConf->UART_IntrEnMask & UART_RXFIFO_FULL_INT_ENA) ?
-                (((pUARTIntrConf->UART_RX_FifoFullIntrThresh)&UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) : 0);
+    reg_val |= ((pUARTIntrConf->enable_mask & UART_RXFIFO_FULL_INT_ENA) ?
+                (((pUARTIntrConf->rx_full_thresh)&UART_RXFIFO_FULL_THRHD) << UART_RXFIFO_FULL_THRHD_S) : 0);
 
-    reg_val |= ((pUARTIntrConf->UART_IntrEnMask & UART_TXFIFO_EMPTY_INT_ENA) ?
-                (((pUARTIntrConf->UART_TX_FifoEmptyIntrThresh)&UART_TXFIFO_EMPTY_THRHD) << UART_TXFIFO_EMPTY_THRHD_S) : 0);
+    reg_val |= ((pUARTIntrConf->enable_mask & UART_TXFIFO_EMPTY_INT_ENA) ?
+                (((pUARTIntrConf->tx_empty_thresh)&UART_TXFIFO_EMPTY_THRHD) << UART_TXFIFO_EMPTY_THRHD_S) : 0);
 
     WRITE_PERI_REG(UART_CONF1(uart_no), reg_val);
     CLEAR_PERI_REG_MASK(UART_INT_ENA(uart_no), UART_INTR_MASK);
-    SET_PERI_REG_MASK(UART_INT_ENA(uart_no), pUARTIntrConf->UART_IntrEnMask);
+    SET_PERI_REG_MASK(UART_INT_ENA(uart_no), pUARTIntrConf->enable_mask);
 }
 
 LOCAL void uart0_rx_intr_handler(void *para)

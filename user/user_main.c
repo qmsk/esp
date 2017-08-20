@@ -89,6 +89,11 @@ void print_system()
   printf("\n");
 }
 
+static struct user_config user_config = {
+  .wifi_ssid = USER_CONFIG_WIFI_SSID,
+  .wifi_password = USER_CONFIG_WIFI_PASSWORD,
+};
+
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
@@ -97,11 +102,6 @@ void print_system()
 *******************************************************************************/
 void user_init(void)
 {
-  struct user_config config = {
-    .wifi_ssid = USER_CONFIG_WIFI_SSID,
-    .wifi_password = USER_CONFIG_WIFI_PASSWORD,
-  };
-
   print_system();
 
   if (init_spiffs()) {
@@ -109,7 +109,12 @@ void user_init(void)
     return;
   }
 
-  if (init_wifi(&config)) {
+  if (init_config(&user_config)) {
+    printf("FATAL: config init failed\n");
+    return;
+  }
+
+  if (init_wifi(&user_config)) {
     printf("FATAL: wifi init failed\n");
     return;
   } else {

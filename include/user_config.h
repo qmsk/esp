@@ -1,5 +1,5 @@
-#ifndef __USER_CONFIG_H__
-#define __USER_CONFIG_H__
+#ifndef __USER__CONFIG_H__
+#define __USER__CONFIG_H__
 
 #include <c_types.h>
 #include <spi_flash.h>

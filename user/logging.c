@@ -36,7 +36,7 @@ void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
   va_end(vargs);
 }
 
-int init_logging()
+int init_logging(struct user_config *config)
 {
   os_install_putc1(logging_os_putc);
 

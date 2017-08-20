@@ -1,9 +1,11 @@
-#include "user_config.h"
+#include "spiffs.h"
 #include "logging.h"
 
 #include <c_types.h>
 #include <spi_flash.h>
 #include <esp_spiffs.h>
+
+extern uint32 user_rf_cal_sector_set(void);
 
 static int config_spiffs(struct esp_spiffs_config *spiffs_config)
 {
@@ -41,4 +43,6 @@ int init_spiffs()
     LOG_ERROR("esp_spiffs_init: %d", err);
     return -1;
   }
+
+  return 0;
 }

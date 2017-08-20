@@ -1,4 +1,4 @@
-#include "user_config.h"
+#include "wifi.h"
 #include "logging.h"
 
 #include <c_types.h>
@@ -56,8 +56,8 @@ int init_wifi(const struct user_config *config)
 {
   struct station_config wifi_station_config = { };
 
-  snprintf(wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->wifi_ssid);
-  snprintf(wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->wifi_password);
+  snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->wifi_ssid);
+  snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->wifi_password);
 
   LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
 

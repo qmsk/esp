@@ -1,8 +1,10 @@
+#include "config.h"
 #include "user_config.h"
 #include "logging.h"
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <unistd.h>
 
 int read_config(struct user_config *config)
 {

@@ -22,8 +22,14 @@
  *
  */
 
-#include <esp_common.h>
 #include "user_config.h"
+#include "uart.h"
+#include "logging.h"
+#include "config.h"
+#include "spiffs.h"
+#include "wifi.h"
+
+#include <esp_common.h>
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -105,12 +111,12 @@ void user_init(void)
 {
   print_system();
 
-  if (init_uart()) {
+  if (init_uart(&user_config)) {
     printf("FATAL: uart init failed\n");
     return;
   }
 
-  if (init_logging()) {
+  if (init_logging(&user_config)) {
     printf("FATAL: logging init failed\n");
     return;
   }

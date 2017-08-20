@@ -92,6 +92,19 @@ void UART_WaitTxFifoEmpty(UART_Port uart_no)
       ;
 }
 
+void UART_Write(UART_Port uart_no, const char *buf, size_t len)
+{
+  while (len-- > 0) {
+    uint8 tx_char = *buf++;
+
+    // wait while the TX fifo is full
+    while (UART_GetTxFifo(uart_no) >= 126)
+      ;
+
+    WRITE_PERI_REG(UART_FIFO(uart_no), tx_char);
+  }
+}
+
 void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
 {
     // wait while the TX fifo is full

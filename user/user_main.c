@@ -109,6 +109,11 @@ void user_init(void)
     return;
   }
 
+  if (init_logging()) {
+    printf("FATAL: logging init failed\n");
+    return;
+  }
+
   if (init_spiffs()) {
     printf("FATAL: spiffs init failed\n");
     return;

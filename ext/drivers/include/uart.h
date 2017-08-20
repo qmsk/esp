@@ -160,6 +160,9 @@ uint8 UART_ReadOne(UART_Port uart_no);
   */
 void UART_WriteOne(UART_Port uart_no, uint8 TxChar);
 
+void UART_Write(UART_Port uart_no, const char *buf, size_t len);
+
+
 /**
   * @brief   Clear uart tx fifo and rx fifo.
   *

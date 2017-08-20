@@ -1,7 +1,10 @@
 #include <drivers/uart.h>
 #include <esp_misc.h>
 
-const char logging_os_prefix[] = { 'O', 'S', ':', ' '};
+#include "logging.h"
+#include "uart.h"
+
+const static char logging_os_prefix[] = { 'O', 'S', ':', ' '};
 
 struct logging {
   bool os_newline;
@@ -22,11 +25,22 @@ void logging_os_putc(char c)
   }
 }
 
+void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
+{
+  va_list vargs;
+
+  va_start(vargs, fmt);
+  uart_printf("%s%s: ", prefix, func);
+  uart_vprintf(fmt, vargs);
+  uart_printf("\n");
+  va_end(vargs);
+}
+
 int init_logging()
 {
   os_install_putc1(logging_os_putc);
 
-  printf("INFO logging: installed os handler\n");
+  LOG_INFO("initialized");
 
   return 0;
 }

@@ -24,41 +24,16 @@
 
 #include "uart.h"
 
-LOCAL STATUS uart_tx_one_char(uint8 uart, uint8 TxChar)
+static inline unsigned UART_GetTxFifo(UART_Port uart_no)
 {
-    while (true) {
-        uint32 fifo_cnt = READ_PERI_REG(UART_STATUS(uart)) & (UART_TXFIFO_CNT << UART_TXFIFO_CNT_S);
-
-        if ((fifo_cnt >> UART_TXFIFO_CNT_S & UART_TXFIFO_CNT) < 126) {
-            break;
-        }
-    }
-
-    WRITE_PERI_REG(UART_FIFO(uart) , TxChar);
-    return OK;
+    return (READ_PERI_REG(UART_STATUS(uart_no)) >> UART_TXFIFO_CNT_S) & UART_TXFIFO_CNT;
 }
 
-LOCAL void uart1_write_char(char c)
+static inline unsigned UART_GetRxFifo(UART_Port uart_no)
 {
-    if (c == '\n') {
-        uart_tx_one_char(UART1, '\r');
-        uart_tx_one_char(UART1, '\n');
-    } else if (c == '\r') {
-    } else {
-        uart_tx_one_char(UART1, c);
-    }
+    return (READ_PERI_REG(UART_STATUS(uart_no)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT;
 }
 
-LOCAL void uart0_write_char(char c)
-{
-    if (c == '\n') {
-        uart_tx_one_char(UART0, '\r');
-        uart_tx_one_char(UART0, '\n');
-    } else if (c == '\r') {
-    } else {
-        uart_tx_one_char(UART0, c);
-    }
-}
 
 void UART_SetWordLength(UART_Port uart_no, UART_WordLength len)
 {
@@ -110,9 +85,25 @@ void UART_SetFlowCtrl(UART_Port uart_no, UART_HwFlowCtrl flow_ctrl, uint8 rx_thr
     }
 }
 
-void UART_WaitTxFifoEmpty(UART_Port uart_no) //do not use if tx flow control enabled
+// do not use if tx flow control enabled
+void UART_WaitTxFifoEmpty(UART_Port uart_no)
 {
-    while (READ_PERI_REG(UART_STATUS(uart_no)) & (UART_TXFIFO_CNT << UART_TXFIFO_CNT_S));
+    while (UART_GetTxFifo(uart_no))
+      ;
+}
+
+void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
+{
+    // wait while the TX fifo is full
+    while (UART_GetTxFifo(uart_no) >= 126)
+      ;
+
+    WRITE_PERI_REG(UART_FIFO(uart_no), TxChar);
+}
+
+uint8 UART_ReadOne(UART_Port uart_no)
+{
+  return READ_PERI_REG(UART_FIFO(uart_no)) & 0xFF;
 }
 
 void UART_ResetFifo(UART_Port uart_no)
@@ -134,15 +125,6 @@ void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask)
 void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg)
 {
     _xt_isr_attach(ETS_UART_INUM, func, arg);
-}
-
-void UART_SetPrintPort(UART_Port uart_no)
-{
-    if (uart_no == 1) {
-        os_install_putc1(uart1_write_char);
-    } else {
-        os_install_putc1(uart0_write_char);
-    }
 }
 
 void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)

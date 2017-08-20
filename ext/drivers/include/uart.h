@@ -36,6 +36,8 @@ extern "C" {
 #define ETS_UART_INTR_DISABLE() _xt_isr_mask(1 << ETS_UART_INUM)
 #define UART_INTR_MASK          0x1ff
 #define UART_LINE_INV_MASK      (0x3f<<19)
+#define UART_TX_SIZE 128
+#define UART_RX_SIZE 128
 
 typedef void (*UART_IntrHandlerFunc)(void *arg);
 
@@ -147,6 +149,18 @@ typedef struct {
 void UART_WaitTxFifoEmpty(UART_Port uart_no); //do not use if tx flow control enabled
 
 /**
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @return  uint8: read byte
+  */
+uint8 UART_ReadOne(UART_Port uart_no);
+
+/**
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @param   uint8 TxChar: write byte
+  */
+void UART_WriteOne(UART_Port uart_no, uint8 TxChar);
+
+/**
   * @brief   Clear uart tx fifo and rx fifo.
   *
   * @param   UART_Port uart_no : UART0 or UART1
@@ -184,15 +198,6 @@ void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask);
   * @return  null
   */
 void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg);
-
-/**
-  * @brief   Config from which serial output printf function.
-  *
-  * @param   UART_Port uart_no : UART0 or UART1
-  *
-  * @return  null
-  */
-void UART_SetPrintPort(UART_Port uart_no);
 
 /**
   * @brief   Config Common parameters of serial ports.

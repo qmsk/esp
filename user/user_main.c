@@ -76,17 +76,17 @@ uint32 user_rf_cal_sector_set(void)
 
 void print_system()
 {
-  printf("SDK version %s\n", system_get_sdk_version());
-  printf("ESP8266	chip ID=0x%x\n",	system_get_chip_id());
-  printf("Reset cause=%d\n", system_get_rst_info()->reason);
-  printf("Boot version=%d mode=%d addr=%d\n", system_get_boot_version(), system_get_boot_mode(), system_get_userbin_addr());
-  printf("Flash id=%d size_map=%d\n", spi_flash_get_id(), system_get_flash_size_map());
-  printf("CPU freq=%d\n", system_get_cpu_freq());
-  printf("Heap free=%d\n", system_get_free_heap_size());
+  printf("!\tSDK version %s\n", system_get_sdk_version());
+  printf("|\tESP8266	chip ID=0x%x\n",	system_get_chip_id());
+  printf("|\tReset cause=%d\n", system_get_rst_info()->reason);
+  printf("|\tBoot version=%d mode=%d addr=%d\n", system_get_boot_version(), system_get_boot_mode(), system_get_userbin_addr());
+  printf("|\tFlash id=%d size_map=%d\n", spi_flash_get_id(), system_get_flash_size_map());
+  printf("|\tCPU freq=%d\n", system_get_cpu_freq());
+  printf("|\tHeap free=%d\n", system_get_free_heap_size());
 
-  printf("Memory info:\n");
+  printf("|\tMemory info:\n");
   system_print_meminfo();
-  printf("\n");
+  printf("*---------------------------------------\n");
 }
 
 static struct user_config user_config = {

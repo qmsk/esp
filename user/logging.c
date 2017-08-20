@@ -7,13 +7,13 @@
 const static char logging_os_prefix[] = { 'O', 'S', ':', ' '};
 
 struct logging {
-  bool os_newline;
+  bool os_write;
 } logging;
 
 void logging_os_putc(char c)
 {
-  if (logging.os_newline) {
-    logging.os_newline = false;
+  if (!logging.os_write) {
+    logging.os_write = true;
 
     UART_Write(UART0, logging_os_prefix, sizeof(logging_os_prefix));
   }
@@ -21,7 +21,7 @@ void logging_os_putc(char c)
   UART_WriteOne(UART0, c);
 
   if (c == '\n') {
-    logging.os_newline = true;
+    logging.os_write = false;
   }
 }
 

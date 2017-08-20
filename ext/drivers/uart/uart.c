@@ -23,17 +23,24 @@
  */
 
 #include "uart.h"
+#include <freertos/FreeRTOS.h>
 
-static inline unsigned UART_GetTxFifo(UART_Port uart_no)
+extern void uart_div_modify(int, int);
+
+static inline uint32 UART_GetTxFifo(UART_Port uart_no)
 {
     return (READ_PERI_REG(UART_STATUS(uart_no)) >> UART_TXFIFO_CNT_S) & UART_TXFIFO_CNT;
 }
 
-static inline unsigned UART_GetRxFifo(UART_Port uart_no)
+static inline uint32 UART_GetRxFifo(UART_Port uart_no)
 {
     return (READ_PERI_REG(UART_STATUS(uart_no)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT;
 }
 
+static inline uint8 UART_ReadOne(UART_Port uart_no)
+{
+  return READ_PERI_REG(UART_FIFO(uart_no)) & 0xFF;
+}
 
 void UART_SetWordLength(UART_Port uart_no, UART_WordLength len)
 {
@@ -92,6 +99,15 @@ void UART_WaitTxFifoEmpty(UART_Port uart_no)
       ;
 }
 
+void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
+{
+    // wait while the TX fifo is full
+    while (UART_GetTxFifo(uart_no) >= 126)
+      ;
+
+    WRITE_PERI_REG(UART_FIFO(uart_no), TxChar);
+}
+
 void UART_Write(UART_Port uart_no, const char *buf, size_t len)
 {
   while (len-- > 0) {
@@ -105,18 +121,16 @@ void UART_Write(UART_Port uart_no, const char *buf, size_t len)
   }
 }
 
-void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
+size_t UART_Read(UART_Port uart_no, char *buf, size_t size)
 {
-    // wait while the TX fifo is full
-    while (UART_GetTxFifo(uart_no) >= 126)
-      ;
+  size_t len = UART_GetRxFifo(uart_no);
+  size_t read;
 
-    WRITE_PERI_REG(UART_FIFO(uart_no), TxChar);
-}
+  for (read = 0; read < len && read < size; read++) {
+    *buf++ = UART_ReadOne(uart_no);
+  }
 
-uint8 UART_ReadOne(UART_Port uart_no)
-{
-  return READ_PERI_REG(UART_FIFO(uart_no)) & 0xFF;
+  return read;
 }
 
 void UART_ResetFifo(UART_Port uart_no)
@@ -138,6 +152,11 @@ void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask)
 void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg)
 {
     _xt_isr_attach(ETS_UART_INUM, func, arg);
+}
+
+uint32 UART_GetIntrStatus(UART_Port uart_no)
+{
+  return READ_PERI_REG(UART_INT_ST(uart_no));
 }
 
 void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
@@ -182,55 +201,4 @@ void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf)
     WRITE_PERI_REG(UART_CONF1(uart_no), reg_val);
     CLEAR_PERI_REG_MASK(UART_INT_ENA(uart_no), UART_INTR_MASK);
     SET_PERI_REG_MASK(UART_INT_ENA(uart_no), pUARTIntrConf->enable_mask);
-}
-
-LOCAL void uart0_rx_intr_handler(void *para)
-{
-    /* uart0 and uart1 intr combine togther, when interrupt occur, see reg 0x3ff20020, bit2, bit0 represents
-    * uart1 and uart0 respectively
-    */
-    uint8 RcvChar;
-    uint8 uart_no = UART0;//UartDev.buff_uart_no;
-    uint8 fifo_len = 0;
-    uint8 buf_idx = 0;
-    uint8 fifo_tmp[128] = {0};
-
-    uint32 uart_intr_status = READ_PERI_REG(UART_INT_ST(uart_no)) ;
-
-    while (uart_intr_status != 0x0) {
-        if (UART_FRM_ERR_INT_ST == (uart_intr_status & UART_FRM_ERR_INT_ST)) {
-            //printf("FRM_ERR\r\n");
-            WRITE_PERI_REG(UART_INT_CLR(uart_no), UART_FRM_ERR_INT_CLR);
-        } else if (UART_RXFIFO_FULL_INT_ST == (uart_intr_status & UART_RXFIFO_FULL_INT_ST)) {
-            printf("full\r\n");
-            fifo_len = (READ_PERI_REG(UART_STATUS(UART0)) >> UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT;
-            buf_idx = 0;
-
-            while (buf_idx < fifo_len) {
-                uart_tx_one_char(UART0, READ_PERI_REG(UART_FIFO(UART0)) & 0xFF);
-                buf_idx++;
-            }
-
-            WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR);
-        } else if (UART_RXFIFO_TOUT_INT_ST == (uart_intr_status & UART_RXFIFO_TOUT_INT_ST)) {
-            printf("tout\r\n");
-            fifo_len = (READ_PERI_REG(UART_STATUS(UART0)) >> UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT;
-            buf_idx = 0;
-
-            while (buf_idx < fifo_len) {
-                uart_tx_one_char(UART0, READ_PERI_REG(UART_FIFO(UART0)) & 0xFF);
-                buf_idx++;
-            }
-
-            WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_TOUT_INT_CLR);
-        } else if (UART_TXFIFO_EMPTY_INT_ST == (uart_intr_status & UART_TXFIFO_EMPTY_INT_ST)) {
-            printf("empty\n\r");
-            WRITE_PERI_REG(UART_INT_CLR(uart_no), UART_TXFIFO_EMPTY_INT_CLR);
-            CLEAR_PERI_REG_MASK(UART_INT_ENA(UART0), UART_TXFIFO_EMPTY_INT_ENA);
-        } else {
-            //skip
-        }
-
-        uart_intr_status = READ_PERI_REG(UART_INT_ST(uart_no)) ;
-    }
 }

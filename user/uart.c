@@ -1,12 +1,28 @@
 #include <drivers/uart.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
 #include <stdio.h>
 
 #include "uart.h"
 #include "user_config.h"
+#include "logging.h"
+
+#define UART_RX_STACK 256
+#define UART_RX_QUEUE 32
+
+struct uart_rx_event {
+  char buf[32];
+  size_t len;
+};
 
 struct uart {
+  xTaskHandle rx_task;
+  xQueueHandle rx_queue;
+
+  char rx_buf[1024];
   char tx_buf[1024];
-  size_t tx_off;
+  size_t rx_off, tx_off;
 } uart;
 
 void uart_flush()
@@ -48,8 +64,51 @@ int uart_printf(const char *fmt, ...)
   return ret;
 }
 
+static void uart_intr_handler(void *arg)
+{
+  uint32 intr_status = UART_GetIntrStatus(UART0);
+  portBASE_TYPE task_woken;
+
+  if (intr_status & (UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST)) {
+    struct uart_rx_event rx_event;
+
+    rx_event.len = UART_Read(UART0, rx_event.buf, sizeof(rx_event.buf));
+
+    if (xQueueSendFromISR(uart.rx_queue, &rx_event, &task_woken) <= 0) {
+      os_printf("XXX uart_intr_handler: xQueueSendFromISR\n");
+    }
+  }
+
+  UART_ClearIntrStatus(UART0, UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST);
+
+  portEND_SWITCHING_ISR(task_woken);
+}
+
+static void uart_rx_task(void *arg)
+{
+  struct uart *uart = arg;
+  struct uart_rx_event rx_event;
+
+  LOG_INFO("init uart=%p", uart);
+
+  for (;;) {
+    if (xQueueReceive(uart->rx_queue, &rx_event, portMAX_DELAY)) {
+      if (rx_event.len < sizeof(rx_event.buf)) {
+        rx_event.buf[rx_event.len] = '\0';
+      }
+
+      LOG_DEBUG("read=%d: %.32s", rx_event.len, rx_event.buf);
+
+    } else {
+      LOG_ERROR("xQueueReceive");
+    }
+  }
+}
+
 int init_uart(struct user_config *config)
 {
+  int err;
+
   UART_Config uart_config = {
     .baud_rate  = USER_CONFIG_UART_BAUD_RATE,
     .data_bits  = UART_WordLength_8b,
@@ -59,11 +118,32 @@ int init_uart(struct user_config *config)
     .flow_rx_thresh = 0,
     .inverse_mask = UART_None_Inverse,
   };
+  UART_IntrConfig intr_config = {
+    .enable_mask        = UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_TOUT_INT_ENA,
+    .rx_full_thresh     = 32, // bytes
+    .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
+  };
+
+  ETS_UART_INTR_DISABLE();
 
   UART_WaitTxFifoEmpty(UART0);
   UART_Setup(UART0, &uart_config);
+  UART_SetupIntr(UART0, &intr_config);
+  UART_RegisterIntrHandler(&uart_intr_handler, NULL);
 
   printf("INFO uart: setup baud=%u\n", uart_config.baud_rate);
+
+  if ((uart.rx_queue = xQueueCreate(UART_RX_QUEUE, sizeof(struct uart_rx_event))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  if ((err = xTaskCreate(&uart_rx_task, (void *) "uart_rx", UART_RX_STACK, &uart, tskIDLE_PRIORITY + 2, &uart.rx_task)) <= 0) {
+    LOG_ERROR("xTaskCreate uart_rx_task: %d", err);
+    return -1;
+  }
+
+  ETS_UART_INTR_ENABLE();
 
   return 0;
 }

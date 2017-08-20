@@ -148,11 +148,6 @@ typedef struct {
   */
 void UART_WaitTxFifoEmpty(UART_Port uart_no); //do not use if tx flow control enabled
 
-/**
-  * @param   UART_Port uart_no : UART0 or UART1
-  * @return  uint8: read byte
-  */
-uint8 UART_ReadOne(UART_Port uart_no);
 
 /**
   * @param   UART_Port uart_no : UART0 or UART1
@@ -160,8 +155,20 @@ uint8 UART_ReadOne(UART_Port uart_no);
   */
 void UART_WriteOne(UART_Port uart_no, uint8 TxChar);
 
+/**
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @param   char *buf: copy from buffer
+  * @param   size_t len: number of bytes in buffer
+  */
 void UART_Write(UART_Port uart_no, const char *buf, size_t len);
 
+/**
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @param   char *buf: copy to buffer
+  * @param   size_t size: size of buffer
+  * @return  size_t: number of bytes read
+  */
+size_t UART_Read(UART_Port uart_no, char *buf, size_t size);
 
 /**
   * @brief   Clear uart tx fifo and rx fifo.
@@ -201,6 +208,8 @@ void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask);
   * @return  null
   */
 void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg);
+
+uint32 UART_GetIntrStatus(UART_Port port_no);
 
 /**
   * @brief   Config Common parameters of serial ports.

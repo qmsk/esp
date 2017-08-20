@@ -7,7 +7,7 @@
 #include <freertos/queue.h>
 
 #define CLI_RX_BUF 1024
-#define CLI_TASK_STACK 256
+#define CLI_TASK_STACK 512
 #define UART_RX_QUEUE_SIZE 8
 
 struct cli {
@@ -20,35 +20,38 @@ struct cli {
 // RX overflow, discard line
 static void cli_rx_overflow(struct cli *cli)
 {
-  *cli->rx_ptr = '\0';
-
-  LOG_WARN("%s", cli->rx_buf);
+  LOG_WARN("len=%s", cli->rx_ptr - cli->rx_buf);
 
   cli->rx_ptr = cli->rx_buf;
 }
 
 // uart->rx_buf contains a '\0'-terminated string
-// it either ends with a '\n', or it fills the entire buffer
-static void cli_rx_flush(struct cli *cli)
+static void cli_rx_line(struct cli *cli)
 {
-  LOG_DEBUG("%s", cli->rx_buf);
+  LOG_INFO("%s", cli->rx_buf);
 
   cli->rx_ptr = cli->rx_buf;
 }
 
-static void on_cli_rx(struct cli *cli, const struct uart_rx_event *rx)
+static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
 {
   if (rx->flags & UART_RX_OVERFLOW) {
       cli_rx_overflow(cli);
   }
 
   for (const char *in = rx->buf; in < rx->buf + rx->len; in++) {
-    *cli->rx_ptr++ = *in;
-
-    if (*in == '\n' || cli->rx_ptr + 1 >= cli->rx_buf + sizeof(cli->rx_buf)) {
+    if (*in == '\r') {
+      continue;
+    } else if (*in == '\n') {
       *cli->rx_ptr = '\0';
 
-      cli_rx_flush(cli);
+      cli_rx_line(cli);
+    } else {
+      *cli->rx_ptr++ = *in;
+    }
+
+    if (cli->rx_ptr >= cli->rx_buf + sizeof(cli->rx_buf)) {
+      cli_rx_overflow(cli);
     }
   }
 }
@@ -71,7 +74,7 @@ void cli_task(void *arg)
         rx_event.len, rx_event.buf
       );
 
-      on_cli_rx(cli, &rx_event);
+      cli_rx(cli, &rx_event);
 
     } else {
       LOG_ERROR("xQueueReceive");

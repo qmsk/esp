@@ -9,7 +9,7 @@
 #include "logging.h"
 
 #define UART_RX_STACK 256
-#define UART_RX_QUEUE 32
+#define UART_RX_QUEUE 8
 
 struct uart_rx_event {
   char buf[32];
@@ -20,9 +20,9 @@ struct uart {
   xTaskHandle rx_task;
   xQueueHandle rx_queue;
 
-  char rx_buf[1024];
+  char rx_buf[1024], *rx_ptr;
   char tx_buf[1024];
-  size_t rx_off, tx_off;
+  size_t tx_off;
 } uart;
 
 void uart_flush()
@@ -64,6 +64,28 @@ int uart_printf(const char *fmt, ...)
   return ret;
 }
 
+// uart->rx_buf contains a '\0'-terminated string
+// it either ends with a '\n', or it fills the entire buffer
+static void uart_rx_flush(struct uart *uart)
+{
+  LOG_DEBUG("%s", uart->rx_buf);
+
+  uart->rx_ptr = uart->rx_buf;
+}
+
+static void uart_rx_event(struct uart *uart, const struct uart_rx_event *event)
+{
+  for (const char *in = event->buf; in < event->buf + event->len; in++) {
+    *uart->rx_ptr++ = *in;
+
+    if (*in == '\n' || uart->rx_ptr + 1 >= uart->rx_buf + sizeof(uart->rx_buf)) {
+      *uart->rx_ptr = '\0';
+
+      uart_rx_flush(uart);
+    }
+  }
+}
+
 static void uart_intr_handler(void *arg)
 {
   uint32 intr_status = UART_GetIntrStatus(UART0);
@@ -75,6 +97,7 @@ static void uart_intr_handler(void *arg)
     rx_event.len = UART_Read(UART0, rx_event.buf, sizeof(rx_event.buf));
 
     if (xQueueSendFromISR(uart.rx_queue, &rx_event, &task_woken) <= 0) {
+      // TODO: set overflow flag?
       os_printf("XXX uart_intr_handler: xQueueSendFromISR\n");
     }
   }
@@ -97,7 +120,9 @@ static void uart_rx_task(void *arg)
         rx_event.buf[rx_event.len] = '\0';
       }
 
-      LOG_DEBUG("read=%d: %.32s", rx_event.len, rx_event.buf);
+      LOG_DEBUG("read len=%d: %.32s", rx_event.len, rx_event.buf);
+
+      uart_rx_event(uart, &rx_event);
 
     } else {
       LOG_ERROR("xQueueReceive");
@@ -123,6 +148,8 @@ int init_uart(struct user_config *config)
     .rx_full_thresh     = 32, // bytes
     .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
   };
+
+  uart.rx_ptr = uart.rx_buf;
 
   ETS_UART_INTR_DISABLE();
 

@@ -25,6 +25,9 @@
 #ifndef __UART_H__
 #define __UART_H__
 
+#include <c_types.h>
+#include <esp8266/esp8266.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +36,8 @@ extern "C" {
 #define ETS_UART_INTR_DISABLE() _xt_isr_mask(1 << ETS_UART_INUM)
 #define UART_INTR_MASK          0x1ff
 #define UART_LINE_INV_MASK      (0x3f<<19)
+
+typedef void (*UART_IntrHandlerFunc)(void *arg);
 
 typedef enum {
     UART_WordLength_5b = 0x0,
@@ -64,23 +69,23 @@ typedef enum {
 } UartExistParity;
 
 typedef enum {
-    BIT_RATE_300     = 300,
-    BIT_RATE_600     = 600,
-    BIT_RATE_1200    = 1200,
-    BIT_RATE_2400    = 2400,
-    BIT_RATE_4800    = 4800,
-    BIT_RATE_9600    = 9600,
-    BIT_RATE_19200   = 19200,
-    BIT_RATE_38400   = 38400,
-    BIT_RATE_57600   = 57600,
-    BIT_RATE_74880   = 74880,
-    BIT_RATE_115200  = 115200,
-    BIT_RATE_230400  = 230400,
-    BIT_RATE_460800  = 460800,
-    BIT_RATE_921600  = 921600,
-    BIT_RATE_1843200 = 1843200,
-    BIT_RATE_3686400 = 3686400,
-} UART_BautRate; //you can add any rate you need in this range
+    BAUD_RATE_300     = 300,
+    BAUD_RATE_600     = 600,
+    BAUD_RATE_1200    = 1200,
+    BAUD_RATE_2400    = 2400,
+    BAUD_RATE_4800    = 4800,
+    BAUD_RATE_9600    = 9600,
+    BAUD_RATE_19200   = 19200,
+    BAUD_RATE_38400   = 38400,
+    BAUD_RATE_57600   = 57600,
+    BAUD_RATE_74880   = 74880,
+    BAUD_RATE_115200  = 115200,
+    BAUD_RATE_230400  = 230400,
+    BAUD_RATE_460800  = 460800,
+    BAUD_RATE_921600  = 921600,
+    BAUD_RATE_1843200 = 1843200,
+    BAUD_RATE_3686400 = 3686400,
+} UART_BaudRate; //you can add any rate you need in this range
 
 typedef enum {
     USART_HardwareFlowControl_None    = 0x0,
@@ -98,21 +103,21 @@ typedef enum {
 } UART_LineLevelInverse;
 
 typedef struct {
-    UART_BautRate   baud_rate;
+    UART_BaudRate   baud_rate;
     UART_WordLength data_bits;
     UART_ParityMode parity;    // chip size in byte
     UART_StopBits   stop_bits;
     UART_HwFlowCtrl flow_ctrl;
-    uint8           UART_RxFlowThresh ;
-    uint32          UART_InverseMask;
-} UART_ConfigTypeDef;
+    uint8           flow_rx_thresh;
+    UART_LineLevelInverse inverse_mask;
+} UART_Config;
 
 typedef struct {
     uint32 UART_IntrEnMask;
     uint8  UART_RX_TimeOutIntrThresh;
     uint8  UART_TX_FifoEmptyIntrThresh;
     uint8  UART_RX_FifoFullIntrThresh;
-} UART_IntrConfTypeDef;
+} UART_IntrConfig;
 
 //=======================================
 
@@ -173,12 +178,12 @@ void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask);
 /**
   * @brief   Register an application-specific interrupt handler for Uarts interrupts.
   *
-  * @param   void *fn : interrupt handler for Uart interrupts.
+  * @param   UART_IntrHandlerFunc func : interrupt handler for Uart interrupts.
   * @param   void *arg : interrupt handler's arg.
   *
   * @return  null
   */
-void UART_intr_handler_register(void *fn, void *arg);
+void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg);
 
 /**
   * @brief   Config from which serial output printf function.
@@ -193,21 +198,21 @@ void UART_SetPrintPort(UART_Port uart_no);
   * @brief   Config Common parameters of serial ports.
   *
   * @param   UART_Port uart_no : UART0 or UART1
-  * @param   UART_ConfigTypeDef *pUARTConfig : parameters structure
+  * @param   UART_Config *pUARTConfig : parameters structure
   *
   * @return  null
   */
-void UART_ParamConfig(UART_Port uart_no,  UART_ConfigTypeDef *pUARTConfig);
+void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig);
 
 /**
   * @brief   Config types of uarts.
   *
   * @param   UART_Port uart_no : UART0 or UART1
-  * @param   UART_IntrConfTypeDef *pUARTIntrConf : parameters structure
+  * @param   UART_IntrConfig *pUARTIntrConf : parameters structure
   *
   * @return  null
   */
-void UART_IntrConfig(UART_Port uart_no,  UART_IntrConfTypeDef *pUARTIntrConf);
+void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf);
 
 /**
   * @brief   Config the length of the uart communication data bits.
@@ -247,7 +252,7 @@ void UART_SetParity(UART_Port uart_no, UART_ParityMode Parity_mode) ;
   *
   * @return  null
   */
-void UART_SetBaudrate(UART_Port uart_no, uint32 baud_rate);
+void UART_SetBaudRate(UART_Port uart_no, UART_BaudRate baud_rate);
 
 /**
   * @brief   Configure Hardware flow control.
@@ -269,15 +274,6 @@ void UART_SetFlowCtrl(UART_Port uart_no, UART_HwFlowCtrl flow_ctrl, uint8 rx_thr
   * @return  null
   */
 void UART_SetLineInverse(UART_Port uart_no, UART_LineLevelInverse inverse_mask) ;
-
-/**
-  * @brief   An example illustrates how to configure the serial port.
-  *
-  * @param   null
-  *
-  * @return  null
-  */
-void uart_init_new(void);
 
 /**
   * @}

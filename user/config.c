@@ -1,4 +1,6 @@
 #include "user_config.h"
+#include "logging.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 
@@ -7,17 +9,17 @@ int read_config(struct user_config *config)
   int fd, ret, err = 0;
 
   if ((fd = open("config", O_RDONLY)) < 0) {
-    printf("ERROR config read: open: %d\n", fd);
+    LOG_ERROR("open: %d", fd);
     return -1;
   }
 
   if ((ret = read(fd, config, sizeof(*config))) < 0) {
     err = -1;
-    printf("ERROR config read: read: %d\n", ret);
+    LOG_ERROR("read: %d", ret);
     goto error;
   }
 
-  printf("INFO config read: %d/%d\n", ret, sizeof(*config));
+  LOG_INFO("read: %d/%d", ret, sizeof(*config));
 
 error:
   close(fd);
@@ -30,17 +32,17 @@ int write_config(struct user_config *config)
   int fd, ret, err = 0;
 
   if ((fd = open("config", O_WRONLY | O_CREAT)) < 0) {
-    printf("ERROR config write: open: %d\n", fd);
+    LOG_ERROR("open: %d", fd);
     return -1;
   }
 
   if ((ret = write(fd, config, sizeof(*config))) < 0) {
     err = -1;
-    printf("ERROR config write: write: %d\n", ret);
+    LOG_ERROR("write: %d", ret);
     goto error;
   }
 
-  printf("INFO config write: %d/%d\n", ret, sizeof(*config));
+  LOG_INFO("%d/%d", ret, sizeof(*config));
 
 error:
   close(fd);

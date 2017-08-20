@@ -1,7 +1,9 @@
+#include "user_config.h"
+#include "logging.h"
+
 #include <c_types.h>
 #include <spi_flash.h>
 #include <esp_spiffs.h>
-#include "user_config.h"
 
 static int config_spiffs(struct esp_spiffs_config *spiffs_config)
 {
@@ -24,19 +26,19 @@ int init_spiffs()
   struct esp_spiffs_config spiffs_config = {};
   int err;
 
-  if (config_spiffs(&spiffs_config)) {
-    printf("ERROR spiffs: config\n");
-    return -1;
+  if ((err = config_spiffs(&spiffs_config))) {
+    LOG_ERROR("config: %d", err);
+    return err;
   }
 
-  printf("INFO spiffs: size=%x flash=%x:%x\n",
+  LOG_INFO("size=%x flash=%x:%x",
     spiffs_config.phys_size,
     spiffs_config.phys_addr,
     spiffs_config.phys_addr + spiffs_config.phys_size - 1
   );
 
   if ((err = esp_spiffs_init(&spiffs_config))) {
-    printf("ERROR spiffs: init %d\n", err);
+    LOG_ERROR("esp_spiffs_init: %d", err);
     return -1;
   }
 }

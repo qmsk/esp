@@ -11,15 +11,21 @@
 #define UART_RX_STACK 256
 #define UART_RX_QUEUE 8
 
+enum uart_rx_flags {
+  UART_RX_OVERFLOW = 1, // data was lost before this event
+};
+
 struct uart_rx_event {
+  uint16_t flags;
+  uint16_t len;
   char buf[32];
-  size_t len;
 };
 
 struct uart {
   xTaskHandle rx_task;
   xQueueHandle rx_queue;
 
+  uint rx_overflow : 1; // owned by uart_intr_handler
   char rx_buf[1024], *rx_ptr;
   char tx_buf[1024];
   size_t tx_off;
@@ -64,6 +70,16 @@ int uart_printf(const char *fmt, ...)
   return ret;
 }
 
+// hardware FIFO or uart->rx_queue overflowed
+static void uart_rx_overflow(struct uart *uart)
+{
+  *uart->rx_ptr = '\0';
+
+  LOG_WARN("%s", uart->rx_buf);
+
+  uart->rx_ptr = uart->rx_buf;
+}
+
 // uart->rx_buf contains a '\0'-terminated string
 // it either ends with a '\n', or it fills the entire buffer
 static void uart_rx_flush(struct uart *uart)
@@ -73,9 +89,13 @@ static void uart_rx_flush(struct uart *uart)
   uart->rx_ptr = uart->rx_buf;
 }
 
-static void uart_rx_event(struct uart *uart, const struct uart_rx_event *event)
+static void uart_rx_event(struct uart *uart, const struct uart_rx_event *rx)
 {
-  for (const char *in = event->buf; in < event->buf + event->len; in++) {
+  if (rx->flags & UART_RX_OVERFLOW) {
+      uart_rx_overflow(uart);
+  }
+
+  for (const char *in = rx->buf; in < rx->buf + rx->len; in++) {
     *uart->rx_ptr++ = *in;
 
     if (*in == '\n' || uart->rx_ptr + 1 >= uart->rx_buf + sizeof(uart->rx_buf)) {
@@ -92,17 +112,28 @@ static void uart_intr_handler(void *arg)
   portBASE_TYPE task_woken;
 
   if (intr_status & (UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST)) {
-    struct uart_rx_event rx_event;
+    struct uart_rx_event rx_event = {.flags = 0};
 
+    if (uart.rx_overflow) {
+      rx_event.flags |= UART_RX_OVERFLOW;
+    }
+
+    // must read to clear the interrupt, even if queue overflow
     rx_event.len = UART_Read(UART0, rx_event.buf, sizeof(rx_event.buf));
 
     if (xQueueSendFromISR(uart.rx_queue, &rx_event, &task_woken) <= 0) {
-      // TODO: set overflow flag?
-      os_printf("XXX uart_intr_handler: xQueueSendFromISR\n");
+      uart.rx_overflow = 1;
+    } else {
+      uart.rx_overflow = 0;
     }
   }
 
-  UART_ClearIntrStatus(UART0, UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST);
+  if (intr_status & (UART_RXFIFO_OVF_INT_ST)) {
+    // lost data after last read
+    uart.rx_overflow = 1;
+  }
+
+  UART_ClearIntrStatus(UART0, UART_RXFIFO_OVF_INT_ST | UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST);
 
   portEND_SWITCHING_ISR(task_woken);
 }
@@ -120,7 +151,10 @@ static void uart_rx_task(void *arg)
         rx_event.buf[rx_event.len] = '\0';
       }
 
-      LOG_DEBUG("read len=%d: %.32s", rx_event.len, rx_event.buf);
+      LOG_DEBUG("read {overflow=%d} len=%d: %.32s",
+        rx_event.flags & UART_RX_OVERFLOW,
+        rx_event.len, rx_event.buf
+      );
 
       uart_rx_event(uart, &rx_event);
 
@@ -144,7 +178,7 @@ int init_uart(struct user_config *config)
     .inverse_mask = UART_None_Inverse,
   };
   UART_IntrConfig intr_config = {
-    .enable_mask        = UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_TOUT_INT_ENA,
+    .enable_mask        = UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ST | UART_RXFIFO_TOUT_INT_ENA,
     .rx_full_thresh     = 32, // bytes
     .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
   };

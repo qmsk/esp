@@ -90,8 +90,9 @@ void print_system()
 }
 
 static struct user_config user_config = {
-  .wifi_ssid = USER_CONFIG_WIFI_SSID,
-  .wifi_password = USER_CONFIG_WIFI_PASSWORD,
+  .version        = USER_CONFIG_VERSION,
+  .wifi_ssid      = USER_CONFIG_WIFI_SSID,
+  .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
 };
 
 /******************************************************************************

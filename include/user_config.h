@@ -10,12 +10,15 @@
 
 #define USER_CONFIG_UART_BAUD_RATE 74880
 
+#include "local/user_config.h"
+
 struct user_config {
+  uint16 version;
   char wifi_ssid[32];
   char wifi_password[64];
 };
 
-#include "local/user_config.h"
+#define USER_CONFIG_VERSION 2
 
 #ifndef USER_CONFIG_WIFI_SSID
   #error "include/local/user_config.h: #define USER_CONFIG_WIFI_SSID"

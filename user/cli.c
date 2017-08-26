@@ -6,11 +6,11 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+#include <cmd.h>
 
 #define CLI_RX_BUF 1024
 #define CLI_TASK_STACK 512
 #define UART_RX_QUEUE_SIZE 8
-#define CLI_ARGS_MAX 8
 
 struct cli {
   xTaskHandle task;
@@ -18,88 +18,18 @@ struct cli {
 
   char rx_buf[CLI_RX_BUF], *rx_ptr;
 
-  const struct cli_command *commands;
+  const struct cmdtab *commands;
 } cli;
 
-static int cli_split(char *line, char **argv, int arg_max)
+static void cli_cmd(struct cli *cli, char *line)
 {
-  char *ptr = line;
-  const char *arg = NULL;
-  int argc = 0;
+  int err;
 
-  for (; *ptr; ptr++) {
-    if (isspace((unsigned char) *ptr)) {
-      *ptr = '\0';
-      LOG_DEBUG("end arg %d: %s", argc, arg);
-      arg = NULL;
-    } else if (!arg) {
-      arg = argv[argc] = ptr;
-      LOG_DEBUG("start arg %d: %s", argc, arg);
-      argc++;
-    }
-
-    if (argc >= arg_max) {
-      LOG_WARN("argc=%d overflow", argc);
-      return -1;
-    }
+  if ((err = cmd_eval(cli->commands, line)) < 0) {
+    LOG_ERROR("cmd_eval %s: %s", line, cmd_strerror(-err));
+  } else if (err) {
+    LOG_ERROR("cmd %s: %d", line, err);
   }
-
-  return argc;
-}
-
-static int cli_lookup(const struct cli_command *commands, const char *argv0, const struct cli_command **commandp)
-{
-  for (const struct cli_command *cmd = commands; cmd->command; cmd++) {
-    if (strcmp(argv0, cmd->command) == 0) {
-      *commandp = cmd;
-      return 0;
-    }
-  }
-
-  return -1;
-}
-
-int cli_subcommand_handler(int argc, char **argv, void *ctx)
-{
-  const struct cli_subcommand *subcommand = ctx;
-  const struct cli_command *command;
-
-  if (argc < 2) {
-    LOG_ERROR("usage: ...");
-    return -1;
-  } else if (cli_lookup(subcommand->commands, argv[1], &command)) {
-    LOG_ERROR("cli_command_lookup %s", argv[1]);
-    return -1;
-  } else {
-    LOG_DEBUG("cmd=%s", command->command);
-  }
-
-  return command->handler(argc - 1, argv + 1, command->ctx ? command->ctx : subcommand->ctx);
-}
-
-static int cli_command(const struct cli_command *commands, char *line)
-{
-  int argc;
-  char *argv[CLI_ARGS_MAX];
-  const struct cli_command *command;
-
-  if ((argc = cli_split(line, argv, CLI_ARGS_MAX)) < 0) {
-    return -1;
-  } else if (argc == 0) {
-    LOG_DEBUG("skip empty line");
-    return 0;
-  }
-
-  LOG_DEBUG("argc=%d argv[0]=%s", argc, argv[0]);
-
-  if (cli_lookup(commands, argv[0], &command)) {
-    LOG_ERROR("cli_command_lookup %s", argv[0]);
-    return -1;
-  } else {
-    LOG_DEBUG("cmd=%s", command->command);
-  }
-
-  return command->handler(argc, argv, command->ctx);
 }
 
 //
@@ -124,7 +54,7 @@ static void cli_rx_line(struct cli *cli)
 {
   LOG_DEBUG("%s", cli->rx_buf);
 
-  cli_command(cli->commands, cli->rx_buf);
+  cli_cmd(cli, cli->rx_buf);
 
   cli_rx_start(cli);
 }
@@ -189,7 +119,7 @@ void cli_task(void *arg)
   }
 }
 
-int init_cli(struct user_config *config, const struct cli_command *commands)
+int init_cli(struct user_config *config, const struct cmdtab *commands)
 {
   int err;
 

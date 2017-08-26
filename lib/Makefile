@@ -13,9 +13,9 @@
 #
 ifndef PDIR
 UP_EXTRACT_DIR = ..
-SUBDIRS = test
-GEN_LIBS = libtest.a
-COMPONENTS_libtest = test/libtest.a
+SUBDIRS = cmd
+GEN_LIBS = libcmd.a
+COMPONENTS_libcmd = cmd/libcmd.a
 endif
 
 

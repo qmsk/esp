@@ -99,7 +99,7 @@ int cmd_config_show(int argc, char **argv, void *ctx)
   return 0;
 }
 
-const struct cli_command config_commands[] = {
+const struct cmd config_commands[] = {
   { "show", cmd_config_show },
   {}
 };

@@ -49,7 +49,7 @@ endif
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a  \
 	ext/drivers/libuart.a \
-	lib/libtest.a
+	lib/libcmd.a
 
 LINKFLAGS_eagle.app.v6 = \
 	-L$(SDK_PATH)/lib        \

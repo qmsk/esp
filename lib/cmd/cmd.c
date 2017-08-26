@@ -38,33 +38,42 @@ static int cmd_lookup(const struct cmdtab *tab, const char *name, const struct c
   return -CMD_ERR_NOT_FOUND;
 }
 
-static int cmd_call(const struct cmdtab *tab, const struct cmd *cmd, int argc, char **argv)
+static int cmd_call(const struct cmdtab *cmdtab, int argc, char **argv, const struct cmdctx *parent)
 {
-  void *ctx = cmd->ctx ? cmd->ctx : tab->ctx;
-
-  return cmd->func(argc, argv, ctx);
-}
-
-int cmd_handler(int argc, char **argv, void *ctx)
-{
-  const struct cmdtab *cmdtab = ctx;
-  const struct cmd *cmd;
+  struct cmdctx ctx = {
+    .parent = parent,
+    .cmdtab = cmdtab,
+    .error_handler = cmdtab->error_handler ? cmdtab->error_handler : parent->error_handler,
+  };
   int err;
 
-  if (argc < 2) {
-    return -CMD_ERR_USAGE;
-  } else if ((err = cmd_lookup(cmdtab, argv[1], &cmd))) {
-    return err;
+  if (argc == 0) {
+    err = -CMD_ERR_MISSING_SUBCOMMAND;
+  } else if ((err = cmd_lookup(cmdtab, argv[0], &ctx.cmd))) {
+
+  } else {
+    if (ctx.cmd->subcommands) {
+      err = cmd_call(ctx.cmd->subcommands, argc - 1, argv + 1, &ctx);
+    } else if (ctx.cmd->func) {
+      void *arg = ctx.cmd->arg ? ctx.cmd->arg : cmdtab->arg;
+
+      err = ctx.cmd->func(argc, argv, arg);
+    } else {
+      err = -CMD_ERR_NOT_IMPLEMENTED;
+    }
   }
 
-  return cmd_call(cmdtab, cmd, argc - 1, argv + 1);
+  if (ctx.error_handler && err < 0) {
+    return ctx.error_handler(&ctx, -err, argc ? argv[0] : NULL);
+  } else {
+    return err;
+  }
 }
 
 int cmd_eval(const struct cmdtab *cmdtab, char *line)
 {
   int argc;
   char *argv[CMD_ARGS_MAX];
-  const struct cmd *cmd;
   int ret;
 
   if ((ret = cmd_parse(line, argv, CMD_ARGS_MAX)) < 0) {
@@ -75,11 +84,7 @@ int cmd_eval(const struct cmdtab *cmdtab, char *line)
     argc = ret;
   }
 
-  if ((ret = cmd_lookup(cmdtab, argv[0], &cmd))) {
-    return ret;
-  }
-
-  return cmd_call(cmdtab, cmd, argc, argv);
+  return cmd_call(cmdtab, argc, argv, NULL);
 }
 
 const char *cmd_strerror(enum cmd_error err)
@@ -91,8 +96,10 @@ const char *cmd_strerror(enum cmd_error err)
       return "maximum number of arguments exceeded";
     case CMD_ERR_NOT_FOUND:
       return "command not found";
-    case CMD_ERR_USAGE:
-      return "usage";
+    case CMD_ERR_NOT_IMPLEMENTED:
+      return "command not implemented";
+    case CMD_ERR_MISSING_SUBCOMMAND:
+      return "missing subcommand";
     default:
       return "<unknown>";
   }

@@ -28,21 +28,15 @@ struct cli {
 /**
  * @return 0 on success
  */
-int cli_putc(char c)
+void cli_putc(char c)
 {
-  int ret;
-
-  do {
-    ret = uart_putc(c);
-  } while (ret > 0);
-
-  return ret;
+  uart_putc(c);
 }
 
 /**
  * @return
  */
-int cli_printf(const char *fmt, ...)
+void cli_printf(const char *fmt, ...)
 {
   va_list vargs;
   char *buf = cli.tx_buf;
@@ -61,11 +55,77 @@ int cli_printf(const char *fmt, ...)
     ptr += ret;
   }
 
-  while (buf < ptr) {
-    buf += uart_write(buf, ptr - buf);
+  uart_write(buf, ptr - buf);
+}
+
+void cli_ctx_print(const struct cmdctx *ctx)
+{
+  if (ctx->parent) {
+    cli_ctx_print(ctx->parent);
+  }
+
+  if (ctx->cmd) {
+    cli_printf(" %s", ctx->cmd->name);
+  }
+}
+
+int cli_cmd_help(const struct cmdtab *cmdtab, const struct cmdctx *parent)
+{
+  struct cmdctx ctx = {
+    .parent = parent,
+    .cmdtab = cmdtab,
+  };
+
+  for (const struct cmd *cmd = cmdtab->commands; cmd->name; cmd++) {
+    ctx.cmd = cmd;
+
+    if (cmd->func) {
+      cli_ctx_print(&ctx);
+
+      if (cmd->usage) {
+        cli_printf(" %s", cmd->usage);
+      }
+
+      if (cmd->describe) {
+        cli_printf(": %s\n", cmd->describe);
+      } else {
+         cli_printf("\n");
+       }
+    }
+
+    if (cmd->subcommands) {
+      cli_cmd_help(cmd->subcommands, &ctx);
+    }
   }
 
   return 0;
+}
+
+int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const char *cmd)
+{
+  cli_printf("!");
+  if (ctx->cmd || ctx->parent) {
+    cli_ctx_print(ctx);
+    cli_printf(": ");
+  } else {
+    cli_printf(" ");
+  }
+  cli_printf("%s", cmd_strerror(err));
+  if (cmd)
+    cli_printf(": %s\n", cmd);
+  else
+    cli_printf("\n");
+
+  if (err == CMD_ERR_NOT_FOUND || err == CMD_ERR_MISSING_SUBCOMMAND) {
+    cli_cmd_help(ctx->cmdtab, ctx->parent);
+  }
+
+  return 0;
+}
+
+int cli_help_cmd(int argc, char **argv, void *ctx)
+{
+  return cli_cmd_help(cli.commands, NULL);
 }
 
 static void cli_cmd(struct cli *cli, char *line)

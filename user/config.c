@@ -91,7 +91,7 @@ int init_config(struct user_config *config)
   }
 }
 
-int cmd_config_show(int argc, char **argv, void *ctx)
+int config_cmd_show(int argc, char **argv, void *ctx)
 {
   struct user_config *config = ctx;
 
@@ -101,6 +101,6 @@ int cmd_config_show(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "show", cmd_config_show },
+  { "show", config_cmd_show, .describe = "Show configuration values" },
   {}
 };

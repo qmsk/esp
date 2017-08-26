@@ -111,7 +111,7 @@ static struct user_config user_config = {
   .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
 };
 
-int cmd_test(int argc, char **argv, void *ctx)
+int test_cmd(int argc, char **argv, void *ctx)
 {
   cli_printf("argc=%d:", argc);
 
@@ -124,19 +124,21 @@ int cmd_test(int argc, char **argv, void *ctx)
   return 0;
 }
 
-static struct cmdtab user_config_cmdtab = {
+static const struct cmdtab user_config_cmdtab = {
   .commands = config_commands,
-  .ctx = &user_config,
+  .arg      = &user_config,
 };
 
-static struct cmd user_commands[] = {
-  { "test",   cmd_test        },
-  { "config", cmd_handler,    &user_config_cmdtab },
+static const struct cmd user_commands[] = {
+  { "help",   cli_help_cmd, .describe = "Show this listing" },
+  { "test",   test_cmd, .usage = "[...]" },
+  { "config", .describe = "Configuration commands", .subcommands = &user_config_cmdtab },
   {}
 };
 
-static struct cmdtab user_cmdtab = {
-  .commands = user_commands,
+static const struct cmdtab user_cmdtab = {
+  .commands       = user_commands,
+  .error_handler  = cli_cmd_error,
 };
 
 /******************************************************************************

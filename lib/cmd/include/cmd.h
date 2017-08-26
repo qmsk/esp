@@ -3,31 +3,43 @@
 
 #define CMD_ARGS_MAX 8
 
-typedef int(*cmd_func)(int argc, char **argv, void *ctx);
+struct cmd;
+struct cmdtab;
+struct cmdctx;
+enum cmd_error;
+
+typedef int(*cmd_func)(int argc, char **argv, void *arg);
+typedef int(*cmdtab_error_func)(const struct cmdctx *ctx, enum cmd_error err, const char *cmd);
 
 struct cmd {
-  const char  *name;
-  cmd_func    func;
-  void        *ctx;
+  const char      *name;
+  cmd_func         func;
+  void            *arg;
+  const char      *usage;
+  const char      *describe;
+  const struct cmdtab   *subcommands; // sub-commands
 };
 
 struct cmdtab {
   const struct cmd  *commands;
-  void              *ctx;
+  void              *arg;
+  cmdtab_error_func error_handler;
+};
+
+struct cmdctx {
+  const struct cmdctx *parent;
+  const struct cmdtab *cmdtab;
+  const struct cmd *cmd;
+  cmdtab_error_func error_handler;
 };
 
 enum cmd_error {
   CMD_ERR_OK          = 0,
   CMD_ERR_ARGS_MAX,
   CMD_ERR_NOT_FOUND,
-  CMD_ERR_USAGE,
+  CMD_ERR_NOT_IMPLEMENTED,
+  CMD_ERR_MISSING_SUBCOMMAND,
 };
-
-/** Subcommand handler: parse first argument as a sub-command
- *
- * @param ctx <cmd_tab>
- */
-int cmd_handler(int argc, char **argv, void *ctx);
 
 int cmd_eval(const struct cmdtab *cmdtab, char *line);
 

@@ -65,51 +65,39 @@ static void uart_rx_overflow() // ISR UART_RXFIFO_OVF_INT_ST
   uart.rx_overflow = true;
 }
 
-int uart_putc(char c) // XXX: unused
+int uart_putc(char c)
 {
-  int err = 0;
+  int ret = 0;
 
   if (uart.tx_ptr < uart.tx_buf + sizeof(uart.tx_buf)) {
     *uart.tx_ptr++ = c;
   } else {
-    err = -1;
+    ret = 1;
   }
 
-  uart_tx();
-
-  return err;
-}
-
-int uart_vprintf(const char *fmt, va_list vargs)
-{
-  size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
-  int ret;
-
-  if (tx_size == 0) {
-    ret = -1;
-    uart.tx_ptr[-1] = '\\'; // XXX: print overflow marker
-  } else if ((ret = vsnprintf(uart.tx_ptr, tx_size, fmt, vargs)) < 0) {
-    // error
-  } else if (ret < tx_size) {
-    uart.tx_ptr += ret;
-  } else {
-    // overflow, write truncated...
-    uart.tx_ptr = uart.tx_buf + sizeof(uart.tx_buf);
-    uart.tx_ptr[-1] = '\\'; // XXX: print overflow marker
-  }
   uart_tx();
 
   return ret;
 }
 
-int uart_printf(const char *fmt, ...)
+int uart_write(const char *buf, size_t len)
 {
-  int ret;
-  va_list vargs;
+  size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
+  int ret = 0;
 
-  va_start(vargs, fmt);
-  ret = uart_vprintf(fmt, vargs);
-  va_end(vargs);
+  if (len <= tx_size) {
+    memcpy(uart.tx_ptr, buf, len);
+    uart.tx_ptr += len;
+    ret = len;
+  } else {
+    // overflow, write truncated...
+    memcpy(uart.tx_ptr, buf, tx_size);
+    uart.tx_ptr = uart.tx_buf + sizeof(uart.tx_buf);
+    uart.tx_ptr[-1] = '\\'; // XXX: write overflow marker
+    ret = tx_size;
+  }
+
+  uart_tx();
 
   return ret;
 }

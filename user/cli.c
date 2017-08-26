@@ -23,7 +23,7 @@ struct cli {
   const struct cli_command *commands;
 } cli;
 
-static int cli_command_split(struct cli *cli, char *line, char **argv, int arg_max)
+static int cli_split(char *line, char **argv, int arg_max)
 {
   char *ptr = line;
   const char *arg = NULL;
@@ -49,9 +49,9 @@ static int cli_command_split(struct cli *cli, char *line, char **argv, int arg_m
   return argc;
 }
 
-static int cli_command_lookup(struct cli *cli, const char *argv0, const struct cli_command **commandp)
+static int cli_lookup(const struct cli_command *commands, const char *argv0, const struct cli_command **commandp)
 {
-  for (const struct cli_command *cmd = cli->commands; cmd->command; cmd++) {
+  for (const struct cli_command *cmd = commands; cmd->command; cmd++) {
     if (strcmp(argv0, cmd->command) == 0) {
       *commandp = cmd;
       return 0;
@@ -61,13 +61,31 @@ static int cli_command_lookup(struct cli *cli, const char *argv0, const struct c
   return -1;
 }
 
-static int cli_command(struct cli *cli, char *line)
+int cli_subcommand_handler(int argc, char **argv, void *ctx)
+{
+  const struct cli_subcommand *subcommand = ctx;
+  const struct cli_command *command;
+
+  if (argc < 2) {
+    LOG_ERROR("usage: ...");
+    return -1;
+  } else if (cli_lookup(subcommand->commands, argv[1], &command)) {
+    LOG_ERROR("cli_command_lookup %s", argv[1]);
+    return -1;
+  } else {
+    LOG_DEBUG("cmd=%s", command->command);
+  }
+
+  return command->handler(argc - 1, argv + 1, command->ctx ? command->ctx : subcommand->ctx);
+}
+
+static int cli_command(const struct cli_command *commands, char *line)
 {
   int argc;
   char *argv[CLI_ARGS_MAX];
   const struct cli_command *command;
 
-  if ((argc = cli_command_split(cli, line, argv, CLI_ARGS_MAX)) < 0) {
+  if ((argc = cli_split(line, argv, CLI_ARGS_MAX)) < 0) {
     return -1;
   } else if (argc == 0) {
     LOG_DEBUG("skip empty line");
@@ -76,7 +94,7 @@ static int cli_command(struct cli *cli, char *line)
 
   LOG_DEBUG("argc=%d argv[0]=%s", argc, argv[0]);
 
-  if (cli_command_lookup(cli, argv[0], &command)) {
+  if (cli_lookup(commands, argv[0], &command)) {
     LOG_ERROR("cli_command_lookup %s", argv[0]);
     return -1;
   } else {
@@ -99,7 +117,7 @@ static void cli_rx_line(struct cli *cli)
 {
   LOG_INFO("%s", cli->rx_buf);
 
-  cli_command(cli, cli->rx_buf);
+  cli_command(cli->commands, cli->rx_buf);
 
   cli->rx_ptr = cli->rx_buf;
 }

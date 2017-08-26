@@ -122,8 +122,14 @@ int cmd_test(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static struct cli_subcommand user_config_subcommand = {
+  .commands = config_commands,
+  .ctx = &user_config,
+};
+
 static struct cli_command user_commands[] = {
   { "test", cmd_test },
+  { "config", cli_subcommand_handler, &user_config_subcommand },
   {}
 };
 

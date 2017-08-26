@@ -89,3 +89,17 @@ int init_config(struct user_config *config)
     return load_config(config, &stored_config);
   }
 }
+
+int cmd_config_show(int argc, char **argv, void *ctx)
+{
+  struct user_config *config = ctx;
+
+  LOG_INFO("config version=%u", config->version);
+
+  return 0;
+}
+
+const struct cli_command config_commands[] = {
+  { "show", cmd_config_show },
+  {}
+};

@@ -61,7 +61,6 @@ int cli_printf(const char *fmt, ...)
     ptr += ret;
   }
 
-  // XXX: blocking
   while (buf < ptr) {
     buf += uart_write(buf, ptr - buf);
   }
@@ -106,15 +105,15 @@ static void cli_rx_line(struct cli *cli)
   cli_rx_start(cli);
 }
 
-static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
+static void cli_rx(struct cli *cli, const struct uart_event *rx)
 {
   if (rx->flags & UART_RX_OVERFLOW) {
       cli_rx_overflow(cli);
   }
 
-  for (const char *in = rx->buf; in < rx->buf + rx->len; in++) {
+  for (const uint8_t *in = rx->buf; in < rx->buf + rx->len; in++) {
     #ifdef DEBUG
-      if (isprint((unsigned char) *in)) {
+      if (isprint(*in)) {
         LOG_DEBUG("%c", *in);
       } else {
         LOG_DEBUG("%#02x", *in);
@@ -147,7 +146,7 @@ static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
 void cli_task(void *arg)
 {
   struct cli *cli = arg;
-  struct uart_rx_event rx_event;
+  struct uart_event rx_event;
 
   LOG_INFO("init cli=%p", cli);
 
@@ -172,7 +171,7 @@ int init_cli(struct user_config *config, const struct cmdtab *commands)
   cli.rx_ptr = cli.rx_buf;
   cli.commands = commands;
 
-  if ((cli.uart_rx_queue = xQueueCreate(UART_RX_QUEUE_SIZE, sizeof(struct uart_rx_event))) == NULL) {
+  if ((cli.uart_rx_queue = xQueueCreate(UART_RX_QUEUE_SIZE, sizeof(struct uart_event))) == NULL) {
     LOG_ERROR("xQueueCreate");
     return -1;
   }

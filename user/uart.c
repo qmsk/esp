@@ -1,5 +1,4 @@
 #include <drivers/uart.h>
-#include <stdio.h>
 
 #include "uart.h"
 #include "user_config.h"
@@ -26,7 +25,9 @@ static void uart_tx() // ISR UART_TXFIFO_EMPTY_INT_ST
 
     uart.tx_ptr -= write;
 
-    uart.tx_buf[0] = '#'; // XXX: TX overflow marker
+    #ifdef DEBUG
+      uart.tx_buf[0] = '#'; // TX overflow marker
+    #endif
 
     // buffer waiting for tx fifo empty
     UART_EnableIntr(UART0, UART_TXFIFO_EMPTY_INT_ENA);
@@ -85,16 +86,33 @@ int uart_write(const char *buf, size_t len)
   size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
   int ret = 0;
 
-  if (len <= tx_size) {
+  if (uart.tx_ptr == uart.tx_buf) {
+    // fastpath if TX buffer is empty
+    ret = UART_Write(UART0, buf, len);
+    buf += ret;
+    len -= ret;
+  }
+
+  if (len == 0) {
+    // fastpath, skip uart_tx()
+    return ret;
+  } else if (len <= tx_size) {
+    // there is room in the TX buffer
     memcpy(uart.tx_ptr, buf, len);
     uart.tx_ptr += len;
     ret = len;
-  } else {
-    // overflow, write truncated...
+  } else if (tx_size > 0) {
+    // TX buffer overflow, write truncated...
     memcpy(uart.tx_ptr, buf, tx_size);
     uart.tx_ptr = uart.tx_buf + sizeof(uart.tx_buf);
-    uart.tx_ptr[-1] = '\\'; // XXX: write overflow marker
     ret = tx_size;
+
+    #ifdef DEBUG
+      uart.tx_ptr[-1] = '\\'; // write overflow marker
+    #endif
+  } else {
+    // TX buffer full
+    ret = 0;
   }
 
   uart_tx();

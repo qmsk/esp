@@ -85,7 +85,10 @@ int uart_vprintf(const char *fmt, va_list vargs)
   size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
   int ret;
 
-  if ((ret = vsnprintf(uart.tx_ptr, tx_size, fmt, vargs)) < 0) {
+  if (tx_size == 0) {
+    ret = -1;
+    uart.tx_ptr[-1] = '\\'; // XXX: print overflow marker
+  } else if ((ret = vsnprintf(uart.tx_ptr, tx_size, fmt, vargs)) < 0) {
     // error
   } else if (ret < tx_size) {
     uart.tx_ptr += ret;

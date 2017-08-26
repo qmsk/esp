@@ -71,20 +71,52 @@ static void uart_intr_rx_overflow() // ISR UART_RXFIFO_OVF_INT_ST
   uart.rx_overflow = true;
 }
 
-int uart_putc(int c)
+// Push TX event to queue, enabling the TX interrupt
+// Blocks if the queue is full
+// @return <0 on timeout, 0 on success
+int uart_tx(const struct uart_event *tx_event)
 {
-  uint8_t tx_byte = c;
-  struct uart_event tx_event;
-
-  tx_event.len = 1;
-  tx_event.buf[0] = tx_byte;
-
-  if (xQueueSend(uart.tx_queue, &tx_event, portMAX_DELAY)) {
+  if (xQueueSend(uart.tx_queue, tx_event, portMAX_DELAY)) {
+    // XXX: can't enable this before sending, it the ISR will race and disable it before the send
+    // XXX: what if the send blocks? Let's hope that someone else enabled it, and the ISR doesn't race and drain the queue before this...?
     UART_EnableIntr(UART0, UART_TXFIFO_EMPTY_INT_ENA);
     return 0;
   } else {
-    return 1; // queue full
+    return -1; // queue full?
   }
+}
+
+int uart_putc(int c)
+{
+  uint8_t tx_byte = c;
+  int ret = 1;
+
+  taskENTER_CRITICAL();
+  {
+    if (!uxQueueMessagesWaiting(uart.tx_queue)) {
+      // fastpath
+      if (UART_TryWrite(UART0, tx_byte)) {
+        ret = 0; // ok
+      }
+    }
+  }
+  taskEXIT_CRITICAL();
+
+  if (ret) {
+    // slow path
+    struct uart_event tx_event;
+
+    tx_event.len = 1;
+    tx_event.buf[0] = tx_byte;
+
+    if (uart_tx(&tx_event) < 0) {
+      ret = 1; // queue full
+    } else {
+      ret = 0; // ok
+    }
+  }
+
+  return ret;
 }
 
 size_t uart_write(const void *buf, size_t len)
@@ -92,7 +124,19 @@ size_t uart_write(const void *buf, size_t len)
   const uint8_t *ptr = buf;
   int write = 0;
 
+  taskENTER_CRITICAL();
+  {
+    if (!uxQueueMessagesWaiting(uart.tx_queue)) {
+      // fastpath
+      write = UART_Write(UART0, buf, len);
+      ptr += write;
+      len -= write;
+    }
+  }
+  taskEXIT_CRITICAL();
+
   while (len > 0) {
+    // slow path
     struct uart_event tx_event;
     size_t size = sizeof(tx_event.buf);
 
@@ -108,11 +152,10 @@ size_t uart_write(const void *buf, size_t len)
       len = 0;
     }
 
-    if (xQueueSend(uart.tx_queue, &tx_event, portMAX_DELAY)) {
-      UART_EnableIntr(UART0, UART_TXFIFO_EMPTY_INT_ENA);
-      write += tx_event.len;
-    } else {
+    if (uart_tx(&tx_event) < 0) {
       break;
+    } else {
+      write += tx_event.len;
     }
   }
 

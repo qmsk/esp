@@ -108,17 +108,18 @@ void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
     WRITE_PERI_REG(UART_FIFO(uart_no), TxChar);
 }
 
-void UART_Write(UART_Port uart_no, const char *buf, size_t len)
+size_t UART_Write(UART_Port uart_no, const char *buf, size_t len)
 {
-  while (len-- > 0) {
-    uint8 tx_char = *buf++;
+  size_t size = UART_TX_SIZE - UART_GetTxFifo(uart_no);
+  size_t write;
 
-    // wait while the TX fifo is full
-    while (UART_GetTxFifo(uart_no) >= 126)
-      ;
+  for (write = 0; write < len && write < size; write++) {
+    uint8 tx_char = *buf++;
 
     WRITE_PERI_REG(UART_FIFO(uart_no), tx_char);
   }
+
+  return write;
 }
 
 size_t UART_Read(UART_Port uart_no, char *buf, size_t size)
@@ -146,7 +147,17 @@ void UART_ClearIntrStatus(UART_Port uart_no, uint32 clr_mask)
 
 void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask)
 {
-    SET_PERI_REG_MASK(UART_INT_ENA(uart_no), ena_mask);
+    WRITE_PERI_REG(UART_INT_ENA(uart_no), ena_mask);
+}
+
+void UART_EnableIntr(UART_Port uart_no, uint32 set_mask)
+{
+    SET_PERI_REG_MASK(UART_INT_ENA(uart_no), set_mask);
+}
+
+void UART_DisableIntr(UART_Port uart_no, uint32 clear_mask)
+{
+    CLEAR_PERI_REG_MASK(UART_INT_ENA(uart_no), clear_mask);
 }
 
 void UART_RegisterIntrHandler(UART_IntrHandlerFunc func, void *arg)

@@ -4,8 +4,6 @@
 #include "logging.h"
 #include "uart.h"
 
-const static char logging_os_prefix[] = { 'O', 'S', ':', ' '};
-
 struct logging {
   bool os_write;
 } logging;
@@ -15,7 +13,10 @@ void logging_os_putc(char c)
   if (!logging.os_write) {
     logging.os_write = true;
 
-    UART_Write(UART0, logging_os_prefix, sizeof(logging_os_prefix));
+    UART_WriteOne(UART0, 'O');
+    UART_WriteOne(UART0, 'S');
+    UART_WriteOne(UART0, ':');
+    UART_WriteOne(UART0, ' ');
   }
 
   UART_WriteOne(UART0, c);

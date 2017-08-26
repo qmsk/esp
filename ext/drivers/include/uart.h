@@ -159,8 +159,9 @@ void UART_WriteOne(UART_Port uart_no, uint8 TxChar);
   * @param   UART_Port uart_no : UART0 or UART1
   * @param   char *buf: copy from buffer
   * @param   size_t len: number of bytes in buffer
+  * @return  size_t: number of bytes written
   */
-void UART_Write(UART_Port uart_no, const char *buf, size_t len);
+size_t UART_Write(UART_Port uart_no, const char *buf, size_t len);
 
 /**
   * @param   UART_Port uart_no : UART0 or UART1
@@ -193,11 +194,31 @@ void UART_ClearIntrStatus(UART_Port uart_no, uint32 clr_mask);
   * @brief   Enable uart interrupts .
   *
   * @param   UART_Port uart_no : UART0 or UART1
-  * @param   uint32 ena_mask : To enable the interrupt bits
+  * @param   uint32 ena_mask : interrupt mask
   *
   * @return  null
   */
 void UART_SetIntrEna(UART_Port uart_no, uint32 ena_mask);
+
+/**
+  * @brief   Partially enable uart interrupts.
+  *
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @param   uint32 set_mask : set mask bits
+  *
+  * @return  null
+  */
+void UART_EnableIntr(UART_Port uart_no, uint32 set_mask);
+
+/**
+  * @brief   Partially disable uart interrupts.
+  *
+  * @param   UART_Port uart_no : UART0 or UART1
+  * @param   uint32 set_mask : clear mask bits
+  *
+  * @return  null
+  */
+void UART_DisableIntr(UART_Port uart_no, uint32 clear_mask);
 
 /**
   * @brief   Register an application-specific interrupt handler for Uarts interrupts.

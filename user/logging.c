@@ -52,7 +52,10 @@ void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
     *ptr++ = '\n';
   }
 
-  uart_write(buf, ptr - buf);
+  // XXX: blocking
+  while (buf < ptr) {
+    buf += uart_write(buf, ptr - buf);
+  }
 }
 
 int init_logging(struct user_config *config)

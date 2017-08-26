@@ -42,6 +42,11 @@ static inline uint8 UART_ReadOne(UART_Port uart_no)
   return READ_PERI_REG(UART_FIFO(uart_no)) & 0xFF;
 }
 
+static inline void UART_WriteOne(UART_Port uart_no, uint8 tx_char)
+{
+    WRITE_PERI_REG(UART_FIFO(uart_no), tx_char);
+}
+
 void UART_SetWordLength(UART_Port uart_no, UART_WordLength len)
 {
     SET_PERI_REG_BITS(UART_CONF0(uart_no), UART_BIT_NUM, len, UART_BIT_NUM_S);
@@ -99,36 +104,51 @@ void UART_WaitTxFifoEmpty(UART_Port uart_no)
       ;
 }
 
-void UART_WriteOne(UART_Port uart_no, uint8 TxChar)
+void UART_WaitWrite(UART_Port uart_no, uint8 tx_char)
 {
     // wait while the TX fifo is full
     while (UART_GetTxFifo(uart_no) >= 126)
       ;
 
-    WRITE_PERI_REG(UART_FIFO(uart_no), TxChar);
+    UART_WriteOne(uart_no, tx_char);
 }
 
-size_t UART_Write(UART_Port uart_no, const char *buf, size_t len)
+int UART_TryWrite(UART_Port uart_no, uint8 tx_char)
 {
+  int ret;
+
+  if ((ret = (UART_GetTxFifo(uart_no) < UART_TX_SIZE)))
+    UART_WriteOne(uart_no, tx_char);
+
+  return ret;
+}
+
+size_t UART_GetWriteSize(UART_Port uart_no)
+{
+  return UART_TX_SIZE - UART_GetTxFifo(uart_no);
+}
+
+size_t UART_Write(UART_Port uart_no, const void *buf, size_t len)
+{
+  const uint8_t *ptr = buf;
   size_t size = UART_TX_SIZE - UART_GetTxFifo(uart_no);
   size_t write;
 
   for (write = 0; write < len && write < size; write++) {
-    uint8 tx_char = *buf++;
-
-    WRITE_PERI_REG(UART_FIFO(uart_no), tx_char);
+    WRITE_PERI_REG(UART_FIFO(uart_no), *ptr++);
   }
 
   return write;
 }
 
-size_t UART_Read(UART_Port uart_no, char *buf, size_t size)
+size_t UART_Read(UART_Port uart_no, void *buf, size_t size)
 {
+  uint8_t *ptr = buf;
   size_t len = UART_GetRxFifo(uart_no);
   size_t read;
 
   for (read = 0; read < len && read < size; read++) {
-    *buf++ = UART_ReadOne(uart_no);
+    *ptr++ = UART_ReadOne(uart_no);
   }
 
   return read;
@@ -195,7 +215,6 @@ void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
 
 void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf)
 {
-
     uint32 reg_val = 0;
     UART_ClearIntrStatus(uart_no, UART_INTR_MASK);
     reg_val = READ_PERI_REG(UART_CONF1(uart_no)) & ((UART_RX_FLOW_THRHD << UART_RX_FLOW_THRHD_S) | UART_RX_FLOW_EN) ;

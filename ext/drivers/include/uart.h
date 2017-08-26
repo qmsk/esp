@@ -148,28 +148,41 @@ typedef struct {
   */
 void UART_WaitTxFifoEmpty(UART_Port uart_no); //do not use if tx flow control enabled
 
+/**
+ * @return number of bytes writable
+ */
+size_t UART_GetWriteSize(UART_Port uart_no);
+
+/** Block waiting for one byte write to TX FIFO
+  *
+  * @param   uart_no : UART0 or UART1
+  * @param   tx_char: char to write
+  */
+void UART_WaitWrite(UART_Port uart_no, uint8 tx_char);
+
+/** Try writing one byte to TX FIFO
+  *
+  * @param   uart_no : UART0 or UART1
+  * @param   tx_char: char to write
+  * @return  0 if TX FIFO full, >0 if written
+  */
+int UART_TryWrite(UART_Port uart_no, uint8 tx_char);
 
 /**
-  * @param   UART_Port uart_no : UART0 or UART1
-  * @param   uint8 TxChar: write byte
+  * @param   port_no UART0 or UART1
+  * @param   buf copy bytes from buffer
+  * @param   len number of bytes in buffer
+  * @return  number of bytes written
   */
-void UART_WriteOne(UART_Port uart_no, uint8 TxChar);
+size_t UART_Write(UART_Port uart_no, const void *buf, size_t len);
 
 /**
-  * @param   UART_Port uart_no : UART0 or UART1
-  * @param   char *buf: copy from buffer
-  * @param   size_t len: number of bytes in buffer
-  * @return  size_t: number of bytes written
+  * @param   uart_no UART0 or UART1
+  * @param   buf copy bytes to buffer
+  * @param   size size of buffer
+  * @return  number of bytes read
   */
-size_t UART_Write(UART_Port uart_no, const char *buf, size_t len);
-
-/**
-  * @param   UART_Port uart_no : UART0 or UART1
-  * @param   char *buf: copy to buffer
-  * @param   size_t size: size of buffer
-  * @return  size_t: number of bytes read
-  */
-size_t UART_Read(UART_Port uart_no, char *buf, size_t size);
+size_t UART_Read(UART_Port uart_no, void *buf, size_t size);
 
 /**
   * @brief   Clear uart tx fifo and rx fifo.

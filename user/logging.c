@@ -17,13 +17,13 @@ void logging_os_putc(char c)
   if (!logging.os_write) {
     logging.os_write = true;
 
-    UART_WriteOne(UART0, 'O');
-    UART_WriteOne(UART0, 'S');
-    UART_WriteOne(UART0, ':');
-    UART_WriteOne(UART0, ' ');
+    UART_WaitWrite(UART0, 'O');
+    UART_WaitWrite(UART0, 'S');
+    UART_WaitWrite(UART0, ':');
+    UART_WaitWrite(UART0, ' ');
   }
 
-  UART_WriteOne(UART0, c);
+  UART_WaitWrite(UART0, c);
 
   if (c == '\n') {
     logging.os_write = false;

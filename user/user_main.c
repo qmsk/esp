@@ -111,6 +111,22 @@ static struct user_config user_config = {
   .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
 };
 
+int cmd_test(int argc, char **argv, void *ctx)
+{
+  LOG_INFO("argc=%d", argc);
+
+  for (int i = 0; i < argc; i++) {
+    LOG_INFO("argv[%d]: %s", i, argv[i]);
+  }
+
+  return 0;
+}
+
+static struct cli_command user_commands[] = {
+  { "test", cmd_test },
+  {}
+};
+
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
@@ -141,7 +157,7 @@ void user_init(void)
     return;
   }
 
-  if (init_cli(&user_config)) {
+  if (init_cli(&user_config, user_commands)) {
     printf("FATAL: init_cli\n");
     return;
   }

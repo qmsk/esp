@@ -1,6 +1,8 @@
-#include <drivers/uart.h>
-
 #include "uart.h"
+
+#include <drivers/uart.h>
+#include <freertos/task.h>
+
 #include "user_config.h"
 #include "logging.h"
 
@@ -70,52 +72,67 @@ int uart_putc(char c)
 {
   int ret = 0;
 
-  if (uart.tx_ptr < uart.tx_buf + sizeof(uart.tx_buf)) {
-    *uart.tx_ptr++ = c;
-  } else {
-    ret = 1;
-  }
+  taskENTER_CRITICAL();
+  {
+    if (uart.tx_ptr < uart.tx_buf + sizeof(uart.tx_buf)) {
+      *uart.tx_ptr++ = c;
+    } else {
+      ret = 1;
+    }
 
-  uart_tx();
+    uart_tx();
+  }
+  taskEXIT_CRITICAL();
 
   return ret;
 }
 
 int uart_write(const char *buf, size_t len)
 {
-  size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
-  int ret = 0;
+  int ret = 0; // number of bytes written
 
-  if (uart.tx_ptr == uart.tx_buf) {
-    // fastpath if TX buffer is empty
-    ret = UART_Write(UART0, buf, len);
-    buf += ret;
-    len -= ret;
-  }
+  taskENTER_CRITICAL();
+  {
+    if (uart.tx_ptr == uart.tx_buf) {
+      // fastpath if TX buffer is empty
+      ret = UART_Write(UART0, buf, len);
+      buf += ret;
+      len -= ret;
+    } else if (uart.tx_ptr == uart.tx_buf + sizeof(uart.tx_buf)) {
+      // try and make room
+      uart_tx();
+    }
 
-  if (len == 0) {
-    // fastpath, skip uart_tx()
-    return ret;
-  } else if (len <= tx_size) {
-    // there is room in the TX buffer
-    memcpy(uart.tx_ptr, buf, len);
-    uart.tx_ptr += len;
-    ret = len;
-  } else if (tx_size > 0) {
-    // TX buffer overflow, write truncated...
-    memcpy(uart.tx_ptr, buf, tx_size);
-    uart.tx_ptr = uart.tx_buf + sizeof(uart.tx_buf);
-    ret = tx_size;
+    size_t tx_size = uart.tx_buf + sizeof(uart.tx_buf) - uart.tx_ptr;
 
-    #ifdef DEBUG
+    if (len == 0) {
+      // fastpath handled send
+
+    } else if (len <= tx_size) {
+      // there is room in the TX buffer
+      memcpy(uart.tx_ptr, buf, len);
+      uart.tx_ptr += len;
+      ret += len;
+
+      uart_tx();
+
+    } else if (tx_size > 0) {
+      // TX buffer overflow, write truncated...
+      memcpy(uart.tx_ptr, buf, tx_size);
+      uart.tx_ptr = uart.tx_buf + sizeof(uart.tx_buf);
+      ret += tx_size;
+
+      #ifdef DEBUG
       uart.tx_ptr[-1] = '\\'; // write overflow marker
-    #endif
-  } else {
-    // TX buffer full
-    ret = 0;
-  }
+      #endif
 
-  uart_tx();
+      uart_tx();
+
+    } else {
+      // TX buffer full
+    }
+  }
+  taskEXIT_CRITICAL();
 
   return ret;
 }

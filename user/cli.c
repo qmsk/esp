@@ -2,13 +2,16 @@
 #include "uart.h"
 #include "logging.h"
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <cmd.h>
 
-#define CLI_RX_BUF 1024
+#define CLI_TX_BUF 512
+#define CLI_RX_BUF 512
 #define CLI_TASK_STACK 512
 #define UART_RX_QUEUE_SIZE 8
 
@@ -16,10 +19,55 @@ struct cli {
   xTaskHandle task;
   xQueueHandle uart_rx_queue;
 
+  char tx_buf[CLI_TX_BUF];
   char rx_buf[CLI_RX_BUF], *rx_ptr;
 
   const struct cmdtab *commands;
 } cli;
+
+/**
+ * @return 0 on success
+ */
+int cli_putc(char c)
+{
+  int ret;
+
+  do {
+    ret = uart_putc(c);
+  } while (ret > 0);
+
+  return ret;
+}
+
+/**
+ * @return
+ */
+int cli_printf(const char *fmt, ...)
+{
+  va_list vargs;
+  char *buf = cli.tx_buf;
+  char *ptr = cli.tx_buf;
+  char *end = cli.tx_buf + sizeof(cli.tx_buf);
+  int ret;
+
+  va_start(vargs, fmt);
+  ret = vsnprintf(ptr, end - ptr, fmt, vargs);
+  va_end(vargs);
+
+  if (ret > sizeof(cli.tx_buf)) {
+    LOG_WARN("truncate ret=%d: fmt=%s", ret, fmt);
+    ptr = end;
+  } else {
+    ptr += ret;
+  }
+
+  // XXX: blocking
+  while (buf < ptr) {
+    buf += uart_write(buf, ptr - buf);
+  }
+
+  return 0;
+}
 
 static void cli_cmd(struct cli *cli, char *line)
 {
@@ -37,8 +85,7 @@ static void cli_rx_start(struct cli *cli)
 {
   cli->rx_ptr = cli->rx_buf;
 
-  uart_putc('>');
-  uart_putc(' ');
+  cli_printf("> ");
 }
 
 // RX overflow, discard line
@@ -74,15 +121,14 @@ static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
       }
     #endif
 
-    uart_putc(*in);
+    cli_putc(*in);
 
     if (*in == '\r') {
       continue;
     } else if (*in == '\b' && cli->rx_ptr > cli->rx_buf) {
       cli->rx_ptr--;
 
-      uart_putc(' ');
-      uart_putc('\b');
+      cli_printf(" \b");
 
     } else if (*in == '\n') {
       *cli->rx_ptr = '\0';

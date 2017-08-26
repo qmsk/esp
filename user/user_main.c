@@ -113,11 +113,13 @@ static struct user_config user_config = {
 
 int cmd_test(int argc, char **argv, void *ctx)
 {
-  LOG_INFO("argc=%d", argc);
+  cli_printf("argc=%d:", argc);
 
-  for (int i = 0; i < argc; i++) {
-    LOG_INFO("argv[%d]: %s", i, argv[i]);
+  for (int argi = 0; argi < argc; argi++) {
+    cli_printf(" %s", argv[argi]);
   }
+
+  cli_printf("\n");
 
   return 0;
 }

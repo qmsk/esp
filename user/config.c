@@ -1,5 +1,6 @@
 #include "config.h"
 #include "user_config.h"
+#include "cli.h"
 #include "logging.h"
 
 #include <fcntl.h>
@@ -94,7 +95,7 @@ int cmd_config_show(int argc, char **argv, void *ctx)
 {
   struct user_config *config = ctx;
 
-  LOG_INFO("config version=%u", config->version);
+  cli_printf("version=%u\n", config->version);
 
   return 0;
 }

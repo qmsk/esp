@@ -6,4 +6,6 @@
 
 int init_cli(struct user_config *config, const struct cmdtab *commands);
 
+int cli_printf(const char *fmt, ...);
+
 #endif

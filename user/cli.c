@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include "cli.h"
 #include "uart.h"
 #include "logging.h"
@@ -104,22 +102,31 @@ static int cli_command(const struct cli_command *commands, char *line)
   return command->handler(argc, argv, command->ctx);
 }
 
+//
+static void cli_rx_start(struct cli *cli)
+{
+  cli->rx_ptr = cli->rx_buf;
+
+  uart_putc('>');
+  uart_putc(' ');
+}
+
 // RX overflow, discard line
 static void cli_rx_overflow(struct cli *cli)
 {
   LOG_WARN("len=%s", cli->rx_ptr - cli->rx_buf);
 
-  cli->rx_ptr = cli->rx_buf;
+  cli_rx_start(cli);
 }
 
 // uart->rx_buf contains a '\0'-terminated string
 static void cli_rx_line(struct cli *cli)
 {
-  LOG_INFO("%s", cli->rx_buf);
+  LOG_DEBUG("%s", cli->rx_buf);
 
   cli_command(cli->commands, cli->rx_buf);
 
-  cli->rx_ptr = cli->rx_buf;
+  cli_rx_start(cli);
 }
 
 static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
@@ -129,8 +136,24 @@ static void cli_rx(struct cli *cli, const struct uart_rx_event *rx)
   }
 
   for (const char *in = rx->buf; in < rx->buf + rx->len; in++) {
+    #ifdef DEBUG
+      if (isprint((unsigned char) *in)) {
+        LOG_DEBUG("%c", *in);
+      } else {
+        LOG_DEBUG("%#02x", *in);
+      }
+    #endif
+
+    uart_putc(*in);
+
     if (*in == '\r') {
       continue;
+    } else if (*in == '\b' && cli->rx_ptr > cli->rx_buf) {
+      cli->rx_ptr--;
+
+      uart_putc(' ');
+      uart_putc('\b');
+
     } else if (*in == '\n') {
       *cli->rx_ptr = '\0';
 
@@ -152,23 +175,17 @@ void cli_task(void *arg)
 
   LOG_INFO("init cli=%p", cli);
 
+  cli_rx_start(cli);
+
   for (;;) {
     if (xQueueReceive(cli->uart_rx_queue, &rx_event, portMAX_DELAY)) {
-      if (rx_event.len < sizeof(rx_event.buf)) {
-        rx_event.buf[rx_event.len] = '\0';
-      }
-
-      LOG_DEBUG("read {overflow=%d} len=%d: %.32s",
-        rx_event.flags & UART_RX_OVERFLOW,
-        rx_event.len, rx_event.buf
-      );
+      LOG_DEBUG("rx overflow=%d len=%d", rx_event.flags & UART_RX_OVERFLOW, rx_event.len);
 
       cli_rx(cli, &rx_event);
 
     } else {
       LOG_ERROR("xQueueReceive");
     }
-
   }
 }
 
@@ -193,6 +210,8 @@ int init_cli(struct user_config *config, const struct cli_command *commands)
     LOG_ERROR("uart_start_recv");
     return err;
   }
+
+  LOG_INFO("");
 
   return 0;
 }

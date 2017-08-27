@@ -29,6 +29,7 @@
 #include "cli.h"
 #include "spiffs.h"
 #include "wifi.h"
+#include "dmx.h"
 
 #include <esp_common.h>
 
@@ -123,6 +124,7 @@ static const struct cmd user_commands[] = {
   { "test",   test_cmd, .usage = "[...]" },
   { "config", .describe = "Configuration commands", .subcommands = &config_cmdtab },
   { "wifi",   .describe = "WiFi commands", .subcommands = &wifi_cmdtab },
+  { "dmx",    .describe = "DMX", .subcommands = &dmx_cmdtab },
   {}
 };
 
@@ -169,7 +171,10 @@ void user_init(void)
   if (init_wifi(&user_config)) {
     printf("FATAL: init_wifi\n");
     return;
-  } else {
-    wifi_print();
+  }
+
+  if (init_dmx(&user_config)) {
+    printf("FATAL: init_dmx\n");
+    return;
   }
 }

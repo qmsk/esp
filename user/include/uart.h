@@ -11,14 +11,21 @@
 
 struct uart;
 
-enum uart_io_flags {
-  UART_RX_OVERFLOW = 1, // data was lost before this event
+enum uart_event_type {
+  UART_IO,
+  UART_RX_OVERFLOW, // data was lost before this event
 };
 
 struct uart_io {
-  uint16_t flags;
   uint16_t len;
   uint8_t buf[UART_IO_SIZE];
+};
+
+struct uart_event {
+  enum uart_event_type type;
+  union {
+    struct uart_io io;
+  };
 };
 
 extern struct uart uart0;

@@ -10,6 +10,8 @@
 
 struct uart {
   UART_Port port;
+  UART_BaudRate baud_rate;
+
   xQueueHandle tx_queue;
   xQueueHandle rx_queue;
   bool rx_overflow;
@@ -26,10 +28,10 @@ struct uart uart1 = {
 // Leaves the TXFIFO_EMPTY interrupt enabled if the TX buffer still has data
 static void uart_intr_tx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR UART_TXFIFO_EMPTY_INT_ST
 {
-  struct uart_io tx;
+  struct uart_event tx;
 
   while (true) {
-    if (UART_GetWriteSize(uart->port) < sizeof(tx.buf)) {
+    if (UART_GetWriteSize(uart->port) < sizeof(tx.io.buf)) {
       // not enough room in the UART TX fifo to write out a complete event
       break;
     }
@@ -41,32 +43,46 @@ static void uart_intr_tx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR U
       break;
     }
 
-    size_t write = 0;
+    if (tx.type == UART_IO) {
+      size_t write = 0;
 
-    do {
-      // this should happen in a single write assuming the UART_GetWriteSize() check
-      write += UART_Write(uart->port, tx.buf + write, tx.len - write);
-    } while (write < tx.len);
+      do {
+        // this should happen in a single write assuming the UART_GetWriteSize() check
+        write += UART_Write(uart->port, tx.io.buf + write, tx.io.len - write);
+      } while (write < tx.io.len);
+    }
   }
 }
 
 static void uart_intr_rx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST
 {
-  struct uart_io rx = {.flags = 0};
+  struct uart_event rx;
 
   if (uart->rx_overflow) {
-    rx.flags |= UART_RX_OVERFLOW;
+    rx.type = UART_RX_OVERFLOW;
+  } else {
+    rx.type = UART_IO;
   }
 
   // must read to clear the interrupt, even if queue overflow
-  rx.len = UART_Read(uart->port, rx.buf, sizeof(rx.buf));
+  rx.io.len = UART_Read(uart->port, rx.io.buf, sizeof(rx.io.buf));
 
   if (!uart->rx_queue) {
     uart->rx_overflow = true;
-  } else if (xQueueSendFromISR(uart->rx_queue, &rx, task_wokenp) <= 0) {
+  } else if (!xQueueSendFromISR(uart->rx_queue, &rx, task_wokenp)) {
     uart->rx_overflow = true;
   } else {
-    uart->rx_overflow = false;
+    // sending UART_RX_OVERFLOW does not yet clear uart->rx_overflow
+  }
+
+  if (uart->rx_queue && rx.type == UART_RX_OVERFLOW) {
+    // after rx_overflow, we still need to re-send the non-overflowing IO
+    rx.type = UART_IO;
+
+    if (xQueueSendFromISR(uart->rx_queue, &rx, task_wokenp)) {
+      // there was room to send UART_RX_OVERFLOW + UART_IO
+      uart->rx_overflow = false;
+    }
   }
 }
 
@@ -79,7 +95,7 @@ static void uart_intr_rx_overflow(struct uart *uart) // ISR UART_RXFIFO_OVF_INT_
 // Push TX event to queue, enabling the TX interrupt
 // Blocks if the queue is full
 // @return <0 on timeout, 0 on success
-int uart_tx(struct uart *uart, const struct uart_io *tx)
+int uart_tx(struct uart *uart, const struct uart_event *tx)
 {
   if (xQueueSend(uart->tx_queue, tx, portMAX_DELAY)) {
     // once there is data on the queue, enable the TX interrupt to ensure that the ISR will fire and drain the queue
@@ -112,10 +128,10 @@ int uart_putc(struct uart *uart, int c)
 
   if (ret) {
     // slow path
-    struct uart_io tx;
+    struct uart_event tx = { UART_IO };
 
-    tx.len = 1;
-    tx.buf[0] = tx_byte;
+    tx.io.len = 1;
+    tx.io.buf[0] = tx_byte;
 
     if (uart_tx(uart, &tx) < 0) {
       ret = 1; // queue full
@@ -145,17 +161,17 @@ size_t uart_write(struct uart *uart, const void *buf, size_t len)
 
   while (len > 0) {
     // slow path
-    struct uart_io tx;
-    size_t size = sizeof(tx.buf);
+    struct uart_event tx = { UART_IO };
+    size_t size = sizeof(tx.io.buf);
 
     if (len > size) {
-      tx.len = size;
-      memcpy(tx.buf, ptr, size);
+      tx.io.len = size;
+      memcpy(tx.io.buf, ptr, size);
       ptr += size;
       len -= size;
     } else {
-      tx.len = len;
-      memcpy(tx.buf, ptr, len);
+      tx.io.len = len;
+      memcpy(tx.io.buf, ptr, len);
       ptr += len;
       len = 0;
     }
@@ -163,7 +179,7 @@ size_t uart_write(struct uart *uart, const void *buf, size_t len)
     if (uart_tx(uart, &tx) < 0) {
       break;
     } else {
-      write += tx.len;
+      write += tx.io.len;
     }
   }
 
@@ -172,15 +188,15 @@ size_t uart_write(struct uart *uart, const void *buf, size_t len)
 
 int uart_read(struct uart *uart, void *buf, size_t size)
 {
-  struct uart_io rx;
+  struct uart_event rx;
 
   if (!uart->rx_queue) {
     LOG_WARN("rx disabled");
     return -1;
   }
 
-  if (size < sizeof(rx.buf)) {
-    LOG_ERROR("buf size %u < %u", size, sizeof(rx.buf));
+  if (size < sizeof(rx.io.buf)) {
+    LOG_ERROR("buf size %u < %u", size, sizeof(rx.io.buf));
     return -1;
   }
 
@@ -189,15 +205,21 @@ int uart_read(struct uart *uart, void *buf, size_t size)
     return 0; // TODO: abort/timeout?
   }
 
-  if (rx.flags & UART_RX_OVERFLOW) {
+  if (rx.type == UART_IO) {
+    memcpy(buf, rx.io.buf, rx.io.len);
+
+    return rx.io.len;
+
+  } else if (rx.type == UART_RX_OVERFLOW) {
     // discard input before overflow
     LOG_ERROR("rx overflow");
     return -1;
+
+  } else {
+    LOG_ERROR("rx event type=%u", rx.type);
+    return -1;
+
   }
-
-  memcpy(buf, rx.buf, rx.len);
-
-  return rx.len;
 }
 
 static void uart_intr_handler(void *arg)
@@ -230,15 +252,15 @@ static void uart_intr_handler(void *arg)
 
 static int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue)
 {
-  if ((uart->tx_queue = xQueueCreate(tx_queue, sizeof(struct uart_io))) == NULL) {
-    LOG_ERROR("xQueueCreate TX %u*%u", tx_queue, sizeof(struct uart_io));
+  if ((uart->tx_queue = xQueueCreate(tx_queue, sizeof(struct uart_event))) == NULL) {
+    LOG_ERROR("xQueueCreate TX %u*%u", tx_queue, sizeof(struct uart_event));
     return -1;
   }
 
   if (!rx_queue) {
     uart->rx_queue = NULL; // disabled
-  } else if ((uart->rx_queue = xQueueCreate(rx_queue, sizeof(struct uart_io))) == NULL) {
-    LOG_ERROR("xQueueCreate RX %u*%u", rx_queue, sizeof(struct uart_io));
+  } else if ((uart->rx_queue = xQueueCreate(rx_queue, sizeof(struct uart_event))) == NULL) {
+    LOG_ERROR("xQueueCreate RX %u*%u", rx_queue, sizeof(struct uart_event));
     return -1;
   }
 
@@ -261,6 +283,8 @@ int uart_setup(struct uart *uart, const UART_Config *uart_config)
   UART_WaitTxFifoEmpty(uart->port);
   UART_Setup(uart->port, uart_config);
   UART_SetupIntr(uart->port, &intr_config);
+
+  uart->baud_rate = uart_config->baud_rate;
 
   return 0;
 }

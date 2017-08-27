@@ -245,7 +245,7 @@ static int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue)
   return 0;
 }
 
-int setup_uart(struct uart *uart, UART_Config *uart_config)
+int uart_setup(struct uart *uart, const UART_Config *uart_config)
 {
   UART_IntrConfig intr_config = {
     .enable_mask        = UART_RXFIFO_FULL_INT_ENA, // XXX: zero INTR_ENA mask bugs out
@@ -265,7 +265,7 @@ int setup_uart(struct uart *uart, UART_Config *uart_config)
   return 0;
 }
 
-void disable_uart(struct uart *uart)
+void uart_disable(struct uart *uart)
 {
   UART_ClearIntrStatus(uart->port, UART_INTR_MASK);
   UART_SetIntrEna(uart->port, 0);
@@ -292,12 +292,12 @@ int init_uart(struct user_config *config)
     return err;
   }
 
-  if ((err = setup_uart(&uart0, &uart_config))) {
+  if ((err = uart_setup(&uart0, &uart_config))) {
     LOG_ERROR ("setup_uart uart0");
     return err;
   }
 
-  disable_uart(&uart1);
+  uart_disable(&uart1);
 
   UART_RegisterIntrHandler(&uart_intr_handler, NULL);
 

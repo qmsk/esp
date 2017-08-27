@@ -36,7 +36,7 @@ int init_uart(struct user_config *config);
  * @param uart_config
  * @return <0 on error
  */
-int setup_uart(struct uart *uart, UART_Config *uart_config);
+int uart_setup(struct uart *uart, const UART_Config *uart_config);
 
 /** Write one byte to UART.
  *

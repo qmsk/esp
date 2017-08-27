@@ -187,7 +187,7 @@ uint32 UART_GetIntrStatus(UART_Port port_no);
   *
   * @return  null
   */
-void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig);
+void UART_Setup(UART_Port uart_no, const UART_Config *pUARTConfig);
 
 /**
   * @brief   Config types of uarts.
@@ -197,7 +197,7 @@ void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig);
   *
   * @return  null
   */
-void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf);
+void UART_SetupIntr(UART_Port uart_no, const UART_IntrConfig *pUARTIntrConf);
 
 /**
   * @brief   Config the length of the uart communication data bits.

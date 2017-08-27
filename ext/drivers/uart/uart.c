@@ -189,7 +189,7 @@ uint32 UART_GetIntrStatus(UART_Port uart_no)
   return READ_PERI_REG(UART_INT_ST(uart_no));
 }
 
-void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
+void UART_Setup(UART_Port uart_no, const UART_Config *pUARTConfig)
 {
     if (uart_no == UART1) {
         PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_U1TXD_BK);
@@ -213,7 +213,7 @@ void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
     UART_ResetFifo(uart_no);
 }
 
-void UART_SetupIntr(UART_Port uart_no, UART_IntrConfig *pUARTIntrConf)
+void UART_SetupIntr(UART_Port uart_no, const UART_IntrConfig *pUARTIntrConf)
 {
     uint32 reg_val = 0;
     UART_ClearIntrStatus(uart_no, UART_INTR_MASK);

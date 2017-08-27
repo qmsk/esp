@@ -6,8 +6,6 @@
 #include "user_config.h"
 #include "logging.h"
 
-#define UART_TX_BUFFER 1024
-
 struct uart {
   xQueueHandle tx_queue;
 
@@ -77,8 +75,11 @@ static void uart_intr_rx_overflow() // ISR UART_RXFIFO_OVF_INT_ST
 int uart_tx(const struct uart_event *tx_event)
 {
   if (xQueueSend(uart.tx_queue, tx_event, portMAX_DELAY)) {
-    // XXX: can't enable this before sending, it the ISR will race and disable it before the send
-    // XXX: what if the send blocks? Let's hope that someone else enabled it, and the ISR doesn't race and drain the queue before this...?
+    // once there is data on the queue, enable the TX interrupt to ensure that the ISR will fire and drain the queue
+    // can't enable the TX interrupt before sending, or the ISR will race, see that the queue is empty and disable it, before we send...
+    // if the queue is full, then the ISR will already be enabled by a previous send, and this will yield waiting for the ISR to drain the queue
+    // assume that xQueueSend on a full queue is safe against a racing ISR that drains the queue, and thus does not yield to an empty queue with interrupts disabled by the ISR!
+    // the ISR may have drained the queue by the time this returns, but re-enabling the interrupt should be harmless: the ISR will fire once and disable itself
     UART_EnableIntr(UART0, UART_TXFIFO_EMPTY_INT_ENA);
     return 0;
   } else {

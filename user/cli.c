@@ -110,7 +110,7 @@ int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const char *arg)
     cli_printf(" ");
   }
   cli_printf("%s", cmd_strerror(err));
-  if (err == CMD_ERR_USAGE && ctx->cmd && ctx->cmd->usage)
+  if ((err & CMD_ERR_USAGE) && ctx->cmd && ctx->cmd->usage)
     cli_printf(": %s\n", ctx->cmd->usage);
   else if (arg)
     cli_printf(": %s\n", arg);

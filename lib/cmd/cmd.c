@@ -86,29 +86,3 @@ int cmd_eval(const struct cmdtab *cmdtab, char *line)
 
   return cmd_call(cmdtab, argc, argv, NULL);
 }
-
-const char *cmd_strerror(enum cmd_error err)
-{
-  switch(err) {
-    case CMD_ERR_OK:
-      return "OK";
-    case CMD_ERR_ARGS_MAX:
-      return "maximum number of arguments exceeded";
-    case CMD_ERR_NOT_FOUND:
-      return "command not found";
-    case CMD_ERR_NOT_IMPLEMENTED:
-      return "command not implemented";
-    case CMD_ERR_MISSING_SUBCOMMAND:
-      return "missing subcommand";
-    case CMD_ERR_USAGE:
-      return "usage";
-    case CMD_ERR_ARGUMENT:
-      return "invalid argument";
-    case CMD_ERR_FAILED:
-      return "failed";
-    case CMD_ERR_TIMEOUT:
-      return "timeout";
-    default:
-      return "<unknown>";
-  }
-}

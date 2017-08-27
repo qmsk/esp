@@ -204,7 +204,7 @@ void wifi_print_scan(struct wifi_scan_event *scan_event)
 int wifi_cmd_status(int argc, char **argv, void *ctx)
 {
   if (argc != 1)
-    return -CMD_ERR_USAGE;
+    return -CMD_ERR_ARGC;
 
   wifi_print();
 
@@ -217,7 +217,7 @@ int wifi_cmd_scan(int argc, char **argv, void *ctx)
   int err;
 
   if (argc != 1)
-    return -CMD_ERR_USAGE;
+    return -CMD_ERR_ARGC;
 
   if ((err = wifi_scan(&scan_event, 5000 / portTICK_RATE_MS)) < 0)
     return -CMD_ERR_FAILED;

@@ -34,13 +34,17 @@ struct cmdctx {
 };
 
 enum cmd_error {
+  CMD_ERR_USAGE       = 0x01000000,
   CMD_ERR_OK          = 0,
-  CMD_ERR_ARGS_MAX,
+
+  CMD_ERR             = 1,
+  CMD_ERR_ARGC        = 2 | CMD_ERR_USAGE, // wrong number of arguments
+  CMD_ERR_ARGV        = 3 | CMD_ERR_USAGE, // invalid argument value
+
+  CMD_ERR_ARGS_MAX    = 0x100,
   CMD_ERR_NOT_FOUND,
   CMD_ERR_NOT_IMPLEMENTED,
   CMD_ERR_MISSING_SUBCOMMAND,
-  CMD_ERR_USAGE,
-  CMD_ERR_ARGUMENT,
   CMD_ERR_FAILED,
   CMD_ERR_TIMEOUT,
 };

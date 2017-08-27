@@ -118,23 +118,23 @@ int config_set(const struct config_tab *tab, const char *value)
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
       if (snprintf(tab->value.string, tab->size, "%s", value) >= tab->size) {
-        return -CMD_ERR_ARGUMENT;
+        return -CMD_ERR_ARGV;
       } else {
         break;
       }
 
     case CONFIG_TYPE_UINT16:
       if (sscanf(value, "%u", &uvalue) <= 0) {
-        return -CMD_ERR_ARGUMENT;
+        return -CMD_ERR_ARGV;
       } else if (uvalue > UINT16_MAX) {
-        return -CMD_ERR_ARGUMENT;
+        return -CMD_ERR_ARGV;
       } else {
         *tab->value.uint16 = (uint16_t) uvalue;
         break;
       }
 
     default:
-      return -CMD_ERR_ARGUMENT;
+      return -CMD_ERR_ARGV;
   }
 
   return 0;
@@ -172,13 +172,13 @@ int config_cmd(int argc, char **argv, void *ctx)
   } else if (argc == 2) {
     value = argv[1];
   } else {
-    return -CMD_ERR_USAGE;
+    return -CMD_ERR_ARGC;
   }
 
   if (!value) {
 
   } else if (tab->readonly) {
-    return -CMD_ERR_ARGUMENT;
+    return -CMD_ERR_ARGC;
   } else if ((err = config_set(tab, value))) {
     return err;
   }

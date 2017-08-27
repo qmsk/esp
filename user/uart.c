@@ -1,7 +1,9 @@
 #include "uart.h"
 
 #include <drivers/uart.h>
+#include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/queue.h>
 
 #include "user_config.h"
 #include "logging.h"
@@ -15,6 +17,9 @@ struct uart {
 
 struct uart uart0 = {
   .port = UART0,
+};
+struct uart uart1 = {
+  .port = UART1,
 };
 
 // drain TX queue by writing to UART FIFO
@@ -169,6 +174,11 @@ int uart_read(struct uart *uart, void *buf, size_t size)
 {
   struct uart_io rx;
 
+  if (!uart->rx_queue) {
+    LOG_WARN("rx disabled");
+    return -1;
+  }
+
   if (size < sizeof(rx.buf)) {
     LOG_ERROR("buf size %u < %u", size, sizeof(rx.buf));
     return -1;
@@ -193,38 +203,72 @@ int uart_read(struct uart *uart, void *buf, size_t size)
 static void uart_intr_handler(void *arg)
 {
   uint32 intr0_status = UART_GetIntrStatus(UART0);
-  portBASE_TYPE tx_task_woken, rx_task_woken;
+  uint32 intr1_status = UART_GetIntrStatus(UART1);
+  portBASE_TYPE tx0_task_woken, rx0_task_woken, tx1_task_woken;
 
   if (intr0_status & (UART_TXFIFO_EMPTY_INT_ST)) {
-    uart_intr_tx(&uart0, &tx_task_woken);
+    uart_intr_tx(&uart0, &tx0_task_woken);
   }
 
   if (intr0_status & (UART_RXFIFO_FULL_INT_ST | UART_RXFIFO_TOUT_INT_ST)) {
-    uart_intr_rx(&uart0, &rx_task_woken);
+    uart_intr_rx(&uart0, &rx0_task_woken);
   }
 
   if (intr0_status & (UART_RXFIFO_OVF_INT_ST)) {
     uart_intr_rx_overflow(&uart0);
   }
 
-  UART_ClearIntrStatus(UART0, UART_TXFIFO_EMPTY_INT_CLR | UART_RXFIFO_OVF_INT_CLR | UART_RXFIFO_FULL_INT_CLR | UART_RXFIFO_TOUT_INT_CLR);
+  if (intr1_status & (UART_TXFIFO_EMPTY_INT_ST)) {
+    uart_intr_tx(&uart1, &tx1_task_woken);
+  }
 
-  portEND_SWITCHING_ISR(tx_task_woken || rx_task_woken);
+  UART_ClearIntrStatus(UART0, UART_TXFIFO_EMPTY_INT_CLR | UART_RXFIFO_OVF_INT_CLR | UART_RXFIFO_FULL_INT_CLR | UART_RXFIFO_TOUT_INT_CLR);
+  UART_ClearIntrStatus(UART1, UART_TXFIFO_EMPTY_INT_CLR);
+
+  portEND_SWITCHING_ISR(tx0_task_woken || rx0_task_woken || tx1_task_woken);
 }
 
-static int uart_init(struct uart *uart)
+static int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue)
 {
-  if ((uart->tx_queue = xQueueCreate(UART_TX_QUEUE_SIZE, sizeof(struct uart_io))) == NULL) {
-    LOG_ERROR("xQueueCreate TX %u*%u", UART_TX_QUEUE_SIZE, sizeof(struct uart_io));
+  if ((uart->tx_queue = xQueueCreate(tx_queue, sizeof(struct uart_io))) == NULL) {
+    LOG_ERROR("xQueueCreate TX %u*%u", tx_queue, sizeof(struct uart_io));
     return -1;
   }
 
-  if ((uart->rx_queue = xQueueCreate(UART_RX_QUEUE_SIZE, sizeof(struct uart_io))) == NULL) {
-    LOG_ERROR("xQueueCreate RX %u*%u", UART_RX_QUEUE_SIZE, sizeof(struct uart_io));
+  if (!rx_queue) {
+    uart->rx_queue = NULL; // disabled
+  } else if ((uart->rx_queue = xQueueCreate(rx_queue, sizeof(struct uart_io))) == NULL) {
+    LOG_ERROR("xQueueCreate RX %u*%u", rx_queue, sizeof(struct uart_io));
     return -1;
   }
 
   return 0;
+}
+
+int setup_uart(struct uart *uart, UART_Config *uart_config)
+{
+  UART_IntrConfig intr_config = {
+    .enable_mask        = UART_RXFIFO_FULL_INT_ENA, // XXX: zero INTR_ENA mask bugs out
+    .rx_full_thresh     = UART_IO_SIZE, // more than bytes in rx fifo
+    .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
+    .tx_empty_thresh    = UART_TX_FIFO / 2, // fewer than bytes in tx fifo
+  };
+
+  if (uart->rx_queue) {
+    intr_config.enable_mask |= UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ENA | UART_RXFIFO_TOUT_INT_ENA;
+  }
+
+  UART_WaitTxFifoEmpty(uart->port);
+  UART_Setup(uart->port, uart_config);
+  UART_SetupIntr(uart->port, &intr_config);
+
+  return 0;
+}
+
+void disable_uart(struct uart *uart)
+{
+  UART_ClearIntrStatus(uart->port, UART_INTR_MASK);
+  UART_SetIntrEna(uart->port, 0);
 }
 
 int init_uart(struct user_config *config)
@@ -240,21 +284,23 @@ int init_uart(struct user_config *config)
     .flow_rx_thresh = 0,
     .inverse_mask = UART_None_Inverse,
   };
-  UART_IntrConfig intr_config = {
-    .enable_mask        = UART_RXFIFO_FULL_INT_ENA | UART_RXFIFO_OVF_INT_ENA | UART_RXFIFO_TOUT_INT_ENA, // XXX: zero INTR_ENA mask bugs out
-    .rx_full_thresh     = UART_IO_SIZE, // more than bytes in rx fifo
-    .rx_timeout_thresh  = 2, // time = 8-bits/baud-rate
-    .tx_empty_thresh    = UART_TX_SIZE / 2, // fewer than bytes in tx fifo
-  };
 
-  if ((err = uart_init(&uart0))) {
+  if ((err = uart_init(&uart0, UART_TX_QUEUE_SIZE, UART_RX_QUEUE_SIZE))) {
     LOG_ERROR("uart_init uart0");
     return err;
   }
 
-  UART_WaitTxFifoEmpty(UART0);
-  UART_Setup(UART0, &uart_config);
-  UART_SetupIntr(UART0, &intr_config);
+  if ((err = uart_init(&uart1, UART_TX_QUEUE_SIZE, 0))) {
+    LOG_ERROR("uart_init uart1");
+    return err;
+  }
+
+  if ((err = setup_uart(&uart0, &uart_config))) {
+    LOG_ERROR ("setup_uart uart0");
+    return err;
+  }
+
+  disable_uart(&uart1);
 
   UART_RegisterIntrHandler(&uart_intr_handler, NULL);
 

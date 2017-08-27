@@ -2,8 +2,8 @@
 #define __USER_UART_H__
 
 #include "user_config.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
+
+#include <drivers/uart_config.h>
 
 #define UART_IO_SIZE 32
 #define UART_TX_QUEUE_SIZE 32
@@ -22,8 +22,21 @@ struct uart_io {
 };
 
 extern struct uart uart0;
+extern struct uart uart1;
 
+/** Initialize uart0, uart1 and uart ISR
+ *
+ * @return <0 on error
+ */
 int init_uart(struct user_config *config);
+
+/** Configure UART for RX/TX
+ *
+ * @param uart configure UART
+ * @param uart_config
+ * @return <0 on error
+ */
+int setup_uart(struct uart *uart, UART_Config *uart_config);
 
 /** Write one byte to UART.
  *

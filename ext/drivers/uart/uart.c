@@ -117,7 +117,7 @@ int UART_TryWrite(UART_Port uart_no, uint8 tx_char)
 {
   int ret;
 
-  if ((ret = (UART_GetTxFifo(uart_no) < UART_TX_SIZE)))
+  if ((ret = (UART_GetTxFifo(uart_no) < UART_TX_FIFO)))
     UART_WriteOne(uart_no, tx_char);
 
   return ret;
@@ -125,13 +125,13 @@ int UART_TryWrite(UART_Port uart_no, uint8 tx_char)
 
 size_t UART_GetWriteSize(UART_Port uart_no)
 {
-  return UART_TX_SIZE - UART_GetTxFifo(uart_no);
+  return UART_TX_FIFO - UART_GetTxFifo(uart_no);
 }
 
 size_t UART_Write(UART_Port uart_no, const void *buf, size_t len)
 {
   const uint8_t *ptr = buf;
-  size_t size = UART_TX_SIZE - UART_GetTxFifo(uart_no);
+  size_t size = UART_TX_FIFO - UART_GetTxFifo(uart_no);
   size_t write;
 
   for (write = 0; write < len && write < size; write++) {

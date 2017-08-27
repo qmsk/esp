@@ -39,21 +39,16 @@ typedef enum {
 } UART_WordLength;
 
 typedef enum {
-    USART_StopBits_1   = 0x1,
-    USART_StopBits_1_5 = 0x2,
-    USART_StopBits_2   = 0x3,
+    UART_StopBits_1   = 0x1,
+    UART_StopBits_1_5 = 0x2,
+    UART_StopBits_2   = 0x3,
 } UART_StopBits;
 
 typedef enum {
-    USART_Parity_None = 0x2,
-    USART_Parity_Even = 0x0,
-    USART_Parity_Odd  = 0x1
+  UART_Parity_None = 0x0,
+  UART_Parity_Even = 0x2,
+  UART_Parity_Odd  = 0x3,
 } UART_ParityMode;
-
-typedef enum {
-    PARITY_DIS = 0x0,
-    PARITY_EN  = 0x2
-} UartExistParity;
 
 typedef enum {
     BAUD_RATE_300     = 300,

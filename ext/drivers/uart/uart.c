@@ -63,13 +63,12 @@ void UART_SetLineInverse(UART_Port uart_no, UART_LineLevelInverse inverse_mask)
     SET_PERI_REG_MASK(UART_CONF0(uart_no), inverse_mask);
 }
 
-void UART_SetParity(UART_Port uart_no, UART_ParityMode Parity_mode)
+void UART_SetParity(UART_Port uart_no, UART_ParityMode parity_mode)
 {
     CLEAR_PERI_REG_MASK(UART_CONF0(uart_no), UART_PARITY | UART_PARITY_EN);
 
-    if (Parity_mode == USART_Parity_None) {
-    } else {
-        SET_PERI_REG_MASK(UART_CONF0(uart_no), Parity_mode | UART_PARITY_EN);
+    if (parity_mode) {
+        SET_PERI_REG_MASK(UART_CONF0(uart_no), UART_PARITY_EN | (parity_mode & UART_PARITY));
     }
 }
 
@@ -204,7 +203,7 @@ void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
     UART_SetBaudRate(uart_no, pUARTConfig->baud_rate);
 
     WRITE_PERI_REG(UART_CONF0(uart_no),
-                   ((pUARTConfig->parity == USART_Parity_None) ? 0x0 : (UART_PARITY_EN | pUARTConfig->parity))
+                   (pUARTConfig->parity ? (UART_PARITY_EN | (pUARTConfig->parity & UART_PARITY)) : 0x0)
                    | (pUARTConfig->stop_bits << UART_STOP_BIT_NUM_S)
                    | (pUARTConfig->data_bits << UART_BIT_NUM_S)
                    | ((pUARTConfig->flow_ctrl & USART_HardwareFlowControl_CTS) ? UART_TX_FLOW_EN : 0x0)

@@ -206,6 +206,7 @@ void UART_Setup(UART_Port uart_no, UART_Config *pUARTConfig)
                    (pUARTConfig->parity ? (UART_PARITY_EN | (pUARTConfig->parity & UART_PARITY)) : 0x0)
                    | (pUARTConfig->stop_bits << UART_STOP_BIT_NUM_S)
                    | (pUARTConfig->data_bits << UART_BIT_NUM_S)
+                   | (pUARTConfig->tx_break ? UART_TXD_BRK : 0x0)
                    | ((pUARTConfig->flow_ctrl & USART_HardwareFlowControl_CTS) ? UART_TX_FLOW_EN : 0x0)
                    | pUARTConfig->inverse_mask);
 

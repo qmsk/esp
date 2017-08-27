@@ -25,6 +25,7 @@
 #ifndef __UART_CONFIG_H__
 #define __UART_CONFIG_H__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -89,6 +90,7 @@ typedef struct {
     UART_WordLength data_bits;
     UART_ParityMode parity;    // chip size in byte
     UART_StopBits   stop_bits;
+    bool            tx_break;
     UART_HwFlowCtrl flow_ctrl;
     uint8_t         flow_rx_thresh;
     UART_LineLevelInverse inverse_mask;

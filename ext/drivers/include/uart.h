@@ -227,7 +227,13 @@ void UART_SetStopBits(UART_Port uart_no, UART_StopBits bit_num);
   *
   * @return  null
   */
-void UART_SetParity(UART_Port uart_no, UART_ParityMode Parity_mode) ;
+void UART_SetParity(UART_Port uart_no, UART_ParityMode Parity_mode);
+
+/**
+ * @param uart_no: UART0/UART1
+ * @param tx_break: drive line low after TX idle, normally high
+ */
+void UART_SetTxBreak(UART_Port uart_no, bool tx_break);
 
 /**
   * @brief   Configure the Baud rate.

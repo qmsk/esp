@@ -72,6 +72,14 @@ void UART_SetParity(UART_Port uart_no, UART_ParityMode parity_mode)
     }
 }
 
+void UART_SetTxBreak(UART_Port uart_no, bool tx_break)
+{
+  if (tx_break)
+    SET_PERI_REG_MASK(UART_CONF0(uart_no), UART_TXD_BRK);
+  else
+    CLEAR_PERI_REG_MASK(UART_CONF0(uart_no), UART_TXD_BRK);
+}
+
 void UART_SetBaudRate(UART_Port uart_no, UART_BaudRate baud_rate)
 {
     uart_div_modify(uart_no, UART_CLK_FREQ / baud_rate);

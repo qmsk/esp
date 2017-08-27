@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "logging.h"
+#include "cli.h"
 
 #include <c_types.h>
 #include <esp_misc.h>
@@ -79,24 +80,101 @@ int init_wifi(const struct user_config *config)
   return 0;
 }
 
-void print_wifi()
+void wifi_print()
 {
   WIFI_MODE wifi_mode = wifi_get_opmode();
   WIFI_PHY_MODE wifi_phymode = wifi_get_phy_mode();
 
-  LOG_INFO("mode=%d phymode=%d", wifi_mode, wifi_phymode);
+  cli_printf("wifi mode=%d phymode=%d\n", wifi_mode, wifi_phymode);
 
   if (wifi_mode == STATION_MODE) {
     uint8 wifi_sta_macaddr[6];
     struct station_config wifi_sta_config;
     struct ip_info wifi_sta_ipinfo;
+    STATION_STATUS wifi_sta_status = wifi_station_get_connect_status();
+    sint8 wifi_sta_rssi = wifi_station_get_rssi();
+    enum dhcp_status wifi_dhcp_status = wifi_station_dhcpc_status();
+    char *wifi_dhcp_hostname = wifi_station_get_hostname();
 
     wifi_get_macaddr(STATION_IF, wifi_sta_macaddr);
     wifi_station_get_config(&wifi_sta_config);
     wifi_get_ip_info(STATION_IF, &wifi_sta_ipinfo);
 
-    LOG_INFO("sta mac=" MACSTR, MAC2STR(wifi_sta_macaddr));
-    LOG_INFO("sta ssid=%s password=%s", wifi_sta_config.ssid, wifi_sta_config.password);
-    LOG_INFO("sta ip=" IPSTR, IP2STR(&wifi_sta_ipinfo.ip));
+    cli_printf("wifi sta mac=" MACSTR "\n", MAC2STR(wifi_sta_macaddr));
+    cli_printf("wifi sta ssid=%.32s password=%.64s\n", wifi_sta_config.ssid, wifi_sta_config.password);
+    if (wifi_sta_config.bssid_set)
+      cli_printf("wifi sta bssid=" MACSTR "\n", MAC2STR(wifi_sta_config.bssid));
+    cli_printf("wifi sta rssi=%d\n", wifi_sta_rssi);
+    cli_printf("wifi sta status=%d\n", wifi_sta_status);
+    cli_printf("wifi sta ip=" IPSTR "\n", IP2STR(&wifi_sta_ipinfo.ip));
+    cli_printf("wifi dhcp status=%d hostname=%s\n", wifi_dhcp_status, wifi_dhcp_hostname);
   }
 }
+
+void wifi_scan_done(void *arg, STATUS status)
+{
+  struct bss_info *bss_info = arg;
+  uint count = 0;
+
+  cli_printf("wifi scan: %32s %17s %4s %4s\n",
+    "SSID",
+    "BSSID",
+    "CHAN",
+    "RSSI"
+  );
+
+  for (; bss_info; bss_info = STAILQ_NEXT(bss_info, next)) {
+    cli_printf("wifi scan: %32.32s " MACSTR " %4u %+4d\n",
+      bss_info->ssid,
+      MAC2STR(bss_info->bssid),
+      bss_info->channel,
+      bss_info->rssi
+    );
+    count++;
+  }
+
+  cli_printf("wifi scan: total of %u APs\n", count);
+}
+
+int wifi_scan_start()
+{
+  struct scan_config wifi_scan_config = { };
+
+  if (!wifi_station_scan(&wifi_scan_config, &wifi_scan_done)) {
+    LOG_ERROR("wifi_stations_scan");
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_cmd_status(int argc, char **argv, void *ctx)
+{
+  if (argc != 1)
+    return -CMD_ERR_USAGE;
+
+  wifi_print();
+
+  return 0;
+}
+
+int wifi_cmd_scan(int argc, char **argv, void *ctx)
+{
+  if (argc != 1)
+    return -CMD_ERR_USAGE;
+
+  if (wifi_scan_start() < 0)
+    return -CMD_ERR_FAILED;
+
+  return 0;
+}
+
+const struct cmd wifi_commands[] = {
+  { "status", wifi_cmd_status },
+  { "scan",   wifi_cmd_scan   },
+  {}
+};
+
+const struct cmdtab wifi_cmdtab = {
+  .commands = wifi_commands,
+};

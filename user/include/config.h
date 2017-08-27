@@ -23,8 +23,9 @@ struct config_tab {
   } value;
 };
 
-extern const struct cmd config_commands[];
-
 int init_config(struct user_config *config);
+
+extern const struct cmdtab config_cmdtab;
+
 
 #endif

@@ -118,14 +118,11 @@ int test_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
-static const struct cmdtab user_config_cmdtab = {
-  .commands = config_commands,
-};
-
 static const struct cmd user_commands[] = {
   { "help",   cli_help_cmd, .describe = "Show this listing" },
   { "test",   test_cmd, .usage = "[...]" },
-  { "config", .describe = "Configuration commands", .subcommands = &user_config_cmdtab },
+  { "config", .describe = "Configuration commands", .subcommands = &config_cmdtab },
+  { "wifi",   .describe = "WiFi commands", .subcommands = &wifi_cmdtab },
   {}
 };
 
@@ -173,6 +170,6 @@ void user_init(void)
     printf("FATAL: init_wifi\n");
     return;
   } else {
-    print_wifi();
+    wifi_print();
   }
 }

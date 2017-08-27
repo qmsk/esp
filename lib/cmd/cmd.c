@@ -104,6 +104,8 @@ const char *cmd_strerror(enum cmd_error err)
       return "usage";
     case CMD_ERR_ARGUMENT:
       return "invalid argument";
+    case CMD_ERR_FAILED:
+      return "failed";
     default:
       return "<unknown>";
   }

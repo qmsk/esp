@@ -194,3 +194,7 @@ const struct cmd config_commands[] = {
   { "wifi.password",  config_cmd, &config_wifi_password, .usage = "[PASSWORD]", .describe = "WiFi Password" },
   {}
 };
+
+const struct cmdtab config_cmdtab = {
+  .commands = config_commands,
+};

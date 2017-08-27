@@ -116,7 +116,7 @@ int dmx_cmd_values(int argc, char **argv, void *ctx)
 
   for (unsigned i = 0; i < count; i++) {
     if ((err = cmd_arg_uint8(argc, argv, 1 + i, &buf[i])))
-      return err;
+      goto error;
   }
 
   if ((err = dmx_send(DMX_CMD_DIMMER, buf, count)))

@@ -1,3 +1,5 @@
+#define DEBUG
+
 #include "wifi.h"
 #include "logging.h"
 #include "cli.h"
@@ -6,6 +8,21 @@
 #include <esp_misc.h>
 #include <esp_wifi.h>
 #include <esp_sta.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
+
+struct wifi_scan_event {
+  int err;
+
+  // XXX: this is horribly unsafe, no idea how the SDK manages this memory
+  struct bss_info *bss_info;
+};
+
+struct wifi {
+  xQueueHandle scan_queue;
+} wifi;
 
 static void on_wifi_event(System_Event_t *event)
 {
@@ -62,6 +79,11 @@ int init_wifi(const struct user_config *config)
 
   LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
 
+  if ((wifi.scan_queue = xQueueCreate(1, sizeof(struct wifi_scan_event))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
   if (!wifi_set_opmode(STATION_MODE)) {
     LOG_ERROR("wifi_set_opmode STATION_MODE");
     return -1;
@@ -111,9 +133,51 @@ void wifi_print()
   }
 }
 
-void wifi_scan_done(void *arg, STATUS status)
+void wifi_scan_done(void *arg, STATUS status) // SDK callback
 {
-  struct bss_info *bss_info = arg;
+  struct wifi_scan_event scan_event = { };
+
+  LOG_DEBUG("task=%p status=%d", xTaskGetCurrentTaskHandle(), status);
+
+  if (status != OK) {
+    LOG_ERROR("wifi scan error: status=%d", status);
+    scan_event.err = -1;
+    scan_event.bss_info = NULL;
+  } else {
+    LOG_INFO("wifi scan ok");
+    scan_event.err = 0;
+    scan_event.bss_info = arg;
+  }
+
+  if (!xQueueOverwrite(wifi.scan_queue, &scan_event)) {
+    LOG_ERROR("xQueueOverwrite");
+  }
+}
+
+// @return <0 on error, >0 on timeout
+int wifi_scan(struct wifi_scan_event *scan_event, portTickType timeout)
+{
+  struct scan_config wifi_scan_config = { };
+
+  // XXX: racy?
+  if (!xQueueReset(wifi.scan_queue)) {
+    LOG_ERROR("xQueueReset");
+  }
+
+  if (!wifi_station_scan(&wifi_scan_config, &wifi_scan_done)) {
+    LOG_ERROR("wifi_stations_scan");
+    return -1;
+  }
+
+  if (!xQueuePeek(wifi.scan_queue, scan_event, timeout)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+void wifi_print_scan(struct wifi_scan_event *scan_event)
+{
   uint count = 0;
 
   cli_printf("wifi scan: %32s %17s %4s %4s\n",
@@ -123,7 +187,7 @@ void wifi_scan_done(void *arg, STATUS status)
     "RSSI"
   );
 
-  for (; bss_info; bss_info = STAILQ_NEXT(bss_info, next)) {
+  for (struct bss_info *bss_info = scan_event->bss_info; bss_info; bss_info = STAILQ_NEXT(bss_info, next)) {
     cli_printf("wifi scan: %32.32s " MACSTR " %4u %+4d\n",
       bss_info->ssid,
       MAC2STR(bss_info->bssid),
@@ -136,17 +200,6 @@ void wifi_scan_done(void *arg, STATUS status)
   cli_printf("wifi scan: total of %u APs\n", count);
 }
 
-int wifi_scan_start()
-{
-  struct scan_config wifi_scan_config = { };
-
-  if (!wifi_station_scan(&wifi_scan_config, &wifi_scan_done)) {
-    LOG_ERROR("wifi_stations_scan");
-    return -1;
-  }
-
-  return 0;
-}
 
 int wifi_cmd_status(int argc, char **argv, void *ctx)
 {
@@ -160,11 +213,20 @@ int wifi_cmd_status(int argc, char **argv, void *ctx)
 
 int wifi_cmd_scan(int argc, char **argv, void *ctx)
 {
+  struct wifi_scan_event scan_event;
+  int err;
+
   if (argc != 1)
     return -CMD_ERR_USAGE;
 
-  if (wifi_scan_start() < 0)
+  if ((err = wifi_scan(&scan_event, 5000 / portTICK_RATE_MS)) < 0)
     return -CMD_ERR_FAILED;
+  else if (err > 0)
+    return -CMD_ERR_TIMEOUT;
+  else if (scan_event.err)
+    return -CMD_ERR_FAILED;
+
+  wifi_print_scan(&scan_event);
 
   return 0;
 }

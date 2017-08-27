@@ -42,6 +42,7 @@ enum cmd_error {
   CMD_ERR_USAGE,
   CMD_ERR_ARGUMENT,
   CMD_ERR_FAILED,
+  CMD_ERR_TIMEOUT,
 };
 
 int cmd_eval(const struct cmdtab *cmdtab, char *line);

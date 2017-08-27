@@ -106,6 +106,8 @@ const char *cmd_strerror(enum cmd_error err)
       return "invalid argument";
     case CMD_ERR_FAILED:
       return "failed";
+    case CMD_ERR_TIMEOUT:
+      return "timeout";
     default:
       return "<unknown>";
   }

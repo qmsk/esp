@@ -13,14 +13,13 @@
 #define CLI_TX_BUF 512
 #define CLI_RX_BUF 512
 #define CLI_TASK_STACK 512
-#define UART_RX_QUEUE_SIZE 8
 
 struct cli {
   xTaskHandle task;
   xQueueHandle uart_rx_queue;
 
-  char tx_buf[CLI_TX_BUF];
-  char rx_buf[CLI_RX_BUF], *rx_ptr;
+  uint8_t tx_buf[CLI_TX_BUF];
+  uint8_t rx_buf[CLI_RX_BUF + UART_IO_SIZE], *rx_ptr;
 
   const struct cmdtab *commands;
 } cli;
@@ -39,9 +38,9 @@ void cli_putc(char c)
 void cli_printf(const char *fmt, ...)
 {
   va_list vargs;
-  char *buf = cli.tx_buf;
-  char *ptr = cli.tx_buf;
-  char *end = cli.tx_buf + sizeof(cli.tx_buf);
+  char *buf = (char *) cli.tx_buf;
+  char *ptr = (char *) cli.tx_buf;
+  char *end = (char *) cli.tx_buf + sizeof(cli.tx_buf);
   int ret;
 
   va_start(vargs, fmt);
@@ -130,6 +129,14 @@ int cli_help_cmd(int argc, char **argv, void *ctx)
   return cli_cmd_help(cli.commands, NULL);
 }
 
+// Reset read state
+static void cli_reset(struct cli *cli)
+{
+  cli->rx_ptr = cli->rx_buf;
+
+  cli_printf("> ");
+}
+
 static void cli_cmd(struct cli *cli, char *line)
 {
   int err;
@@ -141,20 +148,12 @@ static void cli_cmd(struct cli *cli, char *line)
   }
 }
 
-//
-static void cli_rx_start(struct cli *cli)
-{
-  cli->rx_ptr = cli->rx_buf;
-
-  cli_printf("> ");
-}
-
 // RX overflow, discard line
 static void cli_rx_overflow(struct cli *cli)
 {
   LOG_WARN("len=%s", cli->rx_ptr - cli->rx_buf);
 
-  cli_rx_start(cli);
+  cli_reset(cli);
 }
 
 // uart->rx_buf contains a '\0'-terminated string
@@ -162,18 +161,18 @@ static void cli_rx_line(struct cli *cli)
 {
   LOG_DEBUG("%s", cli->rx_buf);
 
-  cli_cmd(cli, cli->rx_buf);
+  cli_cmd(cli, (char *)cli->rx_buf);
 
-  cli_rx_start(cli);
+  cli_reset(cli);
 }
 
-static void cli_rx(struct cli *cli, const struct uart_event *rx)
+// Process len bytes of new input in rx_buf at rx_ptr, advancing the rx_ptr
+static void cli_rx(struct cli *cli, size_t len)
 {
-  if (rx->flags & UART_RX_OVERFLOW) {
-      cli_rx_overflow(cli);
-  }
+  uint8_t *in = cli->rx_ptr;
+  uint8_t *end = cli->rx_ptr + len;
 
-  for (const uint8_t *in = rx->buf; in < rx->buf + rx->len; in++) {
+  for (; in < end; in++) {
     #ifdef DEBUG
       if (isprint(*in)) {
         LOG_DEBUG("%c", *in);
@@ -185,10 +184,13 @@ static void cli_rx(struct cli *cli, const struct uart_event *rx)
     cli_putc(*in);
 
     if (*in == '\r') {
+      // skip
       continue;
     } else if (*in == '\b' && cli->rx_ptr > cli->rx_buf) {
+      // erase one char
       cli->rx_ptr--;
 
+      // echo wipeout
       cli_printf(" \b");
 
     } else if (*in == '\n') {
@@ -196,6 +198,7 @@ static void cli_rx(struct cli *cli, const struct uart_event *rx)
 
       cli_rx_line(cli);
     } else {
+      // copy
       *cli->rx_ptr++ = *in;
     }
 
@@ -208,20 +211,23 @@ static void cli_rx(struct cli *cli, const struct uart_event *rx)
 void cli_task(void *arg)
 {
   struct cli *cli = arg;
-  struct uart_event rx_event;
 
   LOG_INFO("init cli=%p", cli);
 
-  cli_rx_start(cli);
+  cli_reset(cli);
 
   for (;;) {
-    if (xQueueReceive(cli->uart_rx_queue, &rx_event, portMAX_DELAY)) {
-      LOG_DEBUG("rx overflow=%d len=%d", rx_event.flags & UART_RX_OVERFLOW, rx_event.len);
+    // Read new input from UART to tail of rx_buf
+    // XXX: must have at least size > UART_IO_SIZE bytes of room at the tail of the buffer to read any input!
+    uint8_t *ptr = cli->rx_ptr;
+    size_t size = cli->rx_buf + sizeof(cli->rx_buf) - cli->rx_ptr;
+    ssize_t read;
 
-      cli_rx(cli, &rx_event);
-
+    if ((read = uart_read(&uart0, ptr, size)) < 0) {
+      LOG_WARN("uart_read %u", size);
+      cli_reset(cli);
     } else {
-      LOG_ERROR("xQueueReceive");
+      cli_rx(cli, read);
     }
   }
 }
@@ -233,19 +239,9 @@ int init_cli(struct user_config *config, const struct cmdtab *commands)
   cli.rx_ptr = cli.rx_buf;
   cli.commands = commands;
 
-  if ((cli.uart_rx_queue = xQueueCreate(UART_RX_QUEUE_SIZE, sizeof(struct uart_event))) == NULL) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
-  }
-
   if ((err = xTaskCreate(&cli_task, (void *) "cli", CLI_TASK_STACK, &cli, tskIDLE_PRIORITY + 2, &cli.task)) <= 0) {
     LOG_ERROR("xTaskCreate cli: %d", err);
     return -1;
-  }
-
-  if ((err = uart_start_recv(cli.uart_rx_queue))) {
-    LOG_ERROR("uart_start_recv");
-    return err;
   }
 
   LOG_INFO("");

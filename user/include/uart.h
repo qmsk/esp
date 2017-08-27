@@ -8,6 +8,8 @@
 #define UART_EVENT_SIZE 32
 #define UART_TX_QUEUE_SIZE 32
 
+struct uart;
+
 enum uart_rx_flags {
   UART_RX_OVERFLOW = 1, // data was lost before this event
 };
@@ -18,6 +20,8 @@ struct uart_event {
   uint8_t buf[UART_EVENT_SIZE];
 };
 
+extern struct uart uart0;
+
 int init_uart(struct user_config *config);
 
 /** Write one byte to UART.
@@ -27,7 +31,7 @@ int init_uart(struct user_config *config);
  * @param c byte to copy to tx buffer
  * @return 0 if copied, >0 if tx buffer is full
  */
-int uart_putc(int c);
+int uart_putc(struct uart *uart, int c);
 
 /** Write len bytes from buffer to UART.
  *
@@ -37,7 +41,7 @@ int uart_putc(int c);
  * @param len number of bytes to copy
  * @return number of bytes written, 0 if tx buffer is full
  */
-size_t uart_write(const void *ptr, size_t len);
+ size_t uart_write(struct uart *uart, const void *buf, size_t len);
 
 /** Start reading UART data to `struct uart_rx_event` queue.
  *

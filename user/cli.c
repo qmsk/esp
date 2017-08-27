@@ -30,7 +30,7 @@ struct cli {
  */
 void cli_putc(char c)
 {
-  uart_putc(c);
+  uart_putc(&uart0, c);
 }
 
 /**
@@ -55,7 +55,7 @@ void cli_printf(const char *fmt, ...)
     ptr += ret;
   }
 
-  uart_write(buf, ptr - buf);
+  uart_write(&uart0, buf, ptr - buf);
 }
 
 void cli_ctx_print(const struct cmdctx *ctx)

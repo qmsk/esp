@@ -54,7 +54,7 @@ void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
 
   // XXX: blocking
   while (buf < ptr) {
-    buf += uart_write(buf, ptr - buf);
+    buf += uart_write(&uart0, buf, ptr - buf);
   }
 }
 

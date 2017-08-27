@@ -28,10 +28,10 @@ int dmx_send(enum dmx_cmd cmd, void *data, size_t len)
   if ((err = uart_break(dmx_uart, DMX_BREAK_US, DMX_MARK_US)))
     return err;
 
-  if ((err = uart_putc(&uart1, cmd)) < 0)
+  if ((err = uart_putc(dmx_uart, cmd)) < 0)
     return err;
 
-  if ((err = uart_write(&uart1, data, len)) < 0)
+  if ((err = uart_write(dmx_uart, data, len)) < 0)
     return err;
 
   return 0;
@@ -41,7 +41,7 @@ int init_dmx(struct user_config *config)
 {
   int err;
 
-  if ((err = uart_setup(&uart1, &dmx_uart_config))) {
+  if ((err = uart_setup(dmx_uart, &dmx_uart_config))) {
     LOG_ERROR("uart_setup");
     return err;
   }

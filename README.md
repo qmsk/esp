@@ -83,7 +83,7 @@ Support for the following ASCII control codes:
 
 ### `lib/cmd`
 
-CLI commands with arguments, subcommands.
+CLI commands with arguments, subcommands, usage help.
 
 ### `user/config`
 

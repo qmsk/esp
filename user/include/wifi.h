@@ -6,8 +6,4 @@
 
 int init_wifi(const struct user_config *config);
 
-void wifi_print();
-
-extern const struct cmdtab wifi_cmdtab;
-
 #endif

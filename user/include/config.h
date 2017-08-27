@@ -2,8 +2,6 @@
 #define __USER_CONFIG_H__
 
 #include "user_config.h"
-#include <cmd.h>
-
 extern struct user_config user_config;
 
 enum config_type {
@@ -24,8 +22,5 @@ struct config_tab {
 };
 
 int init_config(struct user_config *config);
-
-extern const struct cmdtab config_cmdtab;
-
 
 #endif

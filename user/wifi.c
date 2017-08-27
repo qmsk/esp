@@ -1,8 +1,9 @@
 #define DEBUG
 
 #include "wifi.h"
-#include "logging.h"
+#include "user_cmd.h"
 #include "cli.h"
+#include "logging.h"
 
 #include <c_types.h>
 #include <esp_misc.h>

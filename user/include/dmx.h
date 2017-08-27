@@ -9,6 +9,4 @@ enum dmx_cmd {
 
 int init_dmx(struct user_config *config);
 
-extern const struct cmdtab dmx_cmdtab;
-
 #endif

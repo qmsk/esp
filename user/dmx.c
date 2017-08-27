@@ -1,4 +1,5 @@
 #include "dmx.h"
+#include "user_cmd.h"
 #include "uart.h"
 #include "logging.h"
 

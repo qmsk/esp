@@ -1,5 +1,6 @@
 #include "config.h"
 #include "user_config.h"
+#include "user_cmd.h"
 #include "cli.h"
 #include "logging.h"
 

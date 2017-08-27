@@ -14,6 +14,7 @@ struct uart;
 enum uart_event_type {
   UART_IO,
   UART_RX_OVERFLOW, // data was lost before this event
+  UART_TX_BREAK, // send break
 };
 
 struct uart_io {
@@ -25,6 +26,9 @@ struct uart_event {
   enum uart_event_type type;
   union {
     struct uart_io io;
+    struct uart_tx_break {
+      uint16 break_us, mark_us;
+    } tx_break;
   };
 };
 
@@ -77,5 +81,15 @@ size_t uart_write(struct uart *uart, const void *buf, size_t len);
  * @return <0 on error, 0 on timeuot/abort if RX buffer is empty, >0 number of bytes read
  */
 int uart_read(struct uart *uart, void *buf, size_t size);
+
+/** Send line break (idle low).
+ *
+ * XXX: This should only be used for short breaks <1ms: it blocks the TX interrupt.
+ *
+ * @param uart break on uart
+ * @param break_us break (low) for us delay
+ * @param mark_us mark (high) for us delay
+ */
+int uart_break(struct uart *uart, uint16_t break_us, uint16_t mark_us);
 
 #endif

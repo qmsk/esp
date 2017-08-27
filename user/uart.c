@@ -1,6 +1,7 @@
 #include "uart.h"
 
 #include <drivers/uart.h>
+#include <esp_misc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
@@ -50,6 +51,16 @@ static void uart_intr_tx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR U
         // this should happen in a single write assuming the UART_GetWriteSize() check
         write += UART_Write(uart->port, tx.io.buf + write, tx.io.len - write);
       } while (write < tx.io.len);
+
+    } else if (tx.type == UART_TX_BREAK) {
+      // break
+      UART_SetTxBreak(uart->port, true);
+      UART_WaitTxFifoEmpty(uart->port); // XXX: lower UART_TXFIFO_EMPTY_THRHD during break?
+      os_delay_us(tx.tx_break.break_us);
+
+      // mark
+      UART_SetTxBreak(uart->port, false);
+      os_delay_us(tx.tx_break.mark_us);
     }
   }
 }
@@ -220,6 +231,19 @@ int uart_read(struct uart *uart, void *buf, size_t size)
     return -1;
 
   }
+}
+
+// XXX: delays in the ISR: FreeRTOS timers at 10ms, os_timer at 1ms?
+// TODO: block uart_write() and setup interrupts to wait for the TX queue and FIFO to drain?
+// TODO: use hw_timer (FRC1) for delays?
+int uart_break(struct uart *uart, uint16_t break_us, uint16_t mark_us)
+{
+  struct uart_event tx = { UART_TX_BREAK,
+    .tx_break.break_us = break_us,
+    .tx_break.mark_us = mark_us,
+  };
+
+  return uart_tx(uart, &tx);
 }
 
 static void uart_intr_handler(void *arg)

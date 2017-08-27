@@ -3,13 +3,15 @@
 #include "logging.h"
 
 #include <cmd.h>
-#include <drivers/uart.h>
-#include <esp_misc.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define DMX_BAUD 250000
+#define DMX_BREAK_US 128 // 32 bits
+#define DMX_MARK_US 12 // 3 bits
 #define DMX_SIZE 512
+
+struct uart *dmx_uart = &uart1;
 
 const UART_Config dmx_uart_config = {
   .baud_rate  = DMX_BAUD,
@@ -21,14 +23,16 @@ const UART_Config dmx_uart_config = {
 // Write DMX packet: break, start code frame, data frames
 int dmx_send(enum dmx_cmd cmd, void *data, size_t len)
 {
-  UART_WaitTxFifoEmpty(UART1);
-  UART_SetTxBreak(UART1, true);
-  os_delay_us(128);
-  UART_SetTxBreak(UART1, false);
-  os_delay_us(8);
+  int err;
 
-  uart_putc(&uart1, cmd);
-  uart_write(&uart1, data, len);
+  if ((err = uart_break(dmx_uart, DMX_BREAK_US, DMX_MARK_US)))
+    return err;
+
+  if ((err = uart_putc(&uart1, cmd)) < 0)
+    return err;
+
+  if ((err = uart_write(&uart1, data, len)) < 0)
+    return err;
 
   return 0;
 }

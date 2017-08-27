@@ -7,6 +7,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
+struct user_config user_config = {
+  .version        = USER_CONFIG_VERSION,
+  .wifi_ssid      = USER_CONFIG_WIFI_SSID,
+  .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
+};
+
 int read_config(struct user_config *config)
 {
   int fd, ret, err = 0;
@@ -91,16 +97,100 @@ int init_config(struct user_config *config)
   }
 }
 
-int config_cmd_show(int argc, char **argv, void *ctx)
-{
-  struct user_config *config = ctx;
 
-  cli_printf("version=%u\n", config->version);
+static struct config_tab config_version = { CONFIG_TYPE_UINT16, "version",
+  .readonly = true,
+  .value = { .uint16 = &user_config.version },
+};
+static struct config_tab config_wifi_ssid = { CONFIG_TYPE_STRING, "wifi.ssid",
+  .size = sizeof(user_config.wifi_ssid),
+  .value = { .string = user_config.wifi_ssid },
+};
+static struct config_tab config_wifi_password = { CONFIG_TYPE_STRING, "wifi.password",
+  .size = sizeof(user_config.wifi_password),
+  .value = { .string = user_config.wifi_password },
+};
+
+int config_set(const struct config_tab *tab, const char *value)
+{
+  unsigned uvalue;
+
+  switch (tab->type) {
+    case CONFIG_TYPE_STRING:
+      if (snprintf(tab->value.string, tab->size, "%s", value) >= tab->size) {
+        return -CMD_ERR_ARGUMENT;
+      } else {
+        break;
+      }
+
+    case CONFIG_TYPE_UINT16:
+      if (sscanf(value, "%u", &uvalue) <= 0) {
+        return -CMD_ERR_ARGUMENT;
+      } else if (uvalue > UINT16_MAX) {
+        return -CMD_ERR_ARGUMENT;
+      } else {
+        *tab->value.uint16 = (uint16_t) uvalue;
+        break;
+      }
+
+    default:
+      return -CMD_ERR_ARGUMENT;
+  }
+
+  return 0;
+}
+
+int config_print(const struct config_tab *tab)
+{
+  switch(tab->type) {
+    case CONFIG_TYPE_NULL:
+      break;
+
+    case CONFIG_TYPE_STRING:
+      cli_printf("%s = %s\n", tab->name, tab->value.string);
+      break;
+
+    case CONFIG_TYPE_UINT16:
+      cli_printf("%s = %u\n", tab->name, *tab->value.uint16);
+      break;
+
+    default:
+      return -CMD_ERR_NOT_IMPLEMENTED;
+  }
+
+  return 0;
+}
+
+int config_cmd(int argc, char **argv, void *ctx)
+{
+  struct config_tab *tab = ctx;
+  char *value;
+  int err;
+
+  if (argc == 1) {
+    value = NULL;
+  } else if (argc == 2) {
+    value = argv[1];
+  } else {
+    return -CMD_ERR_USAGE;
+  }
+
+  if (!value) {
+
+  } else if (tab->readonly) {
+    return -CMD_ERR_ARGUMENT;
+  } else if ((err = config_set(tab, value))) {
+    return err;
+  }
+
+  return config_print(tab);
 
   return 0;
 }
 
 const struct cmd config_commands[] = {
-  { "show", config_cmd_show, .describe = "Show configuration values" },
+  { "version",        config_cmd, &config_version,       .describe = "Version" },
+  { "wifi.ssid",      config_cmd, &config_wifi_ssid,     .usage = "[SSID]", .describe = "WiFi SSID"     },
+  { "wifi.password",  config_cmd, &config_wifi_password, .usage = "[PASSWORD]", .describe = "WiFi Password" },
   {}
 };

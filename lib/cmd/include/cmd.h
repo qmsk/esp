@@ -9,7 +9,7 @@ struct cmdctx;
 enum cmd_error;
 
 typedef int(*cmd_func)(int argc, char **argv, void *arg);
-typedef int(*cmdtab_error_func)(const struct cmdctx *ctx, enum cmd_error err, const char *cmd);
+typedef int(*cmdtab_error_func)(const struct cmdctx *ctx, enum cmd_error err, const char *arg);
 
 struct cmd {
   const char      *name;
@@ -39,6 +39,8 @@ enum cmd_error {
   CMD_ERR_NOT_FOUND,
   CMD_ERR_NOT_IMPLEMENTED,
   CMD_ERR_MISSING_SUBCOMMAND,
+  CMD_ERR_USAGE,
+  CMD_ERR_ARGUMENT,
 };
 
 int cmd_eval(const struct cmdtab *cmdtab, char *line);

@@ -105,12 +105,6 @@ void print_system()
   printf("*---------------------------------------\n");
 }
 
-static struct user_config user_config = {
-  .version        = USER_CONFIG_VERSION,
-  .wifi_ssid      = USER_CONFIG_WIFI_SSID,
-  .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
-};
-
 int test_cmd(int argc, char **argv, void *ctx)
 {
   cli_printf("argc=%d:", argc);
@@ -126,7 +120,6 @@ int test_cmd(int argc, char **argv, void *ctx)
 
 static const struct cmdtab user_config_cmdtab = {
   .commands = config_commands,
-  .arg      = &user_config,
 };
 
 static const struct cmd user_commands[] = {

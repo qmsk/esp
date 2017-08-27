@@ -101,7 +101,7 @@ int cli_cmd_help(const struct cmdtab *cmdtab, const struct cmdctx *parent)
   return 0;
 }
 
-int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const char *cmd)
+int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const char *arg)
 {
   cli_printf("!");
   if (ctx->cmd || ctx->parent) {
@@ -111,8 +111,10 @@ int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const char *cmd)
     cli_printf(" ");
   }
   cli_printf("%s", cmd_strerror(err));
-  if (cmd)
-    cli_printf(": %s\n", cmd);
+  if (err == CMD_ERR_USAGE && ctx->cmd && ctx->cmd->usage)
+    cli_printf(": %s\n", ctx->cmd->usage);
+  else if (arg)
+    cli_printf(": %s\n", arg);
   else
     cli_printf("\n");
 

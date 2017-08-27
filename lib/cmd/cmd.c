@@ -100,6 +100,10 @@ const char *cmd_strerror(enum cmd_error err)
       return "command not implemented";
     case CMD_ERR_MISSING_SUBCOMMAND:
       return "missing subcommand";
+    case CMD_ERR_USAGE:
+      return "usage";
+    case CMD_ERR_ARGUMENT:
+      return "invalid argument";
     default:
       return "<unknown>";
   }

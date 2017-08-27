@@ -55,8 +55,8 @@ static void uart_intr_tx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR U
     } else if (tx.type == UART_TX_BREAK) {
       // break
       UART_SetTxBreak(uart->port, true);
-      UART_WaitTxFifoEmpty(uart->port); // XXX: lower UART_TXFIFO_EMPTY_THRHD during break?
-      os_delay_us(tx.tx_break.break_us);
+      UART_WaitTxFifoEmpty(uart->port); // XXX: use low UART_TXFIFO_EMPTY_THRHD and wakeup uart_break() instead?
+      os_delay_us(tx.tx_break.break_us);  // XXX: block uart_send() and use HW timers instead!
 
       // mark
       UART_SetTxBreak(uart->port, false);

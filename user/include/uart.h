@@ -85,6 +85,7 @@ int uart_read(struct uart *uart, void *buf, size_t size);
 /** Send line break (idle low).
  *
  * XXX: This should only be used for short breaks <1ms: it blocks the TX interrupt.
+ * TODO: better timing accuracy: with 128+12us actual measured 134+23us
  *
  * @param uart break on uart
  * @param break_us break (low) for us delay

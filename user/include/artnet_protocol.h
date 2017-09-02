@@ -1,12 +1,13 @@
 #ifndef __ARTNET_PROTOCOL_H__
 #define __ARTNET_PROTOCOL_H__
 
+#include "artnet.h"
+#include "artnet_dmx.h"
 #include <lwip/def.h>
 
 #define ARTNET_PORT 6454
 #define ARTNET_ID { 'A', 'r', 't', '-', 'N', 'e', 't', '\0'}
 #define ARTNET_VERSION 14
-#define ARTNET_DMX_LEN 512
 
 enum artnet_opcode {
   ARTNET_OP_POLL        = 0x2000,
@@ -84,26 +85,32 @@ struct __attribute__((packed)) artnet_packet_poll_reply {
   uint8_t filler[26];
 };
 
-struct __attribute__((packed)) artnet_packet_dmx {
-  struct artnet_packet_header header;
+union artnet_packet_dmx {
+  struct __attribute__((packed)) artnet_packet_dmx_headers {
+    struct artnet_packet_header header;
 
-  uint8_t sequence;
-  uint8_t physical;
-  uint8_t sub_uni;
-  uint8_t net;
-  artnet_u16hl length;
+    uint8_t sequence;
+    uint8_t physical;
+    uint8_t sub_uni;
+    uint8_t net;
 
-  uint8_t data[0];
+    artnet_u16hl length;
+  } headers;
+
+  struct __attribute__((packed)) {
+    struct artnet_packet_header header;
+
+    uint8_t alignment[4];
+
+    struct artnet_dmx dmx;
+  } payload;
 };
 
 union artnet_packet {
   struct artnet_packet_header header;
   struct artnet_packet_poll poll;
   struct artnet_packet_poll_reply poll_reply;
-  struct {
-    struct artnet_packet_dmx dmx;
-    uint8_t _dmx_payload[ARTNET_DMX_LEN];
-  };
+  union artnet_packet_dmx dmx;
 };
 
 inline uint16_t artnet_unpack_u16hl(artnet_u16hl f) { return ntohs(f.hl); }

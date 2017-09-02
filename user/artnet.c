@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "artnet_config.h"
 #include "artnet_protocol.h"
+#include "artnet_dmx.h"
 
 #include <lwip/sockets.h>
 #include <freertos/FreeRTOS.h>
@@ -292,28 +293,30 @@ int artnet_op_poll(struct artnet *artnet, const struct artnet_sendrecv recv)
 
 int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
 {
-  if (recv.len < sizeof(recv.packet->dmx)) {
+  if (recv.len < sizeof(recv.packet->dmx.headers)) {
     LOG_WARN("short packet header");
     return -1;
   }
 
-  struct artnet_packet_dmx *dmx = &recv.packet->dmx;
-  uint16_t addr = (dmx->net << 8) | (dmx->sub_uni);
-  uint16_t dmx_len = artnet_unpack_u16hl(dmx->length);
+  // struct view of packet headers
+  struct artnet_packet_dmx_headers *headers = &recv.packet->dmx.headers;
+  uint16_t addr = (headers->net << 8) | (headers->sub_uni);
+  uint16_t seq = headers->sequence;
+  uint16_t dmx_len = artnet_unpack_u16hl(headers->length);
 
   if ((addr & 0xFFF0) != artnet->config.universe) {
     LOG_DEBUG("ignore addr=%u", addr);
     return 0;
   }
 
-  if (recv.len < sizeof(*dmx) + dmx_len) {
+  if (recv.len < sizeof(*headers) + dmx_len) {
     LOG_WARN("short packet payload");
     return -1;
   }
 
   LOG_DEBUG("seq=%u phy=%u addr=%u len=%u",
-    dmx->sequence,
-    dmx->physical,
+    seq,
+    headers->physical,
     addr,
     dmx_len
   );
@@ -325,7 +328,19 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
     return -1;
   }
 
-  return artnet_dmx_output(output, dmx->data, dmx_len, dmx->sequence);
+  // struct view of packet payload
+  struct artnet_dmx *dmx = &recv.packet->dmx.payload.dmx;
+
+  dmx->len = dmx_len;
+
+  LOG_DEBUG("packet=%p headers=%p dmx=%p dmx.data=%p",
+    recv.packet,
+    headers,
+    dmx,
+    dmx->data
+  );
+
+  return artnet_dmx_output(output, dmx->data, dmx->len, seq);
 }
 
 int artnet_op(struct artnet *artnet, struct artnet_sendrecv recv)

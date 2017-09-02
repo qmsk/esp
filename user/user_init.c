@@ -35,6 +35,8 @@ void print_system()
   printf("*---------------------------------------\n");
 }
 
+struct user_info user_info;
+
 void user_init(void)
 {
   print_system();
@@ -64,7 +66,7 @@ void user_init(void)
     return;
   }
 
-  if (init_wifi(&user_config)) {
+  if (init_wifi(&user_config, &user_info)) {
     printf("FATAL: init_wifi\n");
     return;
   }

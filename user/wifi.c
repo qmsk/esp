@@ -22,8 +22,91 @@ struct wifi_scan_event {
 };
 
 struct wifi {
+  struct user_info *user_info;
   xQueueHandle scan_queue;
 } wifi;
+
+static void on_wifi_event(System_Event_t *event);
+
+
+int wifi_init(struct wifi *wifi, struct user_info *user_info)
+{
+  wifi->user_info = user_info;
+
+  if ((wifi->scan_queue = xQueueCreate(1, sizeof(struct wifi_scan_event))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  if (!wifi_set_event_handler_cb(&on_wifi_event)) {
+    LOG_ERROR("wifi_set_event_handler_cb");
+    return -1;
+  }
+
+  wifi_get_macaddr(STATION_IF, user_info->mac);
+
+  return 0;
+}
+
+void wifi_is_connected(struct wifi *wifi)
+{
+  struct ip_info wifi_sta_ipinfo;
+  char *wifi_sta_hostname;
+
+  wifi_get_ip_info(STATION_IF, &wifi_sta_ipinfo);
+  wifi_sta_hostname = wifi_station_get_hostname();
+
+  wifi->user_info->ip = wifi_sta_ipinfo.ip;
+  snprintf(wifi->user_info->hostname, sizeof(wifi->user_info->hostname), "%s", wifi_sta_hostname);
+
+  LOG_INFO("hostname=%s ip=" IPSTR, wifi->user_info->hostname, IP2STR(&wifi->user_info->ip));
+
+  wifi->user_info->connected = true;
+}
+
+void wifi_is_disconnected(struct wifi *wifi)
+{
+  LOG_INFO("disconnected");
+
+  wifi->user_info->connected = false;
+}
+
+int wifi_setup(struct wifi *wifi, const struct user_config *config)
+{
+  struct station_config wifi_station_config = { };
+
+  snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->wifi_ssid);
+  snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->wifi_password);
+
+  LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
+
+  if (!wifi_set_opmode(STATION_MODE)) {
+    LOG_ERROR("wifi_set_opmode STATION_MODE");
+    return -1;
+  }
+
+  if (!wifi_station_set_config(&wifi_station_config)) {
+    LOG_ERROR("wifi_station_set_config");
+    return -1;
+  }
+
+  // initial
+  switch (wifi_station_get_connect_status()) {
+    case STATION_IDLE:
+    case STATION_CONNECTING:
+    case STATION_WRONG_PASSWORD:
+    case STATION_NO_AP_FOUND:
+    case STATION_CONNECT_FAIL:
+      wifi_is_disconnected(wifi);
+      break;
+
+    case STATION_GOT_IP:
+      wifi_is_connected(wifi);
+      break;
+  }
+
+  return 0;
+}
 
 static void on_wifi_event(System_Event_t *event)
 {
@@ -43,6 +126,8 @@ static void on_wifi_event(System_Event_t *event)
       Event_StaMode_Disconnected_t info = event->event_info.disconnected;
 
       LOG_INFO("disconnected: ssid=%s reason=%u", info.ssid, info.reason);
+
+      wifi_is_disconnected(&wifi);
     } break;
 
     case EVENT_STAMODE_AUTHMODE_CHANGE: {
@@ -59,10 +144,14 @@ static void on_wifi_event(System_Event_t *event)
           IP2STR(&info.mask),
           IP2STR(&info.gw)
       );
+
+      wifi_is_connected(&wifi);
     } break;
 
     case EVENT_STAMODE_DHCP_TIMEOUT: {
       LOG_INFO("dhcp timeout");
+
+      wifi_is_disconnected(&wifi);
     } break;
 
     default: {
@@ -71,33 +160,16 @@ static void on_wifi_event(System_Event_t *event)
   }
 }
 
-int init_wifi(const struct user_config *config)
+int init_wifi(const struct user_config *config, struct user_info *user_info)
 {
-  struct station_config wifi_station_config = { };
+  int err;
 
-  snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->wifi_ssid);
-  snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->wifi_password);
-
-  LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
-
-  if ((wifi.scan_queue = xQueueCreate(1, sizeof(struct wifi_scan_event))) == NULL) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
+  if ((err = wifi_init(&wifi, user_info))) {
+    return err;
   }
 
-  if (!wifi_set_opmode(STATION_MODE)) {
-    LOG_ERROR("wifi_set_opmode STATION_MODE");
-    return -1;
-  }
-
-  if (!wifi_station_set_config(&wifi_station_config)) {
-    LOG_ERROR("wifi_station_set_config");
-    return -1;
-  }
-
-  if (!wifi_set_event_handler_cb(&on_wifi_event)) {
-    LOG_ERROR("wifi_set_event_handler_cb");
-    return -1;
+  if ((err = wifi_setup(&wifi, config))) {
+    return err;
   }
 
   return 0;

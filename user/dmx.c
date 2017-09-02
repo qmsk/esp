@@ -2,7 +2,10 @@
 #include "user_cmd.h"
 #include "uart.h"
 #include "logging.h"
-#include "artnet.h"
+#include "artnet_dmx.h"
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include <cmd.h>
 #include <stdlib.h>
@@ -12,11 +15,16 @@
 #define DMX_BREAK_US 128 // 32 bits
 #define DMX_MARK_US 12 // 3 bits
 #define DMX_SIZE 512
+#define DMX_TASK_STACK 512
 
 struct uart *dmx_uart = &uart1;
 
 struct dmx {
   struct uart *uart;
+
+  xQueueHandle artnet_queue;
+  xTaskHandle artnet_task;
+  struct artnet_dmx artnet_dmx;
 } dmx;
 
 const UART_Config dmx_uart_config = {
@@ -48,12 +56,21 @@ int dmx_send(struct dmx *dmx, enum dmx_cmd cmd, void *data, size_t len)
   return 0;
 }
 
-void dmx_artnet_output(uint8_t *data, size_t len, void *arg)
+void dmx_artnet_task(void *arg)
 {
   struct dmx *dmx = arg;
+  int err;
 
-  if (dmx_send(dmx, DMX_CMD_DIMMER, data, len)) {
-    LOG_ERROR("dmx_send");
+  LOG_DEBUG("dmx=%p", dmx);
+
+  for (;;) {
+    if (!xQueueReceive(dmx->artnet_queue, &dmx->artnet_dmx, portMAX_DELAY)) {
+      LOG_WARN("xQueueReceive");
+    } else if ((err = dmx_send(dmx, DMX_CMD_DIMMER, dmx->artnet_dmx.data, dmx->artnet_dmx.len))) {
+      LOG_WARN("dmx_send");
+    } else {
+      LOG_INFO("dmx send len=%u", dmx->artnet_dmx.len);
+    }
   }
 }
 
@@ -70,7 +87,12 @@ int dmx_setup(struct dmx *dmx, struct dmx_config *config)
   dmx->uart = uart;
 
   if (config->artnet_universe) {
-    if ((err = patch_artnet_output(config->artnet_universe, &dmx_artnet_output, NULL))) {
+    if ((dmx->artnet_queue = xQueueCreate(1, sizeof(struct artnet_dmx))) == NULL) {
+      LOG_ERROR("xQueueCreate");
+      return -1;
+    }
+
+    if ((err = start_artnet_output(config->artnet_universe, dmx->artnet_queue))) {
       LOG_ERROR("patch_artnet_output");
       return err;
     }
@@ -89,6 +111,15 @@ int init_dmx(struct user_config *config)
 
   if ((err = dmx_setup(&dmx, &config->dmx))) {
     return err;
+  }
+
+  if (!dmx.artnet_queue) {
+
+  } else if ((err = xTaskCreate(&dmx_artnet_task, (signed char *) "dmx-artnet", DMX_TASK_STACK, &dmx, tskIDLE_PRIORITY + 2, &dmx.artnet_task)) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  } else {
+    LOG_INFO("dmx-artnet task=%p", dmx.artnet_task);
   }
 
   return 0;

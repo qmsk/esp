@@ -18,8 +18,8 @@ static const char *artnet_product = "https://github.com/SpComb/esp-projects";
 struct artnet_output {
   uint16_t addr;
   enum artnet_port_type type;
-  artnet_output_func *func;
-  void *arg;
+
+  xQueueHandle queue;
 
   uint16_t seq;
 };
@@ -137,7 +137,7 @@ int artnet_setup(struct artnet *artnet, const struct artnet_config *config)
   return 0;
 }
 
-int artnet_patch_output(struct artnet *artnet, uint16_t addr, artnet_output_func *func, void *arg)
+int artnet_start_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue)
 {
   if (artnet->output_count >= ARTNET_PORTS) {
     LOG_ERROR("too many outputs");
@@ -149,12 +149,15 @@ int artnet_patch_output(struct artnet *artnet, uint16_t addr, artnet_output_func
     return -1;
   }
 
-  artnet->output_ports[artnet->output_count++] = (struct artnet_output){
-    .addr = addr,
-    .type = ARTNET_PORT_TYPE_DMX,
-    .func = func,
-    .arg = arg,
+  LOG_INFO("port=%u addr=%u", artnet->output_count, addr);
+
+  artnet->output_ports[artnet->output_count] = (struct artnet_output){
+    .addr  = addr,
+    .type  = ARTNET_PORT_TYPE_DMX,
+    .queue = queue,
   };
+  artnet->output_count++; // XXX: atomic for concurrent artnet_find_output()?
+
 
   return 0;
 }
@@ -171,6 +174,28 @@ int artnet_find_output(struct artnet *artnet, uint16_t addr, struct artnet_outpu
   }
 
   return -1;
+}
+
+int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint16_t seq)
+{
+  if (seq == 0) {
+    // reset
+    output->seq = 0;
+
+  } else if (seq <= output->seq && output->seq - seq < 128) {
+    LOG_WARN("skip addr=%d seq=%d < %d", output->addr, seq, output->seq);
+    return 0;
+
+  } else {
+    // advance or wraparound
+    output->seq = seq;
+  }
+
+  if (!xQueueSend(output->queue, dmx, 0)) {
+    LOG_WARN("skip queue full");
+  }
+
+  return 0;
 }
 
 int artnet_send(struct artnet *artnet, const struct artnet_sendrecv send)
@@ -236,28 +261,6 @@ int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *re
     reply->port_types[port] = output->type | ARTNET_PORT_TYPE_OUTPUT;
     reply->good_output[port] = ARTNET_OUTPUT_TRANSMITTING;
     reply->sw_out[port] = output->addr & 0x0F;
-  }
-
-  return 0;
-}
-
-int artnet_dmx_output(struct artnet_output *output, uint8_t *data, size_t len, uint16_t seq)
-{
-  if (seq == 0) {
-    // reset
-    output->seq = 0;
-
-  } else if (seq <= output->seq && output->seq - seq < 128) {
-    LOG_WARN("skip addr=%d seq=%d < %d", output->addr, seq, output->seq);
-    return 0;
-
-  } else {
-    // advance or wraparound
-    output->seq = seq;
-  }
-
-  if (output->func) {
-    output->func(data, len, output->arg);
   }
 
   return 0;
@@ -340,7 +343,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
     dmx->data
   );
 
-  return artnet_dmx_output(output, dmx->data, dmx->len, seq);
+  return artnet_output_dmx(output, dmx, seq);
 }
 
 int artnet_op(struct artnet *artnet, struct artnet_sendrecv recv)
@@ -415,7 +418,7 @@ int init_artnet(const struct user_config *config, const struct user_info *user_i
   return 0;
 }
 
-int patch_artnet_output(uint16_t addr, artnet_output_func *func, void *arg)
+int start_artnet_output(uint16_t addr, xQueueHandle queue)
 {
-  return artnet_patch_output(&artnet, addr, func, arg);
+  return artnet_start_output(&artnet, addr, queue);
 }

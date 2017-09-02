@@ -271,13 +271,13 @@ int artnet_op_poll(struct artnet *artnet, const struct artnet_sendrecv recv)
   int err;
 
   if (recv.len < sizeof(recv.packet->poll)) {
-    LOG_WARN("short p<cket");
+    LOG_WARN("short packet");
     return -1;
   }
 
   struct artnet_packet_poll *poll = &recv.packet->poll;
 
-  LOG_INFO("ttm=%02x priority=%u", poll->ttm, poll->priority);
+  LOG_INFO("ttm=%02x priority=%u", poll->ttm, poll->priority); // TODO: log sender?
 
   struct artnet_sendrecv send = recv; // reply to sender
 

@@ -97,11 +97,13 @@ union artnet_packet_dmx {
     artnet_u16hl length;
   } headers;
 
+  // align payload.dmx.data with the end of headers
   struct __attribute__((packed)) {
     struct artnet_packet_header header;
 
     uint8_t alignment[4];
 
+    // dmx.len overlaps with headers.length
     struct artnet_dmx dmx;
   } payload;
 };

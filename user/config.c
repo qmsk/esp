@@ -16,6 +16,7 @@ struct user_config user_config = {
     .universe = ARTNET_CONFIG_UNIVERSE,
   },
   .dmx = {
+    .gpio = DMX_CONFIG_GPIO,
     .artnet_universe = DMX_CONFIG_ARTNET_UNIVERSE,
   },
 };
@@ -121,8 +122,10 @@ static struct config_tab config_artnet_universe = { CONFIG_TYPE_UINT16, "artnet.
   .size = sizeof(user_config.artnet.universe),
   .value = { .uint16 = &user_config.artnet.universe },
 };
+static struct config_tab config_dmx_gpio = { CONFIG_TYPE_UINT16, "dmx.gpio",
+  .value = { .uint16 = &user_config.dmx.gpio },
+};
 static struct config_tab config_dmx_artnet_universe = { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
-  .size = sizeof(user_config.dmx.artnet_universe),
   .value = { .uint16 = &user_config.dmx.artnet_universe },
 };
 
@@ -209,6 +212,7 @@ const struct cmd config_commands[] = {
   { "wifi.password",    config_cmd, &config_wifi_password,    .usage = "[PASSWORD]", .describe = "WiFi Password" },
   { "artnet.universe",         config_cmd, &config_artnet_universe,     .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output port base address" },
   { "dmx.artnet-universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
+  { "dmx.gpio",                config_cmd, &config_dmx_gpio,            .usage = "[GPIO]", .describe = "DMX Output Enable GPIO pin (low during boot)" },
   {}
 };
 

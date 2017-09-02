@@ -4,6 +4,7 @@
 #include "logging.h"
 #include "artnet_dmx.h"
 
+#include <drivers/gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -76,8 +77,11 @@ void dmx_artnet_task(void *arg)
 
 int dmx_setup(struct dmx *dmx, struct dmx_config *config)
 {
+  struct GPIO_OutputConfig gpio_config = {};
   struct uart *uart = &uart1;
   int err;
+
+  GPIO_SetupOutput(config->gpio, &gpio_config);
 
   if ((err = uart_setup(uart, &dmx_uart_config))) {
     LOG_ERROR("uart_setup");
@@ -97,6 +101,9 @@ int dmx_setup(struct dmx *dmx, struct dmx_config *config)
       return err;
     }
   }
+
+  // enable TX
+  GPIO_OutputHigh(config->gpio);
 
   return 0;
 }

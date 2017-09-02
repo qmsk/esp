@@ -48,6 +48,7 @@ endif
 
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a  \
+	ext/drivers/libgpio.a \
 	ext/drivers/libuart.a \
 	lib/libcmd.a
 

@@ -212,7 +212,7 @@ void cli_task(void *arg)
 {
   struct cli *cli = arg;
 
-  LOG_INFO("init cli=%p", cli);
+  LOG_DEBUG("init cli=%p", cli);
 
   cli_reset(cli);
 
@@ -242,6 +242,8 @@ int init_cli(struct user_config *config, const struct cmdtab *commands)
   if ((err = xTaskCreate(&cli_task, (void *) "cli", CLI_TASK_STACK, &cli, tskIDLE_PRIORITY + 2, &cli.task)) <= 0) {
     LOG_ERROR("xTaskCreate cli: %d", err);
     return -1;
+  } else {
+    LOG_INFO("cli task=%p", cli.task);
   }
 
   LOG_INFO("");

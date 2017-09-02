@@ -393,6 +393,8 @@ int init_artnet(const struct user_config *config, const struct user_info *user_i
   if ((err = xTaskCreate(&artnet_task, (signed char *) "artnet", ARTNET_TASK_STACK, &artnet, tskIDLE_PRIORITY + 2, &artnet.task)) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
+  } else {
+    LOG_INFO("artnet task=%p", artnet.task);
   }
 
   return 0;

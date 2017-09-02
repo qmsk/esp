@@ -179,7 +179,7 @@ int artnet_send(struct artnet *artnet, const struct artnet_sendrecv send)
     return -1;
   }
 
-  LOG_INFO("op=%04x len=%u", send.packet->header.opcode, send.len);
+  LOG_DEBUG("op=%04x len=%u", send.packet->header.opcode, send.len);
 
   return 0;
 }
@@ -205,7 +205,7 @@ int artnet_parse_header(struct artnet *artnet, struct artnet_packet_header *head
     return -1;
   }
 
-  LOG_INFO("id=%.8s opcode=%04x version=%u",
+  LOG_DEBUG("id=%.8s opcode=%04x version=%u",
     header->id,
     header->opcode,
     version
@@ -311,7 +311,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
     return -1;
   }
 
-  LOG_INFO("seq=%u phy=%u addr=%u len=%u",
+  LOG_DEBUG("seq=%u phy=%u addr=%u len=%u",
     dmx->sequence,
     dmx->physical,
     addr,

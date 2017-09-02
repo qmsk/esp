@@ -242,6 +242,19 @@ int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *re
 
 int artnet_dmx_output(struct artnet_output *output, uint8_t *data, size_t len, uint16_t seq)
 {
+  if (seq == 0) {
+    // reset
+    output->seq = 0;
+
+  } else if (seq <= output->seq && output->seq - seq < 128) {
+    LOG_WARN("skip addr=%d seq=%d < %d", output->addr, seq, output->seq);
+    return 0;
+
+  } else {
+    // advance or wraparound
+    output->seq = seq;
+  }
+
   if (output->func) {
     output->func(data, len, output->arg);
   }
@@ -287,6 +300,11 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
   struct artnet_packet_dmx *dmx = &recv.packet->dmx;
   uint16_t addr = (dmx->net << 8) | (dmx->sub_uni);
   uint16_t dmx_len = artnet_unpack_u16hl(dmx->length);
+
+  if ((addr & 0xFFF0) != artnet->config.universe) {
+    LOG_DEBUG("ignore addr=%u", addr);
+    return 0;
+  }
 
   if (recv.len < sizeof(*dmx) + dmx_len) {
     LOG_WARN("short packet payload");

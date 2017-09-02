@@ -1,4 +1,5 @@
 #include "artnet.h"
+#include "artnet_config.h"
 #include "artnet_protocol.h"
 
 #include <lwip/sockets.h>
@@ -14,11 +15,13 @@
 static const char *artnet_product = "https://github.com/SpComb/esp-projects";
 
 struct artnet {
-  xTaskHandle task;
+  struct artnet_config config;
   const struct user_info *user_info;
 
-  int socket;
+  xTaskHandle task;
 
+
+  int socket;
   union artnet_packet packet;
 } artnet;
 
@@ -41,6 +44,7 @@ struct sockname {
 int artnet_init(struct artnet *artnet, const struct user_info *user_info)
 {
   artnet->user_info = user_info;
+  artnet->socket = -1;
 
   return 0;
 }
@@ -99,6 +103,28 @@ int artnet_sockname(struct artnet *artnet, struct sockname *sockname)
   return 0;
 }
 
+int artnet_setup(struct artnet *artnet, const struct artnet_config *config)
+{
+  struct sockname sockname;
+  int err;
+
+  artnet->config = *config;
+
+  if (artnet->socket < 0) {
+    if ((err = artnet_listen(artnet))) {
+      return err;
+    }
+  }
+
+  if ((err = artnet_sockname(artnet, &sockname))) {
+    return -1;
+  } else {
+    LOG_INFO("listen UDP %s:%u at universe=%u", sockname.host, sockname.port, config->universe);
+  }
+
+  return 0;
+}
+
 int artnet_send(struct artnet *artnet, const struct artnet_sendrecv send)
 {
   if (sendto(artnet->socket, send.packet, send.len, 0, &send.addr, send.addrlen) < 0) {
@@ -147,6 +173,8 @@ int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *re
   memcpy(reply->mac, artnet->user_info->mac, 6);
 
   reply->port_number = artnet_pack_u16lh(ARTNET_PORT);
+  reply->net_switch = (artnet->config.universe & 0x7F00) >> 8;
+  reply->sub_switch = (artnet->config.universe & 0x00F0) >> 0;
   reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
 
   snprintf((char *) reply->short_name, sizeof(reply->short_name), "%s", artnet->user_info->hostname);
@@ -261,21 +289,14 @@ void artnet_task(void *arg)
 
 int init_artnet(const struct user_config *config, const struct user_info *user_info)
 {
-  struct sockname sockname;
   int err;
 
   if ((err = artnet_init(&artnet, user_info))) {
     return err;
   }
 
-  if ((err = artnet_listen(&artnet))) {
+  if ((err = artnet_setup(&artnet, &config->artnet))) {
     return err;
-  }
-
-  if ((err = artnet_sockname(&artnet, &sockname))) {
-    return -1;
-  } else {
-    LOG_INFO("listen UDP %s:%u", sockname.host, sockname.port);
   }
 
   if ((err = xTaskCreate(&artnet_task, (signed char *) "artnet", ARTNET_TASK_STACK, &artnet, tskIDLE_PRIORITY + 2, &artnet.task)) <= 0) {

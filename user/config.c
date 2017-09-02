@@ -12,6 +12,9 @@ struct user_config user_config = {
   .version        = USER_CONFIG_VERSION,
   .wifi_ssid      = USER_CONFIG_WIFI_SSID,
   .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
+  .artnet = {
+    .universe = ARTNET_CONFIG_UNIVERSE,
+  },
 };
 
 int read_config(struct user_config *config)
@@ -111,6 +114,10 @@ static struct config_tab config_wifi_password = { CONFIG_TYPE_STRING, "wifi.pass
   .size = sizeof(user_config.wifi_password),
   .value = { .string = user_config.wifi_password },
 };
+static struct config_tab config_artnet_universe = { CONFIG_TYPE_UINT16, "artnet.universe",
+  .size = sizeof(user_config.artnet.universe),
+  .value = { .uint16 = &user_config.artnet.universe },
+};
 
 int config_set(const struct config_tab *tab, const char *value)
 {
@@ -190,9 +197,10 @@ int config_cmd(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "version",        config_cmd, &config_version,       .describe = "Version" },
-  { "wifi.ssid",      config_cmd, &config_wifi_ssid,     .usage = "[SSID]", .describe = "WiFi SSID"     },
-  { "wifi.password",  config_cmd, &config_wifi_password, .usage = "[PASSWORD]", .describe = "WiFi Password" },
+  { "version",          config_cmd, &config_version,          .describe = "Version" },
+  { "wifi.ssid",        config_cmd, &config_wifi_ssid,        .usage = "[SSID]", .describe = "WiFi SSID"     },
+  { "wifi.password",    config_cmd, &config_wifi_password,    .usage = "[PASSWORD]", .describe = "WiFi Password" },
+  { "artnet.universe",  config_cmd, &config_artnet_universe,  .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output universe base" },
   {}
 };
 

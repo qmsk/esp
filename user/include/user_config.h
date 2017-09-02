@@ -12,6 +12,7 @@
 
 #include "local/user_config.h"
 #include "artnet_config.h"
+#include "dmx_config.h"
 
 struct user_config {
   uint16 version;
@@ -19,9 +20,10 @@ struct user_config {
   char wifi_password[64];
 
   struct artnet_config artnet;
+  struct dmx_config dmx;
 };
 
-#define USER_CONFIG_VERSION 3
+#define USER_CONFIG_VERSION 4
 
 #ifndef USER_CONFIG_WIFI_SSID
   #error "include/local/user_config.h: #define USER_CONFIG_WIFI_SSID"

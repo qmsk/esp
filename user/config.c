@@ -15,6 +15,9 @@ struct user_config user_config = {
   .artnet = {
     .universe = ARTNET_CONFIG_UNIVERSE,
   },
+  .dmx = {
+    .artnet_universe = DMX_CONFIG_ARTNET_UNIVERSE,
+  },
 };
 
 int read_config(struct user_config *config)
@@ -118,6 +121,10 @@ static struct config_tab config_artnet_universe = { CONFIG_TYPE_UINT16, "artnet.
   .size = sizeof(user_config.artnet.universe),
   .value = { .uint16 = &user_config.artnet.universe },
 };
+static struct config_tab config_dmx_artnet_universe = { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
+  .size = sizeof(user_config.dmx.artnet_universe),
+  .value = { .uint16 = &user_config.dmx.artnet_universe },
+};
 
 int config_set(const struct config_tab *tab, const char *value)
 {
@@ -200,7 +207,8 @@ const struct cmd config_commands[] = {
   { "version",          config_cmd, &config_version,          .describe = "Version" },
   { "wifi.ssid",        config_cmd, &config_wifi_ssid,        .usage = "[SSID]", .describe = "WiFi SSID"     },
   { "wifi.password",    config_cmd, &config_wifi_password,    .usage = "[PASSWORD]", .describe = "WiFi Password" },
-  { "artnet.universe",  config_cmd, &config_artnet_universe,  .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output universe base" },
+  { "artnet.universe",         config_cmd, &config_artnet_universe,     .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output port base address" },
+  { "dmx.artnet-universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
   {}
 };
 

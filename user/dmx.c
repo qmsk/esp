@@ -2,6 +2,7 @@
 #include "user_cmd.h"
 #include "uart.h"
 #include "logging.h"
+#include "artnet.h"
 
 #include <cmd.h>
 #include <stdlib.h>
@@ -38,6 +39,13 @@ int dmx_send(enum dmx_cmd cmd, void *data, size_t len)
   return 0;
 }
 
+void dmx_output(uint8_t *data, size_t len, void *arg)
+{
+  if (dmx_send(DMX_CMD_DIMMER, data, len)) {
+    LOG_ERROR("dmx_send");
+  }
+}
+
 int init_dmx(struct user_config *config)
 {
   int err;
@@ -45,6 +53,13 @@ int init_dmx(struct user_config *config)
   if ((err = uart_setup(dmx_uart, &dmx_uart_config))) {
     LOG_ERROR("uart_setup");
     return err;
+  }
+
+  if (config->dmx.artnet_universe) {
+    if ((err = patch_artnet_output(config->dmx.artnet_universe, &dmx_output, NULL))) {
+      LOG_ERROR("patch_artnet_output");
+      return -1;
+    }
   }
 
   return 0;

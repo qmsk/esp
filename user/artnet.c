@@ -10,9 +10,18 @@
 #include "logging.h"
 
 #define ARTNET_TASK_STACK 512
-#define ARTNET_BUF 512
+#define ARTNET_PORTS 4
 
 static const char *artnet_product = "https://github.com/SpComb/esp-projects";
+
+struct artnet_output {
+  uint16_t addr;
+  enum artnet_port_type type;
+  artnet_output_func *func;
+  void *arg;
+
+  uint16_t seq;
+};
 
 struct artnet {
   struct artnet_config config;
@@ -20,6 +29,8 @@ struct artnet {
 
   xTaskHandle task;
 
+  uint output_count;
+  struct artnet_output output_ports[ARTNET_PORTS];
 
   int socket;
   union artnet_packet packet;
@@ -125,6 +136,42 @@ int artnet_setup(struct artnet *artnet, const struct artnet_config *config)
   return 0;
 }
 
+int artnet_patch_output(struct artnet *artnet, uint16_t addr, artnet_output_func *func, void *arg)
+{
+  if (artnet->output_count >= ARTNET_PORTS) {
+    LOG_ERROR("too many outputs");
+    return -1;
+  }
+
+  if ((addr & 0xFFF0) != artnet->config.universe) {
+    LOG_ERROR("port address=%u mismatch with artnet.universe=%u", addr, artnet->config.universe);
+    return -1;
+  }
+
+  artnet->output_ports[artnet->output_count++] = (struct artnet_output){
+    .addr = addr,
+    .type = ARTNET_PORT_TYPE_DMX,
+    .func = func,
+    .arg = arg,
+  };
+
+  return 0;
+}
+
+int artnet_find_output(struct artnet *artnet, uint16_t addr, struct artnet_output **outputp)
+{
+  for (int port = 0; port < artnet->output_count; port++) {
+    struct artnet_output *output = &artnet->output_ports[port];
+
+    if (output->addr == addr) {
+      *outputp = output;
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
 int artnet_send(struct artnet *artnet, const struct artnet_sendrecv send)
 {
   if (sendto(artnet->socket, send.packet, send.len, 0, &send.addr, send.addrlen) < 0) {
@@ -180,6 +227,25 @@ int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *re
   snprintf((char *) reply->short_name, sizeof(reply->short_name), "%s", artnet->user_info->hostname);
   snprintf((char *) reply->long_name, sizeof(reply->long_name), "%s: %s", artnet_product, artnet->user_info->hostname);
 
+  reply->num_ports = artnet_pack_u16hl(artnet->output_count);
+
+  for (int port = 0; port < artnet->output_count; port++) {
+    struct artnet_output *output = &artnet->output_ports[port];
+
+    reply->port_types[port] = output->type | ARTNET_PORT_TYPE_OUTPUT;
+    reply->good_output[port] = ARTNET_OUTPUT_TRANSMITTING;
+    reply->sw_out[port] = output->addr & 0x0F;
+  }
+
+  return 0;
+}
+
+int artnet_dmx_output(struct artnet_output *output, uint8_t *data, size_t len, uint16_t seq)
+{
+  if (output->func) {
+    output->func(data, len, output->arg);
+  }
+
   return 0;
 }
 
@@ -219,6 +285,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
   }
 
   struct artnet_packet_dmx *dmx = &recv.packet->dmx;
+  uint16_t addr = (dmx->net << 8) | (dmx->sub_uni);
   uint16_t dmx_len = artnet_unpack_u16hl(dmx->length);
 
   if (recv.len < sizeof(*dmx) + dmx_len) {
@@ -226,15 +293,21 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
     return -1;
   }
 
-  LOG_INFO("seq=%u phy=%u addr=%u.%u len=%u",
+  LOG_INFO("seq=%u phy=%u addr=%u len=%u",
     dmx->sequence,
     dmx->physical,
-    dmx->sub_uni,
-    dmx->net,
+    addr,
     dmx_len
   );
 
-  return 0;
+  struct artnet_output *output;
+
+  if (artnet_find_output(artnet, addr, &output)) {
+    LOG_WARN("invalid output port addr");
+    return -1;
+  }
+
+  return artnet_dmx_output(output, dmx->data, dmx_len, dmx->sequence);
 }
 
 int artnet_op(struct artnet *artnet, struct artnet_sendrecv recv)
@@ -305,4 +378,9 @@ int init_artnet(const struct user_config *config, const struct user_info *user_i
   }
 
   return 0;
+}
+
+int patch_artnet_output(uint16_t addr, artnet_output_func *func, void *arg)
+{
+  return artnet_patch_output(&artnet, addr, func, arg);
 }

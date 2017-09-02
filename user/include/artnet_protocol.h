@@ -6,11 +6,23 @@
 #define ARTNET_PORT 6454
 #define ARTNET_ID { 'A', 'r', 't', '-', 'N', 'e', 't', '\0'}
 #define ARTNET_VERSION 14
+#define ARTNET_DMX_LEN 512
 
 enum artnet_opcode {
   ARTNET_OP_POLL        = 0x2000,
   ARTNET_OP_POLL_REPLY  = 0x2100,
   ARTNET_OP_DMX         = 0x5000,
+};
+
+enum artnet_port_type {
+  ARTNET_PORT_TYPE_DMX      = 0x00,
+
+  ARTNET_PORT_TYPE_OUTPUT   = 1 << 7,
+  ARTNET_PORT_TYPE_INPUT    = 1 << 6,
+};
+
+enum artnet_output_status {
+  ARTNET_OUTPUT_TRANSMITTING = 1 << 7,
 };
 
 enum artnet_status2 {
@@ -88,7 +100,10 @@ union artnet_packet {
   struct artnet_packet_header header;
   struct artnet_packet_poll poll;
   struct artnet_packet_poll_reply poll_reply;
-  struct artnet_packet_dmx dmx;
+  struct {
+    struct artnet_packet_dmx dmx;
+    uint8_t _dmx_payload[ARTNET_DMX_LEN];
+  };
 };
 
 inline uint16_t artnet_unpack_u16hl(artnet_u16hl f) { return ntohs(f.hl); }

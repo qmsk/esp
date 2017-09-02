@@ -12,11 +12,42 @@
 #define ARTNET_BUF 512
 
 const uint8_t artnet_id[] = { 'A', 'r', 't', '-', 'N', 'e', 't', '\0'};
+const uint16_t artnet_version = 14;
 
-struct __attribute__((packed)) artnet_packet {
+enum artnet_opcode {
+  ARTNET_OP_POLL        = 0x2000,
+  ARTNET_OP_POLL_REPLY  = 0x2100,
+  ARTNET_OP_DMX         = 0x5000,
+};
+
+struct __attribute__((packed)) artnet_packet_header {
   uint8_t id[8];
   uint16_t opcode;
   uint16_t version;
+};
+
+struct __attribute__((packed)) artnet_packet_poll {
+  struct artnet_packet_header header;
+
+  uint8_t ttm;
+  uint8_t priority;
+};
+struct __attribute__((packed)) artnet_packet_dmx {
+  struct artnet_packet_header header;
+
+  uint8_t sequence;
+  uint8_t physical;
+  uint8_t sub_uni;
+  uint8_t net;
+  uint16_t length;
+
+  uint8_t data[0];
+};
+
+union artnet_packet {
+  struct artnet_packet_header header;
+  struct artnet_packet_poll poll;
+  struct artnet_packet_dmx dmx;
 };
 
 struct artnet {
@@ -24,7 +55,7 @@ struct artnet {
 
   int socket;
 
-  struct artnet_packet packet;
+  union artnet_packet packet;
 } artnet;
 
 struct sockname {
@@ -89,21 +120,84 @@ int artnet_sockname(struct artnet *artnet, struct sockname *sockname)
   return 0;
 }
 
-int artnet_parse(struct artnet *artnet, struct artnet_packet *packet, int len)
+int artnet_parse_header(struct artnet *artnet, struct artnet_packet_header *header, int len)
 {
-  if (len < sizeof(*packet)) {
+  if (len < sizeof(*header)) {
     LOG_WARN("short packet");
     return -1;
   }
 
-  packet->version = ntohs(packet->version);
+  header->version = ntohs(header->version);
 
-  if (memcmp(packet->id, artnet_id, sizeof(artnet_id))) {
+  if (memcmp(header->id, artnet_id, sizeof(artnet_id))) {
     LOG_WARN("invalid id");
     return -1;
   }
 
+  if (header->version < artnet_version) {
+    LOG_WARN("invalid version: %u", header->version);
+    return -1;
+  }
+
+  LOG_INFO("id=%.8s opcode=%04x version=%u",
+    header->id,
+    header->opcode,
+    header->version
+  );
+
   return 0;
+}
+
+int artnet_op_poll(struct artnet *artnet, struct artnet_packet_poll *poll, int len)
+{
+  if (len < sizeof(*poll)) {
+    LOG_WARN("short p<cket");
+    return -1;
+  }
+
+  LOG_INFO("ttm=%02x priority=%u", poll->ttm, poll->priority);
+
+  return 0;
+}
+
+int artnet_op_dmx(struct artnet *artnet, struct artnet_packet_dmx *dmx, int len)
+{
+  if (len < sizeof(*dmx)) {
+    LOG_WARN("short packet header");
+    return -1;
+  }
+
+  dmx->length = ntohs(dmx->length);
+
+  if (len < sizeof(*dmx) + dmx->length) {
+    LOG_WARN("short packet payload");
+    return -1;
+  }
+
+  LOG_INFO("seq=%u phy=%u addr=%u.%u len=%u",
+    dmx->sequence,
+    dmx->physical,
+    dmx->sub_uni,
+    dmx->net,
+    dmx->length
+  );
+
+  return 0;
+}
+
+int artnet_packet(struct artnet *artnet, union artnet_packet *packet, int len)
+{
+  switch (packet->header.opcode) {
+  case ARTNET_OP_POLL:
+    return artnet_op_poll(artnet, &packet->poll, len);
+
+  case ARTNET_OP_DMX:
+  return artnet_op_dmx(artnet, &packet->dmx, len);
+
+  default:
+    LOG_WARN("unknown opcode: %04x", packet->header.opcode);
+    return 0;
+  }
 }
 
 int artnet_recv(struct artnet *artnet)
@@ -113,13 +207,11 @@ int artnet_recv(struct artnet *artnet)
   if ((ret = recv(artnet->socket, &artnet->packet, sizeof(artnet->packet), 0)) < 0) {
     LOG_ERROR("recv");
     return -1;
-  } else if ((err = artnet_parse(artnet, &artnet->packet, ret))) {
-    return -1;
+  } else if ((err = artnet_parse_header(artnet, &artnet->packet.header, ret))) {
+    return err;
   } else {
-    LOG_INFO("id=%.8s opcode=%04x version=%04x", artnet->packet.id, artnet->packet.opcode, artnet->packet.version);
+    return artnet_packet(artnet, &artnet->packet, ret);
   }
-
-  return 0;
 }
 
 void artnet_task(void *arg)

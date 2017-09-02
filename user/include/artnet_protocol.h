@@ -1,6 +1,8 @@
 #ifndef __ARTNET_PROTOCOL_H__
 #define __ARTNET_PROTOCOL_H__
 
+#include <lwip/def.h>
+
 #define ARTNET_PORT 6454
 #define ARTNET_ID { 'A', 'r', 't', '-', 'N', 'e', 't', '\0'}
 #define ARTNET_VERSION 14
@@ -11,10 +13,20 @@ enum artnet_opcode {
   ARTNET_OP_DMX         = 0x5000,
 };
 
+enum artnet_status2 {
+  ARTNET_STATUS2_ARTNET3_SUPPORT  = 1 << 3,
+  ARTNET_STATUS2_DHCP_SUPPORT     = 1 << 2,
+  ARTNET_STATUS2_DHCP_ENABLE      = 1 << 1,
+  ARTNET_STATUS2_WEB_SUPPORT      = 1 << 0,
+};
+
+typedef struct __attribute__((packed)) { uint16_t lh; } artnet_u16lh;
+typedef struct __attribute__((packed)) { uint16_t hl; } artnet_u16hl;
+
 struct __attribute__((packed)) artnet_packet_header {
   uint8_t id[8];
-  uint16_t opcode;
-  uint16_t version;
+  artnet_u16lh opcode;
+  artnet_u16hl version;
 };
 
 struct __attribute__((packed)) artnet_packet_poll {
@@ -29,18 +41,18 @@ struct __attribute__((packed)) artnet_packet_poll_reply {
   uint16_t opcode;
 
   uint32_t ip_address;
-  uint16_t port;
-  uint16_t version_info;
+  artnet_u16lh port_number;
+  artnet_u16hl version_info;
   uint8_t net_switch;
   uint8_t sub_switch;
-  uint16_t oem;
+  artnet_u16hl oem;
   uint8_t ubea_version;
   uint8_t status1;
-  uint16_t esta_man;
+  artnet_u16lh esta_man;
   uint8_t short_name[18];
   uint8_t long_name[64];
   uint8_t node_report[64];
-  uint16_t num_ports;
+  artnet_u16hl num_ports;
   uint8_t port_types[4];
   uint8_t good_input[4];
   uint8_t good_output[4];
@@ -67,7 +79,7 @@ struct __attribute__((packed)) artnet_packet_dmx {
   uint8_t physical;
   uint8_t sub_uni;
   uint8_t net;
-  uint16_t length;
+  artnet_u16hl length;
 
   uint8_t data[0];
 };
@@ -78,5 +90,11 @@ union artnet_packet {
   struct artnet_packet_poll_reply poll_reply;
   struct artnet_packet_dmx dmx;
 };
+
+inline uint16_t artnet_unpack_u16hl(artnet_u16hl f) { return ntohs(f.hl); }
+inline uint16_t artnet_unpack_u16lh(artnet_u16lh f) { return f.lh; }
+
+inline artnet_u16hl artnet_pack_u16hl(uint16_t u16) { return (artnet_u16hl){ htons(u16) }; }
+inline artnet_u16lh artnet_pack_u16lh(uint16_t u16) { return (artnet_u16lh){ u16 }; }
 
 #endif

@@ -11,6 +11,8 @@
 #define ARTNET_TASK_STACK 512
 #define ARTNET_BUF 512
 
+static const char *artnet_product = "https://github.com/SpComb/esp-projects";
+
 struct artnet {
   xTaskHandle task;
 
@@ -110,29 +112,42 @@ int artnet_parse_header(struct artnet *artnet, struct artnet_packet_header *head
     return -1;
   }
 
-  header->version = ntohs(header->version);
+  uint16_t version = artnet_unpack_u16hl(header->version);
 
   if (memcmp(header->id, artnet_id, sizeof(artnet_id))) {
     LOG_WARN("invalid id");
     return -1;
   }
 
-  if (header->version < ARTNET_VERSION) {
-    LOG_WARN("invalid version: %u", header->version);
+  if (version < ARTNET_VERSION) {
+    LOG_WARN("invalid version: %u", version);
     return -1;
   }
 
   LOG_INFO("id=%.8s opcode=%04x version=%u",
     header->id,
     header->opcode,
-    header->version
+    version
   );
+
+  return 0;
+}
+
+int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *reply)
+{
+  reply->port_number = artnet_pack_u16lh(ARTNET_PORT);
+  reply->status1 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
+
+  snprintf((char *) reply->short_name, sizeof(reply->short_name), "%s", "unknown");
+  snprintf((char *) reply->long_name, sizeof(reply->long_name), "%s: %s", artnet_product, "unknown");
 
   return 0;
 }
 
 int artnet_op_poll(struct artnet *artnet, const struct artnet_sendrecv recv)
 {
+  int err;
+
   if (recv.len < sizeof(recv.packet->poll)) {
     LOG_WARN("short p<cket");
     return -1;
@@ -150,6 +165,10 @@ int artnet_op_poll(struct artnet *artnet, const struct artnet_sendrecv recv)
     .opcode = ARTNET_OP_POLL_REPLY,
   };
 
+  if ((err = artnet_poll_reply(artnet, &send.packet->poll_reply))) {
+    return err;
+  }
+
   return artnet_send(artnet, send);
 }
 
@@ -161,10 +180,9 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
   }
 
   struct artnet_packet_dmx *dmx = &recv.packet->dmx;
+  uint16_t dmx_len = artnet_unpack_u16hl(dmx->length);
 
-  dmx->length = ntohs(dmx->length);
-
-  if (recv.len < sizeof(*dmx) + dmx->length) {
+  if (recv.len < sizeof(*dmx) + dmx_len) {
     LOG_WARN("short packet payload");
     return -1;
   }
@@ -174,7 +192,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
     dmx->physical,
     dmx->sub_uni,
     dmx->net,
-    dmx->length
+    dmx_len
   );
 
   return 0;
@@ -182,7 +200,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
 
 int artnet_op(struct artnet *artnet, struct artnet_sendrecv recv)
 {
-  switch (recv.packet->header.opcode) {
+  switch (artnet_unpack_u16lh(recv.packet->header.opcode)) {
   case ARTNET_OP_POLL:
     return artnet_op_poll(artnet, recv);
 

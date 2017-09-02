@@ -7,6 +7,7 @@
 #include "cli.h"
 #include "wifi.h"
 #include "dmx.h"
+#include "artnet.h"
 
 #include <esp_common.h>
 
@@ -70,6 +71,11 @@ void user_init(void)
 
   if (init_dmx(&user_config)) {
     printf("FATAL: init_dmx\n");
+    return;
+  }
+
+  if (init_artnet(&user_config)) {
+    printf("FATAL: init_artnet\n");
     return;
   }
 }

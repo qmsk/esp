@@ -76,7 +76,7 @@ void user_init(void)
     return;
   }
 
-  if (init_artnet(&user_config)) {
+  if (init_artnet(&user_config, &user_info)) {
     printf("FATAL: init_artnet\n");
     return;
   }

@@ -40,7 +40,7 @@ struct __attribute__((packed)) artnet_packet_poll_reply {
   uint8_t id[8];
   uint16_t opcode;
 
-  uint32_t ip_address;
+  uint8_t ip_address[4];
   artnet_u16lh port_number;
   artnet_u16hl version_info;
   uint8_t net_switch;

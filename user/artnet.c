@@ -15,6 +15,7 @@ static const char *artnet_product = "https://github.com/SpComb/esp-projects";
 
 struct artnet {
   xTaskHandle task;
+  const struct user_info *user_info;
 
   int socket;
 
@@ -37,7 +38,14 @@ struct sockname {
   char buf[32];
 };
 
-int artnet_init(struct artnet *artnet)
+int artnet_init(struct artnet *artnet, const struct user_info *user_info)
+{
+  artnet->user_info = user_info;
+
+  return 0;
+}
+
+int artnet_listen(struct artnet *artnet)
 {
   struct sockaddr_in bind_addr = {
     .sin_family = AF_INET,
@@ -135,11 +143,14 @@ int artnet_parse_header(struct artnet *artnet, struct artnet_packet_header *head
 
 int artnet_poll_reply(struct artnet *artnet, struct artnet_packet_poll_reply *reply)
 {
-  reply->port_number = artnet_pack_u16lh(ARTNET_PORT);
-  reply->status1 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
+  memcpy(&reply->ip_address, &artnet->user_info->ip, 4);
+  memcpy(reply->mac, artnet->user_info->mac, 6);
 
-  snprintf((char *) reply->short_name, sizeof(reply->short_name), "%s", "unknown");
-  snprintf((char *) reply->long_name, sizeof(reply->long_name), "%s: %s", artnet_product, "unknown");
+  reply->port_number = artnet_pack_u16lh(ARTNET_PORT);
+  reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
+
+  snprintf((char *) reply->short_name, sizeof(reply->short_name), "%s", artnet->user_info->hostname);
+  snprintf((char *) reply->long_name, sizeof(reply->long_name), "%s: %s", artnet_product, artnet->user_info->hostname);
 
   return 0;
 }
@@ -248,12 +259,16 @@ void artnet_task(void *arg)
   }
 }
 
-int init_artnet(struct user_config *config)
+int init_artnet(const struct user_config *config, const struct user_info *user_info)
 {
   struct sockname sockname;
   int err;
 
-  if ((err = artnet_init(&artnet))) {
+  if ((err = artnet_init(&artnet, user_info))) {
+    return err;
+  }
+
+  if ((err = artnet_listen(&artnet))) {
     return err;
   }
 

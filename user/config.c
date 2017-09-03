@@ -21,7 +21,7 @@ struct user_config user_config = {
   },
 };
 
-int read_config(struct user_config *config)
+int config_read(struct user_config *config)
 {
   int fd, ret, err = 0;
 
@@ -49,7 +49,7 @@ error:
   return err;
 }
 
-int write_config(struct user_config *config)
+int config_write(struct user_config *config)
 {
   int fd, ret, err = 0;
 
@@ -72,15 +72,15 @@ error:
   return err;
 }
 
-int upgrade_config(struct user_config *config, const struct user_config *upgrade_config)
+int config_upgrade(struct user_config *config, const struct user_config *upgrade_config)
 {
-  LOG_INFO("invalid config version=%d: expected version %d", upgrade_config->version, config->version);
+  LOG_WARN("invalid config version=%d: expected version %d", upgrade_config->version, config->version);
 
   // TODO: upgrade/downgrade?
-  return write_config(config);
+  return config_write(config);
 }
 
-int load_config(struct user_config *config, const struct user_config *load_config)
+int config_load(struct user_config *config, const struct user_config *load_config)
 {
   *config = *load_config;
 
@@ -94,14 +94,14 @@ int init_config(struct user_config *config)
   struct user_config stored_config;
   int err;
 
-  if ((err = read_config(&stored_config))) {
+  if ((err = config_read(&stored_config))) {
     LOG_WARN("reset config on read error: %d", err);
 
-    return write_config(config);
+    return config_write(config);
   } else if (stored_config.version != config->version) {
-    return upgrade_config(config, &stored_config);
+    return config_upgrade(config, &stored_config);
   } else {
-    return load_config(config, &stored_config);
+    return config_load(config, &stored_config);
   }
 }
 

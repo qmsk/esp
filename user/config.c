@@ -199,6 +199,8 @@ int config_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGC;
   } else if ((err = config_set(tab, value))) {
     return err;
+  } else if ((err = config_write(&user_config))) {
+    return err;
   }
 
   return config_print(tab);

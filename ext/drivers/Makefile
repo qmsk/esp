@@ -15,7 +15,7 @@ ifndef PDIR
 UP_EXTRACT_DIR = ..
 SUBDIRS = gpio uart
 GEN_LIBS = libgpio.a libuart.a
-COMPONENTS_libgpio = gpio/gpio.o
+COMPONENTS_libgpio = gpio/gpio.o gpio/gpio16.o
 COMPONENTS_libuart = uart/uart.o
 endif
 

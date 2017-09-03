@@ -22,6 +22,8 @@ enum GPIO {
   GPIO_15,
 
   GPIO_COUNT,
+
+  GPIO_16     = 16, // special
 };
 
 enum GPIO_OutputMode {
@@ -41,5 +43,8 @@ void GPIO_OutputEnable(enum GPIO gpio);
 void GPIO_Output(enum GPIO gpio, bool level);
 void GPIO_OutputHigh(enum GPIO gpio);
 void GPIO_OutputLow(enum GPIO gpio);
+
+void GPIO16_OutputEnable();
+void GPIO16_Output(bool value);
 
 #endif

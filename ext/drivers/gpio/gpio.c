@@ -60,7 +60,7 @@ static const uint32_t gpio_func_bits_map[GPIO_COUNT] = {
 
 bool GPIO_Exists(enum GPIO gpio)
 {
-  return (gpio < GPIO_COUNT);
+  return (gpio < GPIO_COUNT) || (gpio == GPIO_16);
 }
 
 static inline void GPIO_SelectPinFunc(enum GPIO gpio, uint32 flags)
@@ -75,33 +75,51 @@ static inline void GPIO_SetPin(enum GPIO gpio, uint32_t bits)
 
 inline void GPIO_OutputEnable(enum GPIO gpio)
 {
-  GPIO_OUTPUT_ENABLE(gpio);
+  if (gpio == GPIO_16)
+    GPIO16_OutputEnable();
+  else if (gpio < GPIO_COUNT)
+    GPIO_OUTPUT_ENABLE(gpio);
 }
 
 inline void GPIO_Output(enum GPIO gpio, bool level)
 {
-  if (level)
-    GPIO_OUTPUT_HIGH(gpio);
-  else
-    GPIO_OUTPUT_LOW(gpio);
+  if (gpio == GPIO_16) {
+    GPIO16_Output(level);
+  } else if (gpio < GPIO_COUNT) {
+    if (level)
+      GPIO_OUTPUT_HIGH(gpio);
+    else
+      GPIO_OUTPUT_LOW(gpio);
+  }
 }
 
 void GPIO_OutputHigh(enum GPIO gpio)
 {
-  GPIO_OUTPUT_HIGH(gpio);
+  if (gpio == GPIO_16)
+    GPIO16_Output(1);
+  else if (gpio < GPIO_COUNT)
+    GPIO_OUTPUT_HIGH(gpio);
 }
 
 void GPIO_OutputLow(enum GPIO gpio)
 {
-  GPIO_OUTPUT_LOW(gpio);
+  if (gpio == GPIO_16)
+    GPIO16_Output(0);
+  else if (gpio < GPIO_COUNT)
+    GPIO_OUTPUT_LOW(gpio);
 }
 
 void GPIO_SetupOutput(enum GPIO gpio, enum GPIO_OutputMode mode)
 {
-  GPIO_Output(gpio, (mode & GPIO_OUTPUT_HIGH));
-  GPIO_SetPin(gpio,
-    ((mode & GPIO_OUTPUT_OPEN_DRAIN) ? GPIO_PIN_DRIVER_MASK : 0)
-  );
-  GPIO_OutputEnable(gpio);
-  GPIO_SelectPinFunc(gpio, 0);
+  if (gpio == GPIO_16) {
+    GPIO16_Output((mode & GPIO_OUTPUT_HIGH));
+    GPIO16_OutputEnable();
+  } else if (gpio < GPIO_COUNT) {
+    GPIO_Output(gpio, (mode & GPIO_OUTPUT_HIGH));
+    GPIO_SetPin(gpio,
+      ((mode & GPIO_OUTPUT_OPEN_DRAIN) ? GPIO_PIN_DRIVER_MASK : 0)
+    );
+    GPIO_OutputEnable(gpio);
+    GPIO_SelectPinFunc(gpio, 0);
+  }
 }

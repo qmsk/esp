@@ -77,11 +77,10 @@ void dmx_artnet_task(void *arg)
 
 int dmx_setup(struct dmx *dmx, struct dmx_config *config)
 {
-  struct GPIO_OutputConfig gpio_config = {};
   struct uart *uart = &uart1;
   int err;
 
-  GPIO_SetupOutput(config->gpio, &gpio_config);
+  GPIO_SetupOutput(config->gpio, GPIO_OUTPUT_LOW);
 
   if ((err = uart_setup(uart, &dmx_uart_config))) {
     LOG_ERROR("uart_setup");
@@ -101,6 +100,8 @@ int dmx_setup(struct dmx *dmx, struct dmx_config *config)
       return err;
     }
   }
+
+  LOG_INFO("output enable: gpio=%u", config->gpio);
 
   // enable TX
   GPIO_OutputHigh(config->gpio);

@@ -20,15 +20,25 @@ enum GPIO {
   GPIO_13,
   GPIO_14,
   GPIO_15,
+
+  GPIO_COUNT,
 };
 
-struct GPIO_OutputConfig {
+enum GPIO_OutputMode {
+  GPIO_OUTPUT               = 0,
 
+  GPIO_OUTPUT_LOW           = 0, // initialize output low
+  GPIO_OUTPUT_HIGH          = 1, // initialize output high
+
+  GPIO_OUTPUT_OPEN_DRAIN    = 2, // TODO: low => floating, high => pull output to ground?
 };
 
-void GPIO_SetupOutput(enum GPIO gpio, const struct GPIO_OutputConfig *config);
+bool GPIO_Exists(enum GPIO gpio);
 
-void GPIO_Output(enum GPIO gpio, bool output);
+void GPIO_SetupOutput(enum GPIO gpio, enum GPIO_OutputMode mode);
+
+void GPIO_OutputEnable(enum GPIO gpio);
+void GPIO_Output(enum GPIO gpio, bool level);
 void GPIO_OutputHigh(enum GPIO gpio);
 void GPIO_OutputLow(enum GPIO gpio);
 

@@ -80,7 +80,12 @@ int dmx_setup(struct dmx *dmx, struct dmx_config *config)
   struct uart *uart = &uart1;
   int err;
 
-  GPIO_SetupOutput(config->gpio, GPIO_OUTPUT_LOW);
+  if (GPIO_Exists(config->gpio)) {
+    GPIO_SetupOutput(config->gpio, GPIO_OUTPUT_LOW);
+  } else {
+    LOG_ERROR("invalid gpio=%u", config->gpio);
+    return -1;
+  }
 
   if ((err = uart_setup(uart, &dmx_uart_config))) {
     LOG_ERROR("uart_setup");

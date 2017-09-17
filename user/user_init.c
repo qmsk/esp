@@ -8,6 +8,7 @@
 #include "wifi.h"
 #include "dmx.h"
 #include "artnet.h"
+#include "spi.h"
 
 #include <esp_common.h>
 
@@ -53,6 +54,11 @@ void user_init(void)
 
   if (init_spiffs()) {
     printf("FATAL: init_spiffs\n");
+    return;
+  }
+
+  if (init_spi()) {
+    printf("FATAL: init_spi\n");
     return;
   }
 

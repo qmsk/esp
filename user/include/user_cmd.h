@@ -6,6 +6,7 @@
 extern const struct cmdtab config_cmdtab;
 extern const struct cmdtab wifi_cmdtab;
 extern const struct cmdtab dmx_cmdtab;
+extern const struct cmdtab spi_cmdtab;
 
 extern const struct cmdtab user_cmdtab;
 

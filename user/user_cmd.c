@@ -20,6 +20,7 @@ static const struct cmd user_commands[] = {
   { "config", .describe = "Configuration commands", .subcommands = &config_cmdtab },
   { "wifi",   .describe = "WiFi commands", .subcommands = &wifi_cmdtab },
   { "dmx",    .describe = "DMX", .subcommands = &dmx_cmdtab },
+  { "spi",    .describe = "SPI", .subcommands = &spi_cmdtab },
   {}
 };
 

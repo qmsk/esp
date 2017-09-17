@@ -91,6 +91,7 @@ void SPI_SetupMaster(enum SPI spi, struct SPI_MasterConfig config)
   SPI_DEBUG(spi, "setup-pre");
 
   WRITE_PERI_REG_MASK(SPI_PIN(spi), SPI_IDLE_EDGE, mode_cpol);
+
   CLEAR_PERI_REG_MASK(SPI_CTRL(spi),
       SPI_WR_BIT_ORDER  // 0 = MSB first
     | SPI_RD_BIT_ORDER  // 0 = MSB first
@@ -98,14 +99,21 @@ void SPI_SetupMaster(enum SPI spi, struct SPI_MasterConfig config)
     | SPI_DOUT_MODE | SPI_QOUT_MODE // 0 = single line
     // TODO: SPI_FASTRD_MODE?
   );
+
+  // TODO: SPI_CTRL2 SPI_MISO_DELAY_NUM = 1?
+  /*WRITE_PERI_REG_MASK(SPI_CTRL2(spi), (SPI_MOSI_DELAY_NUM << SPI_MOSI_DELAY_NUM_S) | (SPI_MOSI_DELAY_MODE << SPI_MOSI_DELAY_MODE_S),
+      (0 & SPI_MOSI_DELAY_NUM) << SPI_MOSI_DELAY_NUM_S      // delay 0 cycles (80MHz sys clock)
+    | (1 & SPI_MOSI_DELAY_MODE) << SPI_MOSI_DELAY_MODE_S    // delay mode 1 = half-cycle (spi clock)
+  );*/
+
   CLEAR_PERI_REG_MASK(SPI_USER(spi),
       SPI_FLASH_MODE
+    | SPI_WR_BYTE_ORDER // 0 = big-endian
+    | SPI_RD_BYTE_ORDER // 0 = big-endian
       // TODO: SPI_USR_*_HIGHPART?
   );
   SET_PERI_REG_MASK(SPI_USER(spi),
       SPI_CS_SETUP | SPI_CS_HOLD // TODO: ???
-    | SPI_WR_BYTE_ORDER // 1 = XXX: little-endian?
-    | SPI_RD_BYTE_ORDER // 1 = XXX: little-endian?
   );
   WRITE_PERI_REG_BITS(SPI_USER(spi), SPI_CK_OUT_EDGE,
       ((mode_cpha != mode_cpol) ? SPI_CK_OUT_EDGE : 0)
@@ -114,10 +122,54 @@ void SPI_SetupMaster(enum SPI spi, struct SPI_MasterConfig config)
       SPI_SLAVE_MODE // 0 = master
   );
 
-  // TODO: SPI_CTRL2 SPI_MISO_DELAY_NUM = 1?
-
   SPI_SetClock(spi, config.clock);
   SPI_SelectPinFunc(spi);
 
   SPI_DEBUG(spi, "setup-post");
+}
+
+static inline void SPI_Write(enum SPI spi, const SPI_DataBuf data_buf, unsigned bitlen)
+{
+  for (unsigned i = 0; i <= bitlen / 32 && i < 16; i++) {
+    WRITE_PERI_REG(SPI_W0(spi) + (i * 0x4), data_buf[i]);
+  }
+}
+
+static inline void SPI_Wait(enum SPI spi)
+{
+  while (READ_PERI_REG(SPI_CMD(spi)) & SPI_USR)
+    ;
+}
+
+static inline void SPI_Start(enum SPI spi)
+{
+  SET_PERI_REG_MASK(SPI_CMD(spi), SPI_USR);
+}
+
+void SPI_Send(enum SPI spi, const struct SPI_Operation *op)
+{
+  SPI_Wait(spi);
+
+  WRITE_PERI_REG_BITS(SPI_USER(spi), SPI_USR_COMMAND | SPI_USR_ADDR | SPI_USR_DUMMY | SPI_USR_MISO | SPI_USR_MOSI,
+      (op->command_bits) ? SPI_USR_COMMAND : 0
+    | (op->address_bits) ? SPI_USR_ADDR : 0
+    | (op->dummy_cycles) ? SPI_USR_DUMMY : 0
+    | (op->data_bits) ? SPI_USR_MOSI : 0
+  );
+  WRITE_PERI_REG(SPI_USER1(spi),
+      ((op->address_bits - 1) & SPI_USR_ADDR_BITLEN) << SPI_USR_ADDR_BITLEN_S
+    | ((op->data_bits - 1) & SPI_USR_MOSI_BITLEN) << SPI_USR_MOSI_BITLEN_S
+    | ((op->dummy_cycles - 1) & SPI_USR_DUMMY_CYCLELEN) << SPI_USR_DUMMY_CYCLELEN_S
+  );
+  WRITE_PERI_REG(SPI_USER2(spi),
+      ((op->command_bits - 1) & SPI_USR_COMMAND_BITLEN) << SPI_USR_COMMAND_BITLEN_S
+    | (op->command & SPI_USR_COMMAND_VALUE) << SPI_USR_COMMAND_VALUE_S
+  );
+  WRITE_PERI_REG(SPI_ADDR(spi), op->address);
+
+  SPI_Write(spi, op->data_buf, op->data_bits);
+
+  SPI_DEBUG(spi, "send");
+
+  SPI_Start(spi);
 }

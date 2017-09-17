@@ -37,6 +37,13 @@ void print_system()
   printf("*---------------------------------------\n");
 }
 
+void print_system_post()
+{
+  printf("*---------------------------------------\n");
+  printf("|\tHeap free=%d\n", system_get_free_heap_size());
+  printf("*---------------------------------------\n");
+}
+
 struct user_info user_info;
 
 void user_init(void)
@@ -92,4 +99,6 @@ void user_init(void)
     printf("FATAL: init_p9813\n");
     return;
   }
+
+  print_system_post();
 }

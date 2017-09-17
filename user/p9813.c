@@ -6,6 +6,7 @@
 #include "logging.h"
 
 #include <stdlib.h>
+#include <drivers/gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -29,9 +30,11 @@ void p9813_packet_set(struct p9813_packet *packet, uint8_t b, uint8_t g, uint8_t
 
 struct p9813 {
   struct spi *spi;
+  enum GPIO gpio;
 
   unsigned count;
 
+  bool active;
   struct p9813_packet *buf;
 
   xQueueHandle artnet_queue;
@@ -55,6 +58,22 @@ int p9813_init_spi(struct p9813 *p9813, struct spi *spi)
   }
 
   LOG_INFO("mode=%u clock=%u", spi_config.mode, spi_config.clock);
+
+  return 0;
+}
+
+int p9813_init_gpio(struct p9813 *p9813, unsigned gpio)
+{
+  if (!GPIO_Exists(gpio)) {
+    LOG_ERROR("invalid gpio=%u", gpio);
+    return -1;
+  }
+
+  p9813->gpio = gpio;
+
+  LOG_INFO("gpio=%u", p9813->gpio);
+
+  GPIO_SetupOutput(p9813->gpio, GPIO_OUTPUT_LOW);
 
   return 0;
 }
@@ -107,6 +126,11 @@ int p9813_init(struct p9813 *p9813, const struct p9813_config *config, struct sp
   if ((err = p9813_init_spi(p9813, spi)))
     return err;
 
+  if (config->gpio) {
+    if ((err = p9813_init_gpio(p9813, config->gpio)))
+      return err;
+  }
+
   if ((err = p9813_init_tx(p9813, config->count)))
     return err;
 
@@ -116,6 +140,26 @@ int p9813_init(struct p9813 *p9813, const struct p9813_config *config, struct sp
   }
 
   return 0;
+}
+
+void p9813_off(struct p9813 *p9813)
+{
+  LOG_INFO("gpio=%u low", p9813->gpio);
+
+  GPIO_OutputLow(p9813->gpio);
+
+  p9813->active = false;
+}
+
+void p9813_active(struct p9813 *p9813)
+{
+  if (!p9813->active) {
+    LOG_INFO("gpio=%u high", p9813->gpio);
+
+    GPIO_OutputHigh(p9813->gpio);
+
+    p9813->active = true;
+  }
 }
 
 int p9813_tx(struct p9813 *p9813)
@@ -148,6 +192,8 @@ int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
       dmx->data[i * 3 + 0]  // r
     );
   }
+
+  p9813_active(p9813);
 
   return p9813_tx(p9813);
 }
@@ -204,12 +250,26 @@ int p9813_cmd_set(int argc, char **argv, void *ctx)
   }
 
   p9813_packet_set(&p9813->buf[1 + index], (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 0) & 0xFF);
+  p9813_active(p9813);
 
   return p9813_tx(p9813);
 }
 
+int p9813_cmd_off(int argc, char **argv, void *ctx)
+{
+  struct p9813 *p9813 = ctx;
+
+  if (argc > 1)
+    return -CMD_ERR_ARGC;
+
+  p9813_off(p9813);
+
+  return 0;
+}
+
 const struct cmd p9813_commands[] = {
   { "set",  p9813_cmd_set,  &p9813, .usage = "INDEX RGB", .describe = "Set values" },
+  { "off",  p9813_cmd_off,  &p9813, .usage = "", .describe = "Power off" },
   { }
 };
 

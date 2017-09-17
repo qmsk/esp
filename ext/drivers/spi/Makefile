@@ -12,12 +12,7 @@
 #     a generated lib/image xxx.a ()
 #
 ifndef PDIR
-UP_EXTRACT_DIR = ..
-SUBDIRS = gpio spi uart
-GEN_LIBS = libgpio.a libspi.a libuart.a
-COMPONENTS_libgpio = gpio/gpio.o gpio/gpio16.o
-COMPONENTS_libspi = spi/spi_master.o
-COMPONENTS_libuart = uart/uart.o
+
 endif
 
 

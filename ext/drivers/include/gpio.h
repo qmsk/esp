@@ -1,5 +1,5 @@
-#ifndef __GPIO_H__
-#define __GPIO_H__
+#ifndef __DRIVERS_GPIO_H__
+#define __DRIVERS_GPIO_H__
 
 #include <stdbool.h>
 

@@ -191,8 +191,8 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
     output->seq = seq;
   }
 
-  if (!xQueueSend(output->queue, dmx, 0)) {
-    LOG_WARN("skip addr=%u seq=%d: queue full", output->addr, seq);
+  if (!xQueueOverwrite(output->queue, dmx)) {
+    LOG_WARN("addr=%u seq=%d xQueueOverwrite", output->addr, seq);
   }
 
   return 0;

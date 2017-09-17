@@ -17,6 +17,8 @@ struct artnet_dmx {
  *
  * @param addr Art-Net universe address, must match the config.artnet.universe + 0..16
  * @param queue of struct artnet_dmx, written from the artnet task
+ *
+ * XXX: uses xQueueOverwrite to keep the latest packet, queue MUST be of size 1
  */
 int start_artnet_output(uint16_t addr, xQueueHandle queue);
 

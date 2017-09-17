@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include "spi.h"
 #include "spi_register.h"
 

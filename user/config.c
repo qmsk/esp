@@ -128,6 +128,9 @@ static struct config_tab config_dmx_gpio = { CONFIG_TYPE_UINT16, "dmx.gpio",
 static struct config_tab config_dmx_artnet_universe = { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
   .value = { .uint16 = &user_config.dmx.artnet_universe },
 };
+static struct config_tab config_p9813_count = { CONFIG_TYPE_UINT16, "p9813_count",
+  .value = { .uint16 = &user_config.p9813.count },
+};
 
 int config_set(const struct config_tab *tab, const char *value)
 {
@@ -215,6 +218,7 @@ const struct cmd config_commands[] = {
   { "artnet.universe",         config_cmd, &config_artnet_universe,     .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output port base address" },
   { "dmx.artnet-universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
   { "dmx.gpio",                config_cmd, &config_dmx_gpio,            .usage = "[GPIO]", .describe = "DMX Output Enable GPIO pin (low during boot)" },
+  { "p9813.count",             config_cmd, &config_p9813_count,         .usage = "[COUNT]", .describe = "Number of chained P9813 controllers" },
   {}
 };
 

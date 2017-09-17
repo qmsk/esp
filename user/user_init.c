@@ -9,6 +9,7 @@
 #include "dmx.h"
 #include "artnet.h"
 #include "spi.h"
+#include "p9813.h"
 
 #include <esp_common.h>
 
@@ -84,6 +85,11 @@ void user_init(void)
 
   if (init_artnet(&user_config, &user_info)) {
     printf("FATAL: init_artnet\n");
+    return;
+  }
+
+  if (init_p9813(&user_config)) {
+    printf("FATAL: init_p9813\n");
     return;
   }
 }

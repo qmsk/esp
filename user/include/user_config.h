@@ -13,6 +13,7 @@
 #include "local/user_config.h"
 #include "artnet_config.h"
 #include "dmx_config.h"
+#include "p9813_config.h"
 
 struct user_config {
   uint16 version;
@@ -21,6 +22,7 @@ struct user_config {
 
   struct artnet_config artnet;
   struct dmx_config dmx;
+  struct p9813_config p9813;
 };
 
 #define USER_CONFIG_VERSION 4

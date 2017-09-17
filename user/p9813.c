@@ -151,14 +151,27 @@ void p9813_off(struct p9813 *p9813)
   p9813->active = false;
 }
 
+void p9813_on(struct p9813 *p9813)
+{
+  LOG_INFO("gpio=%u high", p9813->gpio);
+
+  GPIO_OutputHigh(p9813->gpio);
+
+  p9813->active = true;
+}
+
+void p9813_inactive(struct p9813 *p9813)
+{
+  if (p9813->active) {
+    // TODO: timer?
+    p9813_off(p9813);
+  }
+}
+
 void p9813_active(struct p9813 *p9813)
 {
   if (!p9813->active) {
-    LOG_INFO("gpio=%u high", p9813->gpio);
-
-    GPIO_OutputHigh(p9813->gpio);
-
-    p9813->active = true;
+    p9813_on(p9813);
   }
 }
 
@@ -183,17 +196,28 @@ int p9813_tx(struct p9813 *p9813)
 
 int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
 {
+  bool active = false;
+
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < p9813->count && dmx->len >= (i + 1) * 3; i++) {
-    p9813_packet_set(&p9813->buf[1 + i],
+    struct p9813_packet *packet = &p9813->buf[1 + i];
+
+    p9813_packet_set(packet,
       dmx->data[i * 3 + 2], // b
       dmx->data[i * 3 + 1], // g
       dmx->data[i * 3 + 0]  // r
     );
+
+    if (packet->r || packet->g || packet->b)
+      active = true;
   }
 
-  p9813_active(p9813);
+  if (active) {
+    p9813_active(p9813);
+  } else {
+    p9813_inactive(p9813);
+  }
 
   return p9813_tx(p9813);
 }

@@ -75,9 +75,9 @@ void SPI_SetClock(enum SPI spi, enum SPI_Clock clkdiv)
 
     WRITE_PERI_REG(SPI_CLOCK(spi),
           ((clkdiv_pre - 1) & SPI_CLKDIV_PRE) << SPI_CLKDIV_PRE_S
-      ||  ((clkcnt_n - 1) & SPI_CLKCNT_N) << SPI_CLKCNT_N_S
-      ||  ((clkcnt_n / 2 - 1) & SPI_CLKCNT_H) << SPI_CLKCNT_H_S   // XXX: +1?
-      ||  ((clkcnt_n - 1) & SPI_CLKCNT_L) << SPI_CLKCNT_L_S
+      |   ((clkcnt_n - 1) & SPI_CLKCNT_N) << SPI_CLKCNT_N_S
+      |   ((clkcnt_n / 2 - 1) & SPI_CLKCNT_H) << SPI_CLKCNT_H_S   // XXX: +1?
+      |   ((clkcnt_n - 1) & SPI_CLKCNT_L) << SPI_CLKCNT_L_S
     );
   } else {
     WRITE_PERI_REG(SPI_CLOCK(spi), SPI_CLK_EQU_SYSCLK);

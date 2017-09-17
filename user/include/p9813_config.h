@@ -3,8 +3,7 @@
 
 struct p9813_config {
   uint16_t count;
+  uint16_t artnet_universe;
 };
-
-#define P9813_CONFIG_COUNT 0
 
 #endif

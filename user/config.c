@@ -128,8 +128,11 @@ static struct config_tab config_dmx_gpio = { CONFIG_TYPE_UINT16, "dmx.gpio",
 static struct config_tab config_dmx_artnet_universe = { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
   .value = { .uint16 = &user_config.dmx.artnet_universe },
 };
-static struct config_tab config_p9813_count = { CONFIG_TYPE_UINT16, "p9813_count",
+static struct config_tab config_p9813_count = { CONFIG_TYPE_UINT16, "p9813.count",
   .value = { .uint16 = &user_config.p9813.count },
+};
+static struct config_tab config_p9813_artnet_universe = { CONFIG_TYPE_UINT16, "p9813.artnet_universe",
+  .value = { .uint16 = &user_config.p9813.artnet_universe },
 };
 
 int config_set(const struct config_tab *tab, const char *value)
@@ -216,9 +219,10 @@ const struct cmd config_commands[] = {
   { "wifi.ssid",        config_cmd, &config_wifi_ssid,        .usage = "[SSID]", .describe = "WiFi SSID"     },
   { "wifi.password",    config_cmd, &config_wifi_password,    .usage = "[PASSWORD]", .describe = "WiFi Password" },
   { "artnet.universe",         config_cmd, &config_artnet_universe,     .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output port base address" },
-  { "dmx.artnet-universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
+  { "dmx.artnet_universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
   { "dmx.gpio",                config_cmd, &config_dmx_gpio,            .usage = "[GPIO]", .describe = "DMX Output Enable GPIO pin (low during boot)" },
-  { "p9813.count",             config_cmd, &config_p9813_count,         .usage = "[COUNT]", .describe = "Number of chained P9813 controllers" },
+  { "p9813.count",             config_cmd, &config_p9813_count,           .usage = "[COUNT]", .describe = "Number of chained P9813 controllers" },
+  { "p9813.artnet_universe",   config_cmd, &config_p9813_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet P9813 output port universe" },
   {}
 };
 

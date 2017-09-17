@@ -50,7 +50,7 @@ int spi_write(struct spi *spi, const void *buf, size_t len)
   memcpy(op.data_buf, buf, len);
   op.data_bits = 8 * len;
 
-  LOG_INFO("spi=%d len=%u", spi->spi, len);
+  LOG_DEBUG("spi=%d len=%u", spi->spi, len);
 
   SPI_Send(spi->spi, &op);
 

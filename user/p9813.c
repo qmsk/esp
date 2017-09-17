@@ -139,7 +139,7 @@ int p9813_tx(struct p9813 *p9813)
 
 int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
 {
-  LOG_INFO("dmx len=%u", dmx->len);
+  LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < p9813->count && dmx->len >= (i + 1) * 3; i++) {
     p9813_packet_set(&p9813->buf[1 + i],
@@ -181,7 +181,7 @@ int init_p9813 (const struct user_config *config)
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {
-    LOG_INFO("p9813-artnet task=%p", p9813.artnet_task);
+    LOG_DEBUG("p9813-artnet task=%p", p9813.artnet_task);
   }
 
   return 0;

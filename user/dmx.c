@@ -70,7 +70,7 @@ void dmx_artnet_task(void *arg)
     } else if ((err = dmx_send(dmx, DMX_CMD_DIMMER, dmx->artnet_dmx.data, dmx->artnet_dmx.len))) {
       LOG_WARN("dmx_send");
     } else {
-      LOG_INFO("dmx send len=%u", dmx->artnet_dmx.len);
+      LOG_DEBUG("dmx send len=%u", dmx->artnet_dmx.len);
     }
   }
 }
@@ -132,7 +132,7 @@ int init_dmx(struct user_config *config)
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {
-    LOG_INFO("dmx-artnet task=%p", dmx.artnet_task);
+    LOG_DEBUG("dmx-artnet task=%p", dmx.artnet_task);
   }
 
   return 0;

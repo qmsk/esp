@@ -192,7 +192,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
   }
 
   if (!xQueueSend(output->queue, dmx, 0)) {
-    LOG_WARN("skip queue full");
+    LOG_WARN("skip addr=%u seq=%d: queue full", output->addr, seq);
   }
 
   return 0;
@@ -275,9 +275,9 @@ int artnet_op_poll(struct artnet *artnet, const struct artnet_sendrecv recv)
     return -1;
   }
 
-  struct artnet_packet_poll *poll = &recv.packet->poll;
+  struct artnet_packet_poll *poll = &recv.packet->poll; (void) poll; // XXX: unused
 
-  LOG_INFO("ttm=%02x priority=%u", poll->ttm, poll->priority); // TODO: log sender?
+  LOG_DEBUG("ttm=%02x priority=%u", poll->ttm, poll->priority); // TODO: log sender?
 
   struct artnet_sendrecv send = recv; // reply to sender
 

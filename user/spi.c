@@ -41,16 +41,14 @@ int spi_send(struct spi *spi, const struct SPI_Operation *op)
 
 int spi_write(struct spi *spi, const void *buf, size_t len)
 {
-  struct SPI_Operation op = {
-      .data_bits = len * 8,
-  };
+  struct SPI_Operation op = {};
 
   if (len > sizeof(op.data_buf)) {
-    LOG_ERROR("len > %u", sizeof(op.data_buf));
-    return -1;
+    len = sizeof(op.data_buf);
   }
 
   memcpy(op.data_buf, buf, len);
+  op.data_bits = 8 * len;
 
   LOG_INFO("spi=%d len=%u", spi->spi, len);
 

@@ -148,13 +148,23 @@ static inline void SPI_Start(enum SPI spi)
 
 void SPI_Send(enum SPI spi, const struct SPI_Operation *op)
 {
+  uint16_t command = op->command;
+  uint32_t address = op->address;
+
+  // align to MSB
+  command = command << (16 - op->command_bits);
+  address = address << (32 - op->address_bits);
+
+  // cmd byte order is wrong?
+  command = ((command & 0xFF) << 8) | ((command >> 8) & 0xFF);
+
   SPI_Wait(spi);
 
   WRITE_PERI_REG_BITS(SPI_USER(spi), SPI_USR_COMMAND | SPI_USR_ADDR | SPI_USR_DUMMY | SPI_USR_MISO | SPI_USR_MOSI,
-      (op->command_bits) ? SPI_USR_COMMAND : 0
-    | (op->address_bits) ? SPI_USR_ADDR : 0
-    | (op->dummy_cycles) ? SPI_USR_DUMMY : 0
-    | (op->data_bits) ? SPI_USR_MOSI : 0
+      ((op->command_bits) ? SPI_USR_COMMAND : 0)
+    | ((op->address_bits) ? SPI_USR_ADDR : 0)
+    | ((op->dummy_cycles) ? SPI_USR_DUMMY : 0)
+    | ((op->data_bits) ? SPI_USR_MOSI : 0)
   );
   WRITE_PERI_REG(SPI_USER1(spi),
       ((op->address_bits - 1) & SPI_USR_ADDR_BITLEN) << SPI_USR_ADDR_BITLEN_S
@@ -163,9 +173,9 @@ void SPI_Send(enum SPI spi, const struct SPI_Operation *op)
   );
   WRITE_PERI_REG(SPI_USER2(spi),
       ((op->command_bits - 1) & SPI_USR_COMMAND_BITLEN) << SPI_USR_COMMAND_BITLEN_S
-    | (op->command & SPI_USR_COMMAND_VALUE) << SPI_USR_COMMAND_VALUE_S
+    | (command & SPI_USR_COMMAND_VALUE) << SPI_USR_COMMAND_VALUE_S
   );
-  WRITE_PERI_REG(SPI_ADDR(spi), op->address);
+  WRITE_PERI_REG(SPI_ADDR(spi), address);
 
   SPI_Write(spi, op->data_buf, op->data_bits);
 

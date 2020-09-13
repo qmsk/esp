@@ -1,0 +1,67 @@
+# USAGE:
+#
+#   USER_ID=$UID docker-compose up build
+#   TTY_DEV=/dev/ttyUSB? docker-compose up flash
+#   TTY_DEV=/dev/ttyUSB? docker-compose run --rm console
+
+version: '3.8'
+services:
+  build:
+    image: esp8266/sdk
+    build:
+      context: sdk
+    volumes:
+      - .:/build
+    user: "${USER_ID:-1000}"
+    working_dir: /build
+    command: make
+    environment:
+      BIN_PATH: /build/bin
+
+  flash-erase:
+    image: esp8266/sdk
+    volumes:
+      - .:/build
+    user: root
+    working_dir: /build
+    command: esptool.py --port $TTY_DEV erase_flash
+    devices:
+      - $TTY_DEV
+    environment:
+      BIN_PATH: /build/bin
+
+  flash-init:
+    image: esp8266/sdk
+    volumes:
+      - .:/build
+    user: root
+    working_dir: /build
+    command: esptool.py --port $TTY_DEV write_flash -ff 40m -fm dio 0x00000 bin/eagle.flash.bin 0x20000 bin/eagle.irom0text.bin 0x3FC000 /opt/bin/sdk/esp_init_data_default.bin 0x3FE000 /opt/bin/sdk/blank.bin
+    devices:
+      - $TTY_DEV
+    environment:
+      BIN_PATH: /build/bin
+
+  flash:
+    image: esp8266/sdk
+    volumes:
+      - .:/build
+    user: root
+    working_dir: /build
+    command: esptool.py --port $TTY_DEV write_flash -ff 40m -fm dio 0x00000 bin/eagle.flash.bin 0x20000 bin/eagle.irom0text.bin
+    devices:
+      - $TTY_DEV
+    environment:
+      BIN_PATH: /build/bin
+
+  console:
+    image: esp8266/sdk
+    volumes:
+      - .:/build
+    user: root
+    working_dir: /build
+    command: miniterm.py $TTY_DEV 74880
+    devices:
+      - $TTY_DEV
+    environment:
+      BIN_PATH: /build/bin

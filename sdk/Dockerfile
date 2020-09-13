@@ -20,6 +20,8 @@ ENV \
   SDK_PATH=/opt/ESP8266_RTOS_SDK-${ESP8266_RTOS_SDK} \
   BIN_PATH=/esp/bin
 
+RUN ln -s $SDK_PATH/bin /opt/bin/sdk
+
 ENV \
   BOOT=none APP=0 \
   SPI_SPEED=40 SPI_MODE=DIO SPI_SIZE_MAP=6

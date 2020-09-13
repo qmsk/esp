@@ -9,8 +9,9 @@
 #define SPIFFS_PAGE_SIZE (SPI_FLASH_SEC_SIZE / 8)
 
 #define USER_CONFIG_UART_BAUD_RATE 74880
+#define USER_CONFIG_WIFI_SSID ""
+#define USER_CONFIG_WIFI_PASSWORD ""
 
-#include "local/user_config.h"
 #include "artnet_config.h"
 #include "dmx_config.h"
 #include "p9813_config.h"
@@ -26,12 +27,5 @@ struct user_config {
 };
 
 #define USER_CONFIG_VERSION 4
-
-#ifndef USER_CONFIG_WIFI_SSID
-  #error "include/local/user_config.h: #define USER_CONFIG_WIFI_SSID"
-#endif
-#ifndef USER_CONFIG_WIFI_PASSWORD
-  #error "include/local/user_config.h: #define USER_CONFIG_WIFI_PASSWORD"
-#endif
 
 #endif

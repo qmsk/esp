@@ -37,13 +37,9 @@ static int configtab_print(const struct configtab *tab)
 
 static int configmod_print(const struct configmod *mod)
 {
-  cli_printf("[%s]\n", mod->name);
-
   for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
     configtab_print(tab);
   }
-
-  cli_printf("\n");
 
   return 0;
 }
@@ -51,7 +47,11 @@ static int configmod_print(const struct configmod *mod)
 static int config_print(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
+    cli_printf("[%s]\n", mod->name);
+
     configmod_print(mod);
+
+    cli_printf("\n");
   }
 
   return 0;

@@ -3,15 +3,16 @@
 
 /* Status LED */
 
-enum led_state {
+enum led_mode {
     LED_OFF,
-    LED_BLINK_SLOW,
-    LED_BLINK_FAST,
+    LED_SLOW,   // blink slow
+    LED_FAST,   // blink fast
     LED_ON,
+    LED_BLINK,  // blink once
 };
 
-int init_led(enum led_state state);
+int init_led(enum led_mode mode);
 
-int led_set(enum led_state state);
+int led_set(enum led_mode mode);
 
 #endif

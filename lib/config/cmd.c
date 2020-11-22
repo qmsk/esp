@@ -151,9 +151,22 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int config_cmd_reset(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+
+  if (config_clear(config)) {
+    LOG_ERROR("Failed clearing config");
+    return -CMD_ERR;
+  }
+
+  return 0;
+}
+
 const struct cmd config_commands[] = {
   { "show",              config_cmd_show, .usage = "[SECTION]",           .describe = "Show config settings"  },
   { "get",               config_cmd_get,  .usage = "SECTION NAME",        .describe = "Get config setting"    },
   { "set",               config_cmd_set,  .usage = "SECTION NAME VALUE",  .describe = "Set and write config"  },
+  { "reset",             config_cmd_reset,                                .describe = "Remove stored config and reset to defaults" },
   {}
 };

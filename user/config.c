@@ -31,17 +31,13 @@ struct config user_config = {
 
 int init_config()
 {
-  int err;
-
   LOG_INFO("Load config=%s", user_config.filename);
 
-  if ((err = config_load(&user_config))) {
-    LOG_WARN("reset config on read error: %d", err);
-
-    return config_save(&user_config);
+  if (config_load(&user_config)) {
+    LOG_WARN("Load config failed");
   }
 
-  return err;
+  return 0;
 }
 
 const struct cmdtab config_cmdtab = {

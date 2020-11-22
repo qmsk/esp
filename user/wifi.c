@@ -2,6 +2,7 @@
 
 #include "wifi.h"
 #include "wifi_cmd.h"
+#include "wifi_config.h"
 
 #include <lib/cli.h>
 #include <lib/logging.h>
@@ -72,12 +73,12 @@ void wifi_is_disconnected(struct wifi *wifi)
   wifi->user_info->connected = false;
 }
 
-int wifi_setup(struct wifi *wifi, const struct user_config *config)
+int wifi_setup(struct wifi *wifi, const struct wifi_config *config)
 {
   struct station_config wifi_station_config = { };
 
-  snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->wifi_ssid);
-  snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->wifi_password);
+  snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->ssid);
+  snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->password);
 
   LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
 
@@ -161,7 +162,7 @@ static void on_wifi_event(System_Event_t *event)
   }
 }
 
-int init_wifi(const struct user_config *config, struct user_info *user_info)
+int init_wifi(struct wifi_config *config, struct user_info *user_info)
 {
   int err;
 

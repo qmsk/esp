@@ -1,10 +1,9 @@
 #ifndef __USER_WIFI_H__
 #define __USER_WIFI_H__
 
-#include "user_config.h"
+#include "wifi_config.h"
 #include "user_info.h"
-#include <lib/cmd.h>
 
-int init_wifi(const struct user_config *config, struct user_info *info);
+int init_wifi(struct wifi_config *config, struct user_info *info);
 
 #endif

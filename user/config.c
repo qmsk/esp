@@ -95,7 +95,19 @@ int init_config(struct user_config *config)
 }
 
 // CLI
-int config_lookup(const struct config_tab *tab, const char *name, const struct config_tab **tabp)
+int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp)
+{
+  for (; mod->name; mod++) {
+    if (strcmp(mod->name, name) == 0) {
+      *modp = mod;
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int configtab_lookup(const struct configtab *tab, const char *name, const struct configtab **tabp)
 {
   for (; tab->type && tab->name; tab++) {
     if (strcmp(tab->name, name) == 0) {
@@ -107,9 +119,26 @@ int config_lookup(const struct config_tab *tab, const char *name, const struct c
   return 1;
 }
 
-int config_set(const struct config_tab *tab, const char *value)
+int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp)
+{
+    if (configmod_lookup(config->modules, module, modp)) {
+      return 1;
+    }
+    if (configtab_lookup((*modp)->table, name, tabp)) {
+      return 1;
+    }
+
+    return 0;
+}
+
+int config_set(const struct configmod *mod, const struct configtab *tab, const char *value)
 {
   unsigned uvalue;
+
+  if (tab->readonly) {
+    LOG_WARN("Config %s.%s is readonly", mod->name, tab->name);
+    return -1;
+  }
 
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
@@ -136,7 +165,7 @@ int config_set(const struct config_tab *tab, const char *value)
   return 0;
 }
 
-int config_get(const struct config_tab *tab, char *buf, size_t size)
+int config_get(const struct configmod *mod, const struct configtab *tab, char *buf, size_t size)
 {
   switch(tab->type) {
     case CONFIG_TYPE_NULL:
@@ -163,38 +192,81 @@ int config_get(const struct config_tab *tab, char *buf, size_t size)
   return 0;
 }
 
-int config_print(const struct config_tab *tab)
+static int configtab_print(const struct configtab *tab)
 {
-  if (tab->secret) {
-    cli_printf("%s = ***\n", tab->name);
-    return 0;
-  }
-
   switch(tab->type) {
     case CONFIG_TYPE_NULL:
       break;
 
     case CONFIG_TYPE_STRING:
-      cli_printf("%s = %s\n", tab->name, tab->value.string);
+      if (tab->secret) {
+        cli_printf("%s = ***\n", tab->name);
+      } else {
+        cli_printf("%s = %s\n", tab->name, tab->value.string);
+      }
+
       break;
 
     case CONFIG_TYPE_UINT16:
-      cli_printf("%s = %u\n", tab->name, *tab->value.uint16);
+      if (tab->secret) {
+        cli_printf("%s = ***\n", tab->name);
+      } else {
+        cli_printf("%s = %u\n", tab->name, *tab->value.uint16);
+      }
+
       break;
 
     default:
-      return -CMD_ERR_NOT_IMPLEMENTED;
+      cli_printf("%s = ???\n", tab->name);
+
+      break;
   }
 
   return 0;
 }
 
-int config_cmd_list(int argc, char **argv, void *ctx)
+static int configmod_print(const struct configmod *mod)
 {
-  const struct config_tab *configtab = ctx;
+  cli_printf("[%s]\n", mod->name);
 
-  for (const struct config_tab *tab = configtab; tab->type && tab->name; tab++) {
-    config_print(tab);
+  for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
+    configtab_print(tab);
+  }
+
+  cli_printf("\n");
+
+  return 0;
+}
+
+static int config_print(const struct config *config)
+{
+  for (const struct configmod *mod = config->modules; mod->name; mod++) {
+    configmod_print(mod);
+  }
+
+  return 0;
+}
+
+int config_cmd_show(int argc, char **argv, void *ctx)
+{
+  const struct config *config = ctx;
+  const struct configmod *mod;
+  const char *section;
+  int err;
+
+  if (argc == 2) {
+    if ((err = cmd_arg_str(argc, argv, 1, &section))) {
+      return err;
+    }
+
+    if (configmod_lookup(config->modules, section, &mod)) {
+      LOG_ERROR("Unkown config section: %s", section);
+      return -CMD_ERR_ARGV;
+    }
+
+    configmod_print(mod);
+  } else {
+    config_print(config);
   }
 
   return 0;
@@ -202,23 +274,28 @@ int config_cmd_list(int argc, char **argv, void *ctx)
 
 int config_cmd_get(int argc, char **argv, void *ctx)
 {
-  const struct config_tab *configtab = ctx, *tab;
-  const char *name;
+  const struct config *config = ctx;
+  const struct configmod *mod;
+  const struct configtab *tab;
+  const char *section, *name;
   char value[CONFIG_VALUE_SIZE];
 
   int err;
 
-  if ((err = cmd_arg_str(argc, argv, 1, &name))) {
+  if ((err = cmd_arg_str(argc, argv, 1, &section))) {
+    return err;
+  }
+  if ((err = cmd_arg_str(argc, argv, 2, &name))) {
     return err;
   }
 
-  if (config_lookup(configtab, name, &tab)) {
-    LOG_ERROR("Unkown configtab: %s", name);
+  if (config_lookup(config, section, name, &mod, &tab)) {
+    LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_get(tab, value, sizeof(value))) {
-    LOG_ERROR("Invalid configtab %s value: %s", tab->name);
+  if (config_get(mod, tab, value, sizeof(value))) {
+    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name);
     return -CMD_ERR;
   }
 
@@ -229,25 +306,30 @@ int config_cmd_get(int argc, char **argv, void *ctx)
 
 int config_cmd_set(int argc, char **argv, void *ctx)
 {
-  const struct config_tab *configtab = ctx, *tab;
-  const char *name, *value;
+  const struct config *config = ctx;
+  const struct configmod *mod;
+  const struct configtab *tab;
+  const char *section, *name, *value;
 
   int err;
 
-  if ((err = cmd_arg_str(argc, argv, 1, &name))) {
+  if ((err = cmd_arg_str(argc, argv, 1, &section))) {
     return err;
   }
-  if ((err = cmd_arg_str(argc, argv, 2, &value))) {
+  if ((err = cmd_arg_str(argc, argv, 2, &name))) {
+    return err;
+  }
+  if ((err = cmd_arg_str(argc, argv, 3, &value))) {
     return err;
   }
 
-  if (config_lookup(configtab, name, &tab)) {
-    LOG_ERROR("Unkown configtab: %s", name);
+  if (config_lookup(config, section, name, &mod, &tab)) {
+    LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_set(tab, value)) {
-    LOG_ERROR("Invalid configtab %s value: %s", tab->name, value);
+  if (config_set(mod, tab, value)) {
+    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name);
     return -CMD_ERR_ARGV;
   }
 
@@ -260,12 +342,13 @@ int config_cmd_set(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "list",              config_cmd_list, (void *) user_configtab,   .describe = "List config settings" },
-  { "get",               config_cmd_get,  (void *) user_configtab,   .usage = "NAME", .describe = "Get config setting" },
-  { "set",               config_cmd_set,  (void *) user_configtab,   .usage = "NAME VALUE", .describe = "Set and write config" },
+  { "show",              config_cmd_show, .usage = "[SECTION]",           .describe = "Show config settings"  },
+  { "get",               config_cmd_get,  .usage = "SECTION NAME",        .describe = "Get config setting"    },
+  { "set",               config_cmd_set,  .usage = "SECTION NAME VALUE",  .describe = "Set and write config"  },
   {}
 };
 
 const struct cmdtab config_cmdtab = {
   .commands = config_commands,
+  .arg      = (void *) &user_configmeta,
 };

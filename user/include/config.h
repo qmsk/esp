@@ -7,13 +7,15 @@
 
 enum config_type {
   CONFIG_TYPE_NULL,
+
   CONFIG_TYPE_UINT16,
   CONFIG_TYPE_STRING,
 };
 
-struct config_tab {
+struct configtab {
   enum config_type type;
   const char *name;
+
   size_t size;
   bool readonly;
   bool secret;
@@ -22,6 +24,16 @@ struct config_tab {
     uint16_t *uint16;
     char *string;
   } value;
+};
+
+struct configmod {
+  const char *name;
+
+  const struct configtab *table;
+};
+
+struct config {
+  const struct configmod *modules;
 };
 
 #endif

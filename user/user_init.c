@@ -116,7 +116,7 @@ void user_init(void)
     return;
   }
 
-  if (init_wifi(&user_config, &user_info)) {
+  if (init_wifi(&user_config.wifi, &user_info)) {
     printf("FATAL: init_wifi\n");
     return;
   }

@@ -1,10 +1,9 @@
 #include "config.h"
 #include "user_config.h"
+#include "wifi_config.h"
 
 struct user_config user_config = {
   .version        = USER_CONFIG_VERSION,
-  .wifi_ssid      = USER_CONFIG_WIFI_SSID,
-  .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
   .artnet = {
     .universe = ARTNET_CONFIG_UNIVERSE,
   },
@@ -14,38 +13,58 @@ struct user_config user_config = {
   },
 };
 
-const struct config_tab user_configtab[] = {
-  { CONFIG_TYPE_UINT16, "version",
-    .readonly = true,
-    .value  = { .uint16 = &user_config.version },
+const struct configtab wifi_configtab[] = {
+  { CONFIG_TYPE_STRING, "ssid",
+    .size   = sizeof(user_config.wifi.ssid),
+    .value  = { .string = user_config.wifi.ssid },
   },
-  { CONFIG_TYPE_STRING, "wifi.ssid",
-    .size   = sizeof(user_config.wifi_ssid),
-    .value  = { .string = user_config.wifi_ssid },
-  },
-  { CONFIG_TYPE_STRING, "wifi.password",
-    .size   = sizeof(user_config.wifi_password),
+  { CONFIG_TYPE_STRING, "password",
+    .size   = sizeof(user_config.wifi.password),
     .secret = true,
-    .value  = { .string = user_config.wifi_password },
+    .value  = { .string = user_config.wifi.password },
   },
-  { CONFIG_TYPE_UINT16, "artnet.universe",
+  {}
+};
+
+const struct configtab artnet_configtab[] = {
+  { CONFIG_TYPE_UINT16, "universe",
     .size   = sizeof(user_config.artnet.universe),
     .value  = { .uint16 = &user_config.artnet.universe },
   },
-  { CONFIG_TYPE_UINT16, "dmx.gpio",
+  {}
+};
+
+const struct configtab dmx_configtab[] = {
+  { CONFIG_TYPE_UINT16, "gpio",
     .value  = { .uint16 = &user_config.dmx.gpio },
   },
-  { CONFIG_TYPE_UINT16, "dmx.artnet_universe",
+  { CONFIG_TYPE_UINT16, "artnet_universe",
     .value  = { .uint16 = &user_config.dmx.artnet_universe },
   },
-  { CONFIG_TYPE_UINT16, "p9813.count",
+  {}
+};
+
+const struct configtab p9813_configtab[] = {
+  { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &user_config.p9813.count },
   },
-  { CONFIG_TYPE_UINT16, "p9813.artnet_universe",
+  { CONFIG_TYPE_UINT16, "artnet_universe",
     .value  = { .uint16 = &user_config.p9813.artnet_universe },
   },
-  { CONFIG_TYPE_UINT16, "p9813.gpio",
+  { CONFIG_TYPE_UINT16, "gpio",
     .value  = { .uint16 = &user_config.p9813.gpio },
   },
   {}
+};
+
+const struct configmod user_configmods[] = {
+  { "wifi",   wifi_configtab },
+  { "artnet", artnet_configtab },
+  { "dmx",    dmx_configtab },
+  { "p9813",  p9813_configtab },
+  {}
+};
+
+const struct config user_configmeta = {
+  .modules = user_configmods,
 };

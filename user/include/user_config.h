@@ -10,18 +10,16 @@
 #define SPIFFS_PAGE_SIZE (SPI_FLASH_SEC_SIZE / 8)
 
 #define USER_CONFIG_UART_BAUD_RATE 74880
-#define USER_CONFIG_WIFI_SSID ""
-#define USER_CONFIG_WIFI_PASSWORD ""
 
+#include "wifi_config.h"
 #include "artnet_config.h"
 #include "dmx_config.h"
 #include "p9813_config.h"
 
 struct user_config {
   uint16 version;
-  char wifi_ssid[32];
-  char wifi_password[64];
 
+  struct wifi_config wifi;
   struct artnet_config artnet;
   struct dmx_config dmx;
   struct p9813_config p9813;
@@ -30,7 +28,7 @@ struct user_config {
 #define USER_CONFIG_VERSION 4
 
 extern struct user_config user_config;
-extern const struct config_tab user_configtab[];
+extern const struct config user_configmeta;
 
 int init_config(struct user_config *config);
 

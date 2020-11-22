@@ -34,7 +34,7 @@ const struct config_tab user_configtab[] = {
   { CONFIG_TYPE_UINT16, "dmx.gpio",
     .value  = { .uint16 = &user_config.dmx.gpio },
   },
-  { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
+  { CONFIG_TYPE_UINT16, "dmx.artnet_universe",
     .value  = { .uint16 = &user_config.dmx.artnet_universe },
   },
   { CONFIG_TYPE_UINT16, "p9813.count",

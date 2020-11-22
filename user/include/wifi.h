@@ -3,7 +3,7 @@
 
 #include "user_config.h"
 #include "user_info.h"
-#include <cmd.h>
+#include <lib/cmd.h>
 
 int init_wifi(const struct user_config *config, struct user_info *info);
 

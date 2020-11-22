@@ -8,7 +8,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <cmd.h>
+#include <lib/cmd.h>
 #include <stdlib.h>
 #include <string.h>
 

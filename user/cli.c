@@ -8,7 +8,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include <cmd.h>
+#include <lib/cmd.h>
 
 #define CLI_TX_BUF 512
 #define CLI_RX_BUF 512

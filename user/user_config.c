@@ -65,6 +65,7 @@ const struct configmod user_configmods[] = {
   {}
 };
 
-const struct config user_configmeta = {
-  .modules = user_configmods,
+struct config user_configmeta = {
+  .filename = "config.ini",
+  .modules  = user_configmods,
 };

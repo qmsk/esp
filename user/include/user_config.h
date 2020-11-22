@@ -28,8 +28,8 @@ struct user_config {
 #define USER_CONFIG_VERSION 4
 
 extern struct user_config user_config;
-extern const struct config user_configmeta;
+struct config user_configmeta;
 
-int init_config(struct user_config *config);
+int init_config(struct config *config);
 
 #endif

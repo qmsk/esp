@@ -106,7 +106,7 @@ void user_init(void)
     return;
   }
 
-  if (init_config(&user_config)) {
+  if (init_config(&user_configmeta)) {
     printf("FATAL: init_config\n");
     return;
   }

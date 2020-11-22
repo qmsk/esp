@@ -5,93 +5,305 @@
 #include <lib/cli.h>
 #include <lib/logging.h>
 
+#include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
-int config_read(struct user_config *config)
+#define ISSPACE(c) (isspace((int)(c)))
+#define ISIDENT(c) (isalnum((int)(c)) || (c) == '_' || (c) == '-')
+#define ISVALUE(c) (isprint((int)(c)))
+
+// TODO: needs unit tests
+static int config_parse(char *line, const char **sectionp, const char **namep, const char **valuep)
 {
-  int fd, ret, err = 0;
+  enum state { INIT, START_SECTION, SECTION, NAME, PRE_EQ, POST_EQ, VALUE, END } state = INIT;
 
-  if ((fd = open("config", O_RDONLY)) < 0) {
-    LOG_ERROR("open: %d", fd);
-    return -1;
+  for (char *c = line; *c; c++) {
+    switch(state) {
+    case INIT:
+      if (*c == '\n') {
+        return 0;
+      } else if (ISSPACE(*c)) {
+        continue;
+      } else if (*c == '[') {
+        state = START_SECTION;
+      } else if (ISIDENT(*c)) {
+        state = NAME;
+        *namep = c;
+      } else {
+        LOG_WARN("Invalid character at start of line: %c", *c);
+        return -1;
+      }
+      break;
+
+    case START_SECTION:
+      if (ISIDENT(*c)) {
+        state = SECTION;
+        *sectionp = c;
+      } else {
+        LOG_WARN("Invalid character at start of section: %c", *c);
+        return -1;
+      }
+      break;
+
+    case SECTION:
+      if (*c == ']') {
+        state = END;
+        *c = '\0';
+      } else if (ISIDENT(*c)) {
+        continue;
+      } else {
+        LOG_WARN("Invalid character in section: %c", *c);
+        return -1;
+      }
+      break;
+
+    case NAME:
+      if (*c == '\n') {
+        LOG_WARN("EOL in name");
+        return -1;
+      } else if (ISSPACE(*c)) {
+        *c = '\0';
+        state = PRE_EQ;
+      } else if (*c == '=') {
+        *c = '\0';
+        state = POST_EQ;
+      } else if (ISIDENT(*c)) {
+        continue;
+      } else {
+        LOG_WARN("Invalid character in name: %c", *c);
+        return -1;
+      }
+      break;
+
+    case PRE_EQ:
+      if (*c == '\n') {
+        LOG_WARN("EOL before =");
+        return -1;
+      } else if (ISSPACE(*c)) {
+        continue;
+      } else if (*c == '=') {
+        state = POST_EQ;
+      } else {
+        LOG_WARN("Invalid character before EQ: %c", *c);
+        return -1;
+      }
+      break;
+
+    case POST_EQ:
+      if (*c == '\n') {
+        *c = '\0';
+        state = END;
+        *valuep = c; // empty string
+        break;
+      } else if (ISSPACE(*c)) {
+        continue;
+      } else if (ISVALUE(*c)) {
+        state = VALUE;
+        *valuep = c;
+      } else {
+        LOG_WARN("Invalid character after EQ: %c", *c);
+        return -1;
+      }
+      break;
+
+    case VALUE:
+      if (*c == '\n') {
+        *c = '\0';
+        state = END;
+      } else if (ISVALUE(*c)) {
+        continue;
+      } else {
+        LOG_WARN("Invalid character in value: %c", *c);
+        return -1;
+      }
+      break;
+
+    case END:
+      if (ISSPACE(*c)) {
+        continue;
+      } else {
+        LOG_WARN("Invalid character at end: %c", *c);
+        return -1;
+      }
+      break;
+    }
   }
-
-  if ((ret = read(fd, config, sizeof(*config))) < 0) {
-    err = -1;
-    LOG_ERROR("read: %d", ret);
-    goto error;
-  }
-
-  if (ret < sizeof(*config)) {
-    LOG_WARN("read undersize: %d", ret);
-    config->version = 0;
-  } else {
-    LOG_INFO("read", ret);
-  }
-
-error:
-  close(fd);
-
-  return err;
-}
-
-int config_write(struct user_config *config)
-{
-  int fd, ret, err = 0;
-
-  if ((fd = open("config", O_WRONLY | O_CREAT)) < 0) {
-    LOG_ERROR("open: %d", fd);
-    return -1;
-  }
-
-  if ((ret = write(fd, config, sizeof(*config))) < 0) {
-    err = -1;
-    LOG_ERROR("write: %d", ret);
-    goto error;
-  }
-
-  LOG_INFO("%d/%d", ret, sizeof(*config));
-
-error:
-  close(fd);
-
-  return err;
-}
-
-int config_upgrade(struct user_config *config, const struct user_config *upgrade_config)
-{
-  LOG_WARN("invalid config version=%d: expected version %d", upgrade_config->version, config->version);
-
-  // TODO: upgrade/downgrade?
-  return config_write(config);
-}
-
-int config_load(struct user_config *config, const struct user_config *load_config)
-{
-  *config = *load_config;
-
-  LOG_INFO("version=%d", config->version);
 
   return 0;
 }
 
-int init_config(struct user_config *config)
+int config_read(struct config *config, FILE *file)
 {
-  struct user_config stored_config;
-  int err;
+  char buf[CONFIG_LINE];
+  int lineno = 0;
 
-  if ((err = config_read(&stored_config))) {
-    LOG_WARN("reset config on read error: %d", err);
+  const struct configmod *mod = NULL;
+  const struct configtab *tab = NULL;
 
-    return config_write(config);
-  } else if (stored_config.version != config->version) {
-    return config_upgrade(config, &stored_config);
-  } else {
-    return config_load(config, &stored_config);
+  while (fgets(buf, sizeof(buf), file) != NULL) {
+    const char *section = NULL;
+    const char *name = NULL;
+    const char *value = NULL;
+
+    lineno++;
+
+    LOG_DEBUG("%s", buf);
+
+    if (config_parse(buf, &section, &name, &value)) {
+      LOG_WARN("Invalid line at %s:%d", config->filename, lineno);
+      continue;
+    }
+
+    if (section) {
+      mod = NULL;
+
+      if (configmod_lookup(config->modules, section, &mod)) {
+        LOG_WARN("Unknown section: %s", section);
+      } else {
+        LOG_DEBUG("mod=%s", mod->name);
+      }
+    }
+
+    if (name && value) {
+      if (!mod) {
+        LOG_WARN("Invalid name without section: %s", name);
+      } else if (configtab_lookup(mod->table, name, &tab)) {
+        LOG_WARN("Unknown name in section %s: %s", mod->name, name);
+      } else if (config_set(mod, tab, value)) {
+        LOG_WARN("Invalid value for section %s name %s: %s", mod->name, tab->name, value);
+      } else {
+        LOG_DEBUG("mod=%s tab=%s value=%s", mod->name, tab->name, value);
+      }
+    }
   }
+
+  // TODO
+  return 0;
+}
+
+static int configtab_write(const struct configtab *tab, FILE *file)
+{
+  LOG_DEBUG("type=%u name=%s", tab->type, tab->name);
+
+  switch (tab->type) {
+  case CONFIG_TYPE_NULL:
+    break;
+
+  case CONFIG_TYPE_UINT16:
+    if (fprintf(file, "%s = %u\n", tab->name, *tab->value.uint16) < 0) {
+      return -1;
+    }
+    break;
+
+  case CONFIG_TYPE_STRING:
+    if (fprintf(file, "%s = %s\n", tab->name, tab->value.string) < 0) {
+      return -1;
+    }
+    break;
+
+  default:
+    return -1;
+  }
+
+  return 0;
+}
+
+static int configmod_write(const struct configmod *mod, FILE *file)
+{
+  LOG_DEBUG("name=%s", mod->name);
+
+  if (fprintf(file, "[%s]\n", mod->name) < 0) {
+    return -1;
+  }
+
+  for (const struct configtab *tab = mod->table; tab->name; tab++) {
+    if (configtab_write(tab, file)) {
+      return -1;
+    }
+  }
+
+  if (fprintf(file, "\n") < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int config_write(struct config *config, FILE *file)
+{
+  for (const struct configmod *mod = config->modules; mod->name; mod++) {
+    if (configmod_write(mod, file)) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+int config_load(struct config *config)
+{
+  FILE *file;
+  int err = 0;
+
+  if ((file = fopen(config->filename, "r")) == NULL) {
+    LOG_ERROR("fopen %s: %s", config->filename, strerror(errno));
+    return -1;
+  }
+
+  LOG_INFO("%s", config->filename);
+
+  if ((err = config_read(config, file))) {
+    fclose(file);
+    return err;
+  }
+
+  fclose(file);
+
+  return err;
+}
+
+int config_save(struct config *config)
+{
+  char newfile[CONFIG_FILENAME];
+  FILE *file;
+  int err = 0;
+
+  if (snprintf(newfile, sizeof(newfile), "%s.new", config->filename) >= sizeof(newfile)) {
+    LOG_ERROR("filename too long: %s.new", config->filename);
+    return -1;
+  }
+
+  if ((file = fopen(newfile, "w")) == NULL) {
+    LOG_ERROR("fopen %s: %s", config->filename, strerror(errno));
+    return -1;
+  }
+
+  LOG_INFO("%s", newfile);
+
+  if ((err = config_write(config, file))) {
+    fclose(file);
+    return err;
+  }
+
+  if (fclose(file)) {
+    LOG_ERROR("fclose %s: %s", newfile, strerror(errno));
+    return -1;
+  }
+
+  if (remove(config->filename)) {
+    LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
+    return -1;
+  }
+
+  if (rename(newfile, config->filename)) {
+    LOG_ERROR("rename %s -> %s: %s", newfile, config->filename, strerror(errno));
+    return -1;
+  }
+
+  return err;
 }
 
 // CLI
@@ -274,13 +486,13 @@ int config_cmd_show(int argc, char **argv, void *ctx)
 
 int config_cmd_get(int argc, char **argv, void *ctx)
 {
-  const struct config *config = ctx;
+  struct config *config = ctx;
+  int err;
+
   const struct configmod *mod;
   const struct configtab *tab;
   const char *section, *name;
   char value[CONFIG_VALUE_SIZE];
-
-  int err;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
     return err;
@@ -306,12 +518,12 @@ int config_cmd_get(int argc, char **argv, void *ctx)
 
 int config_cmd_set(int argc, char **argv, void *ctx)
 {
-  const struct config *config = ctx;
+  struct config *config = ctx;
+  int err;
+
   const struct configmod *mod;
   const struct configtab *tab;
   const char *section, *name, *value;
-
-  int err;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
     return err;
@@ -333,7 +545,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if (config_write(&user_config)) {
+  if (config_save(config)) {
     LOG_ERROR("Failed writing config");
     return -CMD_ERR;
   }
@@ -350,5 +562,20 @@ const struct cmd config_commands[] = {
 
 const struct cmdtab config_cmdtab = {
   .commands = config_commands,
-  .arg      = (void *) &user_configmeta,
+  .arg      = &user_configmeta,
 };
+
+int init_config(struct config *config)
+{
+  int err;
+
+  LOG_INFO("Load config=%s", config->filename);
+
+  if ((err = config_load(config))) {
+    LOG_WARN("reset config on read error: %d", err);
+
+    return config_save(config);
+  }
+
+  return err;
+}

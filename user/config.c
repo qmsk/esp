@@ -165,6 +165,11 @@ int config_get(const struct config_tab *tab, char *buf, size_t size)
 
 int config_print(const struct config_tab *tab)
 {
+  if (tab->secret) {
+    cli_printf("%s = ***\n", tab->name);
+    return 0;
+  }
+
   switch(tab->type) {
     case CONFIG_TYPE_NULL:
       break;

@@ -25,6 +25,7 @@ const struct config_tab user_configtab[] = {
   },
   { CONFIG_TYPE_STRING, "wifi.password",
     .size   = sizeof(user_config.wifi_password),
+    .secret = true,
     .value  = { .string = user_config.wifi_password },
   },
   { CONFIG_TYPE_UINT16, "artnet.universe",

@@ -16,6 +16,8 @@ struct config_tab {
   const char *name;
   size_t size;
   bool readonly;
+  bool secret;
+
   union {
     uint16_t *uint16;
     char *string;

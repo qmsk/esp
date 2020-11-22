@@ -1,14 +1,14 @@
-#include "user_config.h"
-#include "spiffs.h"
-#include "cli.h"
-#include "wifi.h"
-#include "dmx.h"
 #include "artnet.h"
-#include "spi.h"
+#include "cli.h"
+#include "config.h"
+#include "dmx.h"
 #include "p9813.h"
+#include "spi.h"
+#include "spiffs.h"
+#include "uart.h"
+#include "wifi.h"
 
 #include <lib/logging.h>
-#include <lib/uart.h>
 
 #include <esp_common.h>
 
@@ -45,42 +45,6 @@ void print_system_post()
 
 struct user_info user_info;
 
-int init_uart()
-{
-  int err;
-
-  UART_Config uart_config = {
-    .baud_rate  = USER_CONFIG_UART_BAUD_RATE,
-    .data_bits  = UART_WordLength_8b,
-    .parity     = UART_Parity_None,
-    .stop_bits  = UART_StopBits_1,
-  };
-
-  if ((err = uart_init(&uart0, UART_TX_QUEUE_SIZE, UART_RX_QUEUE_SIZE))) {
-    LOG_ERROR("uart_init uart0");
-    return err;
-  }
-
-  // TODO: move to dmx module?
-  if ((err = uart_init(&uart1, UART_TX_QUEUE_SIZE, 0))) {
-    LOG_ERROR("uart_init uart1");
-    return err;
-  }
-
-  if ((err = uart_setup(&uart0, &uart_config))) {
-    LOG_ERROR("uart_setup uart0");
-    return err;
-  }
-
-  uart_disable(&uart1);
-
-  uart_interrupts_enable();
-
-  LOG_INFO("setup uart0 baud=%u", uart_config.baud_rate);
-
-  return 0;
-}
-
 void user_init(void)
 {
   print_system();
@@ -105,12 +69,12 @@ void user_init(void)
     return;
   }
 
-  if (init_config(&user_config)) {
+  if (init_config()) {
     printf("FATAL: init_config\n");
     return;
   }
 
-  if (init_cli(&user_config)) {
+  if (init_cli()) {
     printf("FATAL: init_cli\n");
     return;
   }

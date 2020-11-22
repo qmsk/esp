@@ -1,9 +1,9 @@
-#include "user_config.h"
+#include "config.h"
 
 #include "artnet_config.h"
 #include "dmx_config.h"
-#include "wifi_config.h"
 #include "p9813_config.h"
+#include "wifi_config.h"
 
 #include <lib/config.h>
 #include <lib/logging.h>
@@ -29,16 +29,16 @@ struct config user_config = {
   .modules  = user_configmods,
 };
 
-int init_config(struct config *config)
+int init_config()
 {
   int err;
 
-  LOG_INFO("Load config=%s", config->filename);
+  LOG_INFO("Load config=%s", user_config.filename);
 
-  if ((err = config_load(config))) {
+  if ((err = config_load(&user_config))) {
     LOG_WARN("reset config on read error: %d", err);
 
-    return config_save(config);
+    return config_save(&user_config);
   }
 
   return err;

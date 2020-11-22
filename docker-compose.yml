@@ -6,10 +6,13 @@
 
 version: '3.8'
 services:
-  build:
-    image: esp8266/sdk
+  sdk:
+    image: esp8266/sdk:2.1.1
     build:
       context: sdk
+
+  build:
+    image: esp8266/sdk:2.1.1
     volumes:
       - .:/build
     user: "${USER_ID:-1000}"
@@ -17,9 +20,14 @@ services:
     command: make
     environment:
       BIN_PATH: /build/bin
+      BOOT: none
+      APP: "0"
+      SPI_SPEED: "40"
+      SPI_MODE: DIO
+      SPI_SIZE_MAP: "6"
 
   flash-erase:
-    image: esp8266/sdk
+    image: esp8266/sdk:2.1.1
     volumes:
       - .:/build
     user: root
@@ -31,7 +39,7 @@ services:
       BIN_PATH: /build/bin
 
   flash-init:
-    image: esp8266/sdk
+    image: esp8266/sdk:2.1.1
     volumes:
       - .:/build
     user: root
@@ -43,7 +51,7 @@ services:
       BIN_PATH: /build/bin
 
   flash:
-    image: esp8266/sdk
+    image: esp8266/sdk:2.1.1
     volumes:
       - .:/build
     user: root
@@ -55,7 +63,7 @@ services:
       BIN_PATH: /build/bin
 
   console:
-    image: esp8266/sdk
+    image: esp8266/sdk:2.1.1
     volumes:
       - .:/build
     user: root

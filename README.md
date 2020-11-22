@@ -1,4 +1,4 @@
-Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) (v1.5.0)
+Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) (v2.1.0)
 
 ## Usage
 

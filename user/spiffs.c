@@ -8,6 +8,11 @@
 
 extern uint32 user_rf_cal_sector_set(void);
 
+#define SPIFFS_FLASH_SECTORS (1 * 1024 * 1024 / SPI_FLASH_SEC_SIZE) // 1MB at end of flash
+#define SPIFFS_BLOCK_SIZE (SPI_FLASH_SEC_SIZE)
+#define SPIFFS_PAGE_SIZE (SPI_FLASH_SEC_SIZE / 8)
+
+
 static int config_spiffs(struct esp_spiffs_config *spiffs_config)
 {
     uint32 rfcal_flash_sect = user_rf_cal_sector_set();

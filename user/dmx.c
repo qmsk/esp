@@ -1,5 +1,6 @@
 #include "dmx.h"
 #include "dmx_cmd.h"
+#include "dmx_config.h"
 #include "artnet_dmx.h"
 
 #include <lib/logging.h>
@@ -114,7 +115,7 @@ int dmx_setup(struct dmx *dmx, struct dmx_config *config)
   return 0;
 }
 
-int init_dmx(struct user_config *config)
+int init_dmx(struct dmx_config *config)
 {
   int err;
 
@@ -122,7 +123,7 @@ int init_dmx(struct user_config *config)
     return err;
   }
 
-  if ((err = dmx_setup(&dmx, &config->dmx))) {
+  if ((err = dmx_setup(&dmx, config))) {
     return err;
   }
 

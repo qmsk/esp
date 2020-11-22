@@ -8,9 +8,4 @@
 
 extern const struct cmdtab config_cmdtab;
 
-const struct cmdtab config_cmdtab = {
-  .commands = config_commands,
-  .arg      = &user_configmeta,
-};
-
 #endif

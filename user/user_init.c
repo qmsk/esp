@@ -45,7 +45,7 @@ void print_system_post()
 
 struct user_info user_info;
 
-int init_uart(struct user_config *config)
+int init_uart()
 {
   int err;
 
@@ -85,7 +85,7 @@ void user_init(void)
 {
   print_system();
 
-  if (init_uart(&user_config)) {
+  if (init_uart()) {
     printf("FATAL: init_uart\n");
     return;
   }
@@ -105,7 +105,7 @@ void user_init(void)
     return;
   }
 
-  if (init_config(&user_configmeta)) {
+  if (init_config(&user_config)) {
     printf("FATAL: init_config\n");
     return;
   }
@@ -115,22 +115,22 @@ void user_init(void)
     return;
   }
 
-  if (init_wifi(&user_config.wifi, &user_info)) {
+  if (init_wifi(&wifi_config, &user_info)) {
     printf("FATAL: init_wifi\n");
     return;
   }
 
-  if (init_dmx(&user_config)) {
+  if (init_dmx(&dmx_config)) {
     printf("FATAL: init_dmx\n");
     return;
   }
 
-  if (init_artnet(&user_config, &user_info)) {
+  if (init_artnet(&artnet_config, &user_info)) {
     printf("FATAL: init_artnet\n");
     return;
   }
 
-  if (init_p9813(&user_config)) {
+  if (init_p9813(&p9813_config)) {
     printf("FATAL: init_p9813\n");
     return;
   }

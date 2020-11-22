@@ -239,11 +239,11 @@ void p9813_artnet_task(void *arg)
   }
 }
 
-int init_p9813 (const struct user_config *config)
+int init_p9813 (const struct p9813_config *config)
 {
   int err;
 
-  if ((err = p9813_init(&p9813, &config->p9813, &spi1)))
+  if ((err = p9813_init(&p9813, config, &spi1)))
     return err;
 
   if (!p9813.artnet_queue) {

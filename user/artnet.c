@@ -397,7 +397,7 @@ void artnet_task(void *arg)
   }
 }
 
-int init_artnet(const struct user_config *config, const struct user_info *user_info)
+int init_artnet(const struct artnet_config *config, const struct user_info *user_info)
 {
   int err;
 
@@ -405,7 +405,7 @@ int init_artnet(const struct user_config *config, const struct user_info *user_i
     return err;
   }
 
-  if ((err = artnet_setup(&artnet, &config->artnet))) {
+  if ((err = artnet_setup(&artnet, config))) {
     return err;
   }
 

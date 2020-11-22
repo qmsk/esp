@@ -37,7 +37,7 @@ const struct cmdtab user_cmdtab = {
   .error_handler  = cli_cmd_error,
 };
 
-int init_cli(struct user_config *config)
+int init_cli()
 {
   if (cli_init(&user_cmdtab)) {
     LOG_ERROR("cli_init");

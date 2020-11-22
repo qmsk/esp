@@ -11,6 +11,16 @@ services:
     build:
       context: sdk
 
+  clean:
+    image: esp8266/sdk:2.1.1
+    volumes:
+      - .:/build
+    user: "${USER_ID:-1000}"
+    working_dir: /build
+    command: make clean
+    environment:
+      BIN_PATH: /build/bin
+
   build:
     image: esp8266/sdk:2.1.1
     volumes:

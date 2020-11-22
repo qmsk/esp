@@ -4,12 +4,18 @@
 
 #include <drivers/gpio.h>
 #include <lib/cmd.h>
+#include <lib/logging.h>
 
 #include <c_types.h>
 #include <espressif/esp_timer.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
 
 static struct led {
   os_timer_t timer;
+  xTaskHandle task;
+  xQueueHandle queue;
 
   enum led_mode mode;
   unsigned counter;
@@ -67,16 +73,6 @@ void led_timer(void *arg)
   }
 }
 
-int init_led(enum led_mode mode)
-{
-  GPIO_SetupOutput(LED_GPIO, GPIO_OUTPUT);
-
-  // setup os_timer
-  os_timer_setfn(&led.timer, led_timer, &led);
-
-  return led_set(mode);
-}
-
 static inline void led_timer_repeat()
 {
   os_timer_disarm(&led.timer);
@@ -94,34 +90,84 @@ static inline void led_timer_stop()
   os_timer_disarm(&led.timer);
 }
 
-int led_set(enum led_mode mode)
-{
+static void led_update(enum led_mode mode) {
   led.mode = mode;
 
   switch (mode) {
     case LED_OFF:
       led_timer_stop();
       led_off();
-      return 0;
+      break;
 
     case LED_SLOW:
     case LED_FAST:
       led_off();
       led_timer_repeat();
-      return 0;
+      break;
 
     case LED_ON:
       led_timer_stop();
       led_on();
-      return 0;
+      break;
 
     case LED_BLINK:
       led_on();
       led_timer_oneshot();
+      break;
 
     default:
-      return -1;
+      break;
   }
+}
+
+#define LED_TASK_STACK 128
+
+void led_task(void *arg)
+{
+  struct led *led = arg;
+  enum led_mode mode;
+
+  for (;;) {
+    if (!xQueueReceive(led->queue, &mode, portMAX_DELAY)) {
+      LOG_WARN("xQueueReceive");
+      continue;
+    }
+
+    led_update(mode);
+  }
+}
+
+int init_led(enum led_mode mode)
+{
+  GPIO_SetupOutput(LED_GPIO, GPIO_OUTPUT);
+
+  // setup os_timer
+  os_timer_setfn(&led.timer, led_timer, &led);
+
+  // initial state
+  led_update(mode);
+
+  // setup task
+  if ((led.queue = xQueueCreate(1, sizeof(enum led_mode))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  if (xTaskCreate(&led_task, (signed char *) "led", LED_TASK_STACK, &led, tskIDLE_PRIORITY + 2, &led.task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  }
+
+  return 0;
+}
+
+int led_set(enum led_mode mode)
+{
+  if (xQueueOverwrite(led.queue, &mode) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+  }
+
+  return 0;
 }
 
 int led_cmd_off(int argc, char **argv, void *ctx)

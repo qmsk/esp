@@ -1,10 +1,12 @@
-#ifndef __USER_CONFIG_H__
-#define __USER_CONFIG_H__
+#ifndef __LIB_CONFIG_H__
+#define __LIB_CONFIG_H__
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#include "cmd.h"
 
 #define CONFIG_FILENAME 64
 #define CONFIG_LINE 512
@@ -56,5 +58,7 @@ int config_write(struct config *config, FILE *file);
 
 int config_load(struct config *config);
 int config_save(struct config *config);
+
+extern const struct cmd config_commands[];
 
 #endif

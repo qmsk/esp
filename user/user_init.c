@@ -1,6 +1,5 @@
 #include "user_config.h"
 #include "spiffs.h"
-#include "config.h"
 #include "cli.h"
 #include "wifi.h"
 #include "dmx.h"

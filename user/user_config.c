@@ -1,6 +1,7 @@
-#include "config.h"
 #include "user_config.h"
-#include "wifi_config.h"
+
+#include <lib/config.h>
+#include <lib/logging.h>
 
 struct user_config user_config = {
   .version        = USER_CONFIG_VERSION,
@@ -69,3 +70,18 @@ struct config user_configmeta = {
   .filename = "config.ini",
   .modules  = user_configmods,
 };
+
+int init_config(struct config *config)
+{
+  int err;
+
+  LOG_INFO("Load config=%s", config->filename);
+
+  if ((err = config_load(config))) {
+    LOG_WARN("reset config on read error: %d", err);
+
+    return config_save(config);
+  }
+
+  return err;
+}

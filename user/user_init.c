@@ -37,11 +37,29 @@ void print_system()
   printf("*---------------------------------------\n");
 }
 
-void print_system_post()
+void user_event(const struct user_info *info, enum user_event event)
 {
-  printf("*---------------------------------------\n");
-  printf("|\tHeap free=%d\n", system_get_free_heap_size());
-  printf("*---------------------------------------\n");
+  switch (event) {
+  case WIFI_CONNECTING:
+    LOG_INFO("wifi connecting");
+    led_set(LED_FAST);
+    break;
+
+  case WIFI_CONNECTED:
+    LOG_INFO("wifi connected");
+    led_set(LED_SLOW);
+    break;
+
+  case WIFI_DISCONNECTED:
+    LOG_INFO("wifi disconnected");
+    led_set(LED_OFF);
+    break;
+
+  default:
+    LOG_INFO("unknown (%d)", event);
+    led_set(LED_ON);
+    break;
+  }
 }
 
 struct user_info user_info;
@@ -86,7 +104,7 @@ void user_init(void)
     return;
   }
 
-  if (init_wifi(&wifi_config, &user_info)) {
+  if (init_wifi(&wifi_config, &user_info, &user_event)) {
     printf("FATAL: init_wifi\n");
     return;
   }
@@ -106,5 +124,5 @@ void user_init(void)
     return;
   }
 
-  print_system_post();
+  LOG_INFO("heap free=%u", system_get_free_heap_size());
 }

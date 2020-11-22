@@ -4,6 +4,6 @@
 #include "wifi_config.h"
 #include "user_info.h"
 
-int init_wifi(struct wifi_config *config, struct user_info *info);
+int init_wifi(struct wifi_config *config, struct user_info *info, user_func_t user_func);
 
 #endif

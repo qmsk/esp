@@ -25,15 +25,18 @@ struct wifi_scan_event {
 
 struct wifi {
   struct user_info *user_info;
+  user_func_t user_func;
+
   xQueueHandle scan_queue;
 } wifi;
 
 static void on_wifi_event(System_Event_t *event);
 
 
-int wifi_init(struct wifi *wifi, struct user_info *user_info)
+int wifi_init(struct wifi *wifi, struct user_info *user_info, user_func_t user_func)
 {
   wifi->user_info = user_info;
+  wifi->user_func = user_func;
 
   if ((wifi->scan_queue = xQueueCreate(1, sizeof(struct wifi_scan_event))) == NULL) {
     LOG_ERROR("xQueueCreate");
@@ -45,12 +48,26 @@ int wifi_init(struct wifi *wifi, struct user_info *user_info)
     return -1;
   }
 
+  // enable auto-connect
+  if (!wifi_station_set_auto_connect(true)) {
+    LOG_ERROR("wifi_station_set_auto_connect(true)");
+  }
+
   wifi_get_macaddr(STATION_IF, user_info->mac);
 
   return 0;
 }
 
-void wifi_is_connected(struct wifi *wifi)
+void wifi_connecting(struct wifi *wifi)
+{
+  LOG_INFO("");
+
+  if (wifi->user_func) {
+    wifi->user_func(wifi->user_info, WIFI_CONNECTING);
+  }
+}
+
+void wifi_connected(struct wifi *wifi)
 {
   struct ip_info wifi_sta_ipinfo;
   char *wifi_sta_hostname;
@@ -64,13 +81,65 @@ void wifi_is_connected(struct wifi *wifi)
   LOG_INFO("hostname=%s ip=" IPSTR, wifi->user_info->hostname, IP2STR(&wifi->user_info->ip));
 
   wifi->user_info->connected = true;
+
+  if (wifi->user_func) {
+    wifi->user_func(wifi->user_info, WIFI_CONNECTED);
+  }
 }
 
-void wifi_is_disconnected(struct wifi *wifi)
+void wifi_disconnected(struct wifi *wifi)
 {
-  LOG_INFO("disconnected");
+  LOG_INFO("");
 
   wifi->user_info->connected = false;
+
+  if (wifi->user_func) {
+    wifi->user_func(wifi->user_info, WIFI_DISCONNECTED);
+  }
+}
+
+void wifi_update_status(struct wifi *wifi, STATION_STATUS status)
+{
+  switch (status) {
+    case STATION_IDLE:
+      LOG_INFO("station idle");
+      wifi_disconnected(wifi);
+      break;
+
+    case STATION_CONNECTING:
+      LOG_INFO("connecting");
+      wifi_connecting(wifi);
+      break;
+
+    case STATION_WRONG_PASSWORD:
+      LOG_WARN("wrong password");
+      wifi_disconnected(wifi);
+      break;
+
+    case STATION_NO_AP_FOUND:
+      LOG_WARN("no AP found");
+      wifi_disconnected(wifi);
+      break;
+
+    case STATION_CONNECT_FAIL:
+      LOG_WARN("connect failed");
+      wifi_disconnected(wifi);
+      break;
+
+    case STATION_GOT_IP:
+      LOG_INFO("got IP");
+      wifi_connected(wifi);
+      break;
+
+    default:
+      // https://github.com/espressif/ESP8266_NONOS_SDK/issues/153 returns 0xff if not configured?
+      if (status == 0xff) {
+        LOG_WARN("not configured?");
+      } else {
+        LOG_WARN("Unknown wifi_station_get_connect_status -> %d", status);
+      }
+      break;
+  }
 }
 
 int wifi_setup(struct wifi *wifi, const struct wifi_config *config)
@@ -80,31 +149,25 @@ int wifi_setup(struct wifi *wifi, const struct wifi_config *config)
   snprintf((char *) wifi_station_config.ssid, sizeof(wifi_station_config.ssid), "%s", config->ssid);
   snprintf((char *) wifi_station_config.password, sizeof(wifi_station_config.password), "%s", config->password);
 
-  LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
-
   if (!wifi_set_opmode(STATION_MODE)) {
     LOG_ERROR("wifi_set_opmode STATION_MODE");
     return -1;
   }
 
-  if (!wifi_station_set_config(&wifi_station_config)) {
-    LOG_ERROR("wifi_station_set_config");
-    return -1;
-  }
+  if (wifi_station_config.ssid[0]) {
+    LOG_INFO("config station mode with ssid=%s", wifi_station_config.ssid);
 
-  // initial
-  switch (wifi_station_get_connect_status()) {
-    case STATION_IDLE:
-    case STATION_CONNECTING:
-    case STATION_WRONG_PASSWORD:
-    case STATION_NO_AP_FOUND:
-    case STATION_CONNECT_FAIL:
-      wifi_is_disconnected(wifi);
-      break;
+    if (!wifi_station_set_config_current(&wifi_station_config)) {
+      LOG_ERROR("wifi_station_set_config_current");
+      return -1;
+    }
 
-    case STATION_GOT_IP:
-      wifi_is_connected(wifi);
-      break;
+    wifi_update_status(wifi, STATION_CONNECTING);
+
+  } else {
+    LOG_INFO("no wifi ssid configured");
+
+    wifi_update_status(wifi, STATION_IDLE);
   }
 
   return 0;
@@ -115,6 +178,7 @@ static void on_wifi_event(System_Event_t *event)
   switch (event->event_id) {
     case EVENT_STAMODE_SCAN_DONE: {
       Event_StaMode_ScanDone_t info = event->event_info.scan_done;
+
       LOG_INFO("scan done: status=%u", info.status);
     } break;
 
@@ -122,6 +186,7 @@ static void on_wifi_event(System_Event_t *event)
       Event_StaMode_Connected_t info = event->event_info.connected;
 
       LOG_INFO("connected: ssid=%s bssid=" MACSTR " channel=%u", info.ssid, MAC2STR(info.bssid), info.channel);
+
     } break;
 
     case EVENT_STAMODE_DISCONNECTED: {
@@ -129,13 +194,13 @@ static void on_wifi_event(System_Event_t *event)
 
       LOG_INFO("disconnected: ssid=%s reason=%u", info.ssid, info.reason);
 
-      wifi_is_disconnected(&wifi);
     } break;
 
     case EVENT_STAMODE_AUTHMODE_CHANGE: {
       Event_StaMode_AuthMode_Change_t info = event->event_info.auth_change;
 
       LOG_INFO("auth mode change: mode=%u -> %u", info.old_mode, info.new_mode);
+
     } break;
 
     case EVENT_STAMODE_GOT_IP: {
@@ -146,27 +211,25 @@ static void on_wifi_event(System_Event_t *event)
           IP2STR(&info.mask),
           IP2STR(&info.gw)
       );
-
-      wifi_is_connected(&wifi);
     } break;
 
     case EVENT_STAMODE_DHCP_TIMEOUT: {
       LOG_INFO("dhcp timeout");
-
-      wifi_is_disconnected(&wifi);
     } break;
 
     default: {
-      LOG_INFO("%u\n", event->event_id);
+      LOG_WARN("unknown event=%u\n", event->event_id);
     }
   }
+
+  wifi_update_status(&wifi, wifi_station_get_connect_status());
 }
 
-int init_wifi(struct wifi_config *config, struct user_info *user_info)
+int init_wifi(struct wifi_config *config, struct user_info *user_info, user_func_t user_func)
 {
   int err;
 
-  if ((err = wifi_init(&wifi, user_info))) {
+  if ((err = wifi_init(&wifi, user_info, user_func))) {
     return err;
   }
 

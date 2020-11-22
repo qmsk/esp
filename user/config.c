@@ -136,6 +136,33 @@ int config_set(const struct config_tab *tab, const char *value)
   return 0;
 }
 
+int config_get(const struct config_tab *tab, char *buf, size_t size)
+{
+  switch(tab->type) {
+    case CONFIG_TYPE_NULL:
+      break;
+
+    case CONFIG_TYPE_STRING:
+      if (snprintf(buf, size, "%s", tab->value.string) >= size) {
+        return -1;
+      } else {
+        break;
+      }
+
+    case CONFIG_TYPE_UINT16:
+    if (snprintf(buf, size, "%u", *tab->value.uint16) >= size) {
+      return -1;
+    } else {
+      break;
+    }
+
+    default:
+      return -CMD_ERR_NOT_IMPLEMENTED;
+  }
+
+  return 0;
+}
+
 int config_print(const struct config_tab *tab)
 {
   switch(tab->type) {
@@ -164,6 +191,33 @@ int config_cmd_list(int argc, char **argv, void *ctx)
   for (const struct config_tab *tab = configtab; tab->type && tab->name; tab++) {
     config_print(tab);
   }
+
+  return 0;
+}
+
+int config_cmd_get(int argc, char **argv, void *ctx)
+{
+  const struct config_tab *configtab = ctx, *tab;
+  const char *name;
+  char value[CONFIG_VALUE_SIZE];
+
+  int err;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &name))) {
+    return err;
+  }
+
+  if (config_lookup(configtab, name, &tab)) {
+    LOG_ERROR("Unkown configtab: %s", name);
+    return -CMD_ERR_ARGV;
+  }
+
+  if (config_get(tab, value, sizeof(value))) {
+    LOG_ERROR("Invalid configtab %s value: %s", tab->name);
+    return -CMD_ERR;
+  }
+
+  cli_printf("%s\n", value);
 
   return 0;
 }
@@ -202,6 +256,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
 
 const struct cmd config_commands[] = {
   { "list",              config_cmd_list, (void *) user_configtab,   .describe = "List config settings" },
+  { "get",               config_cmd_get,  (void *) user_configtab,   .usage = "NAME", .describe = "Get config setting" },
   { "set",               config_cmd_set,  (void *) user_configtab,   .usage = "NAME VALUE", .describe = "Set and write config" },
   {}
 };

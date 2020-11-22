@@ -3,6 +3,8 @@
 
 #include <c_types.h>
 
+#define CONFIG_VALUE_SIZE 256
+
 enum config_type {
   CONFIG_TYPE_NULL,
   CONFIG_TYPE_UINT16,

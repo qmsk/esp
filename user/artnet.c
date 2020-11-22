@@ -3,12 +3,13 @@
 #include "artnet_protocol.h"
 #include "artnet_dmx.h"
 
+#include <lib/logging.h>
+
 #include <lwip/sockets.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string.h>
 
-#include "logging.h"
 
 #define ARTNET_TASK_STACK 512
 #define ARTNET_PORTS 4

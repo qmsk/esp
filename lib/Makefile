@@ -13,9 +13,7 @@
 #
 ifndef PDIR
 UP_EXTRACT_DIR = ..
-SUBDIRS = cmd
-GEN_LIBS = libcmd.a
-COMPONENTS_libcmd = cmd/libcmd.a
+SUBDIRS = cmd uart logging
 endif
 
 

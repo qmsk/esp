@@ -1,6 +1,7 @@
 #include "spi.h"
 #include "user_cmd.h"
-#include "logging.h"
+
+#include <lib/logging.h>
 
 #include <drivers/spi.h>
 #include <string.h>

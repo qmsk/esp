@@ -1,4 +1,5 @@
 #include "uart.h"
+#include "logging.h"
 
 #include <drivers/uart.h>
 #include <esp_misc.h>
@@ -6,8 +7,6 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 
-#include "user_config.h"
-#include "logging.h"
 
 struct uart {
   UART_Port port;
@@ -30,6 +29,13 @@ struct uart uart1 = {
 static void uart_intr_tx(struct uart *uart, portBASE_TYPE *task_wokenp) // ISR UART_TXFIFO_EMPTY_INT_ST
 {
   struct uart_event tx;
+
+  if (!uart->tx_queue) {
+    // queue disabled
+    UART_DisableIntr(uart->port, UART_TXFIFO_EMPTY_INT_ENA);
+
+    return;
+  }
 
   while (true) {
     if (UART_GetWriteSize(uart->port) < sizeof(tx.io.buf)) {
@@ -274,7 +280,7 @@ static void uart_intr_handler(void *arg)
   portEND_SWITCHING_ISR(tx0_task_woken || rx0_task_woken || tx1_task_woken);
 }
 
-static int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue)
+int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue)
 {
   if ((uart->tx_queue = xQueueCreate(tx_queue, sizeof(struct uart_event))) == NULL) {
     LOG_ERROR("xQueueCreate TX %u*%u", tx_queue, sizeof(struct uart_event));
@@ -313,45 +319,17 @@ int uart_setup(struct uart *uart, const UART_Config *uart_config)
   return 0;
 }
 
-void uart_disable(struct uart *uart)
+int uart_disable(struct uart *uart)
 {
   UART_ClearIntrStatus(uart->port, UART_INTR_MASK);
   UART_SetIntrEna(uart->port, 0);
+
+  return 0;
 }
 
-int init_uart(struct user_config *config)
+void uart_interrupts_enable()
 {
-  int err;
-
-  UART_Config uart_config = {
-    .baud_rate  = USER_CONFIG_UART_BAUD_RATE,
-    .data_bits  = UART_WordLength_8b,
-    .parity     = UART_Parity_None,
-    .stop_bits  = UART_StopBits_1,
-  };
-
-  if ((err = uart_init(&uart0, UART_TX_QUEUE_SIZE, UART_RX_QUEUE_SIZE))) {
-    LOG_ERROR("uart_init uart0");
-    return err;
-  }
-
-  if ((err = uart_init(&uart1, UART_TX_QUEUE_SIZE, 0))) {
-    LOG_ERROR("uart_init uart1");
-    return err;
-  }
-
-  if ((err = uart_setup(&uart0, &uart_config))) {
-    LOG_ERROR ("setup_uart uart0");
-    return err;
-  }
-
-  uart_disable(&uart1);
-
   UART_RegisterIntrHandler(&uart_intr_handler, NULL);
 
   ETS_UART_INTR_ENABLE();
-
-  LOG_INFO("setup baud=%u", uart_config.baud_rate);
-
-  return 0;
 }

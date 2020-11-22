@@ -2,7 +2,8 @@
 #include "user_config.h"
 #include "user_cmd.h"
 #include "cli.h"
-#include "logging.h"
+
+#include <lib/logging.h>
 
 #include <fcntl.h>
 #include <stdio.h>

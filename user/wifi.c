@@ -3,7 +3,8 @@
 #include "wifi.h"
 #include "user_cmd.h"
 #include "cli.h"
-#include "logging.h"
+
+#include <lib/logging.h>
 
 #include <c_types.h>
 #include <esp_misc.h>

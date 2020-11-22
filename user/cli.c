@@ -1,6 +1,8 @@
 #include "cli.h"
-#include "uart.h"
-#include "logging.h"
+
+#include <lib/cmd.h>
+#include <lib/logging.h>
+#include <lib/uart.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -8,7 +10,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include <lib/cmd.h>
 
 #define CLI_TX_BUF 512
 #define CLI_RX_BUF 512

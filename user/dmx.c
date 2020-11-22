@@ -1,9 +1,9 @@
 #include "dmx.h"
 #include "user_cmd.h"
-#include "uart.h"
-#include "logging.h"
 #include "artnet_dmx.h"
 
+#include <lib/logging.h>
+#include <lib/uart.h>
 #include <drivers/gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>

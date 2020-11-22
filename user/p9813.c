@@ -3,7 +3,8 @@
 #include "user_cmd.h"
 #include "spi.h"
 #include "artnet_dmx.h"
-#include "logging.h"
+
+#include <lib/logging.h>
 
 #include <stdlib.h>
 #include <drivers/gpio.h>

@@ -1,9 +1,10 @@
-#ifndef __USER_UART_H__
-#define __USER_UART_H__
-
-#include "user_config.h"
+#ifndef __LIB_UART_H__
+#define __LIB_UART_H__
 
 #include <drivers/uart_config.h>
+
+#include <stddef.h>
+#include <stdint.h>
 
 #define UART_IO_SIZE 32
 #define UART_TX_QUEUE_SIZE 32
@@ -27,7 +28,7 @@ struct uart_event {
   union {
     struct uart_io io;
     struct uart_tx_break {
-      uint16 break_us, mark_us;
+      uint16_t break_us, mark_us;
     } tx_break;
   };
 };
@@ -35,11 +36,11 @@ struct uart_event {
 extern struct uart uart0;
 extern struct uart uart1;
 
-/** Initialize uart0, uart1 and uart ISR
+/** Initialize uart state
  *
  * @return <0 on error
  */
-int init_uart(struct user_config *config);
+ int uart_init(struct uart *uart, size_t tx_queue, size_t rx_queue);
 
 /** Configure UART for RX/TX
  *
@@ -48,6 +49,11 @@ int init_uart(struct user_config *config);
  * @return <0 on error
  */
 int uart_setup(struct uart *uart, const UART_Config *uart_config);
+
+/** Disable interrupts for uart.
+ *
+ */
+int uart_disable(struct uart *uart);
 
 /** Write one byte to UART.
  *
@@ -92,5 +98,10 @@ int uart_read(struct uart *uart, void *buf, size_t size);
  * @param mark_us mark (high) for us delay
  */
 int uart_break(struct uart *uart, uint16_t break_us, uint16_t mark_us);
+
+/**
+ * Enable global UART interrupts.
+ */
+void uart_interrupts_enable();
 
 #endif

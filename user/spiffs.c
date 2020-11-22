@@ -1,5 +1,6 @@
 #include "spiffs.h"
-#include "logging.h"
+
+#include <lib/logging.h>
 
 #include <c_types.h>
 #include <spi_flash.h>

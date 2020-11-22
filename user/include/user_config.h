@@ -3,6 +3,7 @@
 
 #include <c_types.h>
 #include <spi_flash.h>
+#include "config.h"
 
 #define SPIFFS_FLASH_SECTORS (1 * 1024 * 1024 / SPI_FLASH_SEC_SIZE) // 1MB at end of flash
 #define SPIFFS_BLOCK_SIZE (SPI_FLASH_SEC_SIZE)
@@ -27,5 +28,10 @@ struct user_config {
 };
 
 #define USER_CONFIG_VERSION 4
+
+extern struct user_config user_config;
+extern const struct config_tab user_configtab[];
+
+int init_config(struct user_config *config);
 
 #endif

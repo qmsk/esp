@@ -1,8 +1,7 @@
 #ifndef __USER_CONFIG_H__
 #define __USER_CONFIG_H__
 
-#include "user_config.h"
-extern struct user_config user_config;
+#include <c_types.h>
 
 enum config_type {
   CONFIG_TYPE_NULL,
@@ -20,7 +19,5 @@ struct config_tab {
     char *string;
   } value;
 };
-
-int init_config(struct user_config *config);
 
 #endif

@@ -6,20 +6,8 @@
 
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
-
-struct user_config user_config = {
-  .version        = USER_CONFIG_VERSION,
-  .wifi_ssid      = USER_CONFIG_WIFI_SSID,
-  .wifi_password  = USER_CONFIG_WIFI_PASSWORD,
-  .artnet = {
-    .universe = ARTNET_CONFIG_UNIVERSE,
-  },
-  .dmx = {
-    .gpio = DMX_CONFIG_GPIO,
-    .artnet_universe = DMX_CONFIG_ARTNET_UNIVERSE,
-  },
-};
 
 int config_read(struct user_config *config)
 {
@@ -105,38 +93,18 @@ int init_config(struct user_config *config)
   }
 }
 
+// CLI
+int config_lookup(const struct config_tab *tab, const char *name, const struct config_tab **tabp)
+{
+  for (; tab->type && tab->name; tab++) {
+    if (strcmp(tab->name, name) == 0) {
+      *tabp = tab;
+      return 0;
+    }
+  }
 
-static struct config_tab config_version = { CONFIG_TYPE_UINT16, "version",
-  .readonly = true,
-  .value = { .uint16 = &user_config.version },
-};
-static struct config_tab config_wifi_ssid = { CONFIG_TYPE_STRING, "wifi.ssid",
-  .size = sizeof(user_config.wifi_ssid),
-  .value = { .string = user_config.wifi_ssid },
-};
-static struct config_tab config_wifi_password = { CONFIG_TYPE_STRING, "wifi.password",
-  .size = sizeof(user_config.wifi_password),
-  .value = { .string = user_config.wifi_password },
-};
-static struct config_tab config_artnet_universe = { CONFIG_TYPE_UINT16, "artnet.universe",
-  .size = sizeof(user_config.artnet.universe),
-  .value = { .uint16 = &user_config.artnet.universe },
-};
-static struct config_tab config_dmx_gpio = { CONFIG_TYPE_UINT16, "dmx.gpio",
-  .value = { .uint16 = &user_config.dmx.gpio },
-};
-static struct config_tab config_dmx_artnet_universe = { CONFIG_TYPE_UINT16, "dmx.artnet-universe",
-  .value = { .uint16 = &user_config.dmx.artnet_universe },
-};
-static struct config_tab config_p9813_count = { CONFIG_TYPE_UINT16, "p9813.count",
-  .value = { .uint16 = &user_config.p9813.count },
-};
-static struct config_tab config_p9813_artnet_universe = { CONFIG_TYPE_UINT16, "p9813.artnet_universe",
-  .value = { .uint16 = &user_config.p9813.artnet_universe },
-};
-static struct config_tab config_p9813_gpio = { CONFIG_TYPE_UINT16, "p9813.gpio",
-  .value = { .uint16 = &user_config.p9813.gpio },
-};
+  return 1;
+}
 
 int config_set(const struct config_tab *tab, const char *value)
 {
@@ -145,23 +113,23 @@ int config_set(const struct config_tab *tab, const char *value)
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
       if (snprintf(tab->value.string, tab->size, "%s", value) >= tab->size) {
-        return -CMD_ERR_ARGV;
+        return -1;
       } else {
         break;
       }
 
     case CONFIG_TYPE_UINT16:
       if (sscanf(value, "%u", &uvalue) <= 0) {
-        return -CMD_ERR_ARGV;
+        return -1;
       } else if (uvalue > UINT16_MAX) {
-        return -CMD_ERR_ARGV;
+        return -1;
       } else {
         *tab->value.uint16 = (uint16_t) uvalue;
         break;
       }
 
     default:
-      return -CMD_ERR_ARGV;
+      return -1;
   }
 
   return 0;
@@ -188,45 +156,50 @@ int config_print(const struct config_tab *tab)
   return 0;
 }
 
-int config_cmd(int argc, char **argv, void *ctx)
+int config_cmd_list(int argc, char **argv, void *ctx)
 {
-  struct config_tab *tab = ctx;
-  char *value;
+  for (const struct config_tab *tab = user_configtab; tab->type && tab->name; tab++) {
+    config_print(tab);
+  }
+
+  return 0;
+}
+
+int config_cmd_set(int argc, char **argv, void *ctx)
+{
+  const struct config_tab *configtab;
+  const char *name, *value;
+  
   int err;
 
-  if (argc == 1) {
-    value = NULL;
-  } else if (argc == 2) {
-    value = argv[1];
-  } else {
-    return -CMD_ERR_ARGC;
-  }
-
-  if (!value) {
-
-  } else if (tab->readonly) {
-    return -CMD_ERR_ARGC;
-  } else if ((err = config_set(tab, value))) {
+  if ((err = cmd_arg_str(argc, argv, 1, &name))) {
     return err;
-  } else if ((err = config_write(&user_config))) {
+  }
+  if ((err = cmd_arg_str(argc, argv, 2, &value))) {
     return err;
   }
 
-  return config_print(tab);
+  if (config_lookup(user_configtab, name, &configtab)) {
+    LOG_ERROR("Unkown configtab: %s", name);
+    return -CMD_ERR_ARGV;
+  }
+
+  if (config_set(configtab, value)) {
+    LOG_ERROR("Invalid configtab %s value: %s", configtab->name, value);
+    return -CMD_ERR_ARGV;
+  }
+
+  if (config_write(&user_config)) {
+    LOG_ERROR("Failed writing config");
+    return -CMD_ERR;
+  }
 
   return 0;
 }
 
 const struct cmd config_commands[] = {
-  { "version",          config_cmd, &config_version,          .describe = "Version" },
-  { "wifi.ssid",        config_cmd, &config_wifi_ssid,        .usage = "[SSID]", .describe = "WiFi SSID"     },
-  { "wifi.password",    config_cmd, &config_wifi_password,    .usage = "[PASSWORD]", .describe = "WiFi Password" },
-  { "artnet.universe",         config_cmd, &config_artnet_universe,     .usage = "[UNIVERSE-BASE]", .describe = "ArtNet output port base address" },
-  { "dmx.artnet_universe",     config_cmd, &config_dmx_artnet_universe, .usage = "[UNIVERSE]", .describe = "ArtNet DMX output port address" },
-  { "dmx.gpio",                config_cmd, &config_dmx_gpio,            .usage = "[GPIO]", .describe = "DMX Output Enable GPIO pin (low during boot)" },
-  { "p9813.count",            config_cmd, &config_p9813_count,            .usage = "[COUNT]",     .describe = "Number of chained P9813 controllers" },
-  { "p9813.artnet_universe",  config_cmd, &config_p9813_artnet_universe,  .usage = "[UNIVERSE]",  .describe = "ArtNet P9813 output port universe" },
-  { "p9813.gpio",             config_cmd, &config_p9813_gpio,             .usage = "[GPIO]",      .describe = "P9813 output enable GPIO pin" },
+  { "list",              config_cmd_list, &user_config,          .describe = "List config settings" },
+  { "set",               config_cmd_set,  &user_config,          .usage = "NAME VALUE", .describe = "Set and write config" },
   {}
 };
 

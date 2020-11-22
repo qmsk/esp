@@ -2,6 +2,7 @@
 #include "cli.h"
 #include "config.h"
 #include "dmx.h"
+#include "led.h"
 #include "p9813.h"
 #include "spi.h"
 #include "spiffs.h"
@@ -48,6 +49,12 @@ struct user_info user_info;
 void user_init(void)
 {
   print_system();
+
+   // status LED high during initial user boot
+  if (init_led(LED_ON)) {
+    printf("FATAL: init_led\n");
+    return;
+  }
 
   if (init_uart()) {
     printf("FATAL: init_uart\n");

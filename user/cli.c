@@ -4,6 +4,7 @@
 #include "dmx_cmd.h"
 #include "spi_cmd.h"
 #include "p9813_cmd.h"
+#include "led_cmd.h"
 
 #include <lib/cli.h>
 #include <lib/logging.h>
@@ -24,6 +25,7 @@ int echo_cmd(int argc, char **argv, void *ctx)
 static const struct cmd user_commands[] = {
   { "help",   cli_help_cmd, .describe = "Show this listing" },
   { "echo",   echo_cmd, .usage = "[...]" },
+  { "led",    .describe = "Status LED", .subcommands = &led_cmdtab },
   { "config", .describe = "Configuration commands", .subcommands = &config_cmdtab },
   { "wifi",   .describe = "WiFi commands", .subcommands = &wifi_cmdtab },
   { "dmx",    .describe = "DMX", .subcommands = &dmx_cmdtab },

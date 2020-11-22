@@ -158,7 +158,9 @@ int config_print(const struct config_tab *tab)
 
 int config_cmd_list(int argc, char **argv, void *ctx)
 {
-  for (const struct config_tab *tab = user_configtab; tab->type && tab->name; tab++) {
+  const struct config_tab *configtab = ctx;
+
+  for (const struct config_tab *tab = configtab; tab->type && tab->name; tab++) {
     config_print(tab);
   }
 
@@ -167,9 +169,9 @@ int config_cmd_list(int argc, char **argv, void *ctx)
 
 int config_cmd_set(int argc, char **argv, void *ctx)
 {
-  const struct config_tab *configtab;
+  const struct config_tab *configtab = ctx, *tab;
   const char *name, *value;
-  
+
   int err;
 
   if ((err = cmd_arg_str(argc, argv, 1, &name))) {
@@ -179,13 +181,13 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(user_configtab, name, &configtab)) {
+  if (config_lookup(configtab, name, &tab)) {
     LOG_ERROR("Unkown configtab: %s", name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_set(configtab, value)) {
-    LOG_ERROR("Invalid configtab %s value: %s", configtab->name, value);
+  if (config_set(tab, value)) {
+    LOG_ERROR("Invalid configtab %s value: %s", tab->name, value);
     return -CMD_ERR_ARGV;
   }
 
@@ -198,8 +200,8 @@ int config_cmd_set(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "list",              config_cmd_list, &user_config,          .describe = "List config settings" },
-  { "set",               config_cmd_set,  &user_config,          .usage = "NAME VALUE", .describe = "Set and write config" },
+  { "list",              config_cmd_list, (void *) user_configtab,   .describe = "List config settings" },
+  { "set",               config_cmd_set,  (void *) user_configtab,   .usage = "NAME VALUE", .describe = "Set and write config" },
   {}
 };
 

@@ -1,7 +1,6 @@
 #include "user_config.h"
 #include "spiffs.h"
 #include "config.h"
-#include "user_cmd.h"
 #include "cli.h"
 #include "wifi.h"
 #include "dmx.h"
@@ -112,7 +111,7 @@ void user_init(void)
     return;
   }
 
-  if (init_cli(&user_config, &user_cmdtab)) {
+  if (init_cli(&user_config)) {
     printf("FATAL: init_cli\n");
     return;
   }

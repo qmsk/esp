@@ -1,8 +1,8 @@
 #include "config.h"
+#include "config_cmd.h"
 #include "user_config.h"
-#include "user_cmd.h"
-#include "cli.h"
 
+#include <lib/cli.h>
 #include <lib/logging.h>
 
 #include <fcntl.h>

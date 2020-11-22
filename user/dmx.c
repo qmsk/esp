@@ -1,5 +1,5 @@
 #include "dmx.h"
-#include "user_cmd.h"
+#include "dmx_cmd.h"
 #include "artnet_dmx.h"
 
 #include <lib/logging.h>

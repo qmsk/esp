@@ -1,6 +1,6 @@
 #include "p9813.h"
 #include "p9813_config.h"
-#include "user_cmd.h"
+#include "p9813_cmd.h"
 #include "spi.h"
 #include "artnet_dmx.h"
 

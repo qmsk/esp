@@ -1,5 +1,5 @@
 #include "spi.h"
-#include "user_cmd.h"
+#include "spi_cmd.h"
 
 #include <lib/logging.h>
 

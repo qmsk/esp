@@ -13,7 +13,7 @@
 #
 ifndef PDIR
 UP_EXTRACT_DIR = ..
-SUBDIRS = cmd uart logging
+SUBDIRS = uart logging cli cmd
 endif
 
 

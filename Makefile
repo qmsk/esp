@@ -51,7 +51,7 @@ COMPONENTS_eagle.app.v6 = \
 	ext/drivers/libgpio.a \
 	ext/drivers/libspi.a \
 	ext/drivers/libuart.a \
-	lib/cmd/libcmd.a lib/uart/libuart.a lib/logging/liblogging.a
+	lib/uart/libuart.a lib/logging/liblogging.a lib/cli/libcli.a lib/cmd/libcmd.a 
 
 LINKFLAGS_eagle.app.v6 = \
 	-L$(SDK_PATH)/lib        \

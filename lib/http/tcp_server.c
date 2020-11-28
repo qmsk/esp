@@ -51,7 +51,7 @@ int tcp_listen (int *sockp, const char *host, const char *port, int backlog)
             continue;
         }
 
-        LOG_INFO("%s...", sockaddr_str(addr->ai_addr, addr->ai_addrlen));
+        LOG_DEBUG("sock=%d bind %s", sock, sockaddr_str(addr->ai_addr, addr->ai_addrlen));
 
         // bind to listen address/port
         if ((err = bind(sock, addr->ai_addr, addr->ai_addrlen)) < 0) {
@@ -61,8 +61,6 @@ int tcp_listen (int *sockp, const char *host, const char *port, int backlog)
             continue;
         }
 
-        LOG_INFO("%s", sockname_str(sock));
-
         break;
     }
 
@@ -70,6 +68,10 @@ int tcp_listen (int *sockp, const char *host, const char *port, int backlog)
 
     if (sock < 0)
         return -1;
+
+
+    LOG_INFO("%s", sockname_str(sock));
+    LOG_DEBUG("sock=%d listen backlog=%d", sock, backlog);
 
     // mark as listening
     if ((err = listen(sock, backlog))) {
@@ -86,7 +88,7 @@ int tcp_listen (int *sockp, const char *host, const char *port, int backlog)
     return 0;
 }
 
-int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog)
+int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog, int flags)
 {
     struct tcp_server *server;
     int err;
@@ -96,15 +98,23 @@ int tcp_server (struct tcp_server **serverp, const char *host, const char *port,
         return -1;
     }
 
+    LOG_DEBUG("server=%p listen host=%s port=%s", server, host, port);
+
     if ((err = tcp_listen(&server->sock, host, port, backlog))) {
         LOG_ERROR("tcp_listen %s:%s", host, port);
         goto error;
     }
 
-    if ((err = sock_nonblocking(server->sock))) {
-        LOG_ERROR("sock_nonblocking");
-        goto error;
+    if (flags & TCP_NONBLOCKING) {
+      LOG_DEBUG("sock_nonblocking sock=%d", server->sock);
+
+      if ((err = sock_nonblocking(server->sock))) {
+          LOG_ERROR("sock_nonblocking");
+          goto error;
+      }
     }
+
+    LOG_DEBUG("server=%p sock=%d", server, server->sock);
 
     // ok
     *serverp = server;
@@ -115,10 +125,12 @@ error:
     return err;
 }
 
-int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size)
+int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size, int flags)
 {
     int err;
     int sock;
+
+    LOG_DEBUG("server=%p ssock=%d accept", server, server->sock);
 
     while ((err = sock_accept(server->sock, &sock)) != 0) {
         // handle various error cases
@@ -137,7 +149,18 @@ int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stre
         }
     }
 
+    LOG_DEBUG("server=%p ssock=%d accept: sock=%d", server->sock, sock);
     LOG_INFO("%s accept %s", sockname_str(sock), sockpeer_str(sock));
+
+    if (flags & TCP_NONBLOCKING) {
+      LOG_DEBUG("sock_nonblocking sock=%d", sock);
+
+      if ((err = sock_nonblocking(sock))) {
+          LOG_ERROR("sock_nonblocking");
+          close(sock);
+          return -1;
+      }
+    }
 
     if (tcp_create(tcpp, sock, stream_size)) {
         LOG_ERROR("tcp_create");

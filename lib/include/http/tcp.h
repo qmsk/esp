@@ -7,6 +7,10 @@
 struct tcp;
 struct tcp_server;
 
+enum {
+    TCP_NONBLOCKING = 1,
+};
+
 /*
  * Open a TCP server socket, listening on the given host/port.
  *
@@ -22,14 +26,14 @@ int tcp_connect (int *sockp, const char *host, const char *port);
 /*
  * Run a server for accepting connections..
  */
-int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog);
+int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog, int flags);
 
 /*
  * Accept a new incoming request.
  * *
  * TODO: Return >0 on temporary per-client errors?
  */
-int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size);
+int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size, int flags);
 
 /*
  * Release all resources.

@@ -136,12 +136,12 @@ int sock_nonblocking (int sock)
     int flags;
 
     if ((flags = fcntl(sock, F_GETFL, 0)) < 0) {
-        LOG_ERROR("fcntl: %s", strerror(errno));
+        LOG_ERROR("fcntl(%d, F_GETFL, 0): %s", sock, strerror(errno));
         return -1;
     }
 
     if (fcntl(sock, F_SETFL, flags | O_NONBLOCK) < 0) {
-        LOG_ERROR("fcntl: %s", strerror(errno));
+        LOG_ERROR("fcntl(%d, F_SETFL, 0x%04x | O_NONBLOCK): %s", sock, flags, strerror(errno));
         return -1;
     }
 
@@ -191,6 +191,8 @@ int sock_accept (int ssock, int *sockp)
     int sock;
 
     sock = accept(ssock, NULL, NULL);
+
+    LOG_DEBUG("accept(%d): %d", ssock, sock);
 
     if (sock >= 0) {
         *sockp = sock;

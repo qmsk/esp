@@ -192,6 +192,8 @@ static int http_connection_create (struct http_server *server, struct tcp *tcp, 
         goto error;
     }
 
+    *connectionp = connection;
+
     return 0;
 
 error:
@@ -247,6 +249,7 @@ void http_connection_destroy (struct http_connection *connection)
 int http_server_listen (struct http_server *server, const char *host, const char *port, struct http_listener **listenerp)
 {
     struct http_listener *listener;
+    int err;
 
     if (!(listener = calloc(1, sizeof(*listener)))) {
         LOG_ERROR("calloc");
@@ -255,7 +258,7 @@ int http_server_listen (struct http_server *server, const char *host, const char
 
     listener->server = server;
 
-    if (tcp_server(&listener->tcp_server, host, port, server->listen_backlog)) {
+    if ((err = tcp_server(&listener->tcp_server, host, port, server->listen_backlog, 0))) {
         LOG_ERROR("tcp_server");
         goto error;
     }
@@ -272,7 +275,7 @@ error:
 
     free(listener);
 
-    return -1;
+    return err;
 }
 
 int http_listener_accept (struct http_listener *listener, struct http_connection **connectionp)
@@ -280,10 +283,12 @@ int http_listener_accept (struct http_listener *listener, struct http_connection
     struct tcp *tcp;
     int err;
 
-    if ((err = tcp_server_accept(listener->tcp_server, &tcp, listener->server->stream_size))) {
+    if ((err = tcp_server_accept(listener->tcp_server, &tcp, listener->server->stream_size, 0))) {
         LOG_ERROR("tcp_server_accept");
         return -1;
     }
+
+    LOG_DEBUG("tcp=%p", tcp);
 
     if ((err = http_connection_create(listener->server, tcp, connectionp))) {
         LOG_ERROR("http_server_connection");

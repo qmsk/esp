@@ -1,4 +1,4 @@
-#include "stream.h"
+#include "http/stream.h"
 
 #include "logging.h"
 

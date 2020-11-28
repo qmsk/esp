@@ -1,5 +1,4 @@
 #include "sock.h"
-
 #include "logging.h"
 
 #include <errno.h>

@@ -1,7 +1,8 @@
-#include "tcp.h"
 #include "tcp_internal.h"
 #include "sock.h"
-#include "stream.h"
+
+#include "http/tcp.h"
+#include "http/stream.h"
 
 #include "logging.h"
 

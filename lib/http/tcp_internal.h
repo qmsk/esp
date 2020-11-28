@@ -1,9 +1,10 @@
 #ifndef TCP_INTERNAL_H
 #define TCP_INTERNAL_H
 
-#include "stream.h"
+#include "http/stream.h"
 
 #include <stddef.h>
+#include <sys/socket.h>
 
 struct tcp {
     int sock;

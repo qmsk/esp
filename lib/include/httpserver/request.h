@@ -1,8 +1,8 @@
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
-#include "http/types.h"
-#include "http/url.h"
+#include <lib/http/types.h>
+#include <lib/http/url.h>
 
 struct http_request;
 

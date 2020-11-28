@@ -41,6 +41,8 @@ int http_listener_accept (struct http_listener *listener, struct http_connection
 
 /*
  * Process one client request on connection.
+ *
+ * Return <0 on internal error, 0 on success with persistent connection, 1 on success with cconnection-close.
  */
 int http_connection_serve (struct http_connection *connection, http_handler_func handler, void *ctx);
 

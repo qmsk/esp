@@ -17,30 +17,6 @@ struct http {
     size_t chunk_size;
 };
 
-const char * http_status_str (enum http_status status)
-{
-    switch (status) {
-        case 200:   return "OK";
-        case 201:   return "Created";
-
-        case 301:   return "Found";
-
-        case 400:   return "Bad Request";
-        case 403:   return "Forbidden";
-        case 404:   return "Not Found";
-        case 405:   return "Method Not Allowed";
-        case 411:   return "Length Required";
-        case 413:   return "Request Entity Too Large";
-        case 414:   return "Request-URI Too Long";
-        case 415:   return "Unsupported Media Type";
-
-        case 500:   return "Internal Server Error";
-
-        // hrhr
-        default:    return "Unknown Response Status";
-    }
-}
-
 int http_create (struct http **httpp, struct stream *read, struct stream *write)
 {
     struct http *http = NULL;
@@ -192,16 +168,9 @@ int http_write_request (struct http *http, const char *version, const char *meth
     return 0;
 }
 
-int http_write_response (struct http *http, const char *version, enum http_status status, const char *reason)
+int http_write_response (struct http *http, enum http_version version, enum http_status status, const char *reason)
 {
-    if (!version) {
-        version = HTTP_VERSION;
-    }
-    if (!reason) {
-        reason = http_status_str(status);
-    }
-
-    return http_write_line(http, "%s %u %s", version, status, reason);
+    return http_write_line(http, "%s %u %s", http_version_str(version), status, reason ? reason : http_status_str(status));
 }
 
 int http_write_headerv (struct http *http, const char *header, const char *fmt, va_list args)

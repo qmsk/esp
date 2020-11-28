@@ -2,50 +2,12 @@
 #define HTTP_H
 
 #include "stream.h"
+#include "types.h"
 
 #include <stddef.h>
 #include <stdio.h>
 
 struct http;
-
-#define HTTP_VERSION "HTTP/1.0"
-
-/* Maximum line length */
-#define HTTP_LINE 1024
-
-/* Maximum method length */
-#define HTTP_METHOD_MAX 64
-
-/* Maximum path length */
-#define HTTP_PATH_MAX 1024
-
-/* Maximum Host: header length */
-#define HTTP_HOST_MAX 256
-
-enum http_version {
-    HTTP_10 = 0,    // default
-    HTTP_11,
-};
-
-enum http_status {
-    HTTP_OK                       = 200,
-    HTTP_CREATED                  = 201,
-    HTTP_FOUND                    = 301,
-    HTTP_BAD_REQUEST              = 400,
-    HTTP_FORBIDDEN                = 403,
-    HTTP_NOT_FOUND                = 404,
-    HTTP_METHOD_NOT_ALLOWED       = 405,
-    HTTP_LENGTH_REQUIRED          = 411,
-    HTTP_REQUEST_ENTITY_TOO_LARGE = 413,
-    HTTP_REQUEST_URI_TOO_LONG     = 414,
-    HTTP_UNSUPPORTED_MEDIA_TYPE   = 415,
-    HTTP_INTERNAL_SERVER_ERROR    = 500,
-};
-
-/*
- * Return a const char* with a textual reason for the given http status.
- */
-const char * http_status_str (enum http_status status);
 
 /*
  * Create a new HTTP connect using the given IO streams.
@@ -80,7 +42,7 @@ int http_write_request (struct http *http, const char *version, const char *meth
  *
  * Reason can be passed as NULL if status is a recognized status code.
  */
-int http_write_response (struct http *http, const char *version, enum http_status status, const char *reason);
+int http_write_response (struct http *http, enum http_version version, enum http_status status, const char *reason);
 
 /*
  * Send one HTTP header.

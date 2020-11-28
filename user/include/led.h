@@ -5,9 +5,9 @@
 
 enum led_mode {
     LED_OFF,
+    LED_ON,
     LED_SLOW,   // blink slow
     LED_FAST,   // blink fast
-    LED_ON,
     LED_BLINK,  // blink once
 };
 

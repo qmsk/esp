@@ -13,7 +13,7 @@
 #
 ifndef PDIR
 UP_EXTRACT_DIR = ..
-SUBDIRS = uart logging cli cmd config http
+SUBDIRS = uart logging cli cmd config http httpserver
 endif
 
 

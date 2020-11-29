@@ -24,8 +24,9 @@ int http_router_create (struct http_router **routerp);
  * Add a server handler for requests.
  *
  * method   - NULL to accept any requests, or specific GET/POST/etc method to handle requests for.
- * path     -
+ * path     - match against url.path (no leading /)
  *      NULL    - wildcard match
+ *              - (empty string) matches "GET /" and nothing else
  *      foo     - matches "GET /foo", but not "GET /foo/" nor "GET /foo/bar" nor "GET /foo.bar"
  *      foo/    - matches "GET /foo" and "GET /foo/" and "GET /foo/bar", but not "GET /foo.bar"
  *

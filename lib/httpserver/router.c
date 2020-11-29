@@ -63,25 +63,32 @@ static int http_route_match_path (const struct http_route *route, const char *pa
 {
     size_t pathlen = strlen(route->path), requestlen = strlen(path);
 
-    if (!route->path || !pathlen)
-        // empty path always matches
+    if (!route->path) {
+        // NULL path always matches
         return 0;
+    }
+
+    if (pathlen == 0) {
+        // empty path only matches root
+        return requestlen == 0 ? 0 : 1;
+    }
 
     // handle trailing /
     size_t prefixlen = pathlen - 1;
     char endswith = route->path[prefixlen];
 
-    if (endswith != '/') {
-        // no trailing /: strict match
-        return strcmp(route->path, path);
-    } else {
-        // trailing /: prefix match, but with optional trailing / in request
-        if (requestlen == prefixlen)
+    if (endswith == '/') {
+        // prefix match, but with optional trailing / in request
+        if (requestlen == prefixlen) {
             // strict match, omitting trailing /
             return strncmp(route->path, path, prefixlen);
-        else
+        } else {
             // prefix match, including trailing /
             return strncmp(route->path, path, pathlen);
+        }
+    } else {
+        // exact match
+        return strcmp(route->path, path);
     }
 }
 

@@ -475,6 +475,8 @@ int stream_flush (struct stream *stream)
 {
     int err;
 
+    LOG_DEBUG("stream=%p, writebuf=%zu", stream, stream_writebuf_size(stream));
+
     // empty write buffer
     while (stream_writebuf_size(stream) > 0) {
         if ((err = _stream_write(stream)))
@@ -503,6 +505,8 @@ int stream_vprintf (struct stream *stream, const char *fmt, va_list args)
 {
     int ret, err;
 
+    LOG_DEBUG("stream=%p fmt=%s", stream, fmt);
+
     if ((ret = vsnprintf(stream_readbuf_ptr(stream), stream_readbuf_size(stream), fmt, args)) < 0) {
         LOG_ERROR("vsnprintf");
         return -1;
@@ -511,6 +515,8 @@ int stream_vprintf (struct stream *stream, const char *fmt, va_list args)
     if (ret >= stream_readbuf_size(stream))
         // full
         return 1;
+
+    LOG_DEBUG("stream=%p mark ret=%d (%*s)", stream, ret, ret, stream_readbuf_ptr(stream));
 
     stream_read_mark(stream, ret);
 

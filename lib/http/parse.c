@@ -6,11 +6,13 @@
 #include <stdlib.h>
 
 /* Lookup parse state for given state/char */
-const struct parse * parse_step (const struct parse *parsing, int state, char c)
+const struct parse * parse_step (const struct parse *parsing, int state, int c)
 {
     const struct parse *p;
 
     for (p = parsing; p->state || p->c || p->next_state; p++) {
+        LOG_DEBUG("? %2d %c -> %2d", p->state, p->c, p->next_state);
+
         if (p->state == state && p->c == c) {
             return p;
         }
@@ -61,12 +63,21 @@ int parse_store (const struct parse *parse, char *token)
 
 int parse (const struct parse *parsing, char *str, int state)
 {
-    char c, *strp = str, *token = str;
+    char *strp = str, *token = str;
+    int c;
     const struct parse *p;
     int err;
 
     while ((c = *strp)) {
-        if (!(p = parse_step(parsing, state, c))) {
+        LOG_DEBUG("  %2d %c", state, c);
+
+        p = parse_step(parsing, state, c);
+
+        if (p) {
+          LOG_DEBUG("! %2d %c -> %2d", state, c, p->next_state);
+        }
+
+        if (!p) {
             // token continues
             strp++;
             continue;
@@ -78,13 +89,13 @@ int parse (const struct parse *parsing, char *str, int state)
             *strp = '\0';
         }
 
-        if ((err = parse_store(p, token)) < 0)
-            return err;
 
-        if (err) {
-            LOG_DEBUG("%d <- '%c' %d : %s", p->next_state, c, state, token);
+        if ((err = parse_store(p, token)) < 0) {
+            return err;
+        } else if (err) {
+
         } else {
-            LOG_DEBUG("%d <- '%c' %d = %s", p->next_state, c, state, token);
+            LOG_DEBUG("= %2d %c -> %2d: %s", p->state, p->c, p->next_state, token);
         }
 
         // begin next token
@@ -104,7 +115,7 @@ int parse (const struct parse *parsing, char *str, int state)
 
     // terminate
     if ((p = parse_step(parsing, state, *strp))) {
-        LOG_DEBUG("%d <-     %d = %s", p->next_state, state, token);
+        LOG_DEBUG("! %2d %c -> %2d", state, *strp, p->next_state);
 
         state = p->next_state;
 

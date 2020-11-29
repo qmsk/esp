@@ -73,6 +73,8 @@ static int http_write_line (struct http *http, const char *fmt, ...)
     va_list args;
     int err;
 
+    LOG_DEBUG("http=%p fmt=%s", http, fmt);
+
     va_start(args, fmt);
     err = stream_vprintf(http->write, fmt, args);
     va_end(args);
@@ -170,7 +172,9 @@ int http_write_request (struct http *http, const char *version, const char *meth
 
 int http_write_response (struct http *http, enum http_version version, enum http_status status, const char *reason)
 {
-    return http_write_line(http, "%s %u %s", http_version_str(version), status, reason ? reason : http_status_str(status));
+    LOG_DEBUG("http=%p version=%d status=%d reason=%s", http, version, status, reason ? reason : "");
+
+    return http_write_line(http, "%s %d %s", http_version_str(version), status, reason ? reason : http_status_str(status));
 }
 
 int http_write_headerv (struct http *http, const char *header, const char *fmt, va_list args)
@@ -331,19 +335,24 @@ int http_parse_request (char *line, const char **methodp, const char **pathp, co
 {
     enum state { START, METHOD, PATH, VERSION, END };
     struct parse parsing[] = {
-        { START,     ' ',     -1            },
-        { START,    -1,        METHOD,        PARSE_KEEP         },
+        { START,      ' ',      -1                      },
+        { START,      -1,       METHOD,     PARSE_KEEP  },
 
-        { METHOD,    ' ',    PATH,        PARSE_STRING,    .parse_string = methodp        },
-        { PATH,        ' ',     VERSION,    PARSE_STRING,    .parse_string = pathp        },
-        { VERSION,    '\0',    END,        PARSE_STRING,    .parse_string = versionp    },
+        { METHOD,     ' ',      PATH,       PARSE_STRING,    .parse_string = methodp  },
+        { PATH,       ' ',      VERSION,    PARSE_STRING,    .parse_string = pathp    },
+        { VERSION,    '\0',     END,        PARSE_STRING,    .parse_string = versionp },
         { }
     };
     int err;
 
+    LOG_DEBUG("line=%s", line);
+
     // parse
-    if ((err = parse(parsing, line, START)) != END)
-        return 400;
+    if ((err = parse(parsing, line, START)) != END) {
+      LOG_DEBUG("parse: state=%d", err);
+
+      return 400;
+    }
 
     return 0;
 }
@@ -353,14 +362,16 @@ int http_parse_response (char *line, const char **versionp, unsigned *statusp, c
     enum state { START, VERSION, STATUS, REASON, END };
     struct parse parsing[] = {
         { START,     ' ',     -1            },
-        { START,    -1,        VERSION,    PARSE_KEEP         },
+        { START,    -1,        VERSION,     PARSE_KEEP  },
 
-        { VERSION,    ' ',    STATUS,        PARSE_STRING,    .parse_string = versionp    },
-        { STATUS,    ' ',     REASON,        PARSE_UINT,        .parse_uint    = statusp        },
-        { REASON,    '\0',    END,        PARSE_STRING,    .parse_string = reasonp        },
+        { VERSION,    ' ',    STATUS,       PARSE_STRING,     .parse_string = versionp  },
+        { STATUS,    ' ',     REASON,       PARSE_UINT,       .parse_uint    = statusp  },
+        { REASON,    '\0',    END,          PARSE_STRING,     .parse_string = reasonp   },
         { }
     };
     int err;
+
+    LOG_DEBUG("line=%p", line);
 
     // parse
     if ((err = parse(parsing, line, START)) != END)

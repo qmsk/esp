@@ -29,7 +29,7 @@ struct parse {
     int state;
 
     /* For char, or -1 for wildcard */
-    char c;
+    int c;
 
     /* To state */
     int next_state;

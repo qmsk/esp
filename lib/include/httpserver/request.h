@@ -66,7 +66,7 @@ int http_request_param (struct http_request *request, const char **keyp, const c
  *
  * Returns >0 HTTP error if there was no request body.
  */
-int http_request_file (struct http_request *request, int fd);
+int http_request_copy (struct http_request *request, int fd);
 
 /*
  * Finish reading any remaining request fields.

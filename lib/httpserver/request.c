@@ -241,7 +241,7 @@ int http_request_param (struct http_request *request, const char **keyp, const c
     return http_request_form(request, keyp, valuep);
 }
 
-int http_request_file (struct http_request *request, int fd)
+int http_request_copy (struct http_request *request, int fd)
 {
     int err;
 

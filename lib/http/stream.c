@@ -133,6 +133,32 @@ int _stream_clear (struct stream *stream)
 }
 
 /*
+ * Read directly from the stream into the given external buffer.
+ *
+ * The stream must not have any data buffered.
+ * Returns bytes read in *sizep.
+ *
+ * Returns 0 on success, 1 on EOF, <0 on error.
+ */
+int _stream_read_direct (struct stream *stream, char *buf, size_t *sizep)
+{
+    int err;
+
+    if ((err = stream->type->read(buf, sizep, stream->ctx)) < 0) {
+        LOG_WARN("stream-write: %s", strerror(errno));
+        return err;
+    } else if (err && *sizep) {
+        LOG_DEBUG("eof");
+        return 1;
+    } else if (err) {
+        LOG_DEBUG("timeout");
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
  * Read into stream from fd. There must be room available for the read buffer.
  *
  * This function is guaranteed to make progress.
@@ -281,6 +307,48 @@ int _stream_write (struct stream *stream)
     stream_write_mark(stream, size);
 
     return 0;
+}
+
+int stream_read (struct stream *stream, char *buf, size_t *sizep)
+{
+  size_t size = *sizep, len = 0;
+  int err;
+
+  if (stream_writebuf_size(stream) == 0) {
+    // no buffered data to consume
+    len = 0;
+  } else if (stream_writebuf_size(stream) < size) {
+    // consume all buffered data
+    len = stream_writebuf_size(stream);
+  } else {
+    // consume partial data
+    len = size;
+  }
+
+  // first consume any buffered data
+  if (len > 0) {
+    memcpy(buf, stream_writebuf_ptr(stream), len);
+
+    stream_write_mark(stream, len);
+
+    buf += len;
+    size -= len;
+  }
+
+  // fill in any remaining data directly
+  if (size > 0) {
+    if ((err = _stream_read_direct(stream, buf, &size)) < 0) {
+      LOG_WARN("_stream_read_direct");
+      return err;
+    }
+
+    buf += size;
+    len += size;
+  }
+
+  *sizep = len;
+
+  return 0;
 }
 
 int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep)

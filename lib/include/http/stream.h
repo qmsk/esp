@@ -46,6 +46,15 @@ struct stream {
 int stream_create (const struct stream_type *type, struct stream **streamp, size_t size, void *ctx);
 
 /*
+ * Read up to *sizep bytes from stream into given buffer, updating *sizep to the number of read bytes.
+ *
+ * Returns any buffered data first, and then performs underlying IO.
+ *
+ * Returns <0 on error, 1 on EOF, 0 on success.
+ */
+int stream_read (struct stream *stream, char *buf, size_t *sizep);
+
+/*
  * Read binary data from the stream, returning a pointer to the internal buffer.
  *
  * *sizep may be passed as 0 to read as much data as available, or a maximum amount to return.
@@ -84,6 +93,8 @@ int stream_read_file (struct stream *stream, int fd, size_t *sizep);
 
 /*
  * Write out the full contents of the given buffer to the stream.
+ *
+ * Returns 0 on success, 1 on EOF, <0 on error.
  */
 int stream_write (struct stream *stream, const char *buf, size_t size);
 

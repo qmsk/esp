@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include "http.h"
 
 #include <lib/httpserver/server.h>

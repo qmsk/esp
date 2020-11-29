@@ -25,6 +25,11 @@ int http_request_read (struct http_request *request)
         return err;
     }
 
+    // mark as read
+    request->request = true;
+
+    LOG_INFO("%s %s %s", method, path, version);
+
     if (strlen(method) >= sizeof(request->method)) {
         LOG_WARN("method is too long: %zu", strlen(method));
         return 400;
@@ -44,16 +49,16 @@ int http_request_read (struct http_request *request)
         return 400;
     }
 
+    LOG_DEBUG("url: scheme=%p host=%p port=%p path=%p", request->url.scheme, request->url.host, request->url.port, request->url.path);
+
     if (request->url.scheme || request->url.host || request->url.port) {
         LOG_WARN("request url includes extra parts: scheme=%s host=%s port=%s",
-                request->url.scheme, request->url.host, request->url.port);
+            request->url.scheme ? request->url.scheme : "",
+            request->url.host ? request->url.host : "",
+            request->url.port ? request->url.port : ""
+        );
         return 400;
     }
-
-    // mark as read
-    request->request = true;
-
-    LOG_INFO("%s %s %s", method, path, version);
 
     if (strcasecmp(version, "HTTP/1.0") == 0) {
         request->version = HTTP_10;
@@ -66,6 +71,7 @@ int http_request_read (struct http_request *request)
 
     } else {
         LOG_WARN("unknown request version: %s", version);
+        return 400;
     }
 
     if (strcasecmp(method, "GET") == 0) {

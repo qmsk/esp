@@ -1,3 +1,5 @@
+#undef LOGGING_UNBUFFERED
+
 #include <stdarg.h>
 #include <drivers/uart.h>
 #include <esp_misc.h>
@@ -52,10 +54,16 @@ void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
     *ptr++ = '\n';
   }
 
-  // XXX: blocking
+#ifndef LOGGING_UNBUFFERED
+  // buffered output, blocking the task
   while (buf < ptr) {
     buf += uart_write(&uart0, buf, ptr - buf);
   }
+#else
+  *end = '\0';
+
+  printf("%s", buf);
+#endif
 }
 
 int logging_init()

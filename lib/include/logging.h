@@ -1,7 +1,8 @@
 #ifndef __LIB_LOGGING_H__
 #define __LIB_LOGGING_H__
 
-void logging_printf(const char *prefix, const char *func, const char *fmt, ...);
+void logging_printf(const char *prefix, const char *func, const char *fmt, ...)
+  __attribute((format (printf, 3, 4)));
 
 #ifdef DEBUG
   #define LOG_DEBUG(...)  do { logging_printf("DEBUG ", __func__, __VA_ARGS__); } while(0)

@@ -60,7 +60,7 @@ int wifi_init(struct wifi *wifi, struct user_info *user_info, user_func_t user_f
 
 void wifi_connecting(struct wifi *wifi)
 {
-  LOG_INFO("");
+  LOG_INFO("connecting");
 
   if (wifi->user_func) {
     wifi->user_func(wifi->user_info, WIFI_CONNECTING);
@@ -89,7 +89,7 @@ void wifi_connected(struct wifi *wifi)
 
 void wifi_disconnected(struct wifi *wifi)
 {
-  LOG_INFO("");
+  LOG_INFO("disconnected");
 
   wifi->user_info->connected = false;
 

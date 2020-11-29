@@ -151,7 +151,7 @@ static void cli_cmd(struct cli *cli, char *line)
 // RX overflow, discard line
 static void cli_rx_overflow(struct cli *cli)
 {
-  LOG_WARN("len=%s", cli->rx_ptr - cli->rx_buf);
+  LOG_WARN("len=%d", cli->rx_ptr - cli->rx_buf);
 
   cli_reset(cli);
 }

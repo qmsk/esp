@@ -57,15 +57,6 @@ int http_write_header (struct http *http, const char *header, const char *fmt, .
 int http_write_headers (struct http *http);
 
 /*
- * Send a HTTP request body from a file.
- *
- * content_length, if given, indicates the expected maximum size of the file to send, or until EOF otherwise.
- *
- * Returns 1 on (unexpected) EOF, <0 on error.
- */
-int http_write_file (struct http *http, int fd, size_t content_length);
-
-/*
  * Send a HTTP/1.1 'Transfer-Encoding: chunked' entity chunk.
  */
 int http_write_chunk (struct http *http, const char *buf, size_t size);
@@ -109,23 +100,41 @@ int http_read_header (struct http *http, const char **headerp, const char **valu
  *
  * The maximum size to read should be given in len, or 0 to read to EOF.
  *
+ * NOTE: does not support chunked read.
+ *
  * Returns 1 on EOF, <0 on error.
  */
 int http_read_string (struct http *http, char **bufp, size_t len);
 
 /*
- * Read the response body into FILE, or discard if -1.
+ * Read chunked header indicating chunk size.
  *
- * If content_length is given as 0, reads all content.
+ * The last chunk has a zero size.
+ *
+ * Returns 1 on EOF, <0 on error, 0 on success.
  */
-int http_read_file (struct http *http, int fd, size_t content_length);
+int http_read_chunk_header (struct http *http, size_t *sizep);
 
 /*
- * Read response body chunks into FILE, or discard if -1
+ * Read chunked footer indicating end of chunk.
+ *
+ * Returns 1 on EOF, <0 on error, 0 on success.
  */
-int http_read_chunked_file (struct http *http, int fd);
+int http_read_chunk_footer (struct http *http);
 
+/*
+ * Read in a chunked response.
+ *
+ * Note that this does not necessarily read in an entire chunk at a time, but will return partial chunks.
+ *
+ * Returns 0 on success with *sizep updated, 1 on end-of-chunks, -1 on error or invalid chunk.
+ */
+int http_read_chunked (struct http *http, char **bufp, size_t *sizep);
 
+/*
+ * Read end-of-chunks trailer.
+ */
+int http_read_chunks (struct http *http);
 
 /*
  * Release all associated resources.

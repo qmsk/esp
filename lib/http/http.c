@@ -1,4 +1,5 @@
 #include "http/http.h"
+#include "http.h"
 #include "parse.h"
 #include "util.h"
 
@@ -6,16 +7,9 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-struct http {
-    /* Stream IO */
-    struct stream *read, *write;
-
-    size_t chunk_size;
-};
 
 int http_create (struct http **httpp, struct stream *read, struct stream *write)
 {
@@ -210,45 +204,6 @@ int http_write_headers (struct http *http)
     return http_write_line(http, "");
 }
 
-int http_write_file (struct http *http, int fd, size_t content_length)
-{
-    bool readall = !content_length;
-    int err;
-
-    while (content_length || readall) {
-        size_t size = content_length;
-
-        if ((err = stream_write_file(http->write, fd, &size)) < 0) {
-            LOG_WARN("stream_write_file %zu", size);
-            return err;
-        }
-
-        LOG_DEBUG("content_length=%zu write=%zu", content_length, size);
-
-        if (err) {
-            // EOF
-            break;
-        }
-
-        // sanity-check
-        if (content_length) {
-            if (size > content_length) {
-                LOG_ERROR("BUG: write=%zu > content_length=%zu", size, content_length);
-                return -1;
-            }
-
-            content_length -= size;
-        }
-    }
-
-    if (content_length) {
-        LOG_WARN("premature EOF: %zu", content_length);
-        return 1;
-    }
-
-    return 0;
-}
-
 // 3.6.1 Chunked Transfer Coding
 int http_write_chunk (struct http *http, const char *buf, size_t size)
 {
@@ -436,55 +391,6 @@ int http_read_string (struct http *http, char **bufp, size_t len)
     return stream_read_string(http->read, bufp, len);
 }
 
-int http_read_file (struct http *http, int fd, size_t content_length)
-{
-    bool readall = !content_length;
-    int err;
-
-    while (content_length || readall) {
-        LOG_DEBUG("content_length: %zu", content_length);
-
-        size_t size = content_length;
-
-        if (fd >= 0) {
-            if ((err = stream_read_file(http->read, fd, &size)) < 0) {
-                LOG_WARN("stream_read_file %zu", size);
-                return err;
-            }
-        } else {
-            char *ignore;
-
-            if ((err = stream_read(http->read, &ignore, &size)) < 0) {
-                LOG_WARN("stream_read %zu", size);
-                return err;
-            }
-        }
-
-        if (err) {
-            // EOF
-            LOG_DEBUG("eof");
-            break;
-        }
-
-        // sanity-check
-        if (content_length) {
-            if (size > content_length) {
-                LOG_ERROR("BUG: write=%zu > content_length=%zu", size, content_length);
-                return -1;
-            }
-
-            content_length -= size;
-        }
-    }
-
-    if (content_length) {
-        LOG_WARN("premature EOF: %zu", content_length);
-        return 1;
-    }
-
-    return 0;
-}
-
 int http_read_chunk_header (struct http *http, size_t *sizep)
 {
     char *line;
@@ -525,13 +431,6 @@ int http_read_chunk_footer (struct http *http)
     return 0;
 }
 
-/*
- * Read in a chunked response.
- *
- * Note that this does not necessarily read in an entire chunk at a time, but will return partial chunks.
- *
- * Returns 0 on success with *sizep updated, 1 on end-of-chunks, -1 on error or invalid chunk.
- */
 int http_read_chunked (struct http *http, char **bufp, size_t *sizep)
 {
     int err;
@@ -572,9 +471,6 @@ int http_read_chunked (struct http *http, char **bufp, size_t *sizep)
     return 0;
 }
 
-/*
- * Read end-of-chunks trailer.
- */
 int http_read_chunks (struct http *http)
 {
     char *line;
@@ -591,59 +487,6 @@ int http_read_chunks (struct http *http)
     }
 
     return err;
-}
-
-int http_read_chunked_file (struct http *http, int fd)
-{
-    int err;
-
-    // continue until http_read_chunk_header returns 1 for the last chunk
-    while (http->chunk_size || !(err = http_read_chunk_header(http, &http->chunk_size))) {
-        // maximum size to read
-        size_t size = http->chunk_size;
-
-        if (fd >= 0) {
-            if ((err = stream_read_file(http->read, fd, &size)) < 0) {
-                LOG_WARN("stream_read_file %zu", size);
-                return err;
-            }
-        } else {
-            char *ignore;
-
-            if ((err = stream_read(http->read, &ignore, &size)) < 0) {
-                LOG_WARN("stream_read %zu", size);
-                return err;
-            }
-        }
-
-        // mark how much of the chunk we have consumed
-        http->chunk_size -= size;
-
-        if (http->chunk_size) {
-            // remaining chunk data
-            LOG_DEBUG("%zu+%zu", size, http->chunk_size);
-
-        } else {
-            // end of chunk
-            LOG_DEBUG("%zu", size);
-
-            if ((err = http_read_chunk_footer(http)))
-                return err;
-        }
-    }
-
-    if (err < 0) {
-        // EOF
-        LOG_WARN("http_read_chunked");
-        return err;
-    }
-
-    if ((err = http_read_chunks(http))) {
-        LOG_WARN("http_read_chunks");
-        return err;
-    }
-
-    return 0;
 }
 
 void http_destroy (struct http *http)

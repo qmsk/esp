@@ -33,7 +33,7 @@ int http_response_header (struct http_response *response, const char *name, cons
 /*
  * Send response body from file.
  */
-int http_response_file (struct http_response *response, int fd, size_t content_length);
+int http_response_sendfile (struct http_response *response, int fd, size_t content_length);
 
 /*
  * Send formatted data as part of the response.

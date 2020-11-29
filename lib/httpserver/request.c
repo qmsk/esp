@@ -2,6 +2,7 @@
 #include "httpserver/request.h"
 
 #include "http/http.h"
+#include "http/http_file.h"
 #include "logging.h"
 
 #include <string.h>

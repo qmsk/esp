@@ -3,6 +3,7 @@
 #include "httpserver/request.h"
 
 #include "http/http.h"
+#include "http/http_file.h"
 #include "logging.h"
 
 int http_response_start (struct http_response *response, enum http_status status, const char *reason)
@@ -95,7 +96,7 @@ int http_response_headers (struct http_response *response)
     return 0;
 }
 
-int http_response_file (struct http_response *response, int fd, size_t content_length)
+int http_response_sendfile (struct http_response *response, int fd, size_t content_length)
 {
     int err;
 
@@ -128,7 +129,7 @@ int http_response_file (struct http_response *response, int fd, size_t content_l
 
     response->body = true;
 
-    if (http_write_file(response->http, fd, content_length)) {
+    if (http_sendfile(response->http, fd, content_length)) {
         LOG_ERROR("http_write_file");
         return -1;
     }

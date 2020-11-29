@@ -579,7 +579,7 @@ int _stream_write_file (struct stream *stream, int fd, size_t *sizep)
     return 0;
 }
 
-int stream_write_file (struct stream *stream, int fd, size_t *sizep)
+int stream_sendfile (struct stream *stream, int fd, size_t *sizep)
 {
     int err;
 

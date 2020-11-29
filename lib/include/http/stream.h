@@ -102,7 +102,7 @@ int stream_printf (struct stream *stream, const char *fmt, ...)
  *
  * Returns <0 on error, 0 on success, >0 on EOF.
  */
-int stream_write_file (struct stream *stream, int fd, size_t *sizep);
+int stream_sendfile (struct stream *stream, int fd, size_t *sizep);
 
 /*
  * Release all resources.

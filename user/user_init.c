@@ -2,6 +2,7 @@
 #include "cli.h"
 #include "config.h"
 #include "dmx.h"
+#include "http.h"
 #include "led.h"
 #include "p9813.h"
 #include "spi.h"
@@ -106,6 +107,11 @@ void user_init(void)
 
   if (init_wifi(&wifi_config, &user_info, &user_event)) {
     printf("FATAL: init_wifi\n");
+    return;
+  }
+
+  if (init_http(&http_config)) {
+    printf("FATAL: init_http\n");
     return;
   }
 

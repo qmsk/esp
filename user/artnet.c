@@ -357,7 +357,7 @@ int artnet_op(struct artnet *artnet, struct artnet_sendrecv recv)
     return artnet_op_dmx(artnet, recv);
 
   default:
-    LOG_WARN("unknown opcode: %04x", recv.packet->header.opcode);
+    LOG_WARN("unknown opcode: %04x", (unsigned) recv.packet->header.opcode.lh);
     return 0;
   }
 }

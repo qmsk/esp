@@ -172,7 +172,7 @@ response:
         LOG_WARN("http_response_start");
         return -1;
     } else {
-        LOG_DEBUG("sent response status=%s", status);
+        LOG_DEBUG("sent response status=%d", status);
     }
 
     // returns >0 if connection closed

@@ -149,7 +149,7 @@ int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stre
         }
     }
 
-    LOG_DEBUG("server=%p ssock=%d accept: sock=%d", server->sock, sock);
+    LOG_DEBUG("server=%p ssock=%d accept: sock=%d", server, server->sock, sock);
     LOG_INFO("%s accept %s", sockname_str(sock), sockpeer_str(sock));
 
     if (flags & TCP_NONBLOCKING) {

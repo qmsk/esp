@@ -105,7 +105,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
   }
 
   if (config_get(mod, tab, value, sizeof(value))) {
-    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name);
+    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
     return -CMD_ERR;
   }
 
@@ -139,7 +139,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   }
 
   if (config_set(mod, tab, value)) {
-    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name);
+    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
     return -CMD_ERR_ARGV;
   }
 

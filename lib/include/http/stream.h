@@ -91,7 +91,8 @@ int stream_write (struct stream *stream, const char *buf, size_t size);
  * Write arbitrary formatted output to the stream.
  */
 int stream_vprintf (struct stream *stream, const char *fmt, va_list args);
-int stream_printf (struct stream *stream, const char *fmt, ...);
+int stream_printf (struct stream *stream, const char *fmt, ...)
+    __attribute((format (printf, 2, 3)));
 
 /*
  * Copy to stream from a file, bypassing the buffer if the stream_type implements it.

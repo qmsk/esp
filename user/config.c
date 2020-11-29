@@ -8,7 +8,7 @@
 #include <lib/config.h>
 #include <lib/logging.h>
 
-const struct configmod user_configmods[] = {
+const struct configmod configmods[] = {
   { "wifi",
     .table = wifi_configtab,
   },
@@ -24,16 +24,16 @@ const struct configmod user_configmods[] = {
   {}
 };
 
-struct config user_config = {
+struct config config = {
   .filename = "config.ini",
-  .modules  = user_configmods,
+  .modules  = configmods,
 };
 
 int init_config()
 {
-  LOG_INFO("Load config=%s", user_config.filename);
+  LOG_INFO("Load config=%s", config.filename);
 
-  if (config_load(&user_config)) {
+  if (config_load(&config)) {
     LOG_WARN("Load config failed");
   }
 
@@ -42,5 +42,5 @@ int init_config()
 
 const struct cmdtab config_cmdtab = {
   .commands = config_commands,
-  .arg      = &user_config,
+  .arg      = &config,
 };

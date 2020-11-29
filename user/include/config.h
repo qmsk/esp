@@ -3,6 +3,8 @@
 
 #include <lib/config.h>
 
+extern struct config config;
+
 int init_config();
 
 #endif

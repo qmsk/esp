@@ -6,6 +6,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
 
 #define HTTP_CONFIG_HOST "0.0.0.0"
 #define HTTP_CONFIG_PORT 80
@@ -34,11 +37,39 @@ struct user_http {
 
 int http_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
-  LOG_INFO("...");
+  FILE *file;
+  int err;
 
-  vTaskDelay(1000 / portTICK_RATE_MS);
+  LOG_INFO("write text/plain response");
 
-  return 200;
+  if ((err = http_response_start(response, HTTP_OK, NULL))) {
+    LOG_WARN("http_response_start");
+    return err;
+  }
+
+  if ((err = http_response_header(response, "Content-Type", "text/plain"))) {
+    LOG_WARN("http_response_header");
+    return err;
+  }
+
+  if ((err = http_response_open(response, &file))) {
+    LOG_WARN("http_response_file");
+    return err;
+  }
+
+  LOG_DEBUG("file=%p", file);
+
+  if (fprintf(file, "Hello World!\n") < 0) {
+    LOG_WARN("fprintf: %s", strerror(errno));
+    return -1;
+  }
+
+  if (fclose(file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+  return 0;
 }
 
 #define HTTP_LISTEN_TASK_SIZE 512

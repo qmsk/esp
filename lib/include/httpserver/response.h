@@ -4,6 +4,7 @@
 #include <lib/http/types.h>
 
 #include <stddef.h>
+#include <stdio.h>
 
 struct http_response;
 
@@ -42,6 +43,13 @@ int http_response_sendfile (struct http_response *response, int fd, size_t conte
  */
 int http_response_print (struct http_response *response, const char *fmt, ...)
     __attribute((format (printf, 2, 3)));
+
+/*
+ * Return stdio FILE for writing to response.
+ *
+ * The response is sent without a Content-Length, and closed.
+ */
+int http_response_open (struct http_response *response, FILE **filep);
 
 /*
  * Send a complete HTTP 301 redirect, using the given host and formatted path.

@@ -3,6 +3,15 @@
 
 #include <lib/http/http.h>
 
+#include <stdio.h>
+
+enum {
+  HTTP_STREAM_READ                = 0x01,
+  HTTP_STREAM_READ_CONTENT_LENGTH = 0x04,
+
+  HTTP_STREAM_WRITE         = 0x10,
+};
+
  /*
   * Send a HTTP request body from a file.
   *
@@ -23,5 +32,17 @@ int http_read_file (struct http *http, int fd, size_t content_length);
  * Read response body chunks into FILE, or discard if -1
  */
 int http_read_chunked_file (struct http *http, int fd);
+
+/*
+ * Open an stdio FILE to read/write the HTTP request/response.
+ *
+ * @param http context
+ * @param content_length limit read request length if HTTP_STREAM_READ_CONTENT_LENGTH
+ * @param flags HTTP_STREAM_READ/WRITE_EOF/CHUNKED
+ * @param filep returned FILE *
+ *
+ * @return 0 on success, <0 on error
+ */
+ int http_file_open (struct http *http, size_t content_length, int flags, FILE **filep);
 
 #endif

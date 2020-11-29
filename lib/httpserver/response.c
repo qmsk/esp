@@ -190,6 +190,33 @@ int http_response_print (struct http_response *response, const char *fmt, ...)
     return 0;
 }
 
+int http_response_open (struct http_response *response, FILE **filep)
+{
+  int err = 0;
+
+  LOG_DEBUG("response=%p", response);
+
+  if (!response->status) {
+      LOG_WARN("attempting to send response body without status");
+      return -1;
+  }
+
+  // Set Connection: close
+  LOG_DEBUG("using connection close");
+
+  response->close = true;
+
+  if ((err = http_response_header(response, "Connection", "close"))) {
+    return err;
+  }
+
+  if ((err = http_response_headers(response))) {
+    return err;
+  }
+
+  return http_file_open(response->http, 0, HTTP_STREAM_WRITE, filep);
+}
+
 int http_response_redirect (struct http_response *response, const char *host, const char *fmt, ...)
 {
     char path[HTTP_RESPONSE_REDIRECT_PATH_MAX];

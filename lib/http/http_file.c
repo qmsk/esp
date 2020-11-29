@@ -1,9 +1,12 @@
+#undef __STRICT_ANSI__
+
 #include "http.h"
 #include "http/http.h"
 #include "http/http_file.h"
 
 #include "logging.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -148,4 +151,93 @@ int http_read_chunked_file (struct http *http, int fd)
     }
 
     return 0;
+}
+
+int http_file_read (void *cookie, char *buf, size_t len)
+{
+  struct http *http = cookie;
+  size_t size = len;
+  int err;
+
+  LOG_DEBUG("http=%p len=%u", http, len);
+
+  if ((err = stream_read(http->read, buf, &size)) < 0) {
+    return -1;
+  } else if (err) {
+    // EOF
+    return 0;
+  } else {
+    return size;
+  }
+}
+
+/* Limit read to given content_length */
+int http_file_read_content_length (void *cookie, char *buf, size_t len)
+{
+  struct http *http = cookie;
+
+  LOG_DEBUG("http=%p len=%u", http, len);
+
+  if (http->content_length == 0) {
+    return 0; // EOF
+  } else if (len > http->content_length) {
+    len = http->content_length;
+  }
+
+  return http_file_read(http, buf, len);
+}
+
+int http_file_write (void *cookie, const char *buf, size_t len)
+{
+  struct http *http = cookie;
+  size_t size = len;
+  int err;
+
+  LOG_DEBUG("http=%p len=%u", http, len);
+
+  if ((err = stream_write(http->write, buf, size)) < 0) {
+    return -1;
+  } else if (err) {
+    // EOF
+    return 0;
+  } else {
+    return size;
+  }
+}
+
+int http_file_open (struct http *http, size_t content_length, int flags, FILE **filep)
+{
+  const char *mode;
+  cookie_io_functions_t functions;
+
+  if (flags & HTTP_STREAM_READ) {
+    mode = "r";
+
+    if (flags & HTTP_STREAM_READ_CONTENT_LENGTH) {
+      http->content_length = content_length;
+      functions.read = http_file_read_content_length;
+    } else {
+      // to EOF
+      http->content_length = 0;
+      functions.read = http_file_read;
+    }
+  }
+
+  if (flags & HTTP_STREAM_WRITE) {
+    mode = "w";
+    functions.write = http_file_write;
+  }
+
+  if (flags & (HTTP_STREAM_READ|HTTP_STREAM_WRITE)) {
+    mode = "w+";
+  }
+
+  LOG_DEBUG("http=%p content_length=%u: mode=%s", http, content_length, mode);
+
+  if (!(*filep = fopencookie(http, mode, functions))) {
+    LOG_WARN("fopencookie");
+    return -1;
+  }
+
+  return 0;
 }

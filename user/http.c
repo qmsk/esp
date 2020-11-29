@@ -1,14 +1,15 @@
+#define DEBUG
+
 #include "http.h"
+#include "http_routes.h"
 
 #include <lib/httpserver/server.h>
+#include <lib/httpserver/router.h>
 #include <lib/logging.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/queue.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
 
 #define HTTP_CONFIG_HOST "0.0.0.0"
 #define HTTP_CONFIG_PORT 80
@@ -30,47 +31,11 @@ struct http_config {
 struct user_http {
   struct http_server *server;
   struct http_listener *listener;
+  struct http_router *router;
 
   xTaskHandle listen_task, server_task;
   xQueueHandle connection_queue;
 } http;
-
-int http_handler(struct http_request *request, struct http_response *response, void *ctx)
-{
-  FILE *file;
-  int err;
-
-  LOG_INFO("write text/plain response");
-
-  if ((err = http_response_start(response, HTTP_OK, NULL))) {
-    LOG_WARN("http_response_start");
-    return err;
-  }
-
-  if ((err = http_response_header(response, "Content-Type", "text/plain"))) {
-    LOG_WARN("http_response_header");
-    return err;
-  }
-
-  if ((err = http_response_open(response, &file))) {
-    LOG_WARN("http_response_file");
-    return err;
-  }
-
-  LOG_DEBUG("file=%p", file);
-
-  if (fprintf(file, "Hello World!\n") < 0) {
-    LOG_WARN("fprintf: %s", strerror(errno));
-    return -1;
-  }
-
-  if (fclose(file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
 
 #define HTTP_LISTEN_TASK_SIZE 512
 #define HTTP_SERVER_TASK_SIZE 1024
@@ -108,6 +73,7 @@ void http_listen_task(void *arg)
 
 void http_server_task(void *arg)
 {
+  struct http_router *router = arg;
   struct http_connection *connection;
   int err;
 
@@ -117,17 +83,17 @@ void http_server_task(void *arg)
       break;
     }
 
-    LOG_DEBUG("connection=%p serve", connection);
+    LOG_DEBUG("connection=%p serve router=%p", connection, router);
 
-    if ((err = http_connection_serve(connection, &http_handler, NULL)) < 0) {
+    if ((err = http_connection_serve(connection, &http_router_handler, router)) < 0) {
       LOG_ERROR("http_connection_serve");
       http_connection_destroy(connection);
       continue;
     } else if (err > 0) {
-      LOG_INFO("force-close HTTP connection");
+      LOG_DEBUG("closing HTTP connection");
       http_connection_destroy(connection);
     } else {
-      LOG_DEBUG("closing HTTP connection");
+      LOG_INFO("force-close HTTP connection");
       http_connection_destroy(connection);
     }
   }
@@ -135,25 +101,52 @@ void http_server_task(void *arg)
   vTaskDelete(NULL);
 }
 
-int init_http(struct http_config *config)
+int setup_http(struct user_http *http, struct http_config *config)
 {
   char port[32];
   int err;
 
+  // router routes
+  for (const struct http_route *route = http_routes; route->method || route->path || route->handler; route++) {
+    LOG_INFO("route %s:%s", route->method, route->path);
+
+    if ((err = http_router_add(http->router, route))) {
+      LOG_ERROR("http_router_add");
+      return err;
+    }
+  }
+
+  // server listeners
   if (snprintf(port, sizeof(port), "%d", config->port) >= sizeof(port)) {
     LOG_ERROR("snprintf port");
     return -1;
   }
+
+  LOG_INFO("listen TCP %s:%s", config->host, port);
+
+  if ((err = http_server_listen(http->server, config->host, port, &http->listener))) {
+    LOG_ERROR("http_server_listen");
+    return err;
+  }
+
+  return 0;
+}
+
+int init_http(struct http_config *config)
+{
+  int err;
 
   if ((err = http_server_create(&http.server, HTTP_LISTEN_BACKLOG, HTTP_STREAM_SIZE))) {
     LOG_ERROR("http_server_create");
     return err;
   }
 
-  LOG_INFO("listen TCP %s:%s", config->host, port);
+  if ((err = http_router_create(&http.router))) {
+    LOG_ERROR("http_router_create");
+    return err;
+  }
 
-  if ((err = http_server_listen(http.server, config->host, port, &http.listener))) {
-    LOG_ERROR("http_server_listen");
+  if ((err = setup_http(&http, config))) {
     return err;
   }
 
@@ -167,7 +160,7 @@ int init_http(struct http_config *config)
     return -1;
   }
 
-  if (xTaskCreate(&http_server_task, (signed char *) "http-server", HTTP_SERVER_TASK_SIZE, NULL, tskIDLE_PRIORITY + 2, &http.server_task) <= 0) {
+  if (xTaskCreate(&http_server_task, (signed char *) "http-server", HTTP_SERVER_TASK_SIZE, http.router, tskIDLE_PRIORITY + 2, &http.server_task) <= 0) {
     LOG_ERROR("xTaskCreate http-server");
     return -1;
   }

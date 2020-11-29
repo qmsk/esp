@@ -192,6 +192,8 @@ int http_write_header (struct http *http, const char *header, const char *fmt, .
     va_list args;
     int err;
 
+    LOG_DEBUG("http=%p header=%s fmt=%s", http, header, fmt);
+
     va_start(args, fmt);
     err = http_write_headerv(http, header, fmt, args);
     va_end(args);
@@ -201,6 +203,8 @@ int http_write_header (struct http *http, const char *header, const char *fmt, .
 
 int http_write_headers (struct http *http)
 {
+    LOG_DEBUG("http=%p", http);
+
     return http_write_line(http, "");
 }
 

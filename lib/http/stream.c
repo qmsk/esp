@@ -51,6 +51,8 @@ static inline char * stream_writebuf_end (struct stream *stream)
 
 static int stream_init (const struct stream_type *type, struct stream *stream, size_t size, void *ctx)
 {
+    LOG_DEBUG("stream=%p size=%d", stream, size);
+
     // buffer
     if (!(stream->buf = malloc(size))) {
         LOG_ERROR("malloc %zu", size);
@@ -91,6 +93,8 @@ error:
  */
 inline static void stream_read_mark (struct stream *stream, size_t size)
 {
+    LOG_DEBUG("stream=%p size=%d", stream, size);
+
     // XXX: assert lenth < size
     stream->length += size;
 }
@@ -100,6 +104,8 @@ inline static void stream_read_mark (struct stream *stream, size_t size)
  */
 inline static void stream_write_mark (struct stream *stream, size_t size)
 {
+    LOG_DEBUG("stream=%p size=%d", stream, size);
+
     // XXX: assert offset < length
     stream->offset += size;
 }
@@ -109,6 +115,8 @@ inline static void stream_write_mark (struct stream *stream, size_t size)
  */
 inline static void stream_write_consume (struct stream *stream)
 {
+    LOG_DEBUG("stream=%p", stream);
+
     stream->offset = stream->length;
 }
 
@@ -543,7 +551,7 @@ int stream_flush (struct stream *stream)
 {
     int err;
 
-    LOG_DEBUG("stream=%p, writebuf=%zu", stream, stream_writebuf_size(stream));
+    LOG_DEBUG("stream=%p, writebuf=%u", stream, stream_writebuf_size(stream));
 
     // empty write buffer
     while (stream_writebuf_size(stream) > 0) {
@@ -583,8 +591,6 @@ int stream_vprintf (struct stream *stream, const char *fmt, va_list args)
     if (ret >= stream_readbuf_size(stream))
         // full
         return 1;
-
-    LOG_DEBUG("stream=%p mark ret=%d (%*s)", stream, ret, ret, stream_readbuf_ptr(stream));
 
     stream_read_mark(stream, ret);
 

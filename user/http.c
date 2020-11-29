@@ -1,6 +1,7 @@
 #define DEBUG
 
 #include "http.h"
+#include "http_config.h"
 #include "http_routes.h"
 
 #include <lib/httpserver/server.h>
@@ -11,21 +12,26 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 
-#define HTTP_CONFIG_HOST "0.0.0.0"
-#define HTTP_CONFIG_PORT 80
-
 #define HTTP_LISTEN_BACKLOG 4
 #define HTTP_STREAM_SIZE 1024 // 1+1kB per connection
 
 #define HTTP_CONNECTION_QUEUE_SIZE 1
 #define HTTP_CONNECTION_QUEUE_TIMEOUT 1000 // 1s
 
-struct http_config {
-  const char *host;
-  int port;
-} http_config = {
+struct http_config http_config = {
   .host = HTTP_CONFIG_HOST,
   .port = HTTP_CONFIG_PORT,
+};
+
+const struct configtab http_configtab[] = {
+  { CONFIG_TYPE_STRING, "host",
+    .size   = sizeof(http_config.host),
+    .value  = { .string = http_config.host },
+  },
+  { CONFIG_TYPE_UINT16, "port",
+    .value  = { .uint16 = &http_config.port },
+  },
+  {}
 };
 
 struct user_http {
@@ -135,6 +141,11 @@ int setup_http(struct user_http *http, struct http_config *config)
 int init_http(struct http_config *config)
 {
   int err;
+
+  if (strlen(config->host) == 0 || config->port == 0) {
+    LOG_INFO("disabled via config [http] host/port");
+    return 1;
+  }
 
   if ((err = http_server_create(&http.server, HTTP_LISTEN_BACKLOG, HTTP_STREAM_SIZE))) {
     LOG_ERROR("http_server_create");

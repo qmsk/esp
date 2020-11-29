@@ -110,7 +110,7 @@ void user_init(void)
     return;
   }
 
-  if (init_http(&http_config)) {
+  if (init_http(&http_config) < 0) {
     printf("FATAL: init_http\n");
     return;
   }

@@ -2,6 +2,7 @@
 
 #include "artnet_config.h"
 #include "dmx_config.h"
+#include "http_config.h"
 #include "p9813_config.h"
 #include "wifi_config.h"
 
@@ -11,6 +12,9 @@
 const struct configmod configmods[] = {
   { "wifi",
     .table = wifi_configtab,
+  },
+  { "http",
+    .table = http_configtab,
   },
   { "artnet",
     .table = artnet_configtab,

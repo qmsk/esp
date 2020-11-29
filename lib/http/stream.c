@@ -283,7 +283,7 @@ int _stream_write (struct stream *stream)
     return 0;
 }
 
-int stream_read (struct stream *stream, char **bufp, size_t *sizep)
+int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep)
 {
     int err;
 

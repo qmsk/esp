@@ -444,8 +444,8 @@ int http_read_chunked (struct http *http, char **bufp, size_t *sizep)
     // reading in at most chunk_size..
     *sizep = http->chunk_size;
 
-    if ((err = stream_read(http->read, bufp, sizep)) < 0) {
-        LOG_WARN("stream_read");
+    if ((err = stream_read_ptr(http->read, bufp, sizep)) < 0) {
+        LOG_WARN("stream_read_ptr");
         return err;
 
     } else if (err) {

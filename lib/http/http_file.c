@@ -64,8 +64,8 @@ int http_read_file (struct http *http, int fd, size_t content_length)
         } else {
             char *ignore;
 
-            if ((err = stream_read(http->read, &ignore, &size)) < 0) {
-                LOG_WARN("stream_read %zu", size);
+            if ((err = stream_read_ptr(http->read, &ignore, &size)) < 0) {
+                LOG_WARN("stream_read_ptr %zu", size);
                 return err;
             }
         }
@@ -112,8 +112,8 @@ int http_read_chunked_file (struct http *http, int fd)
         } else {
             char *ignore;
 
-            if ((err = stream_read(http->read, &ignore, &size)) < 0) {
-                LOG_WARN("stream_read %zu", size);
+            if ((err = stream_read_ptr(http->read, &ignore, &size)) < 0) {
+                LOG_WARN("stream_read_ptr %zu", size);
                 return err;
             }
         }

@@ -46,7 +46,7 @@ struct stream {
 int stream_create (const struct stream_type *type, struct stream **streamp, size_t size, void *ctx);
 
 /*
- * Read binary data from the stream.
+ * Read binary data from the stream, returning a pointer to the internal buffer.
  *
  * *sizep may be passed as 0 to read as much data as available, or a maximum amount to return.
  *
@@ -54,7 +54,7 @@ int stream_create (const struct stream_type *type, struct stream **streamp, size
  *
  * Returns 1 on EOF, <0 on error.
  */
-int stream_read (struct stream *stream, char **bufp, size_t *sizep);
+int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep);
 
 /*
  * Read one line from the stream, returning a pointer to the NUL-terminated line.

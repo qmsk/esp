@@ -10,6 +10,8 @@ int http_response_start (struct http_response *response, enum http_status status
     enum http_version version = http_request_version(response->request);
     int err;
 
+    LOG_DEBUG("reponse=%p version=%d status=%d reason=%s", response, version, status, reason ? reason : "");
+
     if (response->status) {
         LOG_WARN("attempting to re-send status: %u", status);
         return -1;
@@ -40,12 +42,16 @@ int http_response_start (struct http_response *response, enum http_status status
 
 enum http_status http_response_get_status (struct http_response *response)
 {
+  LOG_DEBUG("response=%p: status=%d", response, response->status);
+
   return response->status;
 }
 
 int http_response_header (struct http_response *response, const char *name, const char *fmt, ...)
 {
     int err;
+
+    LOG_DEBUG("response=%p name=%s fmt=%s", response, name, fmt);
 
     if (!response->status) {
         LOG_WARN("attempting to send headers without status: %s", name);
@@ -77,6 +83,8 @@ int http_response_header (struct http_response *response, const char *name, cons
 
 int http_response_headers (struct http_response *response)
 {
+    LOG_DEBUG("response=%p", response);
+
     response->headers = true;
 
     if (http_write_headers(response->http)) {
@@ -90,6 +98,8 @@ int http_response_headers (struct http_response *response)
 int http_response_file (struct http_response *response, int fd, size_t content_length)
 {
     int err;
+
+    LOG_DEBUG("response=%p fd=%d content_length=%zu", response, fd, content_length);
 
     if (content_length) {
         LOG_DEBUG("using content-length");
@@ -130,6 +140,8 @@ int http_response_print (struct http_response *response, const char *fmt, ...)
 {
     va_list args;
     int err = 0;
+
+    LOG_DEBUG("response=%p fmt=%s", response, fmt);
 
     if (!response->status) {
         LOG_WARN("attempting to send response body without status");
@@ -183,6 +195,8 @@ int http_response_redirect (struct http_response *response, const char *host, co
     int ret;
     va_list args;
 
+    LOG_DEBUG("response=%p host=%s fmt=%s", response, host, fmt);
+
     va_start(args, fmt);
     ret = vsnprintf(path, sizeof(path), fmt, args);
     va_end(args);
@@ -213,6 +227,8 @@ int http_response_error (struct http_response *response, enum http_status status
 {
     int err = 0;
 
+    LOG_DEBUG("response=%p status=%d reason=%s detail=%s", response, status, reason, detail);
+
     if (!reason)
         reason = http_status_str(status);
 
@@ -233,6 +249,8 @@ int http_response_error (struct http_response *response, enum http_status status
 int http_response_close (struct http_response *response)
 {
   int err = 0;
+
+  LOG_DEBUG("response=%p", response);
 
   if (!response->status) {
     LOG_WARN("no response started");

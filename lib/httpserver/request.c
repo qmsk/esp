@@ -12,13 +12,17 @@ int http_request_read (struct http_request *request)
     const char *method, *path, *version;
     int err;
 
+    LOG_DEBUG("request=%p", request);
+
     if (request->request) {
         LOG_WARN("re-reading request");
         return -1;
     }
 
-    if ((err = http_read_request(request->http, &method, &path, &version)))
+    if ((err = http_read_request(request->http, &method, &path, &version))) {
+        LOG_WARN("http_read_request");
         return err;
+    }
 
     if (strlen(method) >= sizeof(request->method)) {
         LOG_WARN("method is too long: %zu", strlen(method));
@@ -85,12 +89,14 @@ const struct url *http_request_url(const struct http_request *request)
 
 enum http_version http_request_version(const struct http_request *request)
 {
+  LOG_DEBUG("request=%p: version=%d", request, request->version);
+
   return request->version;
 }
 
 int http_request_query (struct http_request *request, const char **keyp, const char **valuep)
 {
-    LOG_DEBUG("%s", request->get_query);
+    LOG_DEBUG("request=%p: state=%s", request, request->get_query);
 
     return url_decode(&request->get_query, keyp, valuep);
 }
@@ -98,6 +104,8 @@ int http_request_query (struct http_request *request, const char **keyp, const c
 int http_request_header (struct http_request *request, const char **namep, const char **valuep)
 {
     int err;
+
+    LOG_DEBUG("request=%p", request);
 
     if (!request->request) {
         LOG_WARN("premature read of request headers before request line");
@@ -176,6 +184,8 @@ int http_request_header (struct http_request *request, const char **namep, const
 
 int http_request_form (struct http_request *request, const char **keyp, const char **valuep)
 {
+    LOG_DEBUG("request=%p", request);
+
     if (!request->headers) {
         LOG_ERROR("reading request form data before headers?");
         return -1;
@@ -211,6 +221,8 @@ int http_request_form (struct http_request *request, const char **keyp, const ch
 
 int http_request_param (struct http_request *request, const char **keyp, const char **valuep)
 {
+    LOG_DEBUG("request=%p", request);
+
     if (request->get_query)
         return http_request_query(request, keyp, valuep);
 
@@ -231,6 +243,8 @@ int http_request_param (struct http_request *request, const char **keyp, const c
 int http_request_file (struct http_request *request, int fd)
 {
     int err;
+
+    LOG_DEBUG("request=%p fd=%d", request, fd);
 
     if (!request->headers) {
         LOG_WARN("read request body without reading headers!?");
@@ -263,6 +277,8 @@ int http_request_close (struct http_request *request)
 {
     int err;
 
+    LOG_DEBUG("request=%p", request);
+
     // read remaining headers, in case they contain anything relevant for the error response
     if (!request->headers) {
         const char *header, *value;
@@ -270,8 +286,12 @@ int http_request_close (struct http_request *request)
         LOG_DEBUG("reading remaining headers...");
 
         // don't clobber err!
-        while (!(err = http_request_header(request, &header, &value))) {
-          LOG_WARN("http_request_header");
+        while ((err = http_request_header(request, &header, &value)) != 1) {
+          // ignore any 0 or >1 returns
+          if (err < 0) {
+            LOG_ERROR("http_request_header");
+            return -1;
+          }
         }
     }
 
@@ -286,6 +306,8 @@ int http_request_close (struct http_request *request)
     }
 
     if (request->close) {
+      LOG_DEBUG("connection close");
+
       // no more requests
       return 1;
     }

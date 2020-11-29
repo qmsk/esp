@@ -124,6 +124,8 @@ static int http_server_request (struct http_server *server, struct http_request 
     enum http_status status = 0;
     int err;
 
+    LOG_DEBUG("server=%p request=%p response=%p handler=%p ctx=%p", server, request, response, handler, ctx);
+
     // request
     if ((err = http_request_read(request)) < 0) {
         LOG_WARN("http_request_read");
@@ -135,6 +137,7 @@ static int http_server_request (struct http_server *server, struct http_request 
 
     } else if (err > 0) {
         status = err;
+        LOG_INFO("invalid HTTP request, return status=%d", status);
         goto response;
     }
 
@@ -159,8 +162,10 @@ response:
         status = 200;
     }
 
+    LOG_DEBUG("response status=%d", status);
+
     if (!status) {
-        LOG_DEBUG("already have response status");
+
     } else if (http_response_get_status(response)) {
         LOG_WARN("ignoring response status=%d as response already has status set", status);
     } else if ((err = http_response_start(response, status, NULL))) {
@@ -211,6 +216,8 @@ error:
 int http_connection_serve (struct http_connection *connection, http_handler_func handler, void *ctx)
 {
     int err;
+
+    LOG_DEBUG("connection=%p", connection);
 
     // set idle timeouts
     tcp_read_timeout(connection->tcp, &server_read_timeout);

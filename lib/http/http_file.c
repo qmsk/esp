@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 int http_sendfile (struct http *http, int fd, size_t content_length)
 {
@@ -208,7 +209,7 @@ int http_file_write (void *cookie, const char *buf, size_t len)
 int http_file_open (struct http *http, size_t content_length, int flags, FILE **filep)
 {
   const char *mode;
-  cookie_io_functions_t functions;
+  cookie_io_functions_t functions = {};
 
   if (flags & HTTP_STREAM_READ) {
     mode = "r";
@@ -228,14 +229,14 @@ int http_file_open (struct http *http, size_t content_length, int flags, FILE **
     functions.write = http_file_write;
   }
 
-  if (flags & (HTTP_STREAM_READ|HTTP_STREAM_WRITE)) {
+  if ((flags & HTTP_STREAM_READ) && (flags & HTTP_STREAM_WRITE)) {
     mode = "w+";
   }
 
   LOG_DEBUG("http=%p content_length=%u: mode=%s", http, content_length, mode);
 
   if (!(*filep = fopencookie(http, mode, functions))) {
-    LOG_WARN("fopencookie");
+    LOG_WARN("fopencookie: %s", strerror(errno));
     return -1;
   }
 

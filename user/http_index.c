@@ -23,7 +23,7 @@ int http_index_handler(struct http_request *request, struct http_response *respo
   }
 
   if ((err = http_response_open(response, &file))) {
-    LOG_WARN("http_response_file");
+    LOG_WARN("http_response_open");
     return err;
   }
 

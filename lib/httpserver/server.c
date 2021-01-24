@@ -152,7 +152,7 @@ static int http_server_request (struct http_server *server, struct http_request 
 
 response:
     // finalize request
-    if (http_request_close(request)) {
+    if (http_request_close(request) < 0) {
       LOG_WARN("http_request_close");
       return -1;
     }
@@ -176,7 +176,7 @@ response:
     }
 
     // returns >0 if connection closed
-    return http_response_close(response);
+    return http_response_close(response) || http_request_closed(request);
 }
 
 static int http_connection_create (struct http_server *server, struct tcp *tcp, struct http_connection **connectionp)

@@ -95,4 +95,9 @@ int http_request_copy (struct http_request *request, int fd);
  */
 int http_request_close (struct http_request *request);
 
+/*
+ * Returns 1 if the connection should be closed, 0 if there may be more requests.
+ */
+int http_request_closed (struct http_request *request);
+
 #endif

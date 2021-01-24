@@ -348,3 +348,12 @@ int http_request_close (struct http_request *request)
 
     return 0;
 }
+
+int http_request_closed (struct http_request *request)
+{
+  if (request->close) {
+    return 1; // no more requests
+  }
+
+  return 0;
+}

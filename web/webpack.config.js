@@ -40,5 +40,8 @@ module.exports = {
   },
   devServer: {
     contentBase: './dist',
+    proxy: {
+      '/api': process.env.API_URL,
+    }
   },
 };

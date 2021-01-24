@@ -1,0 +1,64 @@
+form {
+
+}
+
+form fieldset {
+  display: grid;
+
+  margin: 1em;
+
+  border: 1px solid #bbb;
+
+  grid-template-columns: 1fr 3fr 1fr;
+  grid-gap: 1em;
+}
+
+form fieldset.actions {
+  border: none;
+}
+
+form fieldset legend {
+  margin: 0.5em;
+  padding: 0.5em;
+
+  background-color: #888;
+  color: #111;
+  font-size: 2em;
+}
+
+form label {
+  grid-column: 1 / 2;
+  align-self: center;
+
+  padding: 0.5em;
+
+  background-color: #444;
+  color: #ccc;
+}
+
+form input {
+  grid-column: 2 / 4;
+}
+
+form button {
+  grid-column: 3;
+
+  padding: 0.5em;
+
+  background-color: #133337;
+  color: #ccc;
+
+  border: 0.25px solid #444;
+  border-radius: 0.25em;
+
+  font-size: 2em;
+  font-weight: bold;
+}
+
+form button:hover {
+  border: 0.25px solid #eee;
+}
+
+form button:active {
+  transform: scale(0.99);
+}

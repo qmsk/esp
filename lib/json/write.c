@@ -204,9 +204,9 @@ static int json_writeq(struct json_writer *w,  enum json_token token, const char
   return 0;
 }
 
-int json_write_string(struct json_writer *w, const char *string)
+int json_write_string(struct json_writer *w, const char *value)
 {
-  return json_writeq(w, JSON_STRING, string);
+  return json_writeq(w, JSON_STRING, value);
 }
 
 int json_write_int(struct json_writer *w, int value)
@@ -217,6 +217,20 @@ int json_write_int(struct json_writer *w, int value)
 int json_write_uint(struct json_writer *w, unsigned value)
 {
   return json_writef(w, JSON_NUMBER, "%u", value);
+}
+
+int json_write_bool(struct json_writer *w, bool value)
+{
+  if (value) {
+    return json_writef(w, JSON_TRUE, "true");
+  } else {
+    return json_writef(w, JSON_FALSE, "false");
+  }
+}
+
+int json_write_null(struct json_writer *w)
+{
+  return json_writef(w, JSON_NULL, "null");
 }
 
 int json_open_object(struct json_writer *w)

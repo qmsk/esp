@@ -1,6 +1,7 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
+#include "httpserver/request.h"
 #include "httpserver/response.h"
 
 #include "http/http.h"
@@ -37,19 +38,16 @@ struct http_request {
     /* Decoded request version, or HTTP_10 if unknown. */
     enum http_version version;
 
+    /* Decoded request headers */
+    struct http_request_headers headers;
+
     /* Client wishes to close connection */
     bool close;
-
-    /* Size of request entity, or zero */
-    size_t content_length;
-
-    /* Content is application/x-www-form-urlencoded */
-    bool content_form;
 
     /* Progress */
     bool request;
     bool header;
-    bool headers;
+    bool headers_done;
     bool body;
 
     /* XXX: Decoding GET params in-place from url.query */

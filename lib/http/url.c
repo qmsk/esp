@@ -151,7 +151,7 @@ int url_unquote (char *str)
     return 0;
 }
 
-int url_decode (char **queryp, const char **namep, const char **valuep)
+int url_decode (char **queryp, char **namep, char **valuep)
 {
     char *query;
     char *name = NULL, *value = NULL, *next = NULL;

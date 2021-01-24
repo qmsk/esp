@@ -6,6 +6,17 @@
 
 struct http_request;
 
+struct http_request_headers {
+  /* Host header, or NULL */
+  const char *host;
+
+  /* Size of request entity, or zero */
+  size_t content_length;
+
+  /* Decoded Content-Type, or HTTP_CONTENT_TYPE_UNKNOWN */
+  enum http_content_type content_type;
+};
+
 /*
  * Read the client request line.
  *
@@ -21,19 +32,21 @@ const char *http_request_method (const struct http_request *request);
 /*
  * Read request URL.
  */
-const struct url *http_request_url(const struct http_request *request);
+const struct url *http_request_url (const struct http_request *request);
 
 /*
  * Read request version.
  */
-enum http_version http_request_version(const struct http_request *request);
+enum http_version http_request_version (const struct http_request *request);
 
 /*
  * Read request URL query param.
  *
+ * NOTE: this modifies the `struct url` query path in-place.
+ *
  * Returns 1 on end-of-params.
  */
-int http_request_query (struct http_request *request, const char **keyp, const char **valuep);
+int http_request_query (struct http_request *request, char **keyp, char **valuep);
 
 /*
  * Read request header.
@@ -43,11 +56,18 @@ int http_request_query (struct http_request *request, const char **keyp, const c
 int http_request_header (struct http_request *request, const char **name, const char **value);
 
 /*
+ * Read request headers. Optionally return pointer to decoded request headers.
+ *
+ * Returns <0 on error.
+ */
+int http_request_headers (struct http_request *request, const struct http_request_headers **headersp);
+
+/*
  * Read request body form param.
  *
  * Returns 1 on end-of-params.
  */
-int http_request_form (struct http_request *request, const char **keyp, const char **valuep);
+int http_request_form (struct http_request *request, char **keyp, char **valuep);
 
 /*
  * Read in request parameters, both GET and POST.
@@ -59,7 +79,7 @@ int http_request_form (struct http_request *request, const char **keyp, const ch
  *
  * Returns 1 on end-of-params, <0 on internal error, >0 on HTTP error, 0 on success.
  */
-int http_request_param (struct http_request *request, const char **keyp, const char **valuep);
+int http_request_param (struct http_request *request, char **keyp, char **valuep);
 
 /*
  * Read request body from client into FILE.

@@ -1,5 +1,7 @@
 #include "http/types.h"
 
+#include <strings.h>
+
 const char *http_version_str (enum http_version version)
 {
   switch (version) {
@@ -15,6 +17,7 @@ const char *http_status_str (enum http_status status)
     switch (status) {
         case 200:   return "OK";
         case 201:   return "Created";
+        case 204:   return "No Content";
 
         case 301:   return "Found";
 
@@ -26,10 +29,32 @@ const char *http_status_str (enum http_status status)
         case 413:   return "Request Entity Too Large";
         case 414:   return "Request-URI Too Long";
         case 415:   return "Unsupported Media Type";
+        case 422:   return "Unprocessable Entity";
 
         case 500:   return "Internal Server Error";
 
         // hrhr
         default:    return "Unknown Response Status";
     }
+}
+
+enum http_content_type http_content_type_parse (const char *value)
+{
+  if (strcasecmp(value, "text/plain") == 0) {
+      return HTTP_CONTENT_TYPE_TEXT_PLAIN;
+  }
+
+  if (strcasecmp(value, "text/html") == 0) {
+      return HTTP_CONTENT_TYPE_TEXT_HTML;
+  }
+
+  if (strcasecmp(value, "application/x-www-form-urlencoded") == 0) {
+      return HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED;
+  }
+
+  if (strcasecmp(value, "application/json") == 0) {
+      return HTTP_CONTENT_TYPE_APPLICATION_JSON;
+  }
+
+  return HTTP_CONTENT_TYPE_UNKNOWN;
 }

@@ -77,6 +77,7 @@ int http_request_read (struct http_request *request)
     if (strcasecmp(method, "GET") == 0) {
         // XXX: decoded in-place, stripping const
         request->get_query = (char *) request->url.query;
+
     } else if (strcasecmp(method, "POST") == 0) {
         request->post = true;
     }
@@ -101,7 +102,7 @@ enum http_version http_request_version(const struct http_request *request)
   return request->version;
 }
 
-int http_request_query (struct http_request *request, const char **keyp, const char **valuep)
+int http_request_query (struct http_request *request, char **keyp, char **valuep)
 {
     LOG_DEBUG("request=%p: state=%s", request, request->get_query);
 
@@ -119,7 +120,7 @@ int http_request_header (struct http_request *request, const char **namep, const
         return -1;
     }
 
-    if (request->headers) {
+    if (request->headers_done) {
         LOG_WARN("request headers have already been read");
         return 1;
     }
@@ -131,7 +132,7 @@ int http_request_header (struct http_request *request, const char **namep, const
 
     if (err == 1) {
         LOG_DEBUG("end of headers");
-        request->headers = true;
+        request->headers_done = true;
         return 1;
     } else if (err) {
         LOG_WARN("http_read_header: %d", err);
@@ -144,12 +145,12 @@ int http_request_header (struct http_request *request, const char **namep, const
     LOG_INFO("\t%20s : %s", *namep, *valuep);
 
     if (strcasecmp(*namep, "Content-Length") == 0) {
-        if (sscanf(*valuep, "%zu", &request->content_length) != 1) {
+        if (sscanf(*valuep, "%zu", &request->headers.content_length) != 1) {
             LOG_WARN("invalid content_length: %s", *valuep);
             return 400;
         }
 
-        LOG_DEBUG("content_length=%zu", request->content_length);
+        LOG_DEBUG("content_length=%zu", request->headers.content_length);
 
     } else if (strcasecmp(*namep, "Host") == 0) {
         if (strlen(*valuep) >= sizeof(request->hostbuf)) {
@@ -160,6 +161,7 @@ int http_request_header (struct http_request *request, const char **namep, const
         }
 
         // TODO: parse :port?
+        request->headers.host = request->hostbuf;
         request->url.host = request->hostbuf;
 
     } else if (strcasecmp(*namep, "Connection") == 0) {
@@ -179,21 +181,46 @@ int http_request_header (struct http_request *request, const char **namep, const
         }
 
     } else if (strcasecmp(*namep, "Content-Type") == 0) {
-        if (strcasecmp(*valuep, "application/x-www-form-urlencoded") == 0) {
-            LOG_DEBUG("request content is form data");
+        request->headers.content_type = http_content_type_parse(*valuep);
 
-            request->content_form = true;
+        if (request->headers.content_type == HTTP_CONTENT_TYPE_UNKNOWN) {
+            LOG_DEBUG("unknown content-type: %s", *valuep);
+        } else {
+            LOG_DEBUG("decoded content-type: %s", *valuep);
         }
     }
 
     return 0;
 }
 
-int http_request_form (struct http_request *request, const char **keyp, const char **valuep)
+int http_request_headers (struct http_request *request, const struct http_request_headers **headersp)
+{
+    int err;
+
+    // read remaining headers
+    if (!request->headers_done) {
+        const char *header, *value;
+
+        while ((err = http_request_header(request, &header, &value)) != 1) {
+            if (err < 0) {
+                LOG_ERROR("http_request_header");
+                return err;
+            }
+        }
+    }
+
+    if (headersp) {
+      *headersp = &request->headers;
+    }
+
+    return 0;
+}
+
+int http_request_form (struct http_request *request, char **keyp, char **valuep)
 {
     LOG_DEBUG("request=%p", request);
 
-    if (!request->headers) {
+    if (!request->headers_done) {
         LOG_ERROR("reading request form data before headers?");
         return -1;
     }
@@ -205,13 +232,13 @@ int http_request_form (struct http_request *request, const char **keyp, const ch
         // have already read in body
         return 1;
 
-    } else if (!request->content_length) {
+    } else if (!request->headers.content_length) {
         // no request body
         return 411;
 
     } else {
         // read in request body; either exactly content_length or to EOF
-        if (http_read_string(request->http, &request->post_form, request->content_length)) {
+        if (http_read_string(request->http, &request->post_form, request->headers.content_length)) {
             LOG_WARN("http_read_string");
             return -1;
         }
@@ -226,7 +253,7 @@ int http_request_form (struct http_request *request, const char **keyp, const ch
     return url_decode(&request->post_form, keyp, valuep);
 }
 
-int http_request_param (struct http_request *request, const char **keyp, const char **valuep)
+int http_request_param (struct http_request *request, char **keyp, char **valuep)
 {
     LOG_DEBUG("request=%p", request);
 
@@ -237,10 +264,10 @@ int http_request_param (struct http_request *request, const char **keyp, const c
         return 1;
 
     // yes, server_request_form also checks this, but we want to report this *before* 415
-    if (!request->content_length)
+    if (!request->headers.content_length)
         return 411; // Length Required
 
-    if (!request->content_form)
+    if (request->headers.content_type != HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED)
         return 415; // Unsupported Media Type
 
     // returns 1 after last param
@@ -253,7 +280,7 @@ int http_request_copy (struct http_request *request, int fd)
 
     LOG_DEBUG("request=%p fd=%d", request, fd);
 
-    if (!request->headers) {
+    if (!request->headers_done) {
         LOG_WARN("read request body without reading headers!?");
         return -1;
     }
@@ -264,12 +291,12 @@ int http_request_copy (struct http_request *request, int fd)
     }
 
     // TODO: Transfer-Encoding?
-    if (!request->content_length) {
+    if (!request->headers.content_length) {
         LOG_DEBUG("no request body given");
         return 411;
     }
 
-    if (((err = http_read_file(request->http, fd, request->content_length)))){
+    if (((err = http_read_file(request->http, fd, request->headers.content_length)))){
         LOG_WARN("http_read_file");
         return err;
     }
@@ -287,7 +314,7 @@ int http_request_close (struct http_request *request)
     LOG_DEBUG("request=%p", request);
 
     // read remaining headers, in case they contain anything relevant for the error response
-    if (!request->headers) {
+    if (!request->headers_done) {
         const char *header, *value;
 
         LOG_DEBUG("reading remaining headers...");
@@ -304,7 +331,7 @@ int http_request_close (struct http_request *request)
 
     // body?
     // TODO: needs better logic for when a request contains a body?
-    if (!request->body && request->content_length) {
+    if (!request->body && request->headers.content_length) {
         // force close, as pipelining will fail
         request->close = true;
 

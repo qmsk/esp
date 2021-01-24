@@ -39,4 +39,9 @@ int json_close_object(struct json_writer *w);
 int json_open_array(struct json_writer *w);
 int json_close_array(struct json_writer *w);
 
+#define JSON_WRITE_OBJECT(w, write_members) (json_open_object(w) || (write_members) || json_close_object(w))
+#define JSON_WRITE_OBJECT_STRING(w, name, value) (json_open_object_member((w), (name)) || json_write_string((w), (value)))
+#define JSON_WRITE_OBJECT_OBJECT(w, name, write_object) (json_open_object_member((w), (name)) || json_open_object(w) || (write_object) || json_close_object(w))
+#define JSON_WRITE_OBJECT_ARRAY(w, name, write_array) (json_open_object_member((w), (name)) || json_open_array(w) || (write_array) || json_close_array(w))
+
 #endif

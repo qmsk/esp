@@ -13,39 +13,109 @@ int json_writer_init(struct json_writer *w, FILE *f)
   return 0;
 }
 
-static int json_write_sep(struct json_writer *w, enum json_token token)
+static int json_push_token(struct json_writer *w, enum json_token token)
 {
-  if (fputc(token, w->file) == EOF) {
-    LOG_ERROR("fputc");
-    return -1;
-  }
-
-  *w->stackp = token;
-
-  return 0;
-}
-
-static int json_write_pre(struct json_writer *w)
-{
-  if (*w->stackp == JSON || *w->stackp == JSON_OBJECT_MEMBER) {
-    return 0;
-  }
-
-  if (w->stackp <= w->stack) {
-    LOG_ERROR("top-level element already written");
+  if (w->stackp >= w->stack + JSON_STACK_SIZE) {
+    LOG_ERROR("stack overflow");
     return -2;
   }
 
-  if (json_write_sep(w, JSON_COMMA)) {
-    return -1;
-  }
+  w->stackp++;
+  *w->stackp = token;
 
   return 0;
 }
 
-static int json_write(struct json_writer *w, enum json_token token)
+static int json_set_token(struct json_writer *w, enum json_token token)
 {
-  if (json_write_pre(w)) {
+  *w->stackp = token;
+
+  return 0;
+}
+
+static int json_pop_token(struct json_writer *w, enum json_token token, enum json_token context)
+{
+  if (w->stackp <= w->stack) {
+    LOG_ERROR("stack underflow");
+    return -2;
+  }
+
+  w->stackp--;
+
+  if (*w->stackp != context) {
+    LOG_ERROR("expected context %c for token %c, actual context %c", context, token, *w->stackp);
+    return -2;
+  }
+
+  *w->stackp = token;
+
+  return 0;
+}
+
+static int json_start_write(struct json_writer *w, enum json_token token)
+{
+  enum json_token state = *w->stackp;
+  int depth = w->stackp - w->stack;
+  int err;
+
+  LOG_DEBUG("depth %d @ state %c : token %c", depth, state, token);
+
+  if (state == JSON) {
+    // initial element
+    err = json_set_token(w, token);
+
+  } else if (state == JSON_ARRAY || state == JSON_OBJECT) {
+    // enter object/array
+    err = json_push_token(w, token);
+
+  } else if (state == JSON_OBJECT_MEMBER) {
+    // key separator
+    if (fputs(": ", w->file) == EOF) {
+      LOG_ERROR("fputs");
+      return -1;
+    }
+
+    err = json_set_token(w, token);
+
+  } else if (depth <= 0) {
+    LOG_ERROR("top-level element already written");
+    return -2;
+
+  } else if (token == JSON_OBJECT_END || token == JSON_ARRAY_END) {
+    // no separator before end token
+    err = json_set_token(w, token);
+
+  } else {
+    // comma separator
+    if (fputs(", ", w->file) == EOF) {
+      LOG_ERROR("fputs");
+      return -1;
+    }
+
+    err = json_set_token(w, token);
+  }
+
+  // exit
+  if (err) {
+    return err;
+
+  } else if (token == JSON_OBJECT_END) {
+    // exit object
+    return json_pop_token(w, token, JSON_OBJECT);
+
+  } else if (token == JSON_ARRAY_END) {
+    // exit array
+    return json_pop_token(w, token, JSON_ARRAY);
+
+  } else {
+    return 0;
+  }
+}
+
+/* Raw char */
+static int json_writec(struct json_writer *w, enum json_token token)
+{
+  if (json_start_write(w, token)) {
     return -1;
   }
 
@@ -54,17 +124,16 @@ static int json_write(struct json_writer *w, enum json_token token)
     return -1;
   }
 
-  *w->stackp = token;
-
   return 0;
 }
 
+/* Raw string */
 static int json_writef(struct json_writer *w, enum json_token token, const char *fmt, ...)
 {
   va_list args;
   int ret;
 
-  if (json_write_pre(w)) {
+  if (json_start_write(w, token)) {
     return -1;
   }
 
@@ -76,59 +145,18 @@ static int json_writef(struct json_writer *w, enum json_token token, const char 
     return -1;
   }
 
-  *w->stackp = token;
-
   return 0;
 }
 
-static int json_write_push(struct json_writer *w, enum json_token token)
+/* Quoted string */
+static int json_writeq(struct json_writer *w,  enum json_token token, const char *string)
 {
-  if (json_write_pre(w)) {
+  if (json_start_write(w, token)) {
     return -1;
   }
 
-  if (fputc(token, w->file) == EOF) {
+  if (fputc('"', w->file) == EOF) {
     LOG_ERROR("fputc");
-    return -1;
-  }
-
-  *w->stackp = token;
-
-  if (w->stackp >= w->stack + JSON_STACK_SIZE) {
-    return -2;
-  } else {
-    *++w->stackp = JSON;
-  }
-
-  return 0;
-}
-
-static int json_write_pop(struct json_writer *w, enum json_token token, enum json_token context)
-{
-  if (w->stackp <= w->stack) {
-    return -2;
-  } else {
-    --w->stackp;
-  }
-
-  if (*w->stackp != context) {
-    return -2;
-  }
-
-  if (fputc(token, w->file) == EOF) {
-    LOG_ERROR("fputc");
-    return -1;
-  }
-
-  *w->stackp = token;
-
-  return 0;
-}
-
-
-int json_write_string(struct json_writer *w, const char *string)
-{
-  if (json_write(w, JSON_STRING)) {
     return -1;
   }
 
@@ -176,6 +204,11 @@ int json_write_string(struct json_writer *w, const char *string)
   return 0;
 }
 
+int json_write_string(struct json_writer *w, const char *string)
+{
+  return json_writeq(w, JSON_STRING, string);
+}
+
 int json_write_int(struct json_writer *w, int value)
 {
   return json_writef(w, JSON_NUMBER, "%d", value);
@@ -188,25 +221,25 @@ int json_write_uint(struct json_writer *w, unsigned value)
 
 int json_open_object(struct json_writer *w)
 {
-  return json_write_push(w, JSON_OBJECT);
+  return json_writec(w, JSON_OBJECT);
 }
 
 int json_open_object_member(struct json_writer *w, const char *name)
 {
-  return json_write_string(w, name) || json_write_sep(w, JSON_OBJECT_MEMBER);
+  return json_writeq(w, JSON_OBJECT_MEMBER, name);
 }
 
 int json_close_object(struct json_writer *w)
 {
-  return json_write_pop(w, JSON_OBJECT_END, JSON_OBJECT);
+  return json_writec(w, JSON_OBJECT_END);
 }
 
 int json_open_array(struct json_writer *w)
 {
-  return json_write_push(w, JSON_ARRAY);
+  return json_writec(w, JSON_ARRAY);
 }
 
 int json_close_array(struct json_writer *w)
 {
-  return json_write_pop(w, JSON_ARRAY_END, JSON_ARRAY);
+  return json_writec(w, JSON_ARRAY_END);
 }

@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include "http.h"
 #include "http_config.h"
 #include "http_routes.h"

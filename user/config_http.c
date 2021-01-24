@@ -221,7 +221,7 @@ static int config_api_set (struct config *config, char *key, char *value)
 }
 
 /* POST /api/config application/x-www-form-urlencoded */
-int config_post_form_handler(struct http_request *request, struct http_response *response, void *ctx)
+int config_api_post_form(struct http_request *request, struct http_response *response, void *ctx)
 {
     char *key, *value;
     int err;
@@ -248,7 +248,7 @@ int config_post_form_handler(struct http_request *request, struct http_response 
     return HTTP_NO_CONTENT;
 }
 
-int config_post_handler(struct http_request *request, struct http_response *response, void *ctx)
+int config_api_post(struct http_request *request, struct http_response *response, void *ctx)
 {
   const struct http_request_headers *headers;
   int err;
@@ -260,7 +260,7 @@ int config_post_handler(struct http_request *request, struct http_response *resp
 
   switch (headers->content_type) {
     case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
-      return config_post_form_handler(request, response, ctx);
+      return config_api_post_form(request, response, ctx);
 
     default:
       LOG_WARN("Unkonwn Content-Type");

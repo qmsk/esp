@@ -83,3 +83,14 @@ services:
       - $TTY_DEV
     environment:
       BIN_PATH: /build/bin
+
+  npm:
+    image: esp8266/web
+    build:
+      context: web
+    volumes:
+      - ./web:/build/web
+    user: "${USER_ID:-1000}"
+    working_dir: /build/web
+    entrypoint: npm
+    network_mode: host

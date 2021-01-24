@@ -93,4 +93,6 @@ services:
     user: "${USER_ID:-1000}"
     working_dir: /build/web
     entrypoint: npm
+    environment:
+      API_URL: $API_URL
     network_mode: host

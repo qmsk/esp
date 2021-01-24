@@ -1,9 +1,9 @@
 import Vue from "vue";
 
-import Main from "./components/Main"
+import App from "./App"
 
 var vue = new Vue({
   el: '#app',
-  components: { Main },
-  template: '<Main />',
+  components: { App },
+  template: '<App />',
 });

@@ -8,12 +8,11 @@
 <div id="app" class="app">
   <header>
     <nav>
-      <a>qmsk::esp</a>
+      <router-link to="/" active-class="">qmsk::esp</router-link>
+      <router-link to="/config">Config</router-link>
     </nav>
   </header>
-  <main class="view centered">
-    Loaded!
-  </main>
+  <router-view> </router-view>
   <footer>
 
   </footer>

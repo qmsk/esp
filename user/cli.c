@@ -5,6 +5,7 @@
 #include "spi_cmd.h"
 #include "p9813_cmd.h"
 #include "led_cmd.h"
+#include "system_cmd.h"
 
 #include <lib/cli.h>
 #include <lib/logging.h>
@@ -31,6 +32,7 @@ static const struct cmd user_commands[] = {
   { "dmx",    .describe = "DMX", .subcommands = &dmx_cmdtab },
   { "spi",    .describe = "SPI", .subcommands = &spi_cmdtab },
   { "p9813",  .describe = "P9813", .subcommands = &p9813_cmdtab },
+  { "system", .describe = "System", .subcommands = &system_cmdtab },
   {}
 };
 

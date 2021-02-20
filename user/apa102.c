@@ -108,9 +108,9 @@ int apa102_init_tx(struct apa102 *apa102, unsigned count, enum apa102_stopbyte s
 /*
  * @param index 0-based index
  * @param r, g, b 8-bit RGB value
- * @param a 8-bit global brightness 0-255 -> scaled to 0-31
+ * @param global 5-bit global brightness 0-31
  */
-void apa102_set(struct apa102 *apa102, unsigned index, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void apa102_set(struct apa102 *apa102, unsigned index, uint8_t r, uint8_t g, uint8_t b, uint8_t global)
 {
   struct apa102_frame *frame;
 
@@ -119,7 +119,7 @@ void apa102_set(struct apa102 *apa102, unsigned index, uint8_t r, uint8_t g, uin
   }
 
   frame = &apa102->frames[index];
-  frame->global = 0xE0 | (a >> 3);
+  frame->global = 0xE0 | (global & 0x1F);
   frame->b = b;
   frame->g = g;
   frame->r = r;
@@ -197,53 +197,23 @@ int apa102_cmd_clear(int argc, char **argv, void *ctx)
   return 0;
 }
 
-int apa102_cmd_set(int argc, char **argv, void *ctx)
-{
-  struct apa102 *apa102 = ctx;
-  unsigned index;
-  int rgba;
-  int err;
-
-  if ((err = cmd_arg_uint(argc, argv, 1, &index)))
-    return err;
-  if ((err = cmd_arg_int(argc, argv, 2, &rgba)))
-    return err;
-
-  if (index >= apa102->count) {
-    LOG_ERROR("index out of bounds");
-    return -CMD_ERR_ARGV;
-  }
-
-  apa102_set(apa102, index,
-    (rgba >> 24) & 0xFF,
-    (rgba >> 16) & 0xFF,
-    (rgba >> 8)  & 0xFF,
-    (rgba >> 0)  & 0xFF
-  );
-
-  if ((err = apa102_tx(apa102))) {
-    LOG_ERROR("apa102_tx");
-    return err;
-  }
-
-  return 0;
-}
-
 int apa102_cmd_all(int argc, char **argv, void *ctx)
 {
   struct apa102 *apa102 = ctx;
-  int rgba;
+  int rgb, a = 0xff;
   int err;
 
-  if ((err = cmd_arg_int(argc, argv, 1, &rgba)))
+  if ((err = cmd_arg_int(argc, argv, 1, &rgb)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &a)))
     return err;
 
   for (unsigned index = 0; index < apa102->count; index++) {
     apa102_set(apa102, index,
-      (rgba >> 24) & 0xFF,
-      (rgba >> 16) & 0xFF,
-      (rgba >> 8)  & 0xFF,
-      (rgba >> 0)  & 0xFF
+      (rgb >> 16) & 0xFF,
+      (rgb >> 8)  & 0xFF,
+      (rgb >> 0)  & 0xFF,
+      a >> 3
     );
   }
 
@@ -255,10 +225,44 @@ int apa102_cmd_all(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int apa102_cmd_set(int argc, char **argv, void *ctx)
+{
+  struct apa102 *apa102 = ctx;
+  unsigned index;
+  int rgb, a = 0xff;
+  int err;
+
+  if ((err = cmd_arg_uint(argc, argv, 1, &index)))
+    return err;
+  if ((err = cmd_arg_int(argc, argv, 2, &rgb)))
+    return err;
+  if ((argc > 3) && (err = cmd_arg_int(argc, argv, 3, &a)))
+    return err;
+
+  if (index >= apa102->count) {
+    LOG_ERROR("index out of bounds");
+    return -CMD_ERR_ARGV;
+  }
+
+  apa102_set(apa102, index,
+    (rgb >> 16) & 0xFF,
+    (rgb >> 8)  & 0xFF,
+    (rgb >> 0)  & 0xFF,
+    a >> 3
+  );
+
+  if ((err = apa102_tx(apa102))) {
+    LOG_ERROR("apa102_tx");
+    return err;
+  }
+
+  return 0;
+}
+
 const struct cmd apa102_commands[] = {
-  { "clear",  apa102_cmd_clear, &apa102, .usage = "",             .describe = "Clear values" },
-  { "set",    apa102_cmd_set,   &apa102, .usage = "INDEX RGBA",   .describe = "Set one pixel to value" },
-  { "all",    apa102_cmd_all,   &apa102, .usage = "RGBA",         .describe = "Set all pixels to values" },
+  { "clear",  apa102_cmd_clear, &apa102, .usage = "",               .describe = "Clear values" },
+  { "all",    apa102_cmd_all,   &apa102, .usage = "RGB [A]",        .describe = "Set all pixels to values" },
+  { "set",    apa102_cmd_set,   &apa102, .usage = "INDEX RGB [A]",  .describe = "Set one pixel to value" },
   { }
 };
 

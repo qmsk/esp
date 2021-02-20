@@ -1,3 +1,4 @@
+#include "apa102.h"
 #include "artnet.h"
 #include "cli.h"
 #include "config.h"
@@ -127,6 +128,11 @@ void user_init(void)
 
   if (init_p9813(&p9813_config)) {
     printf("FATAL: init_p9813\n");
+    return;
+  }
+
+  if (init_apa102(&apa102_config)) {
+    printf("FATAL: init_apa102\n");
     return;
   }
 

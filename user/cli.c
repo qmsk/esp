@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "apa102.h"
 #include "config_cmd.h"
 #include "wifi_cmd.h"
 #include "dmx_cmd.h"
@@ -32,6 +33,7 @@ static const struct cmd user_commands[] = {
   { "dmx",    .describe = "DMX", .subcommands = &dmx_cmdtab },
   { "spi",    .describe = "SPI", .subcommands = &spi_cmdtab },
   { "p9813",  .describe = "P9813", .subcommands = &p9813_cmdtab },
+  { "apa102",  .describe = "APA102 LED", .subcommands = &apa102_cmdtab },
   { "system", .describe = "System", .subcommands = &system_cmdtab },
   {}
 };

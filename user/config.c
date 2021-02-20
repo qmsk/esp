@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "apa102.h"
 #include "artnet_config.h"
 #include "dmx_config.h"
 #include "http_config.h"
@@ -24,6 +25,9 @@ const struct configmod configmods[] = {
   },
   { "p9813",
     .table  = p9813_configtab,
+  },
+  { "apa102",
+    .table  = apa102_configtab,
   },
   {}
 };

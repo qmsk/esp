@@ -123,10 +123,10 @@ int apa102_init_tx(struct apa102 *apa102, unsigned count, enum apa102_stopbyte s
 
 /*
  * @param index 0-based index
- * @param r, g, b 8-bit RGB value
  * @param global 5-bit global brightness 0-31
+ * @param b, g, r 8-bit RGB value
  */
-void apa102_set(struct apa102 *apa102, unsigned index, uint8_t r, uint8_t g, uint8_t b, uint8_t global)
+void apa102_set(struct apa102 *apa102, unsigned index, uint8_t global, uint8_t b, uint8_t g, uint8_t r)
 {
   struct apa102_frame *frame;
 
@@ -168,10 +168,10 @@ int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
 
   for (unsigned i = 0; i < apa102->count && dmx->len >= (i + 1) * 3; i++) {
     apa102_set(apa102, i,
-      dmx->data[i * 3 + 0], // r
+      0x1F,                 // global
+      dmx->data[i * 3 + 0], // b
       dmx->data[i * 3 + 1], // g
-      dmx->data[i * 3 + 2], // b
-      0x1F                  // global
+      dmx->data[i * 3 + 2]  // r
     );
   }
 
@@ -291,10 +291,10 @@ int apa102_cmd_all(int argc, char **argv, void *ctx)
 
   for (unsigned index = 0; index < apa102->count; index++) {
     apa102_set(apa102, index,
-      (rgb >> 16) & 0xFF,
-      (rgb >> 8)  & 0xFF,
-      (rgb >> 0)  & 0xFF,
-      a >> 3
+      a >> 3,             // a
+      (rgb >> 0)  & 0xFF, // b
+      (rgb >> 8)  & 0xFF, // g
+      (rgb >> 16) & 0xFF  // r
     );
   }
 
@@ -326,10 +326,10 @@ int apa102_cmd_set(int argc, char **argv, void *ctx)
   }
 
   apa102_set(apa102, index,
-    (rgb >> 16) & 0xFF,
-    (rgb >> 8)  & 0xFF,
-    (rgb >> 0)  & 0xFF,
-    a >> 3
+    a >> 3,             // a
+    (rgb >> 0)  & 0xFF, // b
+    (rgb >> 8)  & 0xFF, // g
+    (rgb >> 16) & 0xFF  // r
   );
 
   if ((err = apa102_tx(apa102))) {

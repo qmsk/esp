@@ -8,6 +8,7 @@ struct apa102_config {
   bool enabled;
   bool stop_quirk;
   uint16_t count;
+  bool artnet_enabled;
   uint16_t artnet_universe;
 };
 

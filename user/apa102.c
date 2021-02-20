@@ -7,9 +7,13 @@
  * @see https://cpldcpu.wordpress.com/2014/11/30/understanding-the-apa102-superled/
  */
 #include "apa102.h"
+
+#include "artnet_dmx.h"
 #include "spi.h"
 
 #include <lib/logging.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,18 +47,30 @@ const struct configtab apa102_configtab[] = {
   { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &apa102_config.count },
   },
+  { CONFIG_TYPE_BOOL, "artnet_enabled",
+    .value  = { .boolean = &apa102_config.artnet_enabled },
+  },
   { CONFIG_TYPE_UINT16, "artnet_universe",
     .value  = { .uint16 = &apa102_config.artnet_universe },
   },
   {}
 };
 
+#define APA102_ARTNET_TASK_STACK 512
+#define APA102_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
+
 struct apa102 {
   struct spi *spi;
 
+  // tx
   unsigned count, len;
   uint8_t *buf;
   struct apa102_frame *frames;
+
+  // artnet DMX
+  xQueueHandle artnet_queue;
+  xTaskHandle artnet_task;
+  struct artnet_dmx artnet_dmx;
 
 } apa102;
 
@@ -124,7 +140,7 @@ void apa102_set(struct apa102 *apa102, unsigned index, uint8_t r, uint8_t g, uin
   frame->g = g;
   frame->r = r;
 
-  LOG_DEBUG("[%d] %02x:%02x%02x%02x", index, frame->global, frame->b, frame->g, frame->r);
+  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, frame->global, frame->b, frame->g, frame->r);
 }
 
 int apa102_tx(struct apa102 *apa102)
@@ -146,6 +162,64 @@ int apa102_tx(struct apa102 *apa102)
   return 0;
 }
 
+int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
+{
+  LOG_DEBUG("len=%u", dmx->len);
+
+  for (unsigned i = 0; i < apa102->count && dmx->len >= (i + 1) * 3; i++) {
+    apa102_set(apa102, i,
+      dmx->data[i * 3 + 0], // r
+      dmx->data[i * 3 + 1], // g
+      dmx->data[i * 3 + 2], // b
+      0x1F                  // global
+    );
+  }
+
+  return apa102_tx(apa102);
+}
+
+void apa102_artnet_task(void *arg)
+{
+  struct apa102 *apa102 = arg;
+  int err;
+
+  LOG_DEBUG("apa102=%p", apa102);
+
+  for (;;) {
+    if (!xQueueReceive(apa102->artnet_queue, &apa102->artnet_dmx, portMAX_DELAY)) {
+      LOG_WARN("xQueueReceive");
+    } else if ((err = apa102_artnet_dmx(apa102, &apa102->artnet_dmx))) {
+      LOG_WARN("apa102_artnet_dmx");
+    }
+  }
+}
+
+int apa102_init_artnet(struct apa102 *apa102, uint16_t artnet_universe)
+{
+  int err;
+
+  LOG_INFO("artnet_universe=%u", artnet_universe);
+
+  if ((apa102->artnet_queue = xQueueCreate(1, sizeof(struct artnet_dmx))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  if ((err = xTaskCreate(&apa102_artnet_task, (signed char *) "apa102-artnet", APA102_ARTNET_TASK_STACK, apa102, APA102_ARTNET_TASK_PRIORITY, &apa102->artnet_task)) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  } else {
+    LOG_DEBUG("apa102-artnet task=%p", apa102->artnet_task);
+  }
+
+  if ((err = start_artnet_output(artnet_universe, apa102->artnet_queue))) {
+    LOG_ERROR("start_artnet_output");
+    return err;
+  }
+
+  return 0;
+}
+
 int apa102_init(struct apa102 *apa102, const struct apa102_config *config, struct spi *spi)
 {
   int err;
@@ -158,6 +232,13 @@ int apa102_init(struct apa102 *apa102, const struct apa102_config *config, struc
   if ((err = apa102_init_tx(apa102, config->count, config->stop_quirk ? APA102_STOP_ALTERNATE : APA102_STOP_STANDARD))) {
     LOG_ERROR("apa102_init_tx");
     return err;
+  }
+
+  if (config->artnet_enabled) {
+    if ((err = apa102_init_artnet(apa102, config->artnet_universe))) {
+      LOG_ERROR("apa102_init_artnet");
+      return err;
+    }
   }
 
   return 0;

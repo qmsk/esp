@@ -243,6 +243,11 @@ int init_p9813 (const struct p9813_config *config)
 {
   int err;
 
+  if (!config->enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
+
   if ((err = p9813_init(&p9813, config, &spi1)))
     return err;
 

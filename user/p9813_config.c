@@ -5,6 +5,9 @@ struct p9813_config p9813_config = {
 };
 
 const struct configtab p9813_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .value  = { .boolean = &p9813_config.enabled },
+  },
   { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &p9813_config.count },
   },

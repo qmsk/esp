@@ -18,6 +18,7 @@ enum config_type {
 
   CONFIG_TYPE_UINT16,
   CONFIG_TYPE_STRING,
+  CONFIG_TYPE_BOOL,
 };
 
 struct configtab {
@@ -31,6 +32,7 @@ struct configtab {
   union {
     uint16_t *uint16;
     char *string;
+    bool *boolean;
   } value;
 };
 

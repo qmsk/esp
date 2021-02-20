@@ -26,6 +26,15 @@ static int configtab_print(const struct configtab *tab)
 
       break;
 
+    case CONFIG_TYPE_BOOL:
+      if (tab->secret) {
+        cli_printf("%s = ***\n", tab->name);
+      } else {
+        cli_printf("%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false");
+      }
+
+      break;
+
     default:
       cli_printf("%s = ???\n", tab->name);
 

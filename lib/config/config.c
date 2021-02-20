@@ -66,6 +66,17 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
         break;
       }
 
+    case CONFIG_TYPE_BOOL:
+      if (strcmp(value, "true") == 0) {
+        *tab->value.boolean = true;
+      } else if (strcmp(value, "false") == 0) {
+        *tab->value.boolean = false;
+      } else {
+        return -1;
+      }
+
+      break;
+
     default:
       return -1;
   }
@@ -87,11 +98,18 @@ int config_get(const struct configmod *mod, const struct configtab *tab, char *b
       }
 
     case CONFIG_TYPE_UINT16:
-    if (snprintf(buf, size, "%u", *tab->value.uint16) >= size) {
-      return -1;
-    } else {
-      break;
-    }
+      if (snprintf(buf, size, "%u", *tab->value.uint16) >= size) {
+        return -1;
+      } else {
+        break;
+      }
+
+    case CONFIG_TYPE_BOOL:
+      if (snprintf(buf, size, "%s", *tab->value.boolean ? "true" : "false") >= size) {
+        return -1;
+      } else {
+        break;
+      }
 
     default:
       return -CMD_ERR_NOT_IMPLEMENTED;

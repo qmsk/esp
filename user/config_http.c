@@ -61,6 +61,14 @@ static int config_api_write_configtab_string_members(struct json_writer *w, cons
   );
 }
 
+static int config_api_write_configtab_bool_members(struct json_writer *w, const struct configtab *tab)
+{
+  return (
+    JSON_WRITE_MEMBER_STRING(w, "type", "bool") ||
+    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_BOOL(w, "bool", *tab->value.boolean))
+  );
+}
+
 static int config_api_write_configtab_value_members(struct json_writer *w, const struct configtab *tab)
 {
   switch (tab->type) {
@@ -68,6 +76,8 @@ static int config_api_write_configtab_value_members(struct json_writer *w, const
       return config_api_write_configtab_uint16_members(w, tab);
     case CONFIG_TYPE_STRING:
       return config_api_write_configtab_string_members(w, tab);
+    case CONFIG_TYPE_BOOL:
+      return config_api_write_configtab_bool_members(w, tab);
     default:
       return 0;
   }

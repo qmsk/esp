@@ -23,6 +23,12 @@ static int configtab_write(const struct configtab *tab, FILE *file)
     }
     break;
 
+  case CONFIG_TYPE_BOOL:
+    if (fprintf(file, "%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false") < 0) {
+      return -1;
+    }
+    break;
+
   default:
     return -1;
   }

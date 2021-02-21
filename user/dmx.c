@@ -119,6 +119,11 @@ int init_dmx(struct dmx_config *config)
 {
   int err;
 
+  if (!config->enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
+
   if ((err = dmx_init(&dmx))) {
     return err;
   }

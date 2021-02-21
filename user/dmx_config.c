@@ -6,6 +6,9 @@ struct dmx_config dmx_config = {
 };
 
 const struct configtab dmx_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .value  = { .boolean = &dmx_config.enabled },
+  },
   { CONFIG_TYPE_UINT16, "gpio",
     .value  = { .uint16 = &dmx_config.gpio },
   },

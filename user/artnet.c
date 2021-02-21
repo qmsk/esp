@@ -328,7 +328,7 @@ int artnet_op_dmx(struct artnet *artnet, struct artnet_sendrecv recv)
   struct artnet_output *output;
 
   if (artnet_find_output(artnet, addr, &output)) {
-    LOG_WARN("invalid output port addr");
+    LOG_DEBUG("invalid output port addr=%u", addr);
     return -1;
   }
 

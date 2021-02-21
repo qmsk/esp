@@ -44,22 +44,22 @@ void user_event(const struct user_info *info, enum user_event event)
   switch (event) {
   case WIFI_CONNECTING:
     LOG_INFO("wifi connecting");
-    led_set(LED_FAST);
+    set_led(LED_FAST);
     break;
 
   case WIFI_CONNECTED:
     LOG_INFO("wifi connected");
-    led_set(LED_SLOW);
+    set_led(LED_SLOW);
     break;
 
   case WIFI_DISCONNECTED:
     LOG_INFO("wifi disconnected");
-    led_set(LED_OFF);
+    set_led(LED_OFF);
     break;
 
   default:
     LOG_INFO("unknown (%d)", event);
-    led_set(LED_ON);
+    set_led(LED_ON);
     break;
   }
 }

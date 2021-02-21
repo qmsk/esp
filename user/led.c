@@ -2,50 +2,35 @@
 #include "led_config.h"
 #include "led_cmd.h"
 
-#include <drivers/gpio.h>
 #include <lib/cmd.h>
 #include <lib/logging.h>
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/queue.h>
-
-static struct led {
-  xTaskHandle task;
-  xQueueHandle queue;
-  portTickType tick;
-
-  enum led_mode mode;
-  unsigned state;
-
-} led;
-
-static inline void led_off()
+static inline void led_off(struct led *led)
 {
-  GPIO_Output(LED_GPIO, LED_INVERTED ? 1 : 0);
+  GPIO_Output(led->options.gpio, led->options.inverted ? 1 : 0);
 }
 
-static inline void led_on()
+static inline void led_on(struct led *led)
 {
-  GPIO_Output(LED_GPIO, LED_INVERTED ? 0 : 1);
+  GPIO_Output(led->options.gpio, led->options.inverted ? 0 : 1);
 }
 
 static void led_switch(struct led *led, enum led_mode mode)
 {
   switch(led->mode = mode) {
     case LED_OFF:
-      led_off();
+      led_off(led);
       break;
 
     case LED_ON:
-      led_on();
+      led_on(led);
       break;
 
     case LED_SLOW:
     case LED_FAST:
     case LED_BLINK:
       led->state = 0;
-      led_on();
+      led_on(led);
       break;
   }
 }
@@ -60,27 +45,27 @@ static portTickType led_tick(struct led *led)
     case LED_SLOW:
       if (led->state) {
         led->state = 0;
-        led_off();
+        led_off(led);
         return LED_BLINK_SLOW_PERIOD_OFF / portTICK_RATE_MS;
       } else {
         led->state = 1;
-        led_on();
+        led_on(led);
         return LED_BLINK_SLOW_PERIOD_ON / portTICK_RATE_MS;
       }
 
     case LED_FAST:
       if (led->state) {
         led->state = 0;
-        led_off();
+        led_off(led);
       } else {
         led->state = 1;
-        led_on();
+        led_on(led);
       }
       return LED_BLINK_FAST_PERIOD / portTICK_RATE_MS;
 
     case LED_BLINK:
       if (led->state) {
-        led_off();
+        led_off(led);
         return 0;
       } else {
         led->state = 1;
@@ -145,20 +130,22 @@ void led_task(void *arg)
   }
 }
 
-int init_led(enum led_mode mode)
+int led_init(struct led *led, const struct led_options options, enum led_mode mode)
 {
-  GPIO_SetupOutput(LED_GPIO, GPIO_OUTPUT);
+  led->options = options;
+
+  GPIO_SetupOutput(options.gpio, GPIO_OUTPUT);
 
   // set initial state
-  led_switch(&led, mode);
+  led_switch(led, mode);
 
   // setup task
-  if ((led.queue = xQueueCreate(1, sizeof(enum led_mode))) == NULL) {
+  if ((led->queue = xQueueCreate(1, sizeof(enum led_mode))) == NULL) {
     LOG_ERROR("xQueueCreate");
     return -1;
   }
 
-  if (xTaskCreate(&led_task, (signed char *) "led", LED_TASK_STACK, &led, tskIDLE_PRIORITY + 2, &led.task) <= 0) {
+  if (xTaskCreate(&led_task, (signed char *) "led", LED_TASK_STACK, led, tskIDLE_PRIORITY + 2, &led->task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   }
@@ -166,47 +153,69 @@ int init_led(enum led_mode mode)
   return 0;
 }
 
-int led_set(enum led_mode mode)
+int led_set(struct led *led, enum led_mode mode)
 {
-  if (xQueueOverwrite(led.queue, &mode) <= 0) {
+  if (xQueueOverwrite(led->queue, &mode) <= 0) {
     LOG_ERROR("xQueueOverwrite");
   }
 
   return 0;
 }
 
+
+/* User LED */
+static struct led user_led;
+
+#define USER_LED_GPIO      GPIO_16 // integrated LED on NodeMCU
+#define USER_LED_INVERTED  1 // active-low
+
+int init_led(enum led_mode mode)
+{
+  const struct led_options user_led_options = {
+    .gpio     = USER_LED_GPIO,
+    .inverted = USER_LED_INVERTED,
+  };
+
+  return led_init(&user_led, user_led_options, mode);
+}
+
+int set_led(enum led_mode mode)
+{
+  return led_set(&user_led, mode);
+}
+
 /* CLI */
 int led_cmd_off(int argc, char **argv, void *ctx)
 {
-  led_set(LED_OFF);
+  set_led(LED_OFF);
 
   return 0;
 }
 
 int led_cmd_slow(int argc, char **argv, void *ctx)
 {
-  led_set(LED_SLOW);
+  set_led(LED_SLOW);
 
   return 0;
 }
 
 int led_cmd_fast(int argc, char **argv, void *ctx)
 {
-  led_set(LED_FAST);
+  set_led(LED_FAST);
 
   return 0;
 }
 
 int led_cmd_blink(int argc, char **argv, void *ctx)
 {
-  led_set(LED_BLINK);
+  set_led(LED_BLINK);
 
   return 0;
 }
 
 int led_cmd_on(int argc, char **argv, void *ctx)
 {
-  led_set(LED_ON);
+  set_led(LED_ON);
 
   return 0;
 }

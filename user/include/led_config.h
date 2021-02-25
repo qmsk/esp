@@ -11,6 +11,6 @@
 #define LED_BLINK_FAST_PERIOD 100
 
 // 100ms on
-#define LED_BLINK_PERIOD 100
+#define LED_BLINK_PERIOD 10
 
 #endif

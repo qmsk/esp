@@ -157,6 +157,7 @@ int led_set(struct led *led, enum led_mode mode)
 {
   if (xQueueOverwrite(led->queue, &mode) <= 0) {
     LOG_ERROR("xQueueOverwrite");
+    return -1;
   }
 
   return 0;

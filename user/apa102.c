@@ -1,5 +1,3 @@
-#define DEBUG
-
 /*
  * APA102 LED
  *
@@ -9,6 +7,7 @@
 #include "apa102.h"
 
 #include "artnet_dmx.h"
+#include "led.h"
 #include "spi.h"
 
 #include <lib/logging.h>
@@ -47,6 +46,9 @@ const struct configtab apa102_configtab[] = {
   { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &apa102_config.count },
   },
+  { CONFIG_TYPE_UINT16, "led_gpio",
+    .value  = { .uint16 = &apa102_config.led_gpio },
+  },
   { CONFIG_TYPE_BOOL, "artnet_enabled",
     .value  = { .boolean = &apa102_config.artnet_enabled },
   },
@@ -60,6 +62,7 @@ const struct configtab apa102_configtab[] = {
 #define APA102_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 struct apa102 {
+  struct led *led;
   struct spi *spi;
 
   // tx
@@ -73,6 +76,22 @@ struct apa102 {
   struct artnet_dmx artnet_dmx;
 
 } apa102;
+
+int apa102_init_led(struct apa102 *apa102, enum GPIO gpio)
+{
+  const struct led_options led_options = {
+    .gpio = gpio,
+  };
+
+  LOG_INFO("gpio=%d", gpio);
+
+  if ((apa102->led = calloc(1, sizeof(*apa102->led))) == NULL) {
+    LOG_ERROR("calloc");
+    return -1;
+  }
+
+  return led_init(apa102->led, led_options, LED_OFF);
+}
 
 int apa102_init_spi(struct apa102 *apa102, struct spi *spi)
 {
@@ -164,6 +183,8 @@ int apa102_tx(struct apa102 *apa102)
 
 int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
 {
+  int err;
+
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < apa102->count && dmx->len >= (i + 1) * 3; i++) {
@@ -173,6 +194,12 @@ int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
       dmx->data[i * 3 + 1], // g
       dmx->data[i * 3 + 2]  // r
     );
+  }
+
+  if (apa102->led) {
+    if ((err = led_set(apa102->led, LED_BLINK))) {
+      LOG_WARN("led_set");
+    }
   }
 
   return apa102_tx(apa102);
@@ -223,6 +250,13 @@ int apa102_init_artnet(struct apa102 *apa102, uint16_t artnet_universe)
 int apa102_init(struct apa102 *apa102, const struct apa102_config *config, struct spi *spi)
 {
   int err;
+
+  if (config->led_gpio) {
+    if ((err = apa102_init_led(apa102, config->led_gpio))) {
+      LOG_ERROR("apa102_init_led");
+      return err;
+    }
+  }
 
   if ((err = apa102_init_spi(apa102, spi))) {
     LOG_ERROR("apa102_init_spi");

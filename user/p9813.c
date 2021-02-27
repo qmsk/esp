@@ -1,4 +1,5 @@
 #include "p9813.h"
+#include "p9813_protocol.h"
 #include "spi.h"
 #include "artnet_dmx.h"
 
@@ -10,22 +11,6 @@
 #include <freertos/task.h>
 
 #define P9813_TASK_STACK 512
-
-static const enum SPI_Mode p9813_spi_mode = SPI_MODE_0;
-static const enum SPI_Clock p9813_spi_clock = SPI_CLOCK_1MHZ;
-
-struct __attribute__((packed)) p9813_packet {
-  uint8_t control;
-  uint8_t r, g, b;
-};
-
-void p9813_packet_set(struct p9813_packet *packet, uint8_t b, uint8_t g, uint8_t r)
-{
-  packet->control = 0xC0 | ((~b & 0xC0) >> 2) | ((~g & 0xC0) >> 4) | ((~r & 0xC0) >> 6);
-  packet->b = b;
-  packet->g = g;
-  packet->r = r;
-}
 
 struct p9813_config p9813_config = {
 
@@ -194,6 +179,21 @@ void p9813_active(struct p9813 *p9813)
   }
 }
 
+void p9813_set(struct p9813 *p9813, unsigned index, uint8_t b, uint8_t g, uint8_t r)
+{
+  struct p9813_packet *packet;
+
+  if (index >= p9813->count) {
+    return;
+  }
+
+  packet = &p9813->buf[index + 1];
+  packet->control = 0xC0 | ((~b & 0xC0) >> 2) | ((~g & 0xC0) >> 4) | ((~r & 0xC0) >> 6);
+  packet->b = b;
+  packet->g = g;
+  packet->r = r;
+}
+
 int p9813_tx(struct p9813 *p9813)
 {
   const char *ptr = (void *) p9813->buf;
@@ -220,15 +220,13 @@ int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < p9813->count && dmx->len >= (i + 1) * 3; i++) {
-    struct p9813_packet *packet = &p9813->buf[1 + i];
+    uint8_t b = dmx->data[i * 3 + 2];
+    uint8_t g = dmx->data[i * 3 + 1];
+    uint8_t r = dmx->data[i * 3 + 0];
 
-    p9813_packet_set(packet,
-      dmx->data[i * 3 + 2], // b
-      dmx->data[i * 3 + 1], // g
-      dmx->data[i * 3 + 0]  // r
-    );
+    p9813_set(p9813, i, b, g, r);
 
-    if (packet->r || packet->g || packet->b)
+    if (r || g || b)
       active = true;
   }
 
@@ -297,7 +295,7 @@ int p9813_cmd_set(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  p9813_packet_set(&p9813->buf[1 + index], (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 0) & 0xFF);
+  p9813_set(p9813, index, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 0) & 0xFF);
   p9813_active(p9813);
 
   return p9813_tx(p9813);

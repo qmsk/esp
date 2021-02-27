@@ -8,7 +8,7 @@ static const enum SPI_Clock p9813_spi_clock = SPI_CLOCK_1MHZ;
 
 struct __attribute__((packed)) p9813_packet {
   uint8_t control;
-  uint8_t r, g, b;
+  uint8_t b, g, r;
 };
 
 #endif

@@ -255,9 +255,9 @@ int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < p9813->count && dmx->len >= (i + 1) * 3; i++) {
-    uint8_t r = dmx->data[i * 3 + 0];
+    uint8_t b = dmx->data[i * 3 + 0];
     uint8_t g = dmx->data[i * 3 + 1];
-    uint8_t b = dmx->data[i * 3 + 2];
+    uint8_t r = dmx->data[i * 3 + 2];
 
     p9813_set(p9813, i, b, g, r);
 

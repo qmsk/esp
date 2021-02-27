@@ -4,7 +4,7 @@
 #include "artnet_config.h"
 #include "dmx_config.h"
 #include "http_config.h"
-#include "p9813_config.h"
+#include "p9813.h"
 #include "wifi_config.h"
 
 #include <lib/config.h>

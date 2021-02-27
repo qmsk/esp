@@ -1,6 +1,4 @@
 #include "p9813.h"
-#include "p9813_config.h"
-#include "p9813_cmd.h"
 #include "spi.h"
 #include "artnet_dmx.h"
 
@@ -28,6 +26,26 @@ void p9813_packet_set(struct p9813_packet *packet, uint8_t b, uint8_t g, uint8_t
   packet->g = g;
   packet->r = r;
 }
+
+struct p9813_config p9813_config = {
+
+};
+
+const struct configtab p9813_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .value  = { .boolean = &p9813_config.enabled },
+  },
+  { CONFIG_TYPE_UINT16, "count",
+    .value  = { .uint16 = &p9813_config.count },
+  },
+  { CONFIG_TYPE_UINT16, "artnet_universe",
+    .value  = { .uint16 = &p9813_config.artnet_universe },
+  },
+  { CONFIG_TYPE_UINT16, "gpio",
+    .value  = { .uint16 = &p9813_config.gpio },
+  },
+  {}
+};
 
 struct p9813 {
   struct spi *spi;

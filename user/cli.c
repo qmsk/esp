@@ -4,7 +4,7 @@
 #include "wifi_cmd.h"
 #include "dmx_cmd.h"
 #include "spi_cmd.h"
-#include "p9813_cmd.h"
+#include "p9813.h"
 #include "led_cmd.h"
 #include "system_cmd.h"
 

@@ -1,7 +1,9 @@
 #include "p9813.h"
 #include "p9813_protocol.h"
-#include "spi.h"
+
 #include "artnet_dmx.h"
+#include "led.h"
+#include "spi.h"
 
 #include <lib/logging.h>
 
@@ -29,10 +31,14 @@ const struct configtab p9813_configtab[] = {
   { CONFIG_TYPE_UINT16, "gpio",
     .value  = { .uint16 = &p9813_config.gpio },
   },
+  { CONFIG_TYPE_UINT16, "led_gpio",
+    .value  = { .uint16 = &p9813_config.led_gpio },
+  },
   {}
 };
 
 struct p9813 {
+  struct led *led;
   struct spi *spi;
   enum GPIO gpio;
 
@@ -45,6 +51,22 @@ struct p9813 {
   xTaskHandle artnet_task;
   struct artnet_dmx artnet_dmx;
 } p9813;
+
+int p9813_init_led(struct p9813 *p9813, enum GPIO gpio)
+{
+  const struct led_options led_options = {
+    .gpio = gpio,
+  };
+
+  LOG_INFO("gpio=%d", gpio);
+
+  if ((p9813->led = calloc(1, sizeof(*p9813->led))) == NULL) {
+    LOG_ERROR("calloc");
+    return -1;
+  }
+
+  return led_init(p9813->led, led_options, LED_OFF);
+}
 
 int p9813_init_spi(struct p9813 *p9813, struct spi *spi)
 {
@@ -127,6 +149,13 @@ int p9813_init(struct p9813 *p9813, const struct p9813_config *config, struct sp
 {
   int err;
 
+  if (!config->led_gpio) {
+    LOG_INFO("led_gpio disabled");
+  } else if ((err = p9813_init_led(p9813, config->led_gpio))) {
+    LOG_ERROR("p9813_init_led");
+    return err;
+  }
+
   if ((err = p9813_init_spi(p9813, spi)))
     return err;
 
@@ -199,6 +228,12 @@ int p9813_tx(struct p9813 *p9813)
   const char *ptr = (void *) p9813->buf;
   size_t len = (1 + p9813->count + 1) * sizeof(*p9813->buf);
   int ret;
+
+  if (p9813->led) {
+    if (led_set(p9813->led, LED_BLINK)) {
+      LOG_WARN("led_set");
+    }
+  }
 
   while (len > 0) {
     if ((ret = spi_write(p9813->spi, ptr, len)) < 0) {

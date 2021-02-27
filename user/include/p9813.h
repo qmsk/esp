@@ -9,6 +9,7 @@ struct p9813_config {
   uint16_t count;
   uint16_t artnet_universe;
   uint16_t gpio; // output power, active high
+  uint16_t led_gpio; // status LED
 };
 
 extern struct p9813_config p9813_config;

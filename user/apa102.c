@@ -168,6 +168,12 @@ int apa102_tx(struct apa102 *apa102)
   size_t len = apa102->len;
   int ret;
 
+  if (apa102->led) {
+    if (led_set(apa102->led, LED_BLINK)) {
+      LOG_WARN("led_set");
+    }
+  }
+
   while (len > 0) {
     if ((ret = spi_write(apa102->spi, ptr, len)) < 0) {
       LOG_ERROR("spi_write");
@@ -183,8 +189,6 @@ int apa102_tx(struct apa102 *apa102)
 
 int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
 {
-  int err;
-
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < apa102->count && dmx->len >= (i + 1) * 3; i++) {
@@ -194,12 +198,6 @@ int apa102_artnet_dmx(struct apa102 *apa102, const struct artnet_dmx *dmx)
       dmx->data[i * 3 + 1], // g
       dmx->data[i * 3 + 2]  // r
     );
-  }
-
-  if (apa102->led) {
-    if ((err = led_set(apa102->led, LED_BLINK))) {
-      LOG_WARN("led_set");
-    }
   }
 
   return apa102_tx(apa102);
@@ -251,11 +249,11 @@ int apa102_init(struct apa102 *apa102, const struct apa102_config *config, struc
 {
   int err;
 
-  if (config->led_gpio) {
-    if ((err = apa102_init_led(apa102, config->led_gpio))) {
-      LOG_ERROR("apa102_init_led");
-      return err;
-    }
+  if (!config->led_gpio) {
+    LOG_INFO("led_gpio disabled");
+  } else if ((err = apa102_init_led(apa102, config->led_gpio))) {
+    LOG_ERROR("apa102_init_led");
+    return err;
   }
 
   if ((err = apa102_init_spi(apa102, spi))) {

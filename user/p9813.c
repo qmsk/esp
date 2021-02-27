@@ -255,9 +255,9 @@ int p9813_artnet_dmx(struct p9813 *p9813, const struct artnet_dmx *dmx)
   LOG_DEBUG("len=%u", dmx->len);
 
   for (unsigned i = 0; i < p9813->count && dmx->len >= (i + 1) * 3; i++) {
-    uint8_t b = dmx->data[i * 3 + 2];
-    uint8_t g = dmx->data[i * 3 + 1];
     uint8_t r = dmx->data[i * 3 + 0];
+    uint8_t g = dmx->data[i * 3 + 1];
+    uint8_t b = dmx->data[i * 3 + 2];
 
     p9813_set(p9813, i, b, g, r);
 
@@ -314,6 +314,41 @@ int init_p9813 (const struct p9813_config *config)
   return 0;
 }
 
+int p9813_cmd_clear(int argc, char **argv, void *ctx)
+{
+  struct p9813 *p9813 = ctx;
+
+  for (unsigned index = 0; index < p9813->count; index++) {
+    p9813_set(p9813, index, 0, 0, 0);
+  }
+
+  p9813_off(p9813);
+
+  return p9813_tx(p9813);
+}
+
+int p9813_cmd_all(int argc, char **argv, void *ctx)
+{
+  struct p9813 *p9813 = ctx;
+  unsigned rgb;
+  int err;
+
+  if ((err = cmd_arg_uint(argc, argv, 1, &rgb)))
+    return err;
+
+  uint8_t r = (rgb >> 16) & 0xFF;
+  uint8_t g = (rgb >> 8 ) & 0xFF;
+  uint8_t b = (rgb >> 0 ) & 0xFF;
+
+  for (unsigned index = 0; index < p9813->count; index++) {
+    p9813_set(p9813, index, b, g, r);
+  }
+
+  p9813_active(p9813);
+
+  return p9813_tx(p9813);
+}
+
 int p9813_cmd_set(int argc, char **argv, void *ctx)
 {
   struct p9813 *p9813 = ctx;
@@ -330,27 +365,21 @@ int p9813_cmd_set(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  p9813_set(p9813, index, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, (rgb >> 0) & 0xFF);
+  uint8_t r = (rgb >> 16) & 0xFF;
+  uint8_t g = (rgb >> 8 ) & 0xFF;
+  uint8_t b = (rgb >> 0 ) & 0xFF;
+
+  p9813_set(p9813, index, b, g, r);
+
   p9813_active(p9813);
 
   return p9813_tx(p9813);
 }
 
-int p9813_cmd_off(int argc, char **argv, void *ctx)
-{
-  struct p9813 *p9813 = ctx;
-
-  if (argc > 1)
-    return -CMD_ERR_ARGC;
-
-  p9813_off(p9813);
-
-  return 0;
-}
-
 const struct cmd p9813_commands[] = {
-  { "set",  p9813_cmd_set,  &p9813, .usage = "INDEX RGB", .describe = "Set values" },
-  { "off",  p9813_cmd_off,  &p9813, .usage = "", .describe = "Power off" },
+  { "clear",  p9813_cmd_clear,  &p9813, .usage = "", .describe = "Clear all values" },
+  { "all",    p9813_cmd_all,    &p9813, .usage = "RGB", .describe = "Set all values" },
+  { "set",    p9813_cmd_set,    &p9813, .usage = "INDEX RGB", .describe = "Set values" },
   { }
 };
 

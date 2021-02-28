@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "system.h"
 
 #include <logging.h>
 #include <cli.h>
@@ -18,6 +19,9 @@ static int help_cmd(int argc, char **arv, void *ctx)
 
 static const struct cmd commands[] = {
   { "help",   help_cmd,   .describe = "Show commands" },
+  { "system", .describe = "System",
+      .subcommands = &system_cmdtab,
+  },
   { },
 };
 

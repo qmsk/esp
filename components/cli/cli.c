@@ -10,7 +10,7 @@
 #include <freertos/queue.h>
 
 #define CLI_BUF_SIZE 512
-#define CLI_TASK_STACK 1024
+#define CLI_TASK_STACK 2048 // bytes
 #define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 struct cli {

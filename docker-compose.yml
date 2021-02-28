@@ -15,79 +15,31 @@ services:
     volumes:
       - .:/build
     user: "${USER_ID:-1000}"
-
-  build:
-    image: esp8266/sdk:3.4-rc
-    volumes:
-      - .:/build
-    working_dir: /build
     command: make
-    environment:
-      BIN_PATH: /build/bin
-      BOOT: none
-      APP: "0"
-      SPI_SPEED: "40"
-      SPI_MODE: DIO
-      SPI_SIZE_MAP: "6"
-
-  clean:
-    image: esp8266/sdk:3.4-rc
-    volumes:
-      - .:/build
-    user: "${USER_ID:-1000}"
-    working_dir: /build
-    command: make clean
-    environment:
-      BIN_PATH: /build/bin
-
-
-  flash-erase:
-    image: esp8266/sdk:2.1.1
-    volumes:
-      - .:/build
-    user: root
-    working_dir: /build
-    command: esptool.py --port $TTY_DEV erase_flash
-    devices:
-      - $TTY_DEV
-    environment:
-      BIN_PATH: /build/bin
-
-  flash-init:
-    image: esp8266/sdk:2.1.1
-    volumes:
-      - .:/build
-    user: root
-    working_dir: /build
-    command: esptool.py --port $TTY_DEV write_flash -ff 40m -fm dio 0x00000 bin/eagle.flash.bin 0x20000 bin/eagle.irom0text.bin 0x3FC000 /opt/bin/sdk/esp_init_data_default.bin 0x3FE000 /opt/bin/sdk/blank.bin
-    devices:
-      - $TTY_DEV
-    environment:
-      BIN_PATH: /build/bin
 
   flash:
-    image: esp8266/sdk:2.1.1
+    image: esp8266/sdk:3.4-rc
     volumes:
       - .:/build
-    user: root
     working_dir: /build
-    command: esptool.py --port $TTY_DEV write_flash -ff 40m -fm dio 0x00000 bin/eagle.flash.bin 0x20000 bin/eagle.irom0text.bin
+    user: build
+    command: make flash
     devices:
-      - $TTY_DEV
+      - "${ESPPORT}"
     environment:
-      BIN_PATH: /build/bin
+      ESPPORT: "${ESPPORT}"
 
-  console:
-    image: esp8266/sdk:2.1.1
+  monitor:
+    image: esp8266/sdk:3.4-rc
     volumes:
       - .:/build
-    user: root
     working_dir: /build
-    command: miniterm.py $TTY_DEV 74880
+    user: build
+    command: make monitor
     devices:
-      - $TTY_DEV
+      - "${ESPPORT}"
     environment:
-      BIN_PATH: /build/bin
+      ESPPORT: "${ESPPORT}"
 
   npm:
     image: esp8266/web

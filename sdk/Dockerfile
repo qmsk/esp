@@ -30,7 +30,11 @@ ENV IDF_PATH=/opt/ESP8266_RTOS_SDK
 RUN \
   python -m pip install -r $IDF_PATH/requirements.txt
 
+RUN \
+  make -C $IDF_PATH/tools/kconfig
+
 # build
 RUN adduser --system --group --home /build build
+RUN adduser build dialout # flashing
 USER build
 WORKDIR /build

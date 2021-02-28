@@ -23,6 +23,7 @@ services:
     working_dir: /build
     user: "${USER_ID:-1000}"
     command: make
+    init: true
 
   flash:
     image: qmsk/esp8266-sdk
@@ -31,6 +32,7 @@ services:
     working_dir: /build
     user: build
     command: make flash
+    init: true
     devices:
       - "${ESPPORT}"
     environment:
@@ -43,6 +45,7 @@ services:
     working_dir: /build
     user: build
     command: make monitor
+    init: true
     devices:
       - "${ESPPORT}"
     environment:

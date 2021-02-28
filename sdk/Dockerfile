@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
   python python-pip python-serial
 
 # toolchain
+# https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#get-esp8266-rtos-sdk
 ARG TOOLCHAIN_VERSION=gcc8_4_0-esp-2020r3
 ARG TOOLCHAIN_SHA256SUM=0a1804b5e2231c6db8b72af6bc2a0f9a5b6994cfba29956d412651109f13fe7e
 
@@ -19,6 +20,7 @@ RUN \
 ENV PATH=/opt/bin:/opt/xtensa-lx106-elf/bin:$PATH
 
 # SDK
+# https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#get-esp8266-rtos-sdk
 ARG ESP8266_RTOS_SDK_VERSION
 
 RUN \

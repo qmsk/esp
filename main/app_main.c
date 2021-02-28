@@ -1,5 +1,6 @@
 #include "cli.h"
 #include "uart.h"
+#include "spiffs.h"
 
 #include <logging.h>
 
@@ -17,6 +18,11 @@ void app_main()
 
   if (init_cli()) {
     LOG_ERROR("init_cli");
+    abort();
+  }
+
+  if (init_spiffs()) {
+    LOG_ERROR("init_spiffs");
     abort();
   }
 

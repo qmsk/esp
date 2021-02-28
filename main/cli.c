@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "spiffs.h"
 #include "system.h"
 
 #include <logging.h>
@@ -21,6 +22,9 @@ static const struct cmd commands[] = {
   { "help",   help_cmd,   .describe = "Show commands" },
   { "system", .describe = "System",
       .subcommands = &system_cmdtab,
+  },
+  { "spiffs", .describe = "SPIFFS",
+      .subcommands = &spiffs_cmdtab,
   },
   { },
 };

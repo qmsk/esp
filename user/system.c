@@ -3,6 +3,8 @@
 
 #include <espressif/esp_system.h>
 #include <espressif/spi_flash.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 // symbols defined in linker scripts
 extern char _text_start, _text_end;
@@ -68,6 +70,37 @@ int system_cmd_status(int argc, char **argv, void *ctx)
   return 0;
 }
 
+#if ( configUSE_TRACE_FACILITY == 1 )
+int system_cmd_tasks(int argc, char **argv, void *ctx)
+{
+  unsigned count = uxTaskGetNumberOfTasks();
+  unsigned long total_runtime;
+  xTaskStatusType *tasks;
+  int err = 0;
+
+  if ((tasks = calloc(count, sizeof(*tasks)))) {
+    LOG_ERROR("calloc");
+    return -1;
+  }
+
+  if ((count = uxTaskGetSystemState(tasks, count, &total_runtime)) == 0) {
+    LOG_ERROR("uxTaskGetSystemState");
+    err = -1;
+    goto error;
+  }
+
+  cli_printf("%4s %20s\t%1s %5s %s/%s %s\n", "ID", "NAME", "S", "PRI", "TIME", "STACK FREE");
+
+  for (xTaskStatusType *task = tasks; task < tasks + count; task++) {
+    cli_printf("%4u %20s\t%c %2u/%2u %u/%u %u\n");
+  }
+
+error:
+  free(tasks);
+  return err;
+}
+#endif
+
 int system_cmd_restart(int argc, char **argv, void *ctx)
 {
   LOG_INFO("restarting...");
@@ -80,6 +113,9 @@ int system_cmd_restart(int argc, char **argv, void *ctx)
 const struct cmd system_commands[] = {
   { "info",     system_cmd_info,    .describe = "Display system build info"   },
   { "status",   system_cmd_status,  .describe = "Display system runtime info" },
+#if ( configUSE_TRACE_FACILITY == 1 )
+  { "tasks",    system_cmd_tasks,   .describe = "Display system tasks info"   },
+#endif
   { "restart",  system_cmd_restart, .describe = "Restart system"              },
   {}
 };

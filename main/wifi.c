@@ -1,4 +1,5 @@
 #include "wifi.h"
+#include "user_event.h"
 
 #include <logging.h>
 
@@ -133,6 +134,8 @@ int wifi_connect(wifi_config_t *config)
     LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
     return -1;
   }
+
+  user_event(USER_EVENT_CONNECTING);
 
   return 0;
 }

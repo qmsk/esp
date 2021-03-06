@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_internal.h"
+#include "user_event.h"
 
 #include <logging.h>
 
@@ -94,6 +95,8 @@ static void on_sta_disconnected(wifi_event_sta_disconnected_t *event)
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     wifi_err_reason_str(event->reason)
   );
+
+  user_event(USER_EVENT_DISCONNECTED);
 }
 
 static void on_sta_authmode_change(wifi_event_sta_authmode_change_t *event)
@@ -113,11 +116,16 @@ static void on_sta_got_ip(ip_event_got_ip_t *event)
     ip4_addr1_val(event->ip_info.ip), ip4_addr2_val(event->ip_info.ip), ip4_addr3_val(event->ip_info.ip), ip4_addr4_val(event->ip_info.ip),
     event->ip_changed ? "true" : "false"
   );
+
+  user_event(USER_EVENT_CONNECTED);
 }
 
 static void on_sta_lost_ip()
 {
   LOG_INFO(" ");
+
+  // XXX: ???
+  user_event(USER_EVENT_DISCONNECTED);
 }
 
 static void tcpip_adapter_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)

@@ -7,7 +7,13 @@ static struct status_led *user_led;
 
 #define USER_LED_GPIO      GPIO_NUM_16 // integrated LED on NodeMCU
 #define USER_LED_INVERTED  true // active-low
-#define USER_LED_MODE      STATUS_LED_ON // initial mode
+
+enum status_led_mode user_event_led_mode[USER_EVENT_MAX] = {
+  [USER_EVENT_BOOT]         = STATUS_LED_ON,
+  [USER_EVENT_CONNECTING]   = STATUS_LED_FAST,
+  [USER_EVENT_CONNECTED]    = STATUS_LED_SLOW,
+  [USER_EVENT_DISCONNECTED] = STATUS_LED_OFF,
+};
 
 int init_user_led()
 {
@@ -15,8 +21,9 @@ int init_user_led()
     .gpio     = USER_LED_GPIO,
     .inverted = USER_LED_INVERTED,
   };
+  const enum status_led_mode user_led_mode = user_event_led_mode[USER_EVENT_BOOT];
 
-  if (status_led_new(&user_led, user_led_options, USER_LED_MODE)) {
+  if (status_led_new(&user_led, user_led_options, user_led_mode)) {
     LOG_ERROR("status_led_new");
     return -1;
   }
@@ -24,6 +31,16 @@ int init_user_led()
   return 0;
 }
 
+void user_led_event(enum user_event event)
+{
+  if (user_led && event < USER_EVENT_MAX) {
+    if (status_led_mode(user_led, user_event_led_mode[event])) {
+      LOG_WARN("status_led_mode");
+    }
+  }
+}
+
+// CLI
 int set_user_led(enum status_led_mode mode)
 {
   return status_led_mode(user_led, mode);

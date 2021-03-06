@@ -44,12 +44,13 @@ services:
       - .:/build
     working_dir: /build
     user: build
-    command: make monitor
+    command: make monitor MONITOR_OPTS="--baud $${MONITORBAUD} --port $${ESPPORT} --eol CRLF"
     init: true
     devices:
       - "${ESPPORT}"
     environment:
       ESPPORT: "${ESPPORT}"
+      MONITORBAUD: 74880
 
   npm:
     image: qmsk/esp8266-web

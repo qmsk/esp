@@ -33,17 +33,12 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
     return -1;
   }
 
+  // ignore any errors returned by readdir()
+  // https://github.com/pellepl/spiffs/issues/64#issuecomment-171570238 returns an undocumented internal error code in normal case
   while ((d = readdir(dir))) {
     printf("%c %s\n", dirent_type_char(d), d->d_name);
   }
 
-  if (errno) {
-    LOG_ERROR("readdir: %s", strerror(errno));
-    err = -1;
-    goto error;
-  }
-
-error:
   closedir(dir);
 
   return err;

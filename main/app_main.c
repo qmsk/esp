@@ -1,6 +1,7 @@
 #include "cli.h"
 #include "config.h"
 #include "uart.h"
+#include "wifi.h"
 
 #include <logging.h>
 
@@ -23,6 +24,11 @@ void app_main()
 
   if (init_config()) {
     LOG_ERROR("init_config");
+    abort();
+  }
+
+  if (init_wifi()) {
+    LOG_ERROR("init_wifi");
     abort();
   }
 

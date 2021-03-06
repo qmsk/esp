@@ -3,6 +3,7 @@
 #include "spiffs.h"
 #include "system.h"
 #include "vfs.h"
+#include "wifi.h"
 
 #include <logging.h>
 #include <cli.h>
@@ -33,6 +34,9 @@ static const struct cmd commands[] = {
   },
   { "config", .describe = "Configuration",
       .subcommands = &config_cmdtab,
+  },
+  { "wifi", .describe = "WiFi",
+      .subcommands = &wifi_cmdtab,
   },
   { },
 };

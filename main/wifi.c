@@ -3,83 +3,10 @@
 #include <logging.h>
 
 #include <esp_err.h>
-#include <esp_event.h>
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 
-const wifi_auth_mode_t authmode_threshold = WIFI_AUTH_WPA2_PSK;
-
-int init_tcpip_adapter()
-{
-  tcpip_adapter_init();
-
-  return 0;
-}
-
-int init_esp_event()
-{
-  esp_err_t err;
-
-  if ((err = esp_event_loop_create_default())) {
-    LOG_ERROR("esp_event_loop_create_default: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
-int init_wifi_sta()
-{
-  wifi_init_config_t init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_err_t err;
-
-  LOG_INFO("Start ESP8266 WiFI in Station mode");
-
-  if ((err = esp_wifi_init(&init_config))) {
-    LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
-    LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_set_mode(WIFI_MODE_STA))) {
-    LOG_ERROR("esp_wifi_set_mode WIFI_MODE_STA: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
-int init_wifi()
-{
-
-  if (init_tcpip_adapter()) {
-    LOG_ERROR("init_tcpip_adapter");
-    return -1;
-  }
-
-  if (init_esp_event()) {
-    LOG_ERROR("init_esp_event");
-    return -1;
-  }
-
-  if (init_wifi_sta()) {
-    LOG_ERROR("init_wifi_sta");
-    return -1;
-  }
-
-  return 0;
-}
-
-const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
+static const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
   switch (auth_mode) {
     case WIFI_AUTH_OPEN:            return "OPEN";
     case WIFI_AUTH_WEP:             return "WEP";
@@ -93,7 +20,7 @@ const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
   }
 }
 
-const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
+static const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
   switch (cipher_type) {
     case WIFI_CIPHER_TYPE_NONE:         return "NONE";
     case WIFI_CIPHER_TYPE_WEP40:        return "WEP40";
@@ -105,6 +32,21 @@ const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
     case WIFI_CIPHER_TYPE_UNKNOWN:      return "UNKNOWN";
     default:                            return "?";
   }
+}
+
+static const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
+{
+  switch (status) {
+    case TCPIP_ADAPTER_DHCP_INIT:         return "INIT";
+    case TCPIP_ADAPTER_DHCP_STARTED:      return "STARTED";
+    case TCPIP_ADAPTER_DHCP_STOPPED:      return "STOPPED";
+    default:                              return "?";
+  }
+}
+
+static inline void print_ip_info(const char *title, ip4_addr_t ip)
+{
+  printf("\t%-20s: %u.%u.%u.%u\n", title, ip4_addr1_val(ip), ip4_addr2_val(ip), ip4_addr3_val(ip), ip4_addr4_val(ip));
 }
 
 int wifi_scan(const wifi_scan_config_t *scan_config)
@@ -176,9 +118,10 @@ int wifi_connect(wifi_config_t *config)
 {
   esp_err_t err;
 
-  LOG_INFO("Connect: ssid=%.32s password=%s",
+  LOG_INFO("Connect: ssid=%.32s password=%s authmode=%s",
     config->sta.ssid,
-    config->sta.password[0] ? "***" : ""
+    config->sta.password[0] ? "***" : "",
+    wifi_auth_mode_str(config->sta.threshold.authmode)
   );
 
   if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, config))) {
@@ -241,21 +184,6 @@ int wifi_info()
   return 0;
 }
 
-const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
-{
-  switch (status) {
-    case TCPIP_ADAPTER_DHCP_INIT:         return "INIT";
-    case TCPIP_ADAPTER_DHCP_STARTED:      return "STARTED";
-    case TCPIP_ADAPTER_DHCP_STOPPED:      return "STOPPED";
-    default:                              return "?";
-  }
-}
-
-static inline void print_ip_info(const char *title, ip4_addr_t ip)
-{
-  printf("\t%-20s: %u.%u.%u.%u\n", title, ip4_addr1_val(ip), ip4_addr2_val(ip), ip4_addr3_val(ip), ip4_addr4_val(ip));
-}
-
 int tcpip_adapter_info()
 {
   tcpip_adapter_dhcp_status_t dhcp_status;
@@ -299,73 +227,3 @@ int tcpip_adapter_info()
 
   return 0;
 }
-
-int wifi_scan_cmd(int argc, char **argv, void *ctx)
-{
-  wifi_scan_config_t scan_config = {};
-  int err;
-
-  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, (const char **) &scan_config.ssid))) {
-    return err;
-  }
-
-  if ((err = wifi_scan(&scan_config))) {
-    LOG_ERROR("wifi_scan");
-    return err;
-  }
-
-  return 0;
-}
-
-int wifi_connect_cmd(int argc, char **argv, void *ctx)
-{
-  wifi_config_t config = {};
-  int err;
-
-  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) config.ap.ssid, sizeof(config.sta.ssid)))) {
-    return err;
-  }
-  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) config.ap.password, sizeof(config.sta.password)))) {
-    return err;
-  }
-
-  if (config.sta.password[0]) {
-    LOG_INFO("Using authmode threshold: %s", wifi_auth_mode_str(authmode_threshold));
-    config.sta.threshold.authmode = authmode_threshold;
-  }
-
-  if ((err = wifi_connect(&config))) {
-    LOG_ERROR("wifi_info");
-    return err;
-  }
-
-  return 0;
-}
-
-int wifi_info_cmd(int argc, char **argv, void *ctx)
-{
-  int err;
-
-  if ((err = wifi_info())) {
-    LOG_ERROR("wifi_info");
-    return err;
-  }
-
-  if ((err = tcpip_adapter_info())) {
-    LOG_ERROR("tcpip_adapter_info");
-    return err;
-  }
-
-  return 0;
-}
-
-const struct cmd wifi_commands[] = {
-  { "scan",     wifi_scan_cmd,    .usage = "[SSID]",        .describe = "Scan available APs"  },
-  { "connect",  wifi_connect_cmd, .usage = "[SSID] [PSK]",  .describe = "Connect AP"          },
-  { "info",     wifi_info_cmd,    .usage = "",              .describe = "Show connected AP"   },
-  {}
-};
-
-const struct cmdtab wifi_cmdtab = {
-  .commands = wifi_commands,
-};

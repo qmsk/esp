@@ -11,7 +11,9 @@ static int configtab_print(const struct configtab *tab)
       break;
 
     case CONFIG_TYPE_STRING:
-      if (tab->secret) {
+      if (!*tab->value.string) {
+        printf("%s = \n", tab->name);
+      } if (tab->secret) {
         printf("%s = ***\n", tab->name);
       } else {
         printf("%s = %s\n", tab->name, tab->value.string);
@@ -20,7 +22,9 @@ static int configtab_print(const struct configtab *tab)
       break;
 
     case CONFIG_TYPE_UINT16:
-      if (tab->secret) {
+      if (!*tab->value.uint16) {
+        printf("%s = \n", tab->name);
+      } else if (tab->secret) {
         printf("%s = ***\n", tab->name);
       } else {
         printf("%s = %u\n", tab->name, *tab->value.uint16);

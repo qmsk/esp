@@ -2,6 +2,7 @@
 #define __CMD_H__
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define CMD_ARGS_MAX 8
 
@@ -54,6 +55,7 @@ enum cmd_error {
 int cmd_eval(const struct cmdtab *cmdtab, char *line);
 
 int cmd_arg_str(int argc, char **argv, int arg, const char **strp);
+int cmd_arg_strncpy(int argc, char **argv, int arg, char *buf, size_t len);
 int cmd_arg_int(int argc, char **argv, int arg, int *intp);
 int cmd_arg_uint(int argc, char **argv, int arg, unsigned *uintp);
 int cmd_arg_uint8(int argc, char **argv, int arg, uint8_t *uint8p);

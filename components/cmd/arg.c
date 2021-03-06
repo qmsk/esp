@@ -1,6 +1,8 @@
 #include "cmd.h"
-#include <stdio.h>
+
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
 
 int cmd_arg_str(int argc, char **argv, int arg, const char **strp)
 {
@@ -8,6 +10,19 @@ int cmd_arg_str(int argc, char **argv, int arg, const char **strp)
     return -CMD_ERR_ARGC;
 
   *strp = argv[arg];
+
+  return 0;
+}
+
+int cmd_arg_strncpy(int argc, char **argv, int arg, char *buf, size_t len)
+{
+  if (arg >= argc)
+    return -CMD_ERR_ARGC;
+
+  if (strlen(argv[arg]) > len)
+    return -CMD_ERR_ARGV;
+
+  strncpy(buf, argv[arg], len);
 
   return 0;
 }

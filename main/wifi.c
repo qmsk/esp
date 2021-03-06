@@ -220,16 +220,16 @@ int wifi_info()
   );
 
   if (!err) {
-    printf("%20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "BSSID",
+    printf("\t%-20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "BSSID",
       ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4], ap.bssid[5]
     );
-    printf("%20s: %.32s\n", "SSID", ap.ssid);
-    printf("%20s: %d:%d\n", "Channel", ap.primary, ap.second);
-    printf("%20s: %d\n", "RSSI", ap.rssi);
-    printf("%20s: %s\n", "AuthMode", wifi_auth_mode_str(ap.authmode));
-    printf("%20s: %s\n", "Pairwise Cipher", wifi_cipher_type_str(ap.pairwise_cipher));
-    printf("%20s: %s\n", "Group Cipher", wifi_cipher_type_str(ap.group_cipher));
-    printf("%20s: %s %s %s %s %s\n", "Flags",
+    printf("\t%-20s: %.32s\n", "SSID", ap.ssid);
+    printf("\t%-20s: %d:%d\n", "Channel", ap.primary, ap.second);
+    printf("\t%-20s: %d\n", "RSSI", ap.rssi);
+    printf("\t%-20s: %s\n", "AuthMode", wifi_auth_mode_str(ap.authmode));
+    printf("\t%-20s: %s\n", "Pairwise Cipher", wifi_cipher_type_str(ap.pairwise_cipher));
+    printf("\t%-20s: %s\n", "Group Cipher", wifi_cipher_type_str(ap.group_cipher));
+    printf("\t%-20s: %s %s %s %s %s\n", "Flags",
       ap.phy_11b  ? "11b" : "",
       ap.phy_11g  ? "11g" : "",
       ap.phy_11n  ? "11n" : "",
@@ -237,6 +237,65 @@ int wifi_info()
       ap.wps      ? "WPS" : ""
     );
   }
+
+  return 0;
+}
+
+const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
+{
+  switch (status) {
+    case TCPIP_ADAPTER_DHCP_INIT:         return "INIT";
+    case TCPIP_ADAPTER_DHCP_STARTED:      return "STARTED";
+    case TCPIP_ADAPTER_DHCP_STOPPED:      return "STOPPED";
+    default:                              return "?";
+  }
+}
+
+static inline void print_ip_info(const char *title, ip4_addr_t ip)
+{
+  printf("\t%-20s: %u.%u.%u.%u\n", title, ip4_addr1_val(ip), ip4_addr2_val(ip), ip4_addr3_val(ip), ip4_addr4_val(ip));
+}
+
+int tcpip_adapter_info()
+{
+  tcpip_adapter_dhcp_status_t dhcp_status;
+  tcpip_adapter_ip_info_t ip_info;
+  tcpip_adapter_dns_info_t dns_info_main, dns_info_backup, dns_info_fallback;
+  esp_err_t err;
+
+  if ((err = tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &dhcp_status))) {
+    LOG_ERROR("tcpip_adapter_dhcpc_get_status TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info))) {
+    LOG_ERROR("tcpip_adapter_get_ip_info TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_MAIN, &dns_info_main))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_BACKUP, &dns_info_backup))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_FALLBACK, &dns_info_fallback))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  printf("TCP/IP:\n");
+  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcp_status));
+  print_ip_info("IP", ip_info.ip);
+  print_ip_info("Netmask", ip_info.netmask);
+  print_ip_info("Gateway", ip_info.gw);
+  print_ip_info("DNS (main)", dns_info_main.ip);
+  print_ip_info("DNS (backup)", dns_info_backup.ip);
+  print_ip_info("DNS (fallback)", dns_info_fallback.ip);
 
   return 0;
 }
@@ -289,6 +348,11 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
 
   if ((err = wifi_info())) {
     LOG_ERROR("wifi_info");
+    return err;
+  }
+
+  if ((err = tcpip_adapter_info())) {
+    LOG_ERROR("tcpip_adapter_info");
     return err;
   }
 

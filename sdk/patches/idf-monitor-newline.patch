@@ -1,0 +1,15 @@
+https://github.com/espressif/ESP8266_RTOS_SDK/issues/1062
+
+--- a/tools/idf_monitor.py
++++ b/tools/idf_monitor.py
+@@ -419,6 +419,10 @@ class Monitor(object):
+                 pass  # this can happen if a non-ascii character was passed, ignoring
+
+     def handle_serial_input(self, data, finalize_line=False):
++        if data == b'\n':
++            self._print(data)
++            return
++
+         sp = data.split(b'\n')
+         if self._last_line_part != b"":
+             # add unprocessed part from previous "data" to the first line

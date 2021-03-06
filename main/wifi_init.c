@@ -69,6 +69,11 @@ int init_wifi()
     return -1;
   }
 
+  if (init_wifi_events()) {
+    LOG_ERROR("init_wifi_events");
+    return -1;
+  }
+
   if (init_wifi_sta()) {
     LOG_ERROR("init_wifi_sta");
     return -1;

@@ -6,7 +6,7 @@
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 
-static const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
+const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
   switch (auth_mode) {
     case WIFI_AUTH_OPEN:            return "OPEN";
     case WIFI_AUTH_WEP:             return "WEP";
@@ -20,7 +20,7 @@ static const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
   }
 }
 
-static const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
+const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
   switch (cipher_type) {
     case WIFI_CIPHER_TYPE_NONE:         return "NONE";
     case WIFI_CIPHER_TYPE_WEP40:        return "WEP40";
@@ -34,7 +34,7 @@ static const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
   }
 }
 
-static const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
+const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
 {
   switch (status) {
     case TCPIP_ADAPTER_DHCP_INIT:         return "INIT";

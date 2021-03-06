@@ -2,6 +2,7 @@
 #include "config.h"
 #include "spiffs.h"
 #include "system.h"
+#include "user_led.h"
 #include "vfs.h"
 #include "wifi.h"
 
@@ -25,6 +26,9 @@ static const struct cmd commands[] = {
   { "help",   help_cmd,   .describe = "Show commands" },
   { "system", .describe = "System",
       .subcommands = &system_cmdtab,
+  },
+  { "user-led", .describe = "User LED",
+      .subcommands = &user_led_cmdtab,
   },
   { "spiffs", .describe = "SPIFFS",
       .subcommands = &spiffs_cmdtab,

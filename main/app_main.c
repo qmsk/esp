@@ -1,5 +1,6 @@
 #include "cli.h"
 #include "config.h"
+#include "user_led.h"
 #include "uart.h"
 #include "wifi.h"
 
@@ -11,6 +12,11 @@
 void app_main()
 {
   LOG_INFO("start");
+
+  if (init_user_led()) {
+    LOG_ERROR("init_user_led");
+    abort();
+  }
 
   if (init_uart()) {
     LOG_ERROR("uart_init");

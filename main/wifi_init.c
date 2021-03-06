@@ -74,5 +74,10 @@ int init_wifi()
     return -1;
   }
 
+  if (init_wifi_config(&wifi_config)) {
+    LOG_ERROR("init_wifi_config");
+    return -1;
+  }
+
   return 0;
 }

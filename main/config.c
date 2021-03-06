@@ -1,5 +1,6 @@
 #include "config.h"
 #include "spiffs.h"
+#include "wifi.h"
 
 #include <config.h>
 #include <errno.h>
@@ -10,6 +11,9 @@
 #define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
+  { "wifi",
+    .table = wifi_configtab,
+  },
   {}
 };
 

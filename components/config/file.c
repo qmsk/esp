@@ -56,8 +56,12 @@ int config_save(struct config *config)
   }
 
   if (remove(config->filename)) {
-    LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
-    return -1;
+    if (errno == ENOENT) {
+      LOG_DEBUG("no existing file");
+    } else {
+      LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
+      return -1;
+    }
   }
 
   if (rename(newfile, config->filename)) {

@@ -7,6 +7,8 @@
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 
+const wifi_auth_mode_t authmode_threshold = WIFI_AUTH_WPA2_PSK;
+
 int init_tcpip_adapter()
 {
   tcpip_adapter_init();
@@ -35,6 +37,11 @@ int init_wifi_sta()
 
   if ((err = esp_wifi_init(&init_config))) {
     LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
+    LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -143,7 +150,7 @@ int wifi_scan(const wifi_scan_config_t *scan_config)
   );
 
   for (wifi_ap_record_t *ap = wifi_ap_records; ap < wifi_ap_records + number; ap++) {
-    printf("%02x:%02x:%02x:%02x:%02x:%02x\t%-32s\t%-2d:%-2d\t%-4d\t%-10s\t%-10s/%-10s\t%c%c%c%c%c\n",
+    printf("%02x:%02x:%02x:%02x:%02x:%02x\t%-32.32s\t%-2d:%-2d\t%-4d\t%-10s\t%-10s/%-10s\t%c%c%c%c%c\n",
       ap->bssid[0], ap->bssid[1], ap->bssid[2], ap->bssid[3], ap->bssid[4], ap->bssid[5],
       ap->ssid,
       ap->primary, ap->second,
@@ -165,6 +172,75 @@ error:
   return err;
 }
 
+int wifi_connect(wifi_config_t *config)
+{
+  esp_err_t err;
+
+  LOG_INFO("Connect: ssid=%.32s password=%s",
+    config->sta.ssid,
+    config->sta.password[0] ? "***" : ""
+  );
+
+  if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, config))) {
+    LOG_ERROR("esp_wifi_set_config: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_connect())) {
+    LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_info()
+{
+  uint8_t mac[6];
+  wifi_ap_record_t ap;
+  esp_err_t err;
+
+  if ((err = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac))) {
+    LOG_ERROR("esp_wifi_get_mac: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_sta_get_ap_info(&ap))) {
+    if (err == ESP_ERR_WIFI_NOT_CONNECT) {
+      LOG_WARN("esp_wifi_sta_get_ap_info: %s", esp_err_to_name(err));
+    } else {
+      LOG_ERROR("esp_wifi_sta_get_ap_info: %s", esp_err_to_name(err));
+      return -1;
+    }
+  }
+
+  printf("Station %02x:%02x:%02x:%02x:%02x:%02x: %s\n",
+    mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+    err ? "Not Connected" : "Connected"
+  );
+
+  if (!err) {
+    printf("%20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "BSSID",
+      ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4], ap.bssid[5]
+    );
+    printf("%20s: %.32s\n", "SSID", ap.ssid);
+    printf("%20s: %d:%d\n", "Channel", ap.primary, ap.second);
+    printf("%20s: %d\n", "RSSI", ap.rssi);
+    printf("%20s: %s\n", "AuthMode", wifi_auth_mode_str(ap.authmode));
+    printf("%20s: %s\n", "Pairwise Cipher", wifi_cipher_type_str(ap.pairwise_cipher));
+    printf("%20s: %s\n", "Group Cipher", wifi_cipher_type_str(ap.group_cipher));
+    printf("%20s: %s %s %s %s %s\n", "Flags",
+      ap.phy_11b  ? "11b" : "",
+      ap.phy_11g  ? "11g" : "",
+      ap.phy_11n  ? "11n" : "",
+      ap.phy_lr   ? "LR"  : "",
+      ap.wps      ? "WPS" : ""
+    );
+  }
+
+  return 0;
+}
+
 int wifi_scan_cmd(int argc, char **argv, void *ctx)
 {
   wifi_scan_config_t scan_config = {};
@@ -182,8 +258,47 @@ int wifi_scan_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int wifi_connect_cmd(int argc, char **argv, void *ctx)
+{
+  wifi_config_t config = {};
+  int err;
+
+  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) config.ap.ssid, sizeof(config.sta.ssid)))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) config.ap.password, sizeof(config.sta.password)))) {
+    return err;
+  }
+
+  if (config.sta.password[0]) {
+    LOG_INFO("Using authmode threshold: %s", wifi_auth_mode_str(authmode_threshold));
+    config.sta.threshold.authmode = authmode_threshold;
+  }
+
+  if ((err = wifi_connect(&config))) {
+    LOG_ERROR("wifi_info");
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_info_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = wifi_info())) {
+    LOG_ERROR("wifi_info");
+    return err;
+  }
+
+  return 0;
+}
+
 const struct cmd wifi_commands[] = {
-  { "scan",   wifi_scan_cmd,    .usage = "[SSID]",  .describe = "Scan available APs"  },
+  { "scan",     wifi_scan_cmd,    .usage = "[SSID]",        .describe = "Scan available APs"  },
+  { "connect",  wifi_connect_cmd, .usage = "[SSID] [PSK]",  .describe = "Connect AP"          },
+  { "info",     wifi_info_cmd,    .usage = "",              .describe = "Show connected AP"   },
   {}
 };
 

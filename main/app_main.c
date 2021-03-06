@@ -1,6 +1,5 @@
 #include "cli.h"
 #include "uart.h"
-#include "spiffs.h"
 
 #include <logging.h>
 
@@ -21,10 +20,6 @@ void app_main()
     abort();
   }
 
-  if (init_spiffs()) {
-    LOG_ERROR("init_spiffs");
-    abort();
-  }
 
   LOG_INFO("complete");
 }

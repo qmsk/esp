@@ -7,22 +7,25 @@
 
 #define SPIFFS_CONFIG_MAX_FILES 5
 
-int init_spiffs()
+int init_spiffs_partition(const char *base_path, const char *partition_label, size_t max_files)
 {
-  esp_vfs_spiffs_conf_t config_spiffs = {
-    .base_path              = "/config",
-    .partition_label        = "config",
-    .max_files              = SPIFFS_CONFIG_MAX_FILES,
+  esp_vfs_spiffs_conf_t spiffs_conf = {
+    .base_path              = base_path,
+    .partition_label        = partition_label,
+    .max_files              = max_files,
     .format_if_mount_failed = true,
   };
   esp_err_t err;
 
-  if (!(err = esp_vfs_spiffs_register(&config_spiffs))) {
-    LOG_INFO("config partition mounted: %s", config_spiffs.base_path);
+  LOG_INFO("mount partition=%s at base_path=%s with max_files=%u", partition_label, base_path, max_files);
+
+  if (!(err = esp_vfs_spiffs_register(&spiffs_conf))) {
+    LOG_INFO("partition mounted: %s", spiffs_conf.base_path);
   } else if (err == ESP_ERR_NOT_FOUND) {
-    LOG_WARN("config partition not found");
+    LOG_WARN("partition not found: %s", spiffs_conf.partition_label);
+    return 1;
   } else {
-    LOG_ERROR("config partition esp_vfs_spiffs_register: %s", esp_err_to_name(err));
+    LOG_ERROR("partition esp_vfs_spiffs_register base_path=%s partition_label=%s: %s", base_path, partition_label, esp_err_to_name(err));
     return -1;
   }
 

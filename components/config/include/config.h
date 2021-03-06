@@ -1,5 +1,5 @@
-#ifndef __LIB_CONFIG_H__
-#define __LIB_CONFIG_H__
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
 #include <stddef.h>
 #include <stdint.h>

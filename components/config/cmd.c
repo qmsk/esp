@@ -1,6 +1,8 @@
-#include "cli.h"
 #include "config.h"
-#include "logging.h"
+
+#include <cmd.h>
+#include <logging.h>
+#include <stdio.h>
 
 static int configtab_print(const struct configtab *tab)
 {
@@ -10,33 +12,33 @@ static int configtab_print(const struct configtab *tab)
 
     case CONFIG_TYPE_STRING:
       if (tab->secret) {
-        cli_printf("%s = ***\n", tab->name);
+        printf("%s = ***\n", tab->name);
       } else {
-        cli_printf("%s = %s\n", tab->name, tab->value.string);
+        printf("%s = %s\n", tab->name, tab->value.string);
       }
 
       break;
 
     case CONFIG_TYPE_UINT16:
       if (tab->secret) {
-        cli_printf("%s = ***\n", tab->name);
+        printf("%s = ***\n", tab->name);
       } else {
-        cli_printf("%s = %u\n", tab->name, *tab->value.uint16);
+        printf("%s = %u\n", tab->name, *tab->value.uint16);
       }
 
       break;
 
     case CONFIG_TYPE_BOOL:
       if (tab->secret) {
-        cli_printf("%s = ***\n", tab->name);
+        printf("%s = ***\n", tab->name);
       } else {
-        cli_printf("%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false");
+        printf("%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false");
       }
 
       break;
 
     default:
-      cli_printf("%s = ???\n", tab->name);
+      printf("%s = ???\n", tab->name);
 
       break;
   }
@@ -56,11 +58,11 @@ static int configmod_print(const struct configmod *mod)
 static int config_print(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
-    cli_printf("[%s]\n", mod->name);
+    printf("[%s]\n", mod->name);
 
     configmod_print(mod);
 
-    cli_printf("\n");
+    printf("\n");
   }
 
   return 0;
@@ -118,7 +120,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return -CMD_ERR;
   }
 
-  cli_printf("%s\n", value);
+  printf("%s\n", value);
 
   return 0;
 }

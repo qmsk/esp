@@ -45,9 +45,37 @@ const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
   }
 }
 
-static inline void print_ip_info(const char *title, ip4_addr_t ip)
+static inline void print_ip4_info(const char *title, ip4_addr_t *ip)
 {
-  printf("\t%-20s: %u.%u.%u.%u\n", title, ip4_addr1_val(ip), ip4_addr2_val(ip), ip4_addr3_val(ip), ip4_addr4_val(ip));
+  printf("\t%-20s: %u.%u.%u.%u\n", title,
+    ip4_addr1(ip),
+    ip4_addr2(ip),
+    ip4_addr3(ip),
+    ip4_addr4(ip)
+  );
+}
+
+static inline void print_ip6_info(const char *title, ip6_addr_t *ip)
+{
+  printf("\t%-20s: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", title,
+    IP6_ADDR_BLOCK1(ip),
+    IP6_ADDR_BLOCK2(ip),
+    IP6_ADDR_BLOCK3(ip),
+    IP6_ADDR_BLOCK4(ip),
+    IP6_ADDR_BLOCK5(ip),
+    IP6_ADDR_BLOCK6(ip),
+    IP6_ADDR_BLOCK7(ip),
+    IP6_ADDR_BLOCK8(ip)
+ );
+}
+
+static inline void print_ip_info(const char *title, ip_addr_t *ip)
+{
+  if (IP_IS_V4(ip)) {
+    print_ip4_info(title, ip_2_ip4(ip));
+  } else if (IP_IS_V6(ip)) {
+    print_ip6_info(title, ip_2_ip6(ip));
+  }
 }
 
 int wifi_scan(const wifi_scan_config_t *scan_config)
@@ -221,12 +249,12 @@ int tcpip_adapter_info()
 
   printf("TCP/IP:\n");
   printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcp_status));
-  print_ip_info("IP", ip_info.ip);
-  print_ip_info("Netmask", ip_info.netmask);
-  print_ip_info("Gateway", ip_info.gw);
-  print_ip_info("DNS (main)", dns_info_main.ip);
-  print_ip_info("DNS (backup)", dns_info_backup.ip);
-  print_ip_info("DNS (fallback)", dns_info_fallback.ip);
+  print_ip4_info("IP", &ip_info.ip);
+  print_ip4_info("Netmask", &ip_info.netmask);
+  print_ip4_info("Gateway", &ip_info.gw);
+  print_ip_info("DNS (main)", &dns_info_main.ip);
+  print_ip_info("DNS (backup)", &dns_info_backup.ip);
+  print_ip_info("DNS (fallback)", &dns_info_fallback.ip);
 
   return 0;
 }

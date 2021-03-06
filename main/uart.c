@@ -9,6 +9,9 @@
 #define UART_RX_BUFFER_SIZE 256
 #define UART_TX_BUFFER_SIZE 1024
 
+#define UART_RX_LINE_ENDINGS_MODE ESP_LINE_ENDINGS_CRLF // convert CRLF to LF
+#define UART_TX_LINE_ENDINGS_MODE ESP_LINE_ENDINGS_CRLF // convert LF to CRLF
+
 static int putchar_stderr(int c)
 {
   return fputc(c, stderr);
@@ -43,8 +46,10 @@ int init_uart()
     return -1;
   }
 
-  // configure stdio to use buffered/interrupt-driven uart driver
+  // configure stdio to use buffered/interrupt-driven uart driver with CRLF <-> LF conversion
   esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+  esp_vfs_dev_uart_set_rx_line_endings(UART_RX_LINE_ENDINGS_MODE);
+  esp_vfs_dev_uart_set_tx_line_endings(UART_TX_LINE_ENDINGS_MODE);
 
   // unbuffered logging via stderr
   setvbuf(stderr, NULL, _IONBF, 0);

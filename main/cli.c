@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "config.h"
 #include "spiffs.h"
 #include "system.h"
 #include "vfs.h"
@@ -29,6 +30,9 @@ static const struct cmd commands[] = {
   },
   { "vfs", .describe = "Virtual FileSystem",
       .subcommands = &vfs_cmdtab,
+  },
+  { "config", .describe = "Configuration",
+      .subcommands = &config_cmdtab,
   },
   { },
 };

@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "config.h"
 #include "uart.h"
 
 #include <logging.h>
@@ -20,6 +21,10 @@ void app_main()
     abort();
   }
 
+  if (init_config()) {
+    LOG_ERROR("init_config");
+    abort();
+  }
 
   LOG_INFO("complete");
 }

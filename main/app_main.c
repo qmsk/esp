@@ -1,3 +1,4 @@
+#include "apa102.h"
 #include "cli.h"
 #include "config.h"
 #include "user_led.h"
@@ -35,6 +36,11 @@ void app_main()
 
   if (init_wifi()) {
     LOG_ERROR("init_wifi");
+    abort();
+  }
+
+  if (init_apa102()) {
+    LOG_ERROR("init_apa102");
     abort();
   }
 

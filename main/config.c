@@ -1,4 +1,6 @@
 #include "config.h"
+
+#include "apa102.h"
 #include "spiffs.h"
 #include "wifi.h"
 
@@ -13,6 +15,9 @@
 const struct configmod config_modules[] = {
   { "wifi",
     .table = wifi_configtab,
+  },
+  { "apa102",
+    .table = apa102_configtab,
   },
   {}
 };

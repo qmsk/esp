@@ -1,4 +1,5 @@
 #include "activity_led.h"
+#include "atx_psu.h"
 #include "cli.h"
 #include "config.h"
 #include "user_led.h"
@@ -37,6 +38,11 @@ void app_main()
 
   if (init_activity_led()) {
     LOG_ERROR("init_activity_led");
+    abort();
+  }
+
+  if (init_atx_psu()) {
+    LOG_ERROR("init_atx_psu");
     abort();
   }
 

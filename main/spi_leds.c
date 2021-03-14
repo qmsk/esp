@@ -11,6 +11,7 @@
 struct spi_leds_config {
   bool enabled;
   uint16_t count;
+  int protocol;
 
 /* TODO
   bool artnet_enabled;
@@ -20,7 +21,13 @@ struct spi_leds_config {
 
 struct spi_leds *spi_leds;
 struct spi_leds_config spi_leds_config = {
+  .protocol = SPI_LEDS_PROTOCOL_APA102,
+};
 
+const struct config_enum spi_leds_protocol_enum[] = {
+  { "APA102", SPI_LEDS_PROTOCOL_APA102  },
+  { "P9813",  SPI_LEDS_PROTOCOL_P9813   },
+  {}
 };
 
 const struct configtab spi_leds_configtab[] = {
@@ -29,6 +36,10 @@ const struct configtab spi_leds_configtab[] = {
   },
   { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &spi_leds_config.count },
+  },
+  { CONFIG_TYPE_ENUM, "protocol",
+    .enum_values = spi_leds_protocol_enum,
+    .value       = { .enum_value = &spi_leds_config.protocol },
   },
 /*
   { CONFIG_TYPE_BOOL, "artnet_enabled",
@@ -47,8 +58,8 @@ int config_spi_leds(const struct spi_leds_config *config)
       .spi_host = SPI_LEDS_SPI_HOST,
       .spi_clk_div = SPI_LEDS_SPI_CLK_DIV,
 
-      .protocol = SPI_LEDS_PROTOCOL_APA102,
-      .count = config->count,
+      .protocol = config->protocol,
+      .count    = config->count,
   };
   int err;
 

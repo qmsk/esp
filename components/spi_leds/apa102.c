@@ -58,3 +58,21 @@ void apa102_set_frames(struct apa102_packet *packet, unsigned count, struct spi_
     };
   }
 }
+
+static inline bool apa102_frame_active(const struct apa102_frame frame)
+{
+  return (frame.b || frame.g || frame.r) && frame.global > APA102_GLOBAL_BYTE(0);
+}
+
+unsigned apa102_count_active(struct apa102_packet *packet, unsigned count)
+{
+  unsigned active = 0;
+
+  for (unsigned index = 0; index < count; index++) {
+    if (apa102_frame_active(packet->frames[index])) {
+      active++;
+    }
+  }
+
+  return active;
+}

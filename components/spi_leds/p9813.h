@@ -18,3 +18,5 @@ int p9813_new_packet(struct p9813_packet **packetp, size_t *sizep, unsigned coun
 
 void p9813_set_frame(struct p9813_packet *packet, unsigned index, struct spi_led_color color);
 void p9813_set_frames(struct p9813_packet *packet, unsigned count, struct spi_led_color color);
+
+unsigned p9813_count_active(struct p9813_packet *packet, unsigned count);

@@ -58,3 +58,21 @@ void p9813_set_frames(struct p9813_packet *packet, unsigned count, struct spi_le
     };
   }
 }
+
+static inline bool p9813_frame_active(const struct p9813_frame frame)
+{
+  return frame.b || frame.g || frame.r;
+}
+
+unsigned p9813_count_active(struct p9813_packet *packet, unsigned count)
+{
+  unsigned active = 0;
+
+  for (unsigned index = 0; index < count; index++) {
+    if (p9813_frame_active(packet->frames[index])) {
+      active++;
+    }
+  }
+
+  return active;
+}

@@ -33,6 +33,9 @@ int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *opt
 /* Get LED count */
 unsigned spi_leds_count(struct spi_leds *spi_leds);
 
+/* Get active LED count */
+unsigned spi_leds_active(struct spi_leds *spi_leds);
+
 /*
  * @param index 0-based index
  * @param global 5-bit global brightness 0-31

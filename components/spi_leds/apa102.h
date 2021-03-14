@@ -18,3 +18,5 @@ int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsigned co
 
 void apa102_set_frame(struct apa102_packet *packet, unsigned index, struct spi_led_color color);
 void apa102_set_frames(struct apa102_packet *packet, unsigned count, struct spi_led_color color);
+
+unsigned apa102_count_active(struct apa102_packet *packet, unsigned count);

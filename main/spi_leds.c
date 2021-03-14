@@ -1,5 +1,6 @@
 #include "spi_leds.h"
 #include "activity_led.h"
+#include "atx_psu.h"
 
 #include <spi_leds.h>
 
@@ -20,6 +21,7 @@ struct spi_leds_config {
 };
 
 struct spi_leds *spi_leds;
+bool spi_leds_activated;
 struct spi_leds_config spi_leds_config = {
   .protocol = SPI_LEDS_PROTOCOL_APA102,
 };
@@ -88,9 +90,40 @@ int init_spi_leds()
   return 0;
 }
 
+static void activate_spi_leds()
+{
+  LOG_INFO("active");
+
+  activate_atx_psu(ATX_PSU_BIT_SPI_LED);
+
+  spi_leds_activated = true;
+}
+
+static void deactivate_spi_leds()
+{
+  LOG_INFO("inactive");
+
+  deactivate_atx_psu(ATX_PSU_BIT_SPI_LED);
+
+  spi_leds_activated = false;
+}
+
 static int update_spi_leds()
 {
+  unsigned active = spi_leds_active(spi_leds);
   int err;
+
+  LOG_INFO("active=%u", active);
+
+  if (active) {
+    if (!spi_leds_activated) {
+      activate_spi_leds();
+    }
+  } else {
+    if (spi_leds_activated) {
+      deactivate_spi_leds();
+    }
+  }
 
   activity_led_event();
 

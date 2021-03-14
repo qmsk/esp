@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "activity_led.h"
 #include "apa102.h"
 #include "spiffs.h"
 #include "wifi.h"
@@ -13,6 +14,9 @@
 #define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
+  { "activity_led",
+    .table = activity_led_configtab,
+  },
   { "wifi",
     .table = wifi_configtab,
   },

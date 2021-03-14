@@ -1,3 +1,4 @@
+#include "activity_led.h"
 #include "apa102.h"
 #include "cli.h"
 #include "config.h"
@@ -31,6 +32,11 @@ void app_main()
 
   if (init_config()) {
     LOG_ERROR("init_config");
+    abort();
+  }
+
+  if (init_activity_led()) {
+    LOG_ERROR("init_activity_led");
     abort();
   }
 

@@ -49,6 +49,9 @@ int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *opti
     case SPI_LEDS_PROTOCOL_APA102:
       return apa102_new_packet(&spi_leds->packet.apa102, &spi_leds->packet_size, options->count);
 
+    case SPI_LEDS_PROTOCOL_P9813:
+      return p9813_new_packet(&spi_leds->packet.p9813, &spi_leds->packet_size, options->count);
+
     default:
       LOG_ERROR("unknown protocol=%#x", options->protocol);
       return -1;
@@ -95,6 +98,10 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
       apa102_set_frame(spi_leds->packet.apa102, index, color);
       return 0;
 
+    case SPI_LEDS_PROTOCOL_P9813:
+      p9813_set_frame(spi_leds->packet.p9813, index, color);
+      return 0;
+
     default:
       LOG_ERROR("unknown protocol=%#x", spi_leds->protocol);
       return -1;
@@ -108,6 +115,10 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
   switch(spi_leds->protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
       apa102_set_frames(spi_leds->packet.apa102, spi_leds->count, color);
+      return 0;
+
+    case SPI_LEDS_PROTOCOL_P9813:
+      p9813_set_frames(spi_leds->packet.p9813, spi_leds->count, color);
       return 0;
 
     default:

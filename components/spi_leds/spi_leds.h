@@ -6,6 +6,7 @@
 union spi_leds_packet {
   uint8_t *buf;
   struct apa102_packet *apa102;
+  struct p9813_packet *p9813;
 };
 
 struct spi_leds {

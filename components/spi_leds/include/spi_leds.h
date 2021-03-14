@@ -7,6 +7,7 @@ struct spi_leds;
 
 enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_APA102          = 1,
+  SPI_LEDS_PROTOCOL_P9813           = 2,
 };
 
 struct spi_leds_options {

@@ -4,88 +4,34 @@
 #include <logging.h>
 #include <stdio.h>
 
-static int configtab_print_enum(const struct configtab *tab)
+static int print_configtab(const struct configmod *mod, const struct configtab *tab)
 {
-  const struct config_enum *e;
-
-  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
-    printf("%s = ???\n", tab->name);
-    return 0;
-  }
-
   if (tab->secret) {
     printf("%s = ***\n", tab->name);
   } else {
-    printf("%s = %s\n", tab->name, e->name);
+    printf("%s = ", tab->name);
+    config_print(mod, tab, stdout);
+    printf("\n");
   }
 
   return 0;
 }
 
-static int configtab_print(const struct configtab *tab)
-{
-  switch(tab->type) {
-    case CONFIG_TYPE_NULL:
-      break;
-
-    case CONFIG_TYPE_STRING:
-      if (!*tab->value.string) {
-        printf("%s = \n", tab->name);
-      } if (tab->secret) {
-        printf("%s = ***\n", tab->name);
-      } else {
-        printf("%s = %s\n", tab->name, tab->value.string);
-      }
-
-      break;
-
-    case CONFIG_TYPE_UINT16:
-      if (!*tab->value.uint16) {
-        printf("%s = \n", tab->name);
-      } else if (tab->secret) {
-        printf("%s = ***\n", tab->name);
-      } else {
-        printf("%s = %u\n", tab->name, *tab->value.uint16);
-      }
-
-      break;
-
-    case CONFIG_TYPE_BOOL:
-      if (tab->secret) {
-        printf("%s = ***\n", tab->name);
-      } else {
-        printf("%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false");
-      }
-
-      break;
-
-    case CONFIG_TYPE_ENUM:
-      return configtab_print_enum(tab);
-
-    default:
-      printf("%s = ???\n", tab->name);
-
-      break;
-  }
-
-  return 0;
-}
-
-static int configmod_print(const struct configmod *mod)
+static int print_configmod(const struct configmod *mod)
 {
   for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
-    configtab_print(tab);
+    print_configtab(mod, tab);
   }
 
   return 0;
 }
 
-static int config_print(const struct config *config)
+static int print_config(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     printf("[%s]\n", mod->name);
 
-    configmod_print(mod);
+    print_configmod(mod);
 
     printf("\n");
   }
@@ -110,9 +56,9 @@ int config_cmd_show(int argc, char **argv, void *ctx)
       return -CMD_ERR_ARGV;
     }
 
-    configmod_print(mod);
+    print_configmod(mod);
   } else {
-    config_print(config);
+    print_config(config);
   }
 
   return 0;

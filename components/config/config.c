@@ -177,3 +177,57 @@ int config_get(const struct configmod *mod, const struct configtab *tab, char *b
 
   return 0;
 }
+
+static int config_print_enum(const struct configmod *mod, const struct configtab *tab, FILE *file)
+{
+  const struct config_enum *e;
+
+  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
+    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->value.enum_value);
+    return -1;
+  }
+
+  LOG_DEBUG("%s.%s: value=%#x enum=%s", mod->name, tab->name, *tab->value.enum_value, e->name);
+
+  if (fprintf(file, "%s", e->name) < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
+int config_print(const struct configmod *mod, const struct configtab *tab, FILE *file)
+{
+  LOG_DEBUG("type=%u name=%s", tab->type, tab->name);
+
+  switch (tab->type) {
+  case CONFIG_TYPE_NULL:
+    break;
+
+  case CONFIG_TYPE_UINT16:
+    if (fprintf(file, "%u", *tab->value.uint16) < 0) {
+      return -1;
+    }
+    break;
+
+  case CONFIG_TYPE_STRING:
+    if (fprintf(file, "%s", tab->value.string) < 0) {
+      return -1;
+    }
+    break;
+
+  case CONFIG_TYPE_BOOL:
+    if (fprintf(file, "%s", *tab->value.boolean ? "true" : "false") < 0) {
+      return -1;
+    }
+    break;
+
+  case CONFIG_TYPE_ENUM:
+    return config_print_enum(mod, tab, file);
+
+  default:
+    return -1;
+  }
+
+  return 0;
+}

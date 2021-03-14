@@ -3,54 +3,19 @@
 
 #include <stdio.h>
 
-static int configtab_write_enum(const struct configmod *mod, const struct configtab *tab, FILE *file)
-{
-  const struct config_enum *e;
-
-  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
-    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->value.enum_value);
-    return -1;
-  }
-
-  LOG_DEBUG("tab=%s value=%#x enum=%s", tab->name, *tab->value.enum_value, e->name);
-
-  if (fprintf(file, "%s = %s\n", tab->name, e->name) < 0) {
-    return -1;
-  }
-
-  return 0;
-}
-
 static int configtab_write(const struct configmod *mod, const struct configtab *tab, FILE *file)
 {
   LOG_DEBUG("type=%u name=%s", tab->type, tab->name);
 
-  switch (tab->type) {
-  case CONFIG_TYPE_NULL:
-    break;
+  if (fprintf(file, "%s =", tab->name) < 0) {
+    return -1;
+  }
 
-  case CONFIG_TYPE_UINT16:
-    if (fprintf(file, "%s = %u\n", tab->name, *tab->value.uint16) < 0) {
-      return -1;
-    }
-    break;
+  if (config_print(mod, tab, file)) {
+    return -1;
+  }
 
-  case CONFIG_TYPE_STRING:
-    if (fprintf(file, "%s = %s\n", tab->name, tab->value.string) < 0) {
-      return -1;
-    }
-    break;
-
-  case CONFIG_TYPE_BOOL:
-    if (fprintf(file, "%s = %s\n", tab->name, *tab->value.boolean ? "true" : "false") < 0) {
-      return -1;
-    }
-    break;
-
-  case CONFIG_TYPE_ENUM:
-    return configtab_write_enum(mod, tab, file);
-
-  default:
+  if (fprintf(file, "\n") < 0) {
     return -1;
   }
 

@@ -66,6 +66,7 @@ int config_lookup(const struct config *config, const char *module, const char *n
 
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value);
 int config_get(const struct configmod *mod, const struct configtab *tab, char *buf, size_t size);
+int config_print(const struct configmod *mod, const struct configtab *tab, FILE *file);
 
 int config_read(struct config *config, FILE *file);
 int config_write(struct config *config, FILE *file);

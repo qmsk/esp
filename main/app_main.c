@@ -1,9 +1,9 @@
 #include "activity_led.h"
-#include "apa102.h"
 #include "cli.h"
 #include "config.h"
 #include "user_led.h"
 #include "uart.h"
+#include "spi_leds.h"
 #include "wifi.h"
 
 #include <logging.h>
@@ -45,8 +45,8 @@ void app_main()
     abort();
   }
 
-  if (init_apa102()) {
-    LOG_ERROR("init_apa102");
+  if (init_spi_leds()) {
+    LOG_ERROR("init_spi_leds");
     abort();
   }
 

@@ -1,6 +1,6 @@
 #include "cli.h"
 
-#include "apa102.h"
+#include "spi_leds.h"
 #include "config.h"
 #include "spiffs.h"
 #include "system.h"
@@ -44,8 +44,8 @@ static const struct cmd commands[] = {
   { "wifi", .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
   },
-  { "apa102", .describe = "APA-102 LEDs",
-      .subcommands = &apa102_cmdtab,
+  { "spi-leds", .describe = "SPI LEDs",
+      .subcommands = &spi_leds_cmdtab,
   },
   { },
 };

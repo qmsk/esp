@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include "activity_led.h"
-#include "apa102.h"
+#include "spi_leds.h"
 #include "spiffs.h"
 #include "wifi.h"
 
@@ -20,8 +20,8 @@ const struct configmod config_modules[] = {
   { "wifi",
     .table = wifi_configtab,
   },
-  { "apa102",
-    .table = apa102_configtab,
+  { "spi_leds",
+    .table = spi_leds_configtab,
   },
   {}
 };

@@ -1,4 +1,6 @@
 #include "apa102.h"
+#include "activity_led.h"
+
 #include <apa102.h>
 
 #include <logging.h>
@@ -11,7 +13,6 @@ struct apa102_config {
   uint16_t count;
 
 /* TODO
-  uint16_t led_gpio;
   bool artnet_enabled;
   uint16_t artnet_universe;
 */
@@ -30,9 +31,6 @@ const struct configtab apa102_configtab[] = {
     .value  = { .uint16 = &apa102_config.count },
   },
 /*
-  { CONFIG_TYPE_UINT16, "led_gpio",
-    .value  = { .uint16 = &apa102_config.led_gpio },
-  },
   { CONFIG_TYPE_BOOL, "artnet_enabled",
     .value  = { .boolean = &apa102_config.artnet_enabled },
   },
@@ -79,6 +77,20 @@ int init_apa102()
   return 0;
 }
 
+static int update_apa102()
+{
+  int err;
+
+  activity_led_event();
+
+  if ((err = apa102_tx(apa102))) {
+    LOG_ERROR("apa102_tx");
+    return err;
+  }
+
+  return 0;
+}
+
 int apa102_cmd_clear(int argc, char **argv, void *ctx)
 {
   int err;
@@ -93,8 +105,10 @@ int apa102_cmd_clear(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = apa102_tx(apa102))) {
-    LOG_ERROR("apa102_tx");
+  update_apa102();
+
+  if ((err = update_apa102())) {
+    LOG_ERROR("update_apa102");
     return err;
   }
 
@@ -126,8 +140,8 @@ int apa102_cmd_all(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = apa102_tx(apa102))) {
-    LOG_ERROR("apa102_tx");
+  if ((err = update_apa102())) {
+    LOG_ERROR("update_apa102");
     return err;
   }
 
@@ -162,8 +176,8 @@ int apa102_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = apa102_tx(apa102))) {
-    LOG_ERROR("apa102_tx");
+  if ((err = update_apa102())) {
+    LOG_ERROR("update_apa102");
     return err;
   }
 

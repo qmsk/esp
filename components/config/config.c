@@ -3,6 +3,30 @@
 
 #include <string.h>
 
+int config_enum_lookup(const struct config_enum *e, const char *name, const struct config_enum **enump)
+{
+  for (; e->name; e++) {
+    if (strcmp(e->name, name) == 0) {
+      *enump = e;
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+int config_enum_find_by_value(const struct config_enum *e, int value, const struct config_enum **enump)
+{
+  for (; e->name; e++) {
+    if (e->value == value) {
+      *enump = e;
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp)
 {
   for (; mod->name; mod++) {
@@ -39,12 +63,26 @@ int config_lookup(const struct config *config, const char *module, const char *n
     return 0;
 }
 
+int config_set_enum(const struct configmod *mod, const struct configtab *tab, const char *value)
+{
+  const struct config_enum *e;
+
+  if (config_enum_lookup(tab->enum_values, value, &e)) {
+    LOG_WARN("%s.%s: unknown value: %s", mod->name, tab->name, value);
+    return -1;
+  }
+
+  *tab->value.enum_value = e->value;
+
+  return 0;
+}
+
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value)
 {
   unsigned uvalue;
 
   if (tab->readonly) {
-    LOG_WARN("Config %s.%s is readonly", mod->name, tab->name);
+    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
     return -1;
   }
 
@@ -77,8 +115,27 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
 
       break;
 
+    case CONFIG_TYPE_ENUM:
+      return config_set_enum(mod, tab, value);
+
     default:
       return -1;
+  }
+
+  return 0;
+}
+
+int config_get_enum(const struct configmod *mod, const struct configtab *tab, char *buf, size_t size)
+{
+  const struct config_enum *e;
+
+  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
+    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->value.enum_value);
+    return -1;
+  }
+
+  if (snprintf(buf, size, "%s", e->name) >= size) {
+    return -1;
   }
 
   return 0;
@@ -110,6 +167,9 @@ int config_get(const struct configmod *mod, const struct configtab *tab, char *b
       } else {
         break;
       }
+
+    case CONFIG_TYPE_ENUM:
+      return config_get_enum(mod, tab, buf, size);
 
     default:
       return -CMD_ERR_NOT_IMPLEMENTED;

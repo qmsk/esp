@@ -4,6 +4,24 @@
 #include <logging.h>
 #include <stdio.h>
 
+static int configtab_print_enum(const struct configtab *tab)
+{
+  const struct config_enum *e;
+
+  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
+    printf("%s = ???\n", tab->name);
+    return 0;
+  }
+
+  if (tab->secret) {
+    printf("%s = ***\n", tab->name);
+  } else {
+    printf("%s = %s\n", tab->name, e->name);
+  }
+
+  return 0;
+}
+
 static int configtab_print(const struct configtab *tab)
 {
   switch(tab->type) {
@@ -40,6 +58,9 @@ static int configtab_print(const struct configtab *tab)
       }
 
       break;
+
+    case CONFIG_TYPE_ENUM:
+      return configtab_print_enum(tab);
 
     default:
       printf("%s = ???\n", tab->name);

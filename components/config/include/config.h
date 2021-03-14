@@ -19,6 +19,13 @@ enum config_type {
   CONFIG_TYPE_UINT16,
   CONFIG_TYPE_STRING,
   CONFIG_TYPE_BOOL,
+  CONFIG_TYPE_ENUM,
+};
+
+struct config_enum {
+  const char *name;
+
+  int value;
 };
 
 struct configtab {
@@ -26,6 +33,7 @@ struct configtab {
   const char *name;
 
   size_t size;
+  const struct config_enum *enum_values;
   bool readonly;
   bool secret;
 
@@ -33,6 +41,7 @@ struct configtab {
     uint16_t *uint16;
     char *string;
     bool *boolean;
+    int *enum_value;
   } value;
 };
 
@@ -47,6 +56,9 @@ struct config {
 
   const struct configmod *modules;
 };
+
+int config_enum_lookup(const struct config_enum *e, const char *name, const struct config_enum **enump);
+int config_enum_find_by_value(const struct config_enum *e, int value, const struct config_enum **enump);
 
 int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp);
 int configtab_lookup(const struct configtab *tab, const char *name, const struct configtab **tabp);

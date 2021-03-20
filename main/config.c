@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "activity_led.h"
+#include "artnet.h"
 #include "atx_psu.h"
 #include "spi_leds.h"
 #include "spiffs.h"
@@ -23,6 +24,9 @@ const struct configmod config_modules[] = {
   },
   { "wifi",
     .table = wifi_configtab,
+  },
+  { "artnet",
+    .table = artnet_configtab,
   },
   { "spi_leds",
     .table = spi_leds_configtab,

@@ -1,4 +1,5 @@
 #include "activity_led.h"
+#include "artnet.h"
 #include "atx_psu.h"
 #include "cli.h"
 #include "config.h"
@@ -51,10 +52,20 @@ void app_main()
     abort();
   }
 
+  if (init_artnet()) {
+    LOG_ERROR("init_artnet");
+    abort();
+  }
+
   if (init_spi_leds()) {
     LOG_ERROR("init_spi_leds");
     abort();
   }
 
   LOG_INFO("complete");
+
+  if (start_artnet()) {
+    LOG_ERROR("start_artnet");
+    abort();
+  }
 }

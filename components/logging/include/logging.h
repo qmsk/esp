@@ -5,8 +5,10 @@
 
 #ifdef DEBUG
   #define LOG_DEBUG(...)  do { esp_log_write(ESP_LOG_DEBUG, __func__, __VA_ARGS__); } while(0)
+  #define LOG_ISR_DEBUG(...)  do { esp_early_log_write(ESP_LOG_DEBUG, __func__, __VA_ARGS__); } while(0)
 #else
   #define LOG_DEBUG(...)
+  #define LOG_ISR_DEBUG(...)
 #endif
 
 #define LOG_INFO(...)   do { esp_log_write(ESP_LOG_INFO, __func__, __VA_ARGS__); } while(0)

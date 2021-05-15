@@ -2,6 +2,7 @@
 
 #include "spi_leds.h"
 #include "config.h"
+#include "dmx.h"
 #include "spiffs.h"
 #include "system.h"
 #include "user_led.h"
@@ -46,6 +47,9 @@ static const struct cmd commands[] = {
   },
   { "spi-leds", .describe = "SPI LEDs",
       .subcommands = &spi_leds_cmdtab,
+  },
+  { "dmx", .describe = "DMX output",
+      .subcommands = &dmx_cmdtab,
   },
   { },
 };

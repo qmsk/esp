@@ -3,6 +3,7 @@
 #include "atx_psu.h"
 #include "cli.h"
 #include "config.h"
+#include "dmx.h"
 #include "user_led.h"
 #include "uart.h"
 #include "spi_leds.h"
@@ -59,6 +60,11 @@ void app_main()
 
   if (init_spi_leds()) {
     LOG_ERROR("init_spi_leds");
+    abort();
+  }
+
+  if (init_dmx()) {
+    LOG_ERROR("init_dmx");
     abort();
   }
 

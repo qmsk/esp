@@ -99,7 +99,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   // headers
   uint16_t addr = (dmx_headers->net << 8) | (dmx_headers->sub_uni);
   uint8_t phy = dmx_headers->physical;
-  uint16_t seq = dmx_headers->sequence;
+  uint8_t seq = dmx_headers->sequence;
   uint16_t dmx_len = artnet_unpack_u16hl(dmx_headers->length);
 
   if ((addr & 0xFFF0) != artnet->options.universe) {

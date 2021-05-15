@@ -40,7 +40,7 @@ int artnet_find_output(struct artnet *artnet, uint16_t addr, struct artnet_outpu
   return 1;
 }
 
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint16_t seq)
+int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq)
 {
   if (seq == 0) {
     // reset

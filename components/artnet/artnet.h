@@ -27,13 +27,13 @@ int artnet_recv(int sock, struct artnet_sendrecv *recv);
 struct artnet_output {
   enum artnet_port_type type;
   uint16_t addr;
-  uint16_t seq;
+  uint8_t seq;
 
   xQueueHandle queue;
 };
 
 int artnet_find_output(struct artnet *artnet, uint16_t addr, struct artnet_output **outputp);
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint16_t seq);
+int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq);
 
 /* protocol.c */
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv);

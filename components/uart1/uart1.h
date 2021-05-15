@@ -1,0 +1,30 @@
+#pragma once
+
+#include <uart1.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/stream_buffer.h>
+
+struct uart1 {
+  StreamBufferHandle_t tx_buffer;
+};
+
+// uart_tx
+void uart1_tx_setup(struct uart1_options options);
+
+size_t uart1_tx_raw(const uint8_t *buf, size_t size);
+size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len);
+size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len);
+
+/* Bytes available in tx buffer */
+size_t uart1_tx_size();
+
+void uart1_tx_intr_enable(int empty_threshold);
+void uart1_tx_intr_disable();
+void uart1_tx_intr_clear();
+void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken);
+
+// uart intr
+void uart1_intr_setup();
+
+int uart1_intr_start(struct uart1 *uart1);

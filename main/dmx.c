@@ -3,6 +3,8 @@
 
 #include "activity_led.h"
 
+#include <driver/gpio.h>
+#include <esp_err.h>
 #include <logging.h>
 #include <uart1.h>
 
@@ -11,14 +13,25 @@ static const unsigned DMX_BREAK_US = 92, DMX_MARK_US = 12;
 
 struct dmx_config {
   bool enabled;
+  uint16_t output_enable_gpio;
 
   bool artnet_enabled;
   uint16_t artnet_universe;
-} dmx_config;
+} dmx_config = {
+  .enabled            = false,
+  .output_enable_gpio = GPIO_NUM_5,
+};
 
 const struct configtab dmx_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .value  = { .boolean = &dmx_config.enabled },
+  },
+  /*
+   * This should be a GPIO pin that's active low on boot, and used to drive the RS-485 transceiver's driver/output enable pin.
+   * This allows supressing the UART1 bootloader debug output.
+   */
+  { CONFIG_TYPE_UINT16, "output_enable_gpio",
+    .value  = { .uint16 = &dmx_config.output_enable_gpio },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",
@@ -31,6 +44,7 @@ const struct configtab dmx_configtab[] = {
 };
 
 struct dmx {
+  gpio_num_t output_enable_gpio;
   struct uart1 *uart1;
 } dmx;
 
@@ -49,6 +63,42 @@ int dmx_init (struct dmx *dmx, const struct dmx_config *config)
   if ((err = uart1_new(&dmx->uart1, uart1_options))) {
     LOG_ERROR("uart1_new");
     return err;
+  }
+
+  return 0;
+}
+
+static int dmx_init_gpio(struct dmx *dmx, const struct dmx_config *config)
+{
+  esp_err_t err;
+
+  dmx->output_enable_gpio = config->output_enable_gpio;
+
+  if ((err = gpio_set_direction(dmx->output_enable_gpio, GPIO_MODE_OUTPUT))) {
+    LOG_ERROR("gpio_set_direction: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = gpio_set_pull_mode(dmx->output_enable_gpio, GPIO_PULLDOWN_ONLY))) {
+    LOG_ERROR("gpio_set_pull_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = gpio_set_level(dmx->output_enable_gpio, 0))) {
+    LOG_ERROR("gpio_set_level: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int dmx_output_enable (struct dmx *dmx)
+{
+  esp_err_t err;
+
+  if ((err = gpio_set_level(dmx->output_enable_gpio, 1))) {
+    LOG_ERROR("gpio_set_level: %s", esp_err_to_name(err));
+    return -1;
   }
 
   return 0;
@@ -98,11 +148,21 @@ int init_dmx()
     return err;
   }
 
+  if ((err = dmx_init_gpio(&dmx, &dmx_config))) {
+    LOG_ERROR("dmx_init_gpio");
+    return err;
+  }
+
   if (dmx_config.artnet_enabled) {
     if ((err = init_dmx_artnet(dmx_config.artnet_universe))) {
       LOG_ERROR("init_dmx_artnet");
       return err;
     }
+  }
+
+  if ((err = dmx_output_enable(&dmx))) {
+    LOG_ERROR("dmx_output_enable");
+    return err;
   }
 
   return 0;

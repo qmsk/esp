@@ -30,11 +30,15 @@ void uart1_intr_handler(void *ctx)
 
 void uart1_intr_setup()
 {
+  taskENTER_CRITICAL();
+
   // clear all interrupts
   uart1.int_clr.val = UART1_INTR_MASK;
 
   // clear enable mask
   uart1.int_ena.val = 0;
+
+  taskEXIT_CRITICAL();
 }
 
 int uart1_intr_start(struct uart1 *uart1)

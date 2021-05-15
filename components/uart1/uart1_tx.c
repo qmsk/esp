@@ -9,11 +9,16 @@
 #include <esp8266/eagle_soc.h>
 #include <esp8266/rom_functions.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #define UART1_TXFIFO_SIZE 128
 #define UART1_TXBUF_SIZE 64 // on ISR stack
 
 void uart1_tx_setup(struct uart1_options options)
 {
+  taskENTER_CRITICAL();
+
   uart1.clk_div.div_int = options.clock_div;
 
   uart1.conf0.parity = options.parity_bits & 0x1;
@@ -24,9 +29,51 @@ void uart1_tx_setup(struct uart1_options options)
 
   // GPIO2 UART1 TX
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_UART1_TXD_BK);
+
+  taskEXIT_CRITICAL();
 }
 
-size_t uart1_tx_raw(const uint8_t *buf, size_t size)
+static inline void uart1_tx_intr_enable(int empty_threshold)
+{
+  LOG_ISR_DEBUG("empty_threshold=%u", empty_threshold);
+
+  uart1.conf1.txfifo_empty_thrhd = empty_threshold;
+  uart1.int_ena.txfifo_empty = 1;
+}
+
+int uart1_tx_one(struct uart1 *uart, uint8_t byte)
+{
+  int ret;
+
+  taskENTER_CRITICAL();
+
+  if (uart1.status.txfifo_cnt < UART1_TXFIFO_SIZE) {
+    uart1.fifo.rw_byte = byte;
+
+    LOG_ISR_DEBUG("tx fifo");
+
+    ret = 0;
+
+  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+    LOG_ISR_DEBUG("tx buffer");
+
+    // byte was written
+    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
+
+    ret = 0;
+
+  } else {
+    LOG_ISR_DEBUG("failed");
+
+    ret = -1;
+  }
+
+  taskEXIT_CRITICAL();
+
+  return ret;
+}
+
+static size_t uart1_tx_raw(const uint8_t *buf, size_t size)
 {
   size_t len = 0;
 
@@ -46,20 +93,16 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
 {
   size_t write = 0;
 
+  taskENTER_CRITICAL();
+
   if (xStreamBufferIsEmpty(uart->tx_buffer)) {
     // fastpath
     write = uart1_tx_raw(buf, len);
   }
 
+  taskEXIT_CRITICAL();
+
   return write;
-}
-
-static inline void uart1_tx_intr_enable(int empty_threshold)
-{
-  LOG_ISR_DEBUG("empty_threshold=%u", empty_threshold);
-
-  uart1.conf1.txfifo_empty_thrhd = empty_threshold;
-  uart1.int_ena.txfifo_empty = 1;
 }
 
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
@@ -71,33 +114,10 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 
   // enable ISR to consume stream buffer
+  // does not use a critical section, inter enable racing with stream send / ISR is harmless
   uart1_tx_intr_enable(UART1_TXBUF_SIZE);
 
   return write;
-}
-
-int uart1_tx(struct uart1 *uart, uint8_t byte)
-{
-  if (uart1.status.txfifo_cnt < UART1_TXFIFO_SIZE) {
-    uart1.fifo.rw_byte = byte;
-
-    LOG_ISR_DEBUG("tx fifo");
-
-    return 0;
-  }
-
-  if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
-    LOG_ISR_DEBUG("tx buffered, interrupt enable");
-
-    // byte was written
-    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
-
-    return 0;
-  } else {
-    LOG_ISR_DEBUG("failed");
-
-    return -1;
-  }
 }
 
 /* Bytes available in tx buffer */

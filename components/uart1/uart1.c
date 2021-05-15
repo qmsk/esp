@@ -42,10 +42,8 @@ int uart1_new(struct uart1 **uart1p, struct uart1_options options)
     options.inverted
   );
 
-  taskENTER_CRITICAL();
   uart1_tx_setup(options);
   uart1_intr_setup(options);
-  taskEXIT_CRITICAL();
 
   if ((err = uart1_intr_start(uart1))) {
     LOG_ERROR("uart1_intr_start");
@@ -68,11 +66,7 @@ int uart1_putc(struct uart1 *uart1, int ch)
 
   LOG_DEBUG("ch=%#02x", ch);
 
-  taskENTER_CRITICAL();
-  err = uart1_tx(uart1, ch);
-  taskEXIT_CRITICAL();
-
-  if (err) {
+  if ((err = uart1_tx_one(uart1, ch))) {
     return -1;
   }
 
@@ -83,10 +77,8 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
 {
   size_t write = 0;
 
-  // fastpath via FIFO
-  taskENTER_CRITICAL();
+  // fastpath via FIFO queue
   write = uart1_tx_fast(uart1, buf, len);
-  taskEXIT_CRITICAL();
 
   LOG_DEBUG("tx fast len=%u: write=%u", len, write);
 
@@ -94,10 +86,8 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
   len -= write;
 
   if (len > 0) {
-    // slowpath via ISR
-    taskENTER_CRITICAL();
+    // slowpath via buffer + ISR
     write += uart1_tx_slow(uart1, buf, len);
-    taskEXIT_CRITICAL();
 
     LOG_DEBUG("tx slow len=%u: write=%u", len, write);
   }

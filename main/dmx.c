@@ -1,6 +1,8 @@
 #include "dmx.h"
 #include "dmx_protocol.h"
 
+#include "activity_led.h"
+
 #include <logging.h>
 #include <uart1.h>
 
@@ -116,6 +118,8 @@ int output_dmx(void *data, size_t len)
   for (int i = 0; i < len; i++) {
     LOG_DEBUG("[%03d] %02x", i, ((uint8_t *) data)[i]);
   }
+
+  activity_led_event();
 
   return dmx_send(&dmx, DMX_CMD_DIMMER, data, len);
 }

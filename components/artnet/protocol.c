@@ -133,7 +133,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
   if (artnet_find_output(artnet, addr, &output)) {
     LOG_DEBUG("unknown subnet addr=%u", addr);
-    return -1;
+    return 0;
   }
 
   return artnet_output_dmx(output, &dmx_payload->dmx, seq);

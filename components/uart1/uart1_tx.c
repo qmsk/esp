@@ -120,7 +120,55 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-/* Bytes available in tx buffer */
+int uart1_tx_break(struct uart1 *uart)
+{
+  TaskHandle_t task = xTaskGetCurrentTaskHandle();
+
+  taskENTER_CRITICAL();
+
+  uart1.conf0.txd_brk = 1;
+
+  // notify task once complete
+  uart->tx_break_task = task;
+
+  LOG_ISR_DEBUG("wait tx break task=%p", uart->tx_break_task);
+
+  if (xStreamBufferIsEmpty(uart->tx_buffer)) {
+    // enable TX interrupts with low empty threshold, to interrupt once TX queue is empty
+    uart1_tx_intr_enable(1);
+  }
+
+  taskEXIT_CRITICAL();
+
+  // wait for tx to complete and break to start
+  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+    LOG_WARN("timeout");
+    return -1;
+  }
+
+  LOG_DEBUG("done");
+
+  return 0;
+}
+
+void uart1_tx_mark(struct uart1 *uart)
+{
+  taskENTER_CRITICAL();
+
+  LOG_ISR_DEBUG(" ");
+
+  uart1.conf0.txd_brk = 0;
+
+  taskEXIT_CRITICAL();
+}
+
+/* Bytes waiting in TX buffer */
+static inline size_t uart1_tx_len()
+{
+  return uart1.status.txfifo_cnt;
+}
+
+/* Space available in tx buffer */
 static inline size_t uart1_tx_size()
 {
   return UART1_TXFIFO_SIZE - uart1.status.txfifo_cnt;
@@ -154,9 +202,26 @@ void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken)
   LOG_ISR_DEBUG("xStreamBufferReceiveFromISR size=%u: len=%u", tx_size, tx_len);
 
   if (tx_len == 0) {
-    // buffer is empty, nothing to queue, allow it to empty
-    uart1_tx_intr_disable();
+    if (!uart->tx_break_task) {
+      LOG_ISR_DEBUG("buffer empty, no tx_break_task");
 
+      // buffer is empty, nothing to queue, allow it to empty
+      uart1_tx_intr_disable();
+
+    } else if (uart1_tx_len() > 0) {
+      LOG_ISR_DEBUG("wait tx_break_task=%p fifo empty", uart->tx_break_task);
+
+      // tx_break_task waiting for FIFO to empty
+      uart1_tx_intr_enable(1);
+
+    } else {
+      LOG_ISR_DEBUG("notify tx_break_task=%p", uart->tx_break_task);
+
+      // FIFO is empty, break is active
+      vTaskNotifyGiveFromISR(uart->tx_break_task, task_woken);
+
+      uart1_tx_intr_disable();
+    }
   } else {
     // this should always happen in a single call due to the uart1_tx_size() check
     for (uint8_t *tx_ptr = tx_buf; tx_len > 0; ) {

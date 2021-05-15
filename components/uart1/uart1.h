@@ -4,9 +4,11 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/stream_buffer.h>
+#include <freertos/task.h>
 
 struct uart1 {
   StreamBufferHandle_t tx_buffer;
+  TaskHandle_t tx_break_task;
 };
 
 // uart_tx
@@ -16,6 +18,9 @@ int uart1_tx_one(struct uart1 *uart, uint8_t byte);
 
 size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len);
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len);
+
+int uart1_tx_break(struct uart1 *uart);
+void uart1_tx_mark(struct uart1 *uart);
 
 void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken);
 

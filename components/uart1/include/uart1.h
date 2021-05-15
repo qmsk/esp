@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <esp8266/eagle_soc.h>
 
+/*
+ * NOTE: uart1 is only safe for use by a single task.
+ */
 struct uart1;
 
 enum uart1_baud_rate {
@@ -56,5 +59,16 @@ int uart1_putc(struct uart1 *uart1, int ch);
  * Returns number of bytes written, or <0 on error.
  */
 ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len);
+
+/*
+ * Send break once TX completes, and hold for >= break_us.
+ * After break, hold mark for >= mark_us.
+ *
+ * Blocks until TX, break and mark are complete.
+ * Timing is approximate, not bit-exact.
+ *
+ * Return <0 on error.
+ */
+int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us);
 
 #endif

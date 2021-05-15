@@ -7,6 +7,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <rom/ets_sys.h>
+
 static int uart1_init(struct uart1 *uart1, struct uart1_options options)
 {
   LOG_DEBUG("tx_buffer_size=%u", options.tx_buffer_size);
@@ -93,4 +95,36 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
   }
 
   return write;
+}
+
+static inline void uart1_wait(unsigned us)
+{
+  // ESP8266_RTOS_SDK timers are shit:
+  // * FreeRTOS timers only do 10ms ticks
+  // * esp_timer is just a wrapper for FreeRTOS timers
+  // * os_timer only does msec
+  // * there's no shared timer implementation for FRC1/2
+  // * there's no FRC2?
+  // so we just busyloop, 'cause that's what everybody else does. It's really dumb.
+  ets_delay_us(us);
+}
+
+int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us)
+{
+  int err;
+
+  LOG_DEBUG("break_us=%u mark_us=%u", break_us, mark_us);
+
+  if ((err = uart1_tx_break(uart1))) {
+    LOG_ERROR("uart1_tx_break");
+    return err;
+  }
+  uart1_wait(break_us);
+
+  uart1_tx_mark(uart1);
+  uart1_wait(mark_us);
+
+  LOG_DEBUG("done");
+
+  return 0;
 }

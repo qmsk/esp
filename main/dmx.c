@@ -9,11 +9,21 @@ static const unsigned DMX_BREAK_US = 92, DMX_MARK_US = 12;
 
 struct dmx_config {
   bool enabled;
+
+  bool artnet_enabled;
+  uint16_t artnet_universe;
 } dmx_config;
 
 const struct configtab dmx_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .value  = { .boolean = &dmx_config.enabled },
+  },
+
+  { CONFIG_TYPE_BOOL, "artnet_enabled",
+    .value  = { .boolean = &dmx_config.artnet_enabled },
+  },
+  { CONFIG_TYPE_UINT16, "artnet_universe",
+    .value  = { .uint16 = &dmx_config.artnet_universe },
   },
   {}
 };
@@ -84,6 +94,13 @@ int init_dmx()
   if ((err = dmx_init(&dmx, &dmx_config))) {
     LOG_ERROR("dmx_init");
     return err;
+  }
+
+  if (dmx_config.artnet_enabled) {
+    if ((err = init_dmx_artnet(dmx_config.artnet_universe))) {
+      LOG_ERROR("init_dmx_artnet");
+      return err;
+    }
   }
 
   return 0;

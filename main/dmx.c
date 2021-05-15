@@ -5,6 +5,7 @@
 #include <uart1.h>
 
 static const size_t DMX_TX_BUFFER_SIZE = 1 + 512; // fit one complete DMX frame
+static const unsigned DMX_BREAK_US = 92, DMX_MARK_US = 12;
 
 struct dmx_config {
   bool enabled;
@@ -45,7 +46,11 @@ int dmx_send (struct dmx *dmx, enum dmx_cmd cmd, void *data, size_t len)
 {
   int err;
 
-  // TODO: break
+  // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
+  if ((err = uart1_break(dmx->uart1, DMX_BREAK_US, DMX_MARK_US))) {
+    LOG_ERROR("uart1_break");
+    return err;
+  }
 
   if ((err = uart1_putc(dmx->uart1, cmd)) < 0) {
     LOG_ERROR("uart1_putc");

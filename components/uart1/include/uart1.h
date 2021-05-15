@@ -44,6 +44,13 @@ struct uart1_options {
 int uart1_new(struct uart1 **uart1p, struct uart1_options options);
 
 /*
+ * Write one byte. Blocks if TX buffer is full.
+ *
+ * Returns ch on success, <0 on error.
+ */
+int uart1_putc(struct uart1 *uart1, int ch);
+
+/*
  * Write up to len bytes from buf. Blocks if TX buffer is full.
  *
  * Returns number of bytes written, or <0 on error.

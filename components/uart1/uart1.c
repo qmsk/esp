@@ -52,6 +52,21 @@ error:
   return err;
 }
 
+int uart1_putc(struct uart1 *uart1, int ch)
+{
+  int err;
+
+  taskENTER_CRITICAL();
+  err = uart1_tx(uart1, ch);
+  taskEXIT_CRITICAL();
+
+  if (err) {
+    return -1;
+  }
+
+  return ch;
+}
+
 ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
 {
   size_t write = 0;

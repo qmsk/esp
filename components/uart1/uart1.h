@@ -16,6 +16,8 @@ size_t uart1_tx_raw(const uint8_t *buf, size_t size);
 size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len);
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len);
 
+int uart1_tx(struct uart1 *uart, uint8_t byte);
+
 /* Bytes available in tx buffer */
 size_t uart1_tx_size();
 

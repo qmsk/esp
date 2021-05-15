@@ -8,7 +8,7 @@
 #include <esp8266/rom_functions.h>
 
 #define UART1_TXFIFO_SIZE 128
-#define UART1_TXBUF_SIZE 128 // on ISR stack
+#define UART1_TXBUF_SIZE 64 // on ISR stack
 
 void uart1_tx_setup(struct uart1_options options)
 {
@@ -63,9 +63,28 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
   write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
 
   // enable ISR to consume stream buffer
-  uart1_tx_intr_enable(UART1_TXFIFO_SIZE / 2);
+  uart1_tx_intr_enable(UART1_TXBUF_SIZE);
 
   return write;
+}
+
+int uart1_tx(struct uart1 *uart, uint8_t byte)
+{
+  if (uart1.status.txfifo_cnt < UART1_TXFIFO_SIZE) {
+    uart1.fifo.rw_byte = byte;
+
+    return 0;
+  }
+
+  if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+    // byte was written
+    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
+
+    return 0;
+  }
+
+  // unable
+  return -1;
 }
 
 size_t uart1_tx_size()

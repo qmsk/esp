@@ -21,7 +21,6 @@ void uart1_intr_handler(void *ctx)
 
   if (int_st & UART_TXFIFO_EMPTY_INT_ST) {
     uart1_tx_intr_handler(uart, &task_woken);
-    uart1_tx_intr_clear();
   }
 
   if (task_woken == pdTRUE) {

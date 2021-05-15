@@ -18,12 +18,6 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len);
 
 int uart1_tx(struct uart1 *uart, uint8_t byte);
 
-/* Bytes available in tx buffer */
-size_t uart1_tx_size();
-
-void uart1_tx_intr_enable(int empty_threshold);
-void uart1_tx_intr_disable();
-void uart1_tx_intr_clear();
 void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken);
 
 // uart intr

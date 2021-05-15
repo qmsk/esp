@@ -1,6 +1,8 @@
 #include <uart1.h>
 #include "uart1.h"
 
+#include <logging.h>
+
 #include <esp8266/uart_struct.h>
 #include <esp8266/uart_register.h>
 #include <esp8266/pin_mux_register.h>
@@ -35,6 +37,8 @@ size_t uart1_tx_raw(const uint8_t *buf, size_t size)
     len++;
   }
 
+  LOG_ISR_DEBUG("size=%u: len=%u", size, len);
+
   return len;
 }
 
@@ -50,8 +54,10 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-void uart1_tx_intr_enable(int empty_threshold)
+static inline void uart1_tx_intr_enable(int empty_threshold)
 {
+  LOG_ISR_DEBUG("empty_threshold=%u", empty_threshold);
+
   uart1.conf1.txfifo_empty_thrhd = empty_threshold;
   uart1.int_ena.txfifo_empty = 1;
 }
@@ -61,6 +67,8 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
   size_t write;
 
   write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
+
+  LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 
   // enable ISR to consume stream buffer
   uart1_tx_intr_enable(UART1_TXBUF_SIZE);
@@ -73,28 +81,41 @@ int uart1_tx(struct uart1 *uart, uint8_t byte)
   if (uart1.status.txfifo_cnt < UART1_TXFIFO_SIZE) {
     uart1.fifo.rw_byte = byte;
 
+    LOG_ISR_DEBUG("tx fifo");
+
     return 0;
   }
 
   if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+    LOG_ISR_DEBUG("tx buffered, interrupt enable");
+
     // byte was written
     uart1_tx_intr_enable(UART1_TXBUF_SIZE);
 
     return 0;
-  }
+  } else {
+    LOG_ISR_DEBUG("failed");
 
-  // unable
-  return -1;
+    return -1;
+  }
 }
 
-size_t uart1_tx_size()
+/* Bytes available in tx buffer */
+static inline size_t uart1_tx_size()
 {
   return UART1_TXFIFO_SIZE - uart1.status.txfifo_cnt;
 }
 
-void uart1_tx_intr_disable()
+static inline void uart1_tx_intr_disable()
 {
+  LOG_ISR_DEBUG(" ");
+
   uart1.int_ena.txfifo_empty = 0;
+}
+
+static inline void uart1_tx_intr_clear()
+{
+  uart1.int_clr.txfifo_empty = 1;
 }
 
 void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken)
@@ -110,23 +131,21 @@ void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken)
 
   tx_len = xStreamBufferReceiveFromISR(uart->tx_buffer, tx_buf, tx_size, task_woken);
 
+  LOG_ISR_DEBUG("xStreamBufferReceiveFromISR size=%u: len=%u", tx_size, tx_len);
+
   if (tx_len == 0) {
     // buffer is empty, nothing to queue, allow it to empty
     uart1_tx_intr_disable();
 
-    return;
+  } else {
+    // this should always happen in a single call due to the uart1_tx_size() check
+    for (uint8_t *tx_ptr = tx_buf; tx_len > 0; ) {
+      size_t tx = uart1_tx_raw(tx_ptr, tx_len);
+
+      tx_ptr += tx;
+      tx_len -= tx;
+    }
   }
 
-  // this should always happen in a single call due to the uart1_tx_size() check
-  for (uint8_t *tx_ptr = tx_buf; tx_len > 0; ) {
-    size_t tx = uart1_tx_raw(tx_ptr, tx_len);
-
-    tx_ptr += tx;
-    tx_len -= tx;
-  }
-}
-
-void uart1_tx_intr_clear()
-{
-  uart1.int_clr.txfifo_empty = 1;
+  uart1_tx_intr_clear();
 }

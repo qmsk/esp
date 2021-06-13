@@ -1,4 +1,5 @@
 #include "spi_leds.h"
+#include "spi_leds_artnet.h"
 #include "artnet.h"
 
 #include <artnet.h>
@@ -20,6 +21,7 @@ struct spi_leds_artnet {
   xQueueHandle queue;
 
   struct spi_leds *spi_leds;
+  enum spi_leds_artnet_mode mode;
   struct artnet_dmx artnet_dmx;
 } *spi_leds_artnet;
 
@@ -57,7 +59,7 @@ static void spi_leds_artnet_task(void *ctx)
   }
 }
 
-int init_spi_leds_artnet(uint16_t universe)
+int init_spi_leds_artnet(uint16_t universe, enum spi_leds_artnet_mode mode)
 {
   LOG_INFO("universe=%u", universe);
 
@@ -67,6 +69,7 @@ int init_spi_leds_artnet(uint16_t universe)
   }
 
   spi_leds_artnet->spi_leds = spi_leds;
+  spi_leds_artnet->mode = mode;
 
   if (!(spi_leds_artnet->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");

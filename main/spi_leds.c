@@ -80,7 +80,7 @@ int config_spi_leds(const struct spi_leds_config *config)
   }
 
   if (spi_leds_config.artnet_enabled) {
-    if ((err = init_spi_leds_artnet(spi_leds_config.artnet_universe))) {
+    if ((err = init_spi_leds_artnet(spi_leds_config.artnet_universe, spi_leds_config.artnet_mode))) {
       LOG_ERROR("init_spi_leds_artnet");
       return err;
     }

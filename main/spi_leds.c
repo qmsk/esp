@@ -1,4 +1,5 @@
 #include "spi_leds.h"
+#include "spi_leds_artnet.h"
 #include "activity_led.h"
 #include "atx_psu.h"
 
@@ -16,17 +17,25 @@ struct spi_leds_config {
 
   bool artnet_enabled;
   uint16_t artnet_universe;
+  int artnet_mode;
 };
 
 struct spi_leds *spi_leds;
 bool spi_leds_activated;
 struct spi_leds_config spi_leds_config = {
-  .protocol = SPI_LEDS_PROTOCOL_APA102,
+  .protocol    = SPI_LEDS_PROTOCOL_APA102,
+  .artnet_mode = SPI_LEDS_BGR,
 };
 
 const struct config_enum spi_leds_protocol_enum[] = {
   { "APA102", SPI_LEDS_PROTOCOL_APA102  },
   { "P9813",  SPI_LEDS_PROTOCOL_P9813   },
+  {}
+};
+const struct config_enum spi_leds_artnet_mode_enum[] = {
+  { "RGB", SPI_LEDS_RGB  },
+  { "BGR", SPI_LEDS_BGR  },
+  { "GRB", SPI_LEDS_GRB  },
   {}
 };
 
@@ -46,6 +55,10 @@ const struct configtab spi_leds_configtab[] = {
   },
   { CONFIG_TYPE_UINT16, "artnet_universe",
     .value  = { .uint16 = &spi_leds_config.artnet_universe },
+  },
+  { CONFIG_TYPE_ENUM, "artnet_mode",
+    .enum_values = spi_leds_artnet_mode_enum,
+    .value       = { .enum_value = &spi_leds_config.artnet_mode },
   },
   {}
 };

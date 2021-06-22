@@ -1,7 +1,7 @@
 #ifndef HTTP_FILE_H
 #define HTTP_FILE_H
 
-#include <lib/http/http.h>
+#include <http/http.h>
 
 #include <stdio.h>
 

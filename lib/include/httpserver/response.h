@@ -1,7 +1,7 @@
 #ifndef HTTP_RESPONSE_H
 #define HTTP_RESPONSE_H
 
-#include <lib/http/types.h>
+#include <http/http_types.h>
 
 #include <stddef.h>
 #include <stdio.h>

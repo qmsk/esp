@@ -46,20 +46,20 @@ int url_parse (struct url *url, char *buf)
         QUERY,
     };
     struct parse parsing[] = {
-        { START,        '/',        START_SEP   },
-        { START,        ':',        SCHEME,     PARSE_SKIP                    },
-        { START,        '[',        HOST_IPV6   },
-        { START,        0,          HOST,       PARSE_STRING,               .parse_string = &url->host            },
+        { START,        '/',        START_SEP },
+        { START,        ':',        SCHEME,     PARSE_SKIP },
+        { START,        '[',        HOST_IPV6 },
+        { START,        0,          HOST,       PARSE_STRING,               .parse_string = &url->host          },
 
-        { START_SEP,    '/',        HOST_PRE    },
+        { START_SEP,    '/',        HOST_PRE  },
         { START_SEP,    '?',        QUERY,      PARSE_STRING,               .parse_string = &url->path          },
         { START_SEP,    0,          PATH,       PARSE_STRING,               .parse_string = &url->path          },
         { START_SEP,    -1,         PATH,       PARSE_STRING | PARSE_KEEP,  .parse_string = &url->path          },
 
         { SCHEME,       '/',        SCHEME_SEP, PARSE_STRING,               .parse_string = &url->scheme        },
-        { SCHEME,       -1,         PORT,       PARSE_STRING | PARSE_KEEP,  .parse_string = &url->host            },
+        { SCHEME,       -1,         PORT,       PARSE_STRING | PARSE_KEEP,  .parse_string = &url->host          },
 
-        { SCHEME_SEP,   '/',        HOST_PRE    },
+        { SCHEME_SEP,   '/',        HOST_PRE  },
 
         { HOST_PRE,     '[',        HOST_IPV6 },
         { HOST_PRE,     '/',        PATH,       PARSE_STRING,               .parse_string = &url->host          },
@@ -72,10 +72,10 @@ int url_parse (struct url *url, char *buf)
         // XXX: too lax
         { HOST_IPV6,    ']',        HOST_POST,  PARSE_STRING,               .parse_string = &url->host          },
 
-        { HOST_POST,    ':',        PORT        },
-        { HOST_POST,    '/',        PATH        },
-        { HOST_POST,    0,          HOST_POST   },
-        { HOST_POST,    -1,         -1          },
+        { HOST_POST,    ':',        PORT      },
+        { HOST_POST,    '/',        PATH      },
+        { HOST_POST,    0,          HOST_POST },
+        { HOST_POST,    -1,         -1        },
 
         { PORT,         '/',        PATH,       PARSE_STRING,               .parse_string = &url->port          },
         { PORT,         0,          PORT,       PARSE_STRING,               .parse_string = &url->port          },
@@ -167,14 +167,14 @@ int url_decode (char **queryp, char **namep, char **valuep)
         END,
     } state;
     struct parse parsing[] = {
-        { NAME,         '=',        VALUE,      PARSE_STRING,               .parse_string = (const char **) &name },
-        { NAME,         '&',        NEXT,       PARSE_STRING,               .parse_string = (const char **) &name },
-        { NAME,         0,          END,        PARSE_STRING,               .parse_string = (const char **) &name },
+        { NAME,         '=',        VALUE,      PARSE_STRING,               .parse_string = (const char **) &name  },
+        { NAME,         '&',        NEXT,       PARSE_STRING,               .parse_string = (const char **) &name  },
+        { NAME,         0,          END,        PARSE_STRING,               .parse_string = (const char **) &name  },
 
         { VALUE,        '&',        NEXT,       PARSE_STRING,               .parse_string = (const char **) &value },
         { VALUE,        0,          END,        PARSE_STRING,               .parse_string = (const char **) &value },
 
-        { NEXT,         0,          NEXT,       PARSE_STRING,               .parse_string = (const char **) &next },
+        { NEXT,         0,          NEXT,       PARSE_STRING,               .parse_string = (const char **) &next  },
 
         { }
     };

@@ -2,7 +2,7 @@
 #define HTTP_H
 
 #include "stream.h"
-#include "types.h"
+#include "http_types.h"
 
 #include <stddef.h>
 #include <stdio.h>

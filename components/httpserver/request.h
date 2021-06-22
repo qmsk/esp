@@ -5,7 +5,7 @@
 #include "httpserver/response.h"
 
 #include "http/http.h"
-#include "http/types.h"
+#include "http/http_types.h"
 #include "http/url.h"
 
 #include <stdbool.h>

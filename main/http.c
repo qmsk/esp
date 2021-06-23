@@ -1,6 +1,7 @@
 #include "http.h"
 #include "http_routes.h"
 
+#include <esp_ota_ops.h>
 #include <httpserver/server.h>
 #include <httpserver/router.h>
 #include <logging.h>
@@ -90,9 +91,31 @@ void http_listen_task(void *arg)
   vTaskDelete(NULL);
 }
 
+/* Hook to add response headers */
+static int http_server_response_headers(struct http_response *response, void *ctx)
+{
+  const esp_app_desc_t *ead = esp_ota_get_app_description();
+  int err;
+
+  if ((err = http_response_header(response, "Server", "%s/%s (%s %s) ESP-IDF/%s", ead->project_name, ead->version, ead->date, ead->time, ead->idf_ver))) {
+    LOG_ERROR("http_response_header");
+    return err;
+  }
+
+  return 0;
+}
+
 void http_server_task(void *arg)
 {
   struct http_router *router = arg;
+  struct http_hook http_hook_response_headers = {
+    .func.response_headers = http_server_response_headers,
+  };
+  struct http_hooks hooks = {
+    .types = {
+      [HTTP_HOOK_RESPONSE] = &http_hook_response_headers,
+    },
+  };
   struct http_connection *connection;
   int err;
 
@@ -104,7 +127,7 @@ void http_server_task(void *arg)
 
     LOG_DEBUG("connection=%p serve router=%p", connection, router);
 
-    if ((err = http_connection_serve(connection, &http_router_handler, router)) < 0) {
+    if ((err = http_connection_serve(connection, &hooks, &http_router_handler, router)) < 0) {
       LOG_ERROR("http_connection_serve");
       http_connection_destroy(connection);
       continue;

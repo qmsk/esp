@@ -223,3 +223,17 @@ Integrates with `activity_led`.
 Art-NET DMX controller for SPI-compatible RGB LEDs.
 
 Integrates with `activity_led` and `atx_psu`.
+
+# HTTP
+
+### `GET /config.ini`
+
+Returns the boot config in INI form.
+
+### `GET /api/config`
+
+Returns a JSON structure describing the config schema and current values.
+
+### `POST /api/config`
+
+Accepts `application/x-www-form-urlencoded` form parameters in a `[module]name=value` format, as per `config set ...`.

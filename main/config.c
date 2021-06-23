@@ -52,7 +52,7 @@ int init_config()
 {
   int err;
 
-  if ((err = init_spiffs_partition(CONFIG_BASE_PATH, CONFIG_PARTITON_LABEL, CONFIG_MAX_FILES)) < 0) {
+  if ((err = init_spiffs_partition_formatted(CONFIG_BASE_PATH, CONFIG_PARTITON_LABEL, CONFIG_MAX_FILES)) < 0) {
     LOG_ERROR("init_spiffs_partition");
   } else if (err) {
     LOG_WARN("No configuration partition available");

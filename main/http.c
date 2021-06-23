@@ -171,6 +171,12 @@ int init_http()
   }
 
   if ((err = setup_http(&http, &http_config))) {
+    LOG_ERROR("setup_http");
+    return err;
+  }
+
+  if ((err = init_http_dist(&http, &http_config))) {
+    LOG_ERROR("init_http_dist");
     return err;
   }
 

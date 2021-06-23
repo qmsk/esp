@@ -7,7 +7,7 @@ static int configtab_write(const struct configmod *mod, const struct configtab *
 {
   LOG_DEBUG("type=%u name=%s", tab->type, tab->name);
 
-  if (fprintf(file, "%s =", tab->name) < 0) {
+  if (fprintf(file, "%s = ", tab->name) < 0) {
     return -1;
   }
 

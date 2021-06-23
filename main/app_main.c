@@ -4,6 +4,7 @@
 #include "cli.h"
 #include "config.h"
 #include "dmx.h"
+#include "http.h"
 #include "user_led.h"
 #include "uart.h"
 #include "spi_leds.h"
@@ -50,6 +51,11 @@ void app_main()
 
   if (init_wifi()) {
     LOG_ERROR("init_wifi");
+    abort();
+  }
+
+  if (init_http()) {
+    LOG_ERROR("init_http");
     abort();
   }
 

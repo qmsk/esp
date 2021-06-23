@@ -4,6 +4,7 @@
 #include "artnet.h"
 #include "atx_psu.h"
 #include "dmx.h"
+#include "http.h"
 #include "spi_leds.h"
 #include "spiffs.h"
 #include "wifi.h"
@@ -25,6 +26,9 @@ const struct configmod config_modules[] = {
   },
   { "wifi",
     .table = wifi_configtab,
+  },
+  { "http",
+    .table = http_configtab,
   },
   { "artnet",
     .table = artnet_configtab,

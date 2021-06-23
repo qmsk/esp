@@ -40,6 +40,10 @@ form input {
   grid-column: 2 / 4;
 }
 
+form input[type="checkbox"] {
+  width: 2em;
+}
+
 form button {
   grid-column: 3;
 

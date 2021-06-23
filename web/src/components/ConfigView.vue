@@ -24,6 +24,14 @@
               :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
               :value="tab.value.string"
               :readonly="tab.readonly">
+            <input v-if="tab.type == 'bool'" type="hidden"
+              :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+              :value="false"
+              >
+            <input v-if="tab.type == 'bool'" type="checkbox"
+              :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+              :value="true" :checked=tab.value.bool
+              :readonly="tab.readonly">
 
           </template>
         </fieldset>

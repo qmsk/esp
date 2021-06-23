@@ -69,6 +69,35 @@ static int config_api_write_configtab_bool_members(struct json_writer *w, const 
   );
 }
 
+static int config_api_write_configtab_enum_values(struct json_writer *w, const struct config_enum *e)
+{
+  int err;
+
+  for (; e->name; e++) {
+    if ((err = json_write_string(w, e->name))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+static int config_api_write_configtab_enum_members(struct json_writer *w, const struct configtab *tab)
+{
+  const struct config_enum *e;
+
+  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
+    LOG_ERROR("%s: unknown value: %#x", tab->name, *tab->value.enum_value);
+    return -1;
+  }
+
+  return (
+    JSON_WRITE_MEMBER_STRING(w, "type", "enum") ||
+    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_STRING(w, "enum", e->name)) ||
+    JSON_WRITE_MEMBER_ARRAY(w, "enum_values", config_api_write_configtab_enum_values(w, tab->enum_values))
+  );
+}
+
 static int config_api_write_configtab_value_members(struct json_writer *w, const struct configtab *tab)
 {
   switch (tab->type) {
@@ -78,6 +107,8 @@ static int config_api_write_configtab_value_members(struct json_writer *w, const
       return config_api_write_configtab_string_members(w, tab);
     case CONFIG_TYPE_BOOL:
       return config_api_write_configtab_bool_members(w, tab);
+    case CONFIG_TYPE_ENUM:
+      return config_api_write_configtab_enum_members(w, tab);
     default:
       return 0;
   }

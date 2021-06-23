@@ -23,16 +23,6 @@ struct http_server {
 
     /* Listen tasks */
     TAILQ_HEAD(server_listeners, http_listener) listeners;
-
-    /* Response headers */
-    TAILQ_HEAD(server_headers, server_header) headers;
-};
-
-struct server_header {
-    char *name;
-    char *value;
-
-    TAILQ_ENTRY(server_header) server_headers;
 };
 
 struct http_listener {
@@ -74,43 +64,10 @@ int http_server_create (struct http_server **serverp, int listen_backlog, size_t
     server->stream_size = stream_size;
 
     TAILQ_INIT(&server->listeners);
-    TAILQ_INIT(&server->headers);
 
     *serverp = server;
 
     return 0;
-}
-
-int http_server_add_header (struct http_server *server, const char *name, const char *value)
-{
-    struct server_header *header;
-
-    if (!(header = calloc(1, sizeof(*header)))) {
-        LOG_ERROR("calloc");
-        return -1;
-    }
-
-    if (!(header->name = strdup(name))) {
-        LOG_ERROR("strdup");
-        goto error;
-    }
-
-    if (!(header->value = strdup(value))) {
-        LOG_ERROR("strdup");
-        goto error;
-    }
-
-    // ok
-    TAILQ_INSERT_TAIL(&server->headers, header, server_headers);
-
-    return 0;
-
-error:
-    free(header->value);
-    free(header->name);
-    free(header);
-
-    return -1;
 }
 
 /*
@@ -329,17 +286,6 @@ void http_server_destroy (struct http_server *server)
         TAILQ_REMOVE(&server->listeners, l, server_listeners);
 
         // TODO: kill TCP server to interrupt accept()
-    }
-
-    // headers
-    struct server_header *sh;
-
-    while ((sh = TAILQ_FIRST(&server->headers))) {
-        TAILQ_REMOVE(&server->headers, sh, server_headers);
-
-        free(sh->name);
-        free(sh->value);
-        free(sh);
     }
 
     free(server);

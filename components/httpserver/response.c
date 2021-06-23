@@ -27,17 +27,6 @@ int http_response_start (struct http_response *response, enum http_status status
         return err;
     }
 
-/* TODO
-    // custom headers
-    struct server_header *header;
-
-    TAILQ_FOREACH(header, &client->server->headers, server_headers) {
-        if ((err = http_write_header(client->http, header->name, "%s", header->value))) {
-            LOG_ERROR("failed to write response header");
-            return -1;
-        }
-    }
-*/
     HTTP_HOOK_RETURN(response->hooks, HTTP_HOOK_RESPONSE, response, response, status, reason);
 }
 

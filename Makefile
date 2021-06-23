@@ -3,3 +3,7 @@
 PROJECT_NAME := qmsk-esp
 
 include $(IDF_PATH)/make/project.mk
+
+SPIFFS_IMAGE_FLASH_IN_PROJECT := 1
+SPIFFS_IMAGE_DEPENDS :=
+$(eval $(call spiffs_create_partition_image,web-dist,web/dist))

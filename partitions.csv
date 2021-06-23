@@ -5,3 +5,4 @@ phy_init, data, phy,     0xf000,   0x1000,
 factory,  app,  factory, 0x10000,  0xF0000,
 # 1MB spiffs /config
 config,   data, spiffs,  0x200000, 0x100000,
+web-dist, data, spiffs,  0x300000, 0x100000,

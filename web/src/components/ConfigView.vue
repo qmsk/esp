@@ -33,6 +33,12 @@
               :value="true" :checked=tab.value.bool
               :readonly="tab.readonly">
 
+            <select v-if="tab.type == 'enum'"
+              :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+              :disabled="tab.readonly">
+              <option v-for="value in tab.enum_values" :value="value">{{ value }}</option>
+            </select>
+
           </template>
         </fieldset>
 

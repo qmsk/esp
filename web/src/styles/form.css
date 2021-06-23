@@ -44,6 +44,10 @@ form input[type="checkbox"] {
   width: 2em;
 }
 
+form select {
+  grid-column: 2 / 4;
+}
+
 form button {
   grid-column: 3;
 

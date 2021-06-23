@@ -1,4 +1,4 @@
-Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) (v2.1.0)
+Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) (v3.4)
 
 # Build
 
@@ -8,19 +8,19 @@ Prepare the SDK/toolchain:
 
 Build firmware image:
 
-    $ USER_ID=$UID docker-compose up build
+    $ USER_ID=$UID docker-compose run --rm build
 
 # Install
 
 Flash to correct nodeMCU device:
 
-    TTY_DEV=/dev/ttyUSB? docker-compose up flash
+    TTY_DEV=/dev/ttyUSB? docker-compose run --rm flash
 
 # Usage
 
 Connect to the serial console:
 
-    TTY_DEV=/dev/ttyUSB? docker-compose run --rm console
+    TTY_DEV=/dev/ttyUSB? docker-compose run --rm monitor
 
 ```
 > help

@@ -14,7 +14,7 @@ services:
     build:
       context: sdk
       args:
-        ESP8266_RTOS_SDK_VERSION: v3.4-rc
+        ESP8266_RTOS_SDK_VERSION: v3.4
 
   build:
     image: qmsk/esp8266-sdk

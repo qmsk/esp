@@ -22,18 +22,24 @@
 #define HTTP_SERVER_TASK_STACK 2048
 #define HTTP_SERVER_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+#define HTTP_CONFIG_ENABLED true
 #define HTTP_CONFIG_HOST "0.0.0.0"
 #define HTTP_CONFIG_PORT 80
 
 struct http_config {
+  bool     enabled;
   char     host[32];
   uint16_t port;
 } http_config = {
-  .host = HTTP_CONFIG_HOST,
-  .port = HTTP_CONFIG_PORT,
+  .enabled  = HTTP_CONFIG_ENABLED,
+  .host     = HTTP_CONFIG_HOST,
+  .port     = HTTP_CONFIG_PORT,
 };
 
 const struct configtab http_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .value  = { .boolean = &http_config.enabled },
+  },
   { CONFIG_TYPE_STRING, "host",
     .size   = sizeof(http_config.host),
     .value  = { .string = http_config.host },
@@ -149,8 +155,8 @@ int init_http()
 {
   int err;
 
-  if (strlen(http_config.host) == 0 || http_config.port == 0) {
-    LOG_INFO("disabled via config [http] host/port");
+  if (!http_config.enabled) {
+    LOG_INFO("disabled");
     return 1;
   }
 

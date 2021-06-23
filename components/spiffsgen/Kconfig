@@ -1,0 +1,9 @@
+menu "SPIFFS Configuration"
+    config SPIFFS_FOLLOW_SYMLINKS
+        bool "Enable symbolic links for image creation"
+        default "n"
+        help
+            If this option is enabled, symbolic links are taken into account
+            during partition image creation.
+
+endmenu

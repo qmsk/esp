@@ -20,11 +20,11 @@ int http_sendfile (struct http *http, int fd, size_t content_length)
         size_t size = content_length;
 
         if ((err = stream_sendfile(http->write, fd, &size)) < 0) {
-            LOG_WARN("stream_write_file %zu", size);
+            LOG_WARN("stream_write_file %u", size);
             return err;
         }
 
-        LOG_DEBUG("content_length=%zu write=%zu", content_length, size);
+        LOG_DEBUG("content_length=%u write=%u", content_length, size);
 
         if (err) {
             // EOF
@@ -34,7 +34,7 @@ int http_sendfile (struct http *http, int fd, size_t content_length)
         // sanity-check
         if (content_length) {
             if (size > content_length) {
-                LOG_ERROR("BUG: write=%zu > content_length=%zu", size, content_length);
+                LOG_ERROR("BUG: write=%u > content_length=%u", size, content_length);
                 return -1;
             }
 
@@ -43,7 +43,7 @@ int http_sendfile (struct http *http, int fd, size_t content_length)
     }
 
     if (content_length) {
-        LOG_WARN("premature EOF: %zu", content_length);
+        LOG_WARN("premature EOF: %u", content_length);
         return 1;
     }
 

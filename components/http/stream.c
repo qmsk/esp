@@ -632,7 +632,7 @@ int _stream_write_file (struct stream *stream, int fd, size_t *sizep)
         size = *sizep;
 
     if ((ret = read(fd, stream_readbuf_ptr(stream), size)) < 0) {
-        LOG_ERROR("read: %s", strerror(errno));
+        LOG_ERROR("read(%d, %p, %u): %s", fd, stream_readbuf_ptr(stream), size, strerror(errno));
         return -1;
     }
 

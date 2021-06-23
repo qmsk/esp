@@ -6,6 +6,11 @@
 #   ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
 #
 # @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#environment-variables
+#
+#
+#   USER_ID=$UID docker-compose run --rm npm install
+#   USER_ID=$UID docker-compose run --rm npm build
+#   USER_ID=$UID API_URL=http://172.29.16.47 docker-compose run --rm npm start
 
 version: '3.8'
 services:

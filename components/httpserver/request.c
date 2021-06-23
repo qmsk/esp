@@ -82,7 +82,7 @@ int http_request_read (struct http_request *request)
         request->post = true;
     }
 
-    return 0;
+    HTTP_HOOK_RETURN(request->hooks, HTTP_HOOK_REQUEST, request, request, method, path, version);
 }
 
 const char *http_request_method (const struct http_request *request)
@@ -190,7 +190,7 @@ int http_request_header (struct http_request *request, const char **namep, const
         }
     }
 
-    return 0;
+    HTTP_HOOK_RETURN(request->hooks, HTTP_HOOK_REQUEST_HEADER, request_header, request, *namep, *valuep);
 }
 
 int http_request_headers (struct http_request *request, const struct http_request_headers **headersp)
@@ -213,7 +213,7 @@ int http_request_headers (struct http_request *request, const struct http_reques
       *headersp = &request->headers;
     }
 
-    return 0;
+    HTTP_HOOK_RETURN(request->hooks, HTTP_HOOK_REQUEST_HEADERS, request_headers, request);
 }
 
 int http_request_form (struct http_request *request, char **keyp, char **valuep)

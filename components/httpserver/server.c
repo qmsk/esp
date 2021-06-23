@@ -215,7 +215,7 @@ error:
 /*
  * Handle one client.
  */
-int http_connection_serve (struct http_connection *connection, http_handler_func handler, void *ctx)
+int http_connection_serve (struct http_connection *connection, const struct http_hooks *hooks, http_handler_func handler, void *ctx)
 {
     int err;
 
@@ -229,10 +229,12 @@ int http_connection_serve (struct http_connection *connection, http_handler_func
     connection->request = (struct http_request) {
       .http     = connection->http,
       .response = &connection->response,
+      .hooks    = hooks,
     };
     connection->response = (struct http_response) {
       .http     = connection->http,
       .request  = &connection->request,
+      .hooks    = hooks,
     };
 
     if ((err = http_server_request(connection->server, &connection->request, &connection->response, handler, ctx)) < 0) {

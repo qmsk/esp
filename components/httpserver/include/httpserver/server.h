@@ -2,6 +2,7 @@
 #define HTTP_SERVER_H
 
 #include "handler.h"
+#include "hooks.h"
 
 /*
  * HTTP Server.
@@ -44,7 +45,7 @@ int http_listener_accept (struct http_listener *listener, struct http_connection
  *
  * Return <0 on internal error, 0 on success with persistent connection, 1 on success with cconnection-close.
  */
-int http_connection_serve (struct http_connection *connection, http_handler_func handler, void *ctx);
+int http_connection_serve (struct http_connection *connection, const struct http_hooks *hooks, http_handler_func handler, void *ctx);
 
 /* Cleanup connection */
 void http_connection_destroy (struct http_connection *connection);

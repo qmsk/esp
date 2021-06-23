@@ -2,6 +2,7 @@
 #define RESPONSE_H
 
 #include "httpserver/request.h"
+#include "httpserver/hooks.h"
 #include "http/http.h"
 
 #include <stdbool.h>
@@ -11,6 +12,7 @@
 struct http_response {
     struct http *http;
     struct http_request *request;
+    const struct http_hooks *hooks;
 
     /* Does the client support HTTP/1.1? */
     bool http11; // set from http_request

@@ -38,7 +38,7 @@ int http_response_start (struct http_response *response, enum http_status status
         }
     }
 */
-    return 0;
+    HTTP_HOOK_RETURN(response->hooks, HTTP_HOOK_RESPONSE, response, response, status, reason);
 }
 
 enum http_status http_response_get_status (struct http_response *response)
@@ -64,12 +64,13 @@ int http_response_header (struct http_response *response, const char *name, cons
         return -1;
     }
 
-    va_list args;
+    HTTP_HOOK_CHECK_RETURN(response->hooks, HTTP_HOOK_RESPONSE_HEADER, response_header, response, name);
 
     LOG_INFO("\t%20s : %s", name, fmt);
 
     response->header = true;
 
+    va_list args;
     va_start(args, fmt);
     err = http_write_headerv(response->http, name, fmt, args);
     va_end(args);
@@ -85,6 +86,8 @@ int http_response_header (struct http_response *response, const char *name, cons
 int http_response_headers (struct http_response *response)
 {
     LOG_DEBUG("response=%p", response);
+
+    HTTP_HOOK_CHECK_RETURN(response->hooks, HTTP_HOOK_RESPONSE_HEADERS, response_headers, response);
 
     response->headers = true;
 

@@ -3,6 +3,7 @@
 
 #include "httpserver/request.h"
 #include "httpserver/response.h"
+#include "httpserver/hooks.h"
 
 #include "http/http.h"
 #include "http/http_types.h"
@@ -22,6 +23,7 @@
 struct http_request {
     struct http *http;
     struct http_response *response;
+    const struct http_hooks *hooks;
 
     /* Storage for request method field */
     char method[HTTP_REQUEST_METHOD_MAX];

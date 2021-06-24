@@ -80,7 +80,7 @@ int http_server_create (struct http_server **serverp, int listen_backlog, size_t
  */
 static int http_server_request (struct http_server *server, struct http_request *request, struct http_response *response, http_handler_func handler, void *ctx)
 {
-    enum http_status status = 0;
+    enum http_status status = 0, response_status;
     int err;
 
     LOG_DEBUG("server=%p request=%p response=%p handler=%p ctx=%p", server, request, response, handler, ctx);
@@ -125,8 +125,8 @@ response:
 
     if (!status) {
 
-    } else if (http_response_get_status(response)) {
-        LOG_WARN("ignoring response status=%d as response already has status set", status);
+    } else if ((response_status = http_response_get_status(response))) {
+        LOG_WARN("ignoring response status=%d as response already has status=%d set", status, response_status);
     } else if ((err = http_response_start(response, status, NULL))) {
         LOG_WARN("http_response_start");
         return -1;

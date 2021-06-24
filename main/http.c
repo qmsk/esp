@@ -4,6 +4,7 @@
 #include <esp_ota_ops.h>
 #include <httpserver/server.h>
 #include <httpserver/router.h>
+#include <httpserver/auth.h>
 #include <logging.h>
 
 #include <freertos/FreeRTOS.h>
@@ -23,6 +24,9 @@
 #define HTTP_SERVER_TASK_STACK 2048
 #define HTTP_SERVER_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+#define HTTP_AUTHENTICATION_REALM "HTTP username/password"
+#define HTTP_AUTHORIZATION_HEADER_MAX 64
+
 #define HTTP_CONFIG_ENABLED true
 #define HTTP_CONFIG_HOST "0.0.0.0"
 #define HTTP_CONFIG_PORT 80
@@ -30,6 +34,8 @@
 struct http_config {
   bool     enabled;
   char     host[32];
+  char     username[32];
+  char     password[32];
   uint16_t port;
 } http_config = {
   .enabled  = HTTP_CONFIG_ENABLED,
@@ -44,6 +50,15 @@ const struct configtab http_configtab[] = {
   { CONFIG_TYPE_STRING, "host",
     .size   = sizeof(http_config.host),
     .value  = { .string = http_config.host },
+  },
+  { CONFIG_TYPE_STRING, "username",
+    .size   = sizeof(http_config.username),
+    .value  = { .string = http_config.username },
+  },
+  { CONFIG_TYPE_STRING, "password",
+    .size   = sizeof(http_config.password),
+    .secret = true,
+    .value  = { .string = http_config.password },
   },
   { CONFIG_TYPE_UINT16, "port",
     .value  = { .uint16 = &http_config.port },
@@ -91,6 +106,61 @@ void http_listen_task(void *arg)
   vTaskDelete(NULL);
 }
 
+struct http_context {
+  const struct http_config *config;
+
+  bool authentication_required;
+  bool authenticated;
+};
+
+/* Hook to check authentication headers */
+static int http_server_request_header(struct http_request *request, const char *header, const char *value, void *ctx)
+{
+  struct http_context *context = ctx;
+  char buf[HTTP_AUTHORIZATION_HEADER_MAX];
+  int err;
+
+  if (context->authentication_required && strcasecmp(header, "Authorization") == 0) {
+    const char *username, *password;
+
+    if ((err = http_basic_authorization(value, buf, sizeof(buf), &username, &password))) {
+      LOG_WARN("http_basic_authorization");
+      return err;
+    }
+
+    if (strcmp(username, context->config->username) != 0 || strcmp(password, context->config->password) != 0) {
+      LOG_WARN("failed authentication as username=%s with password=%s", username, password);
+
+      context->authenticated = false;
+
+      return 0;
+    }
+
+    LOG_INFO("authenticated as username=%s with password", username);
+
+    context->authenticated = true;
+  }
+
+  return 0;
+}
+
+static int http_server_request_response(struct http_request *request, struct http_response *response, void *ctx)
+{
+  struct http_context *context = ctx;
+
+  if (context->authentication_required && !context->authenticated) {
+    LOG_WARN("unauthenticated request, returning HTTP 401");
+
+    return (
+          http_response_start(response, HTTP_UNAUTHORIZED, "Unauthorized")
+      ||  http_response_header(response, "WWW-Authenticate", "Basic realm=\"%s\"", HTTP_AUTHENTICATION_REALM)
+      ||  401
+    );
+  }
+
+  return 0;
+}
+
 /* Hook to add response headers */
 static int http_server_response_headers(struct http_response *response, void *ctx)
 {
@@ -108,12 +178,24 @@ static int http_server_response_headers(struct http_response *response, void *ct
 void http_server_task(void *arg)
 {
   struct http_router *router = arg;
+  struct http_context ctx;
+  struct http_hook http_hook_request_header = {
+    .func.request_header = http_server_request_header,
+    .ctx = &ctx,
+  };
+  struct http_hook http_hook_request_response = {
+    .func.request_response = http_server_request_response,
+    .ctx = &ctx,
+  };
   struct http_hook http_hook_response_headers = {
     .func.response_headers = http_server_response_headers,
+    .ctx = &ctx,
   };
   struct http_hooks hooks = {
     .types = {
-      [HTTP_HOOK_RESPONSE] = &http_hook_response_headers,
+      [HTTP_HOOK_REQUEST_HEADER]    = &http_hook_request_header,
+      [HTTP_HOOK_REQUEST_RESPONSE]  = &http_hook_request_response,
+      [HTTP_HOOK_RESPONSE]          = &http_hook_response_headers,
     },
   };
   struct http_connection *connection;
@@ -126,6 +208,13 @@ void http_server_task(void *arg)
     }
 
     LOG_DEBUG("connection=%p serve router=%p", connection, router);
+
+    ctx = (struct http_context) {
+      .config = &http_config,
+
+      .authentication_required = http_config.username[0] ? true : false,
+      .authenticated = false,
+    };
 
     if ((err = http_connection_serve(connection, &hooks, &http_router_handler, router)) < 0) {
       LOG_ERROR("http_connection_serve");

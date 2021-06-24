@@ -147,15 +147,22 @@ static int http_server_request_header(struct http_request *request, const char *
 static int http_server_request_response(struct http_request *request, struct http_response *response, void *ctx)
 {
   struct http_context *context = ctx;
+  int err;
 
   if (context->authentication_required && !context->authenticated) {
     LOG_WARN("unauthenticated request, returning HTTP 401");
 
-    return (
-          http_response_start(response, HTTP_UNAUTHORIZED, "Unauthorized")
-      ||  http_response_header(response, "WWW-Authenticate", "Basic realm=\"%s\"", HTTP_AUTHENTICATION_REALM)
-      ||  401
-    );
+    if ((err = http_response_start(response, HTTP_UNAUTHORIZED, "Unauthorized"))) {
+      LOG_ERROR("http_response_start");
+      return err;
+    }
+
+    if ((err = http_response_header(response, "WWW-Authenticate", "Basic realm=\"%s\"", HTTP_AUTHENTICATION_REALM))) {
+      LOG_ERROR("http_response_header");
+      return err;
+    }
+
+    return 401;
   }
 
   return 0;

@@ -12,6 +12,7 @@ enum http_status {
     HTTP_NO_CONTENT               = 204,
     HTTP_FOUND                    = 301,
     HTTP_BAD_REQUEST              = 400,
+    HTTP_UNAUTHORIZED             = 401,
     HTTP_FORBIDDEN                = 403,
     HTTP_NOT_FOUND                = 404,
     HTTP_METHOD_NOT_ALLOWED       = 405,

@@ -133,6 +133,7 @@ int http_request_header (struct http_request *request, const char **namep, const
     if (err == 1) {
         LOG_DEBUG("end of headers");
         request->headers_done = true;
+        HTTP_HOOK_CHECK_RETURN(request->hooks, HTTP_HOOK_REQUEST_HEADERS, request_headers, request);
         return 1;
     } else if (err) {
         LOG_WARN("http_read_header: %d", err);
@@ -202,7 +203,7 @@ int http_request_headers (struct http_request *request, const struct http_reques
         const char *header, *value;
 
         while ((err = http_request_header(request, &header, &value)) != 1) {
-            if (err < 0) {
+            if (err) {
                 LOG_ERROR("http_request_header");
                 return err;
             }
@@ -213,7 +214,7 @@ int http_request_headers (struct http_request *request, const struct http_reques
       *headersp = &request->headers;
     }
 
-    HTTP_HOOK_RETURN(request->hooks, HTTP_HOOK_REQUEST_HEADERS, request_headers, request);
+    return 0;
 }
 
 int http_request_form (struct http_request *request, char **keyp, char **valuep)

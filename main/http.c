@@ -34,9 +34,9 @@
 struct http_config {
   bool     enabled;
   char     host[32];
+  uint16_t port;
   char     username[32];
   char     password[32];
-  uint16_t port;
 } http_config = {
   .enabled  = HTTP_CONFIG_ENABLED,
   .host     = HTTP_CONFIG_HOST,
@@ -51,6 +51,9 @@ const struct configtab http_configtab[] = {
     .size   = sizeof(http_config.host),
     .value  = { .string = http_config.host },
   },
+  { CONFIG_TYPE_UINT16, "port",
+    .value  = { .uint16 = &http_config.port },
+  },
   { CONFIG_TYPE_STRING, "username",
     .size   = sizeof(http_config.username),
     .value  = { .string = http_config.username },
@@ -59,9 +62,6 @@ const struct configtab http_configtab[] = {
     .size   = sizeof(http_config.password),
     .secret = true,
     .value  = { .string = http_config.password },
-  },
-  { CONFIG_TYPE_UINT16, "port",
-    .value  = { .uint16 = &http_config.port },
   },
   {}
 };

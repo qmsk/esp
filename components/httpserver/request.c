@@ -210,6 +210,12 @@ int http_request_headers (struct http_request *request, const struct http_reques
         }
     }
 
+    if (!request->headers_hook) {
+      request->headers_hook = true;
+
+      HTTP_HOOK_CHECK_RETURN(request->hooks, HTTP_HOOK_REQUEST_RESPONSE, request_response, request, request->response);
+    }
+
     if (headersp) {
       *headersp = &request->headers;
     }
@@ -328,6 +334,9 @@ int http_request_close (struct http_request *request)
             return -1;
           }
         }
+
+        // supress response hook
+        request->headers_hook = true;
     }
 
     // body?

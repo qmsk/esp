@@ -13,6 +13,11 @@ int config_get_handler(struct http_request *request, struct http_response *respo
   FILE *file;
   int err;
 
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
   LOG_INFO("return ");
 
   if ((err = http_response_start(response, HTTP_OK, NULL))) {
@@ -174,6 +179,11 @@ int config_api_get(struct http_request *request, struct http_response *response,
   struct json_writer json_writer;
   FILE *file;
   int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
 
   if ((err = http_response_start(response, HTTP_OK, NULL))) {
     LOG_WARN("http_response_start");

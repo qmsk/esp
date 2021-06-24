@@ -11,6 +11,12 @@ int http_response_start (struct http_response *response, enum http_status status
     enum http_version version = http_request_version(response->request);
     int err;
 
+    // ensure request is complete
+    if ((err = http_request_headers(response->request, NULL))) {
+      LOG_ERROR("http_request_headers");
+      return err;
+    }
+
     LOG_DEBUG("reponse=%p version=%d status=%d reason=%s", response, version, status, reason ? reason : "");
 
     if (response->status) {

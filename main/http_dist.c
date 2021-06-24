@@ -151,6 +151,13 @@ error:
 
 int http_dist_index_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
   return http_dist_response(response, HTTP_DIST_INDEX_PATH, HTTP_DIST_INDEX_CONTENT_TYPE);
 }
 
@@ -158,6 +165,11 @@ int http_dist_handler(struct http_request *request, struct http_response *respon
 {
   char path[HTTP_DIST_MAX_PATH], *ext = NULL;
   int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
 
   if ((err = http_dist_path(request, path, sizeof(path), &ext))) {
     return err;

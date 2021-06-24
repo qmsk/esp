@@ -8,6 +8,7 @@ enum http_hook_type {
   HTTP_HOOK_REQUEST,
   HTTP_HOOK_REQUEST_HEADER,
   HTTP_HOOK_REQUEST_HEADERS,
+  HTTP_HOOK_REQUEST_RESPONSE,
 
   HTTP_HOOK_RESPONSE,
   HTTP_HOOK_RESPONSE_HEADER,
@@ -21,6 +22,7 @@ struct http_hook {
     int (*request)(struct http_request *request, const char *method, const char *path, const char *version, void *ctx);
     int (*request_header)(struct http_request *request, const char *header, const char *value, void *ctx);
     int (*request_headers)(struct http_request *request, void *ctx);
+    int (*request_response)(struct http_request *request, struct http_response *response, void *ctx);
 
     int (*response)(struct http_response *response, enum http_status status, const char *reason, void *ctx);
     int (*response_header)(struct http_response *response, const char *name, void *ctx);

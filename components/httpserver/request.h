@@ -50,6 +50,7 @@ struct http_request {
     bool request;
     bool header;
     bool headers_done;
+    bool headers_hook;
     bool body;
 
     /* XXX: Decoding GET params in-place from url.query */

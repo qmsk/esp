@@ -15,8 +15,7 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     config: null,
-    system_info: null,
-    system_status: null,
+    system: null,
   },
   plugins: [
     // XXX: only during development
@@ -38,8 +37,7 @@ export default new Vuex.Store({
     async loadSystem({ commit }) {
       const data = await systemService.get();
 
-      commit('updateSystemInfo', data.info);
-      commit('updateSystemStatus', data.status);
+      commit('updateSystem', data);
     },
     async restartSystem({ dispatch }) {
       await systemService.restart();
@@ -51,11 +49,8 @@ export default new Vuex.Store({
     loadConfig (state, config) {
       state.config = config;
     },
-    updateSystemInfo(state, info) {
-      state.system_info = info;
+    updateSystem(state, system) {
+      state.system = system;
     },
-    updateSystemStatus(state, status) {
-      state.system_status = status;
-    }
   },
 });

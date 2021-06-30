@@ -195,3 +195,33 @@ dl dd {
 dl dd meter {
   width: 100%;
 }
+
+/* Tables */
+table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+table th {
+  padding: 0.25em;
+
+  background-color: #444;
+  color: #ccc;
+}
+
+table td {
+  padding: 0.25em;
+
+  background-color: #ccc;
+  color: #111;
+  border: 1px solid #aaa;
+}
+
+table td.ptr {
+  font-family: monospace;
+}
+
+table td.size {
+  text-align: right;
+}

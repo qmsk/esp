@@ -72,6 +72,31 @@
 
         </dl>
       </template>
+      <template v-if="partitions">
+        <h2>Partitions</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Label</th>
+              <th>Type</th>
+              <th>SubType</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="part in partitions" :key="part.start">
+              <td>{{ part.label }}</td>
+              <td>{{ part.type }}</td>
+              <td>{{ part.subtype }}</td>
+              <td class="ptr">{{ part.start | ptr }}</td>
+              <td class="ptr">{{ part.end | ptr }}</td>
+              <td class="size">{{ part.size | kib }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </div>
     <div class="controls">
       <form @submit="restartSubmit">
@@ -95,21 +120,30 @@ export default {
   },
   computed: {
     info() {
-      return this.$store.state.system_info;
+      if (this.$store.state.system) {
+        return this.$store.state.system.info;
+      }
     },
     status() {
-      return this.$store.state.system_status;
+      if (this.$store.state.system) {
+        return this.$store.state.system.status;
+      }
+    },
+    partitions() {
+      if (this.$store.state.system) {
+        return this.$store.state.system.partitions;
+      }
     },
   },
   filters: {
     mhz: function(value) {
-      return (value / 1000 / 1000).toFixed(1) + 'MHz';
+      return (value / 1000 / 1000).toFixed(1) + ' MHz';
     },
     mib: function(value) {
-      return (value / 1024 / 1024).toFixed(1) + 'MiB';
+      return (value / 1024 / 1024).toFixed(1) + ' MiB';
     },
     kib: function(value) {
-      return (value / 1024).toFixed(1) + 'KiB';
+      return (value / 1024).toFixed(1) + ' KiB';
     },
     uptime: function(us) {
       const s = Math.floor(us / 1000 / 1000);
@@ -133,6 +167,9 @@ export default {
       }
 
       return out.join(", ");
+    },
+    ptr: function(addr) {
+      return "0x" + addr.toString(16).padStart(8, '0');
     },
   },
   methods: {

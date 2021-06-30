@@ -1,0 +1,36 @@
+commit 5ed26d384464c351cd303d26b737396cf8b92cb5
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Wed Jun 30 23:14:30 2021 +0300
+
+    freertos: report task stack size
+
+diff --git a/components/freertos/freertos/tasks.c b/components/freertos/freertos/tasks.c
+index c747cd74..d6e7acea 100644
+--- a/components/freertos/freertos/tasks.c
++++ b/components/freertos/freertos/tasks.c
+@@ -3604,6 +3604,13 @@ static void prvCheckTasksWaitingTermination( void )
+ 		pxTaskStatus->uxCurrentPriority = pxTCB->uxPriority;
+ 		pxTaskStatus->pxStackBase = pxTCB->pxStack;
+ 		pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
++		#if ( portSTACK_GROWTH > 0 )
++		pxTaskStatus->usStackSize = (pxTCB->pxEndOfStack + 1 - pxTCB->pxStack) * sizeof(StackType_t);
++		#elif ( configRECORD_STACK_HIGH_ADDRESS == 1 )
++		pxTaskStatus->usStackSize = (pxTCB->pxEndOfStack - pxTCB->pxStack) * sizeof(StackType_t) + portBYTE_ALIGNMENT;
++		#else
++		pxTaskStatus->usStackSize = 0;
++		#endif
+ 
+ 		#if ( configUSE_MUTEXES == 1 )
+ 		{
+diff --git a/components/freertos/include/freertos/task.h b/components/freertos/include/freertos/task.h
+index 5f50397c..d63bc9f7 100644
+--- a/components/freertos/include/freertos/task.h
++++ b/components/freertos/include/freertos/task.h
+@@ -135,6 +135,7 @@ typedef struct xTASK_STATUS
+ 	UBaseType_t uxBasePriority;		/* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
+ 	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+ 	StackType_t *pxStackBase;		/* Points to the lowest address of the task's stack area. */
++	uint16_t usStackSize;	/* The current total stack space for the task. */
+ 	uint16_t usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+ } TaskStatus_t;
+ 

@@ -31,7 +31,7 @@ ENV IDF_PATH=/opt/ESP8266_RTOS_SDK
 
 # custom patches
 COPY patches/ /tmp/patches
-RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < $patch; done
+RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < $patch || exit 1; done
 
 RUN \
   python -m pip install -r $IDF_PATH/requirements.txt

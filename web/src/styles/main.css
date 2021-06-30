@@ -157,3 +157,41 @@ main progress {
 .controls fieldset button {
   grid-column: 2 / 3;
 }
+
+/* Components */
+dl {
+  display: grid;
+
+  margin: 0em;
+  margin-bottom: 1em;
+  padding: 1em;
+
+  border: 1px solid #bbb;
+
+  grid-template-columns: 1fr 3fr;
+  grid-gap: 1em;
+}
+
+dl dt {
+  grid-column: 1 / 2;
+
+  margin-left: 0;
+  padding: 0.5em;
+
+  background-color: #444;
+  color: #ccc;
+}
+
+dl dd {
+  grid-column: 2 / 3;
+
+  margin: 0;
+  padding: 0.5em;
+
+  background-color: #ccc;
+  color: #111;
+}
+
+dl dd meter {
+  width: 100%;
+}

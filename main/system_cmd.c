@@ -161,7 +161,7 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
     goto error;
   }
 
-  printf("%4s %-20s %5s\t%6s\t%6s\t%6s\t%s\n", "ID", "NAME", "STATE", "PRI", "TOTAL%", "LAST%", "STACK FREE");
+  printf("%4s %-20s %5s\t%6s\t%6s\t%6s\t%6s\t%6s\n", "ID", "NAME", "STATE", "PRI", "TOTAL%", "LAST%", "STACK", "STACK FREE");
 
   unsigned total_runtime_permille = runtime / 1000; // for .x percentage calcuation
   unsigned last_runtime_permille = 0;
@@ -187,13 +187,14 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
     next_counters->xTaskNumber = task->xTaskNumber;
     next_counters->ulRunTimeCounter = task->ulRunTimeCounter;
 
-    printf("%4d %-20s %c    \t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%u\n",
+    printf("%4d %-20s %5c\t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%6u\t%6u\n",
       task->xTaskNumber,
       task->pcTaskName,
       system_task_state_char(task->eCurrentState),
       task->uxBasePriority, task->uxCurrentPriority,
       total_usage / 10, total_usage % 10,
       last_usage / 10, last_usage % 10,
+      task->usStackSize,
       task->usStackHighWaterMark
     );
   }

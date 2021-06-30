@@ -116,6 +116,8 @@ table.tasks td.stack-free {
               <th>State</th>
               <th>Priority</th>
               <th>CPU</th>
+              <th>Stack</th>
+              <th>Stack Usage</th>
               <th>Stack Free</th>
             </tr>
           </thead>
@@ -129,7 +131,13 @@ table.tasks td.stack-free {
                 <span v-else>{{ task.base_priority }}</span>
               </td>
               <td class="cpu">{{ task.runtime / task.total_runtime | percentage }}</td>
-              <td class="stack-free">{{ task.stack_highwater_mark | kib }}</td>
+              <td class="stack">{{ task.stack_size | kib }}</td>
+              <td>
+                <meter min="0" :max="task.stack_size" :value="task.stack_size - task.stack_highwater_mark">
+                  {{ task.stack_size - task.stack_highwater_mark | kib }} used / {{ task.stack_size | kib }} total
+                </meter>
+              </td>
+              <td class="stack">{{ task.stack_highwater_mark | kib }}</td>
             </tr>
           </tbody>
         </table>

@@ -104,6 +104,7 @@ static int system_api_write_task_object(struct json_writer *w, const TaskStatus_
     JSON_WRITE_MEMBER_UINT(w, "base_priority", t->uxCurrentPriority) ||
     JSON_WRITE_MEMBER_UINT(w, "runtime", t->ulRunTimeCounter) ||
     JSON_WRITE_MEMBER_UINT(w, "total_runtime", total_runtime) ||
+    JSON_WRITE_MEMBER_UINT(w, "stack_size", t->usStackSize) ||
     JSON_WRITE_MEMBER_UINT(w, "stack_highwater_mark", t->usStackHighWaterMark)
   );
 }

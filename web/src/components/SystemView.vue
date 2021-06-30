@@ -34,6 +34,9 @@ table.tasks td.stack-free {
 
           <dt>dRAM</dt>
           <dd>{{ info.dram_size | kib }} @ {{ info.dram_usage | kib }} code + {{ info.dram_heap | kib }} heap</dd>
+
+          <dt>Reset reason</dt>
+          <dd>{{ status.reset_reason }}</dd>
         </dl>
 
         <h2>Software</h2>
@@ -46,15 +49,9 @@ table.tasks td.stack-free {
 
           <dt>Build</dt>
           <dd>{{ info.build_date }} @ {{ info.build_time }}</dd>
-        </dl>
 
-        <h2>Operating System</h2>
-        <dl>
           <dt>Uptime</dt>
           <dd>{{ status.uptime | uptime }}</dd>
-
-          <dt>Reset reason</dt>
-          <dd>{{ status.reset_reason }}</dd>
         </dl>
 
         <h2>Memory</h2>

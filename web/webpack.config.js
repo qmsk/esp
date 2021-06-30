@@ -43,6 +43,7 @@ module.exports = {
     contentBase: './dist',
     proxy: {
       '/api': process.env.API_URL,
+      '/config.ini': process.env.API_URL,
     }
   },
 };

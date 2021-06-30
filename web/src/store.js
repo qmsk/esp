@@ -22,11 +22,15 @@ export default new Vuex.Store({
     async loadConfig({ commit }) {
       const config = await configService.get();
 
-      commit('updateConfig', config);
+      commit('loadConfig', config);
+    },
+    async uploadConfig({ dispatch }, file) {
+      await configService.upload(file);
+      await dispatch('loadConfig');
     },
   },
   mutations: {
-    updateConfig (state, config) {
+    loadConfig (state, config) {
       state.config = config;
     }
   },

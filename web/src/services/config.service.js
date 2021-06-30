@@ -8,4 +8,8 @@ export default class ConfigService {
 
     return response.data
   }
+
+  async upload(file) {
+    const response = await this.apiService.upload('/config.ini', file, 'text/plain');
+  }
 }

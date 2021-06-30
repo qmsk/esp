@@ -2,6 +2,7 @@ form {
 
 }
 
+/* fieldsets */
 form fieldset {
   display: grid;
 
@@ -9,7 +10,7 @@ form fieldset {
 
   border: 1px solid #bbb;
 
-  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-columns: 1fr 3fr 0.5fr;
   grid-gap: 1em;
 }
 
@@ -18,40 +19,64 @@ form fieldset.actions {
 }
 
 form fieldset legend {
-  margin: 0.5em;
+  margin: 0.5em 0em;
   padding: 0.5em;
 
   background-color: #888;
   color: #111;
   font-size: 2em;
+  font-weight: bold;
 }
 
-form label {
+form fieldset label {
   grid-column: 1 / 2;
   align-self: center;
+}
 
+form fieldset input {
+  grid-column: 2 / 3;
+}
+
+form fieldset select {
+  grid-column: 2 / 3;
+}
+
+form fieldset progress.input {
+  grid-column: 3 / 4;
+  width: 100%;
+}
+
+form fieldset progress.form {
+  grid-column: 2 / 3;
+}
+
+form fieldset button {
+  grid-column: 3;
+}
+
+/* general styles */
+form label {
+  margin-left: 1em;
   padding: 0.5em;
 
   background-color: #444;
   color: #ccc;
 }
 
-form input {
-  grid-column: 2 / 4;
+form input:invalid {
+  box-shadow: 0 0 5px 1px red;
 }
 
 form input[type="checkbox"] {
   width: 2em;
 }
 
-form select {
-  grid-column: 2 / 4;
+form input[type="file"] {
+  margin: auto 0;
 }
 
 form button {
-  grid-column: 3;
-
-  padding: 0.5em;
+  padding: 0.5em 1em;
 
   background-color: #133337;
   color: #ccc;
@@ -69,4 +94,11 @@ form button:hover {
 
 form button:active {
   transform: scale(0.99);
+}
+
+form button:disabled {
+  background-color: #888;
+}
+form button:disabled:hover {
+  border: 0.25px solid #000;
 }

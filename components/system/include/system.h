@@ -33,7 +33,7 @@ struct system_info {
  */
 struct system_status {
   esp_reset_reason_t reset_reason;
-  int uptime; // us
+  int64_t uptime; // us
   int cpu_frequency; // gz
 
   size_t total_heap_size, free_heap_size, minimum_free_heap_size;

@@ -11,6 +11,7 @@ int config_get_handler(struct http_request *request, struct http_response *respo
 int config_post_handler(struct http_request *request, struct http_response *response, void *ctx);
 
 int system_api_handler(struct http_request *request, struct http_response *response, void *ctx);
+int system_api_tasks_handler(struct http_request *request, struct http_response *response, void *ctx);
 int system_api_restart_handler(struct http_request *request, struct http_response *response, void *ctx);
 
 int config_api_get(struct http_request *request, struct http_response *response, void *ctx);

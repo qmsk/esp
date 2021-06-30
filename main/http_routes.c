@@ -10,6 +10,7 @@ const struct http_route http_routes[] = {
   { "POST", "api/config",         config_api_post, NULL },
 
   { "GET",  "api/system",         system_api_handler,         NULL },
+  { "GET",  "api/system/tasks",   system_api_tasks_handler,   NULL },
   { "POST", "api/system/restart", system_api_restart_handler, NULL },
 
   {}

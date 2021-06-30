@@ -152,16 +152,16 @@ static int system_api_write(struct json_writer *w)
   );
 }
 
-int system_api_handler(struct http_request *request, struct http_response *response, void *ctx)
+static int system_api_write_tasks(struct json_writer *w)
+{
+  return JSON_WRITE_ARRAY(w, system_api_write_tasks_array(w));
+}
+
+static int write_json_response(struct http_response *response, int(*f)(struct json_writer *w))
 {
   struct json_writer json_writer;
   FILE *file;
   int err;
-
-  if ((err = http_request_headers(request, NULL))) {
-    LOG_WARN("http_request_headers");
-    return err;
-  }
 
   if ((err = http_response_start(response, HTTP_OK, NULL))) {
     LOG_WARN("http_response_start");
@@ -183,8 +183,7 @@ int system_api_handler(struct http_request *request, struct http_response *respo
     return -1;
   }
 
-  if ((err = system_api_write(&json_writer))) {
-    LOG_WARN("config_get_api_write");
+  if ((err = f(&json_writer))) {
     return -1;
   }
 
@@ -195,6 +194,40 @@ int system_api_handler(struct http_request *request, struct http_response *respo
 
   return 0;
 
+}
+
+int system_api_handler(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = write_json_response(response, system_api_write))) {
+    LOG_WARN("write_json_response -> system_api_write");
+    return err;
+  }
+
+  return 0;
+}
+
+int system_api_tasks_handler(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = write_json_response(response, system_api_write_tasks))) {
+    LOG_WARN("write_json_response -> system_api_write_tasks");
+    return err;
+  }
+
+  return 0;
 }
 
 int system_api_restart_handler(struct http_request *request, struct http_response *response, void *ctx)

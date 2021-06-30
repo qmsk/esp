@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 
 import App from "./App"
 import ConfigView from "./components/ConfigView"
+import SystemView from "./components/SystemView"
 
 Vue.use(VueRouter);
 
@@ -12,6 +13,7 @@ const router = new VueRouter({
 
   routes: [
     { path: '/config', component: ConfigView },
+    { path: '/system', component: SystemView },
   ],
 });
 

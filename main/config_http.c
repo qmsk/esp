@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define CONFIG_HTTP_FILENAME "config.ini"
+#define CONFIG_HTTP_CONTENT_TYPE "text/plain"
+
 int config_get_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
   FILE *file;
@@ -25,7 +28,12 @@ int config_get_handler(struct http_request *request, struct http_response *respo
     return err;
   }
 
-  if ((err = http_response_header(response, "Content-Type", "text/plain"))) {
+  if ((err = http_response_header(response, "Content-Type", "%s", CONFIG_HTTP_CONTENT_TYPE))) {
+    LOG_WARN("http_response_header");
+    return err;
+  }
+
+  if ((err = http_response_header(response, "Content-Disposition", "attachment; filename=\"%s\"", CONFIG_HTTP_FILENAME))) {
     LOG_WARN("http_response_header");
     return err;
   }

@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 int json_writer_init(struct json_writer *w, FILE *f)
 {
@@ -214,9 +215,19 @@ int json_write_int(struct json_writer *w, int value)
   return json_writef(w, JSON_NUMBER, "%d", value);
 }
 
+int json_write_int64(struct json_writer *w, int64_t value)
+{
+  return json_writef(w, JSON_NUMBER, "%" PRId64, value);
+}
+
 int json_write_uint(struct json_writer *w, unsigned value)
 {
   return json_writef(w, JSON_NUMBER, "%u", value);
+}
+
+int json_write_uint64(struct json_writer *w, uint64_t value)
+{
+  return json_writef(w, JSON_NUMBER, "%" PRIu64, value);
 }
 
 int json_write_bool(struct json_writer *w, bool value)

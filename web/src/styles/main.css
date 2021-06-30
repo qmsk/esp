@@ -200,6 +200,9 @@ dl dd meter {
 table {
   width: 100%;
 
+  margin: 0em;
+  margin-bottom: 1em;
+
   border-collapse: collapse;
 }
 

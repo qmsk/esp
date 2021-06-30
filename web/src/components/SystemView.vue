@@ -1,5 +1,14 @@
 <style>
-
+table.tasks td {
+  text-align: center;
+}
+table.tasks td.name {
+  text-align: left;
+}
+table.tasks td.cpu,
+table.tasks td.stack-free {
+  text-align: right;
+}
 </style>
 
 <template>
@@ -97,6 +106,34 @@
           </tbody>
         </table>
       </template>
+      <template v-if="tasks">
+        <h2>Tasks</h2>
+        <table class="tasks">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>State</th>
+              <th>Priority</th>
+              <th>CPU</th>
+              <th>Stack Free</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="task in tasks" :key="task.number">
+              <td>{{ task.number }}</td>
+              <td class="name">{{ task.name }}</td>
+              <td>{{ task.state }}</td>
+              <td>
+                <span v-if="task.current_priority != task.base_priority">{{ task.base_priority }} &rarr; {{ task.current_priority }}</span>
+                <span v-else>{{ task.base_priority }}</span>
+              </td>
+              <td class="cpu">{{ task.runtime / task.total_runtime | percentage }}</td>
+              <td class="stack-free">{{ task.stack_highwater_mark | kib }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </div>
     <div class="controls">
       <form @submit="restartSubmit">
@@ -132,6 +169,11 @@ export default {
     partitions() {
       if (this.$store.state.system) {
         return this.$store.state.system.partitions;
+      }
+    },
+    tasks() {
+      if (this.$store.state.system) {
+        return this.sortTasks(this.$store.state.system.tasks);
       }
     },
   },
@@ -171,6 +213,9 @@ export default {
     ptr: function(addr) {
       return "0x" + addr.toString(16).padStart(8, '0');
     },
+    percentage: function(value) {
+      return (value * 100).toFixed(1) + '%';
+    },
   },
   methods: {
     async load() {
@@ -192,6 +237,12 @@ export default {
       } finally {
         this.restarting = false;
       }
+    },
+    sortTasks(tasks) {
+      tasks = Array.from(tasks);
+      tasks.sort((a, b) => a.number - b.number);
+
+      return tasks;
     }
   }
 }

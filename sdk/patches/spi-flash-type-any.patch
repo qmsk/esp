@@ -1,0 +1,26 @@
+diff --git a/components/spi_flash/include/esp_partition.h b/components/spi_flash/include/esp_partition.h
+index d7d295c9..667079e3 100644
+--- a/components/spi_flash/include/esp_partition.h
++++ b/components/spi_flash/include/esp_partition.h
+@@ -38,6 +38,8 @@ extern "C" {
+ typedef enum {
+     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
+     ESP_PARTITION_TYPE_DATA = 0x01,      //!< Data partition type
++
++    ESP_PARTITION_TYPE_ANY = 0xff,
+ } esp_partition_type_t;
+
+ /**
+diff --git a/components/spi_flash/src/partition.c b/components/spi_flash/src/partition.c
+index 14d684ad..d5b187db 100644
+--- a/components/spi_flash/src/partition.c
++++ b/components/spi_flash/src/partition.c
+@@ -97,7 +97,7 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
+     _lock_acquire(&s_partition_list_lock);
+     for (; it->next_item != NULL; it->next_item = SLIST_NEXT(it->next_item, next)) {
+         esp_partition_t* p = &it->next_item->info;
+-        if (it->type != p->type) {
++        if (it->type != 0xff && it->type != p->type) {
+             continue;
+         }
+         if (it->subtype != 0xff && it->subtype != p->subtype) {

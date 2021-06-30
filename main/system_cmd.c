@@ -2,6 +2,7 @@
 
 #include <logging.h>
 #include <system.h>
+#include <system_tasks.h>
 
 #include <esp_partition.h>
 #include <freertos/FreeRTOS.h>
@@ -111,19 +112,6 @@ static int system_status_cmd(int argc, char **argv, void *ctx)
   );
 
   return 0;
-}
-
-static char system_task_state_char(eTaskState state)
-{
-    switch(state) {
-      case eRunning:    return 'X';
-      case eReady:      return 'R';
-      case eBlocked:    return 'B';
-      case eSuspended:  return 'S';
-      case eDeleted:    return 'D';
-      case eInvalid:    return 'I';
-      default:          return '?';
-    }
 }
 
 // store previous task counters for delta

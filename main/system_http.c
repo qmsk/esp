@@ -3,9 +3,13 @@
 #include <logging.h>
 #include <json.h>
 #include <system.h>
+#include <system_tasks.h>
 
 #include <errno.h>
 #include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -33,6 +37,22 @@ static int system_api_write_info_object(struct json_writer *w)
     JSON_WRITE_MEMBER_UINT(w, "dram_size", info.image_info.dram_size) ||
     JSON_WRITE_MEMBER_UINT(w, "dram_usage", info.image_info.dram_usage) ||
     JSON_WRITE_MEMBER_UINT(w, "dram_heap", info.image_info.dram_heap_size)
+  );
+}
+
+static int system_api_write_status_object(struct json_writer *w)
+{
+  struct system_status status;
+
+  system_status_get(&status);
+
+  return (
+    JSON_WRITE_MEMBER_INT64(w, "uptime", status.uptime) ||
+    JSON_WRITE_MEMBER_STRING(w, "reset_reason", esp_reset_reason_str(status.reset_reason)) ||
+    JSON_WRITE_MEMBER_UINT(w, "cpu_frequency", status.cpu_frequency) ||
+    JSON_WRITE_MEMBER_UINT(w, "heap_size", status.total_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "heap_free", status.free_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "heap_free_min", status.minimum_free_heap_size)
   );
 }
 
@@ -74,20 +94,51 @@ error:
   return err;
 }
 
-static int system_api_write_status_object(struct json_writer *w)
+static int system_api_write_task_object(struct json_writer *w, const TaskStatus_t *t, uint32_t total_runtime)
 {
-  struct system_status status;
-
-  system_status_get(&status);
-
   return (
-    JSON_WRITE_MEMBER_INT64(w, "uptime", status.uptime) ||
-    JSON_WRITE_MEMBER_STRING(w, "reset_reason", esp_reset_reason_str(status.reset_reason)) ||
-    JSON_WRITE_MEMBER_UINT(w, "cpu_frequency", status.cpu_frequency) ||
-    JSON_WRITE_MEMBER_UINT(w, "heap_size", status.total_heap_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "heap_free", status.free_heap_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "heap_free_min", status.minimum_free_heap_size)
+    JSON_WRITE_MEMBER_STRING(w, "name", t->pcTaskName) ||
+    JSON_WRITE_MEMBER_UINT(w, "number", t->xTaskNumber) ||
+    JSON_WRITE_MEMBER_STRING(w, "state", system_task_state_str(t->eCurrentState)) ||
+    JSON_WRITE_MEMBER_UINT(w, "current_priority", t->uxCurrentPriority) ||
+    JSON_WRITE_MEMBER_UINT(w, "base_priority", t->uxCurrentPriority) ||
+    JSON_WRITE_MEMBER_UINT(w, "runtime", t->ulRunTimeCounter) ||
+    JSON_WRITE_MEMBER_UINT(w, "total_runtime", total_runtime) ||
+    JSON_WRITE_MEMBER_UINT(w, "stack_highwater_mark", t->usStackHighWaterMark)
   );
+}
+
+static int system_api_write_tasks_array(struct json_writer *w)
+{
+  unsigned count = uxTaskGetNumberOfTasks();
+  TaskStatus_t *tasks;
+  uint32_t total_runtime;
+  int err = 0;
+
+  if (!(tasks = calloc(count, sizeof(*tasks)))) {
+    LOG_ERROR("calloc");
+    return -1;
+  }
+
+  if (!(count = uxTaskGetSystemState(tasks, count, &total_runtime))) {
+    err = -1;
+    LOG_ERROR("uxTaskGetSystemState");
+    goto error;
+  }
+
+  for (unsigned i = 0; i < count; i++) {
+    TaskStatus_t *t = &tasks[i];
+
+    if ((err = JSON_WRITE_OBJECT(w, system_api_write_task_object(w, t, total_runtime)))) {
+      LOG_ERROR("system_api_write_task_object");
+      goto error;
+    }
+  }
+
+error:
+  free(tasks);
+
+  return err;
 }
 
 static int system_api_write(struct json_writer *w)
@@ -95,7 +146,8 @@ static int system_api_write(struct json_writer *w)
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_OBJECT(w, "info", system_api_write_info_object(w)) ||
     JSON_WRITE_MEMBER_OBJECT(w, "status", system_api_write_status_object(w)) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "partitions", system_api_write_partitions_array(w))
+    JSON_WRITE_MEMBER_ARRAY(w, "partitions", system_api_write_partitions_array(w)) ||
+    JSON_WRITE_MEMBER_ARRAY(w, "tasks", system_api_write_tasks_array(w))
   );
 }
 

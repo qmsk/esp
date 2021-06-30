@@ -297,9 +297,9 @@ int http_request_copy (struct http_request *request, int fd)
         return -1;
     }
 
-    // TODO: Transfer-Encoding?
+    // TODO: Transfer-Encoding, Connection: close?
     if (!request->headers.content_length) {
-        LOG_DEBUG("no request body given");
+        LOG_WARN("no request Content-Length");
         return 411;
     }
 
@@ -312,6 +312,39 @@ int http_request_copy (struct http_request *request, int fd)
     request->body = true;
 
     return 0;
+}
+
+int http_request_open (struct http_request *request, FILE **filep)
+{
+  int err;
+
+  LOG_DEBUG("request=%p", request);
+
+  if (!request->headers_done) {
+      LOG_WARN("read request body without reading headers");
+      return -1;
+  }
+
+  if (request->body) {
+      LOG_WARN("re-reading request body");
+      return -1;
+  }
+
+  // TODO: Transfer-Encoding, Connection: close?
+  if (!request->headers.content_length) {
+    LOG_WARN("no request Content-Length");
+    return 411;
+  }
+
+  if ((err = http_file_open(request->http, HTTP_STREAM_READ, &request->headers.content_length, filep))) {
+    LOG_ERROR("http_file_open");
+    return err;
+  }
+
+  // XXX: unknown if body completed
+  //request->body = true;
+
+  return 0;
 }
 
 int http_request_close (struct http_request *request)

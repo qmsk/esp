@@ -84,9 +84,20 @@ int http_request_param (struct http_request *request, char **keyp, char **valuep
 /*
  * Read request body from client into FILE.
  *
+ * NOTE: Only supports requests with Content-Length headers.
+ *
  * Returns >0 HTTP error if there was no request body.
  */
 int http_request_copy (struct http_request *request, int fd);
+
+/*
+ * Return stdio FILE for reading from response.
+ *
+ * NOTE: Only supports requests with Content-Length headers.
+ *
+ * Returns <0 on error, >0 HTTP error if there was no request body.
+ */
+int http_request_open (struct http_request *request, FILE **filep);
 
 /*
  * Finish reading any remaining request fields.

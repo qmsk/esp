@@ -12,28 +12,35 @@ static int system_info_cmd(int argc, char **argv, void *ctx)
 
   system_info_get(&info);
 
-  printf("IDF version=%s\n", info.esp_idf_version);
-  printf("Project name=%s version=%s date=%s time=%s\n",
-    info.esp_app_desc->project_name,
-    info.esp_app_desc->version,
-    info.esp_app_desc->date,
-    info.esp_app_desc->time
-  );
-  printf("\n");
-  printf("CPU model=%#x features=%#x cores=%u revision=%u\n",
-    info.esp_chip_info.model,
+  printf("Chip model=%s features=%#x revision=%u\n",
+    esp_chip_model_str(info.esp_chip_info.model),
     info.esp_chip_info.features,
-    info.esp_chip_info.cores,
     info.esp_chip_info.revision
   );
-  printf("Flash size=%u\n", info.spi_flash_chip_size);
+  printf("CPU cores=%u\n", info.esp_chip_info.cores);
   printf("\n");
-  printf("Firmware DRAM   start=%#08x end=%#08x usage=%8u size=%8u\n", (unsigned) info.image_info.dram_start, (unsigned) info.image_info.dram_end, info.image_info.dram_usage, info.image_info.dram_size);
-  printf("Firmware IRAM   start=%#08x end=%#08x usage=%8u size=%8u\n", (unsigned) info.image_info.iram_start, (unsigned) info.image_info.iram_end, info.image_info.iram_usage, info.image_info.iram_size);
-  printf("Firmware Flash  start=%#08x end=%#08x usage=%8u\n", (unsigned) info.image_info.flash_start, (unsigned) info.image_info.flash_end, info.image_info.flash_usage);
+  printf("SDK version=%s\n", info.esp_idf_version);
+  printf("App name=%s version=%s\n", info.esp_app_desc.project_name, info.esp_app_desc.version);
+  printf("Build date=%s time=%s\n", info.esp_app_desc.date, info.esp_app_desc.time);
   printf("\n");
-  printf("Heap DRAM   start=%#08x size=%d\n", (unsigned) info.image_info.dram_heap_start, info.image_info.dram_heap_size);
-  printf("Heap IRAM   start=%#08x size=%d\n", (unsigned) info.image_info.iram_heap_start, info.image_info.iram_heap_size);
+  printf("Flash size=%8u usage=%8u\n", info.spi_flash_chip_size, info.image_info.flash_usage);
+  printf("DRAM  size=%8u usage=%8u heap=%8u\n", info.image_info.dram_size, info.image_info.dram_usage, info.image_info.dram_heap_size);
+  printf("IRAM  size=%8u usage=%8u heap=%8u\n", info.image_info.iram_size, info.image_info.iram_usage, info.image_info.iram_heap_size);
+
+  return 0;
+}
+
+static int system_memory_cmd(int argc, char **argv, void *ctx)
+{
+  struct system_image_info image_info;
+
+  system_image_info_get(&image_info);
+
+  printf("DRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.dram_start, (unsigned) image_info.dram_end, image_info.dram_usage);
+  printf("DRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.dram_heap_start, (unsigned) image_info.dram_heap_start + image_info.dram_heap_size, image_info.dram_heap_size);
+  printf("IRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.iram_start, (unsigned) image_info.iram_end, image_info.iram_usage);
+  printf("IRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.iram_heap_start, (unsigned) image_info.iram_heap_start + image_info.iram_heap_size, image_info.iram_heap_size);
+  printf("Flash Image %#08x - %#08x = %8u\n", (unsigned) image_info.flash_start, (unsigned) image_info.flash_end, image_info.flash_usage);
 
   return 0;
 }
@@ -180,6 +187,7 @@ static int system_restart_cmd(int argc, char **argv, void *ctx)
 
 static const struct cmd system_commands[] = {
   { "info",     system_info_cmd,    .describe = "Print system info" },
+  { "memory",   system_memory_cmd,  .describe = "Print system memory" },
   { "status",   system_status_cmd,  .describe = "Print system status" },
   { "tasks",    system_tasks_cmd,   .describe = "Print system tasks" },
   { "restart",  system_restart_cmd, .describe = "Restart system" },

@@ -22,8 +22,9 @@ struct system_info {
     esp_chip_info_t esp_chip_info;
     struct system_image_info image_info;
 
+    esp_app_desc_t esp_app_desc;
+
     const char* esp_idf_version;
-    const esp_app_desc_t *esp_app_desc;
     size_t spi_flash_chip_size;
 };
 
@@ -40,11 +41,12 @@ struct system_status {
 
 size_t system_get_total_heap_size();
 
-void system_image_info(struct system_image_info *info);
+void system_image_info_get(struct system_image_info *info);
 void system_info_get(struct system_info *info);
 void system_status_get(struct system_status *status);
 
 /* Return string for reset reason */
 const char *esp_reset_reason_str(esp_reset_reason_t reason);
+const char *esp_chip_model_str(esp_chip_model_t model);
 
 #endif

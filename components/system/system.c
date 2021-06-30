@@ -15,7 +15,7 @@ size_t system_get_total_heap_size()
   return heap_caps_get_total_size(MALLOC_CAP_32BIT);
 }
 
-void system_image_info(struct system_image_info *info)
+void system_image_info_get(struct system_image_info *info)
 {
   info->iram_start = &_iram_start;
   info->iram_end = &_iram_end;
@@ -47,10 +47,11 @@ void system_image_info(struct system_image_info *info)
 void system_info_get(struct system_info *info)
 {
   esp_chip_info(&info->esp_chip_info);
-  system_image_info(&info->image_info);
+  system_image_info_get(&info->image_info);
+
+  info->esp_app_desc = *esp_ota_get_app_description();
 
   info->esp_idf_version = esp_get_idf_version();
-  info->esp_app_desc = esp_ota_get_app_description();
   info->spi_flash_chip_size = spi_flash_get_chip_size();
 }
 

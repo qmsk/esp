@@ -20,6 +20,8 @@ int system_api_write_info(struct json_writer *w)
     JSON_WRITE_MEMBER_UINT(w, "chip_revision", info.esp_chip_info.revision) ||
     JSON_WRITE_MEMBER_UINT(w, "cpu_cores", info.esp_chip_info.cores) ||
     JSON_WRITE_MEMBER_UINT(w, "flash_size", info.spi_flash_chip_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "flash_usage", info.image_info.flash_usage) ||
+    JSON_WRITE_MEMBER_STRING(w, "sdk_name", info.esp_idf_name) ||
     JSON_WRITE_MEMBER_STRING(w, "sdk_version", info.esp_idf_version) ||
     JSON_WRITE_MEMBER_STRING(w, "app_name", info.esp_app_desc.project_name) ||
     JSON_WRITE_MEMBER_STRING(w, "app_version", info.esp_app_desc.version) ||

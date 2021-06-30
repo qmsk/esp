@@ -10,6 +10,8 @@
 #include <esp_timer.h>
 #include <spi_flash.h>
 
+#define IDF_NAME "ESP8266_RTOS_SDK"
+
 size_t system_get_total_heap_size()
 {
   return heap_caps_get_total_size(MALLOC_CAP_32BIT);
@@ -51,6 +53,7 @@ void system_info_get(struct system_info *info)
 
   info->esp_app_desc = *esp_ota_get_app_description();
 
+  info->esp_idf_name = IDF_NAME;
   info->esp_idf_version = esp_get_idf_version();
   info->spi_flash_chip_size = spi_flash_get_chip_size();
 }

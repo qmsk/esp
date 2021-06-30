@@ -19,7 +19,7 @@ static int system_info_cmd(int argc, char **argv, void *ctx)
   );
   printf("CPU cores=%u\n", info.esp_chip_info.cores);
   printf("\n");
-  printf("SDK version=%s\n", info.esp_idf_version);
+  printf("SDK name=%s version=%s\n", info.esp_idf_name, info.esp_idf_version);
   printf("App name=%s version=%s\n", info.esp_app_desc.project_name, info.esp_app_desc.version);
   printf("Build date=%s time=%s\n", info.esp_app_desc.date, info.esp_app_desc.time);
   printf("\n");

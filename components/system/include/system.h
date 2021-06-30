@@ -24,6 +24,7 @@ struct system_info {
 
     esp_app_desc_t esp_app_desc;
 
+    const char *esp_idf_name;
     const char* esp_idf_version;
     size_t spi_flash_chip_size;
 };

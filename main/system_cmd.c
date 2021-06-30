@@ -105,10 +105,11 @@ static int system_status_cmd(int argc, char **argv, void *ctx)
   printf("\n");
   printf("CPU frequency=%dMhz\n", status.cpu_frequency / 1000 / 1000);
   printf("\n");
-  printf("Heap total=%8u free=%8u min_free=%u\n",
+  printf("Heap total=%8u free=%8u min_free=%u max_free=%u\n",
     status.total_heap_size,
     status.free_heap_size,
-    status.minimum_free_heap_size
+    status.minimum_free_heap_size,
+    status.maximum_free_heap_size
   );
 
   return 0;

@@ -39,14 +39,18 @@ struct system_status {
   int64_t uptime; // us
   int cpu_frequency; // gz
 
-  size_t total_heap_size, free_heap_size, minimum_free_heap_size;
+  size_t total_heap_size, free_heap_size, minimum_free_heap_size, maximum_free_heap_size;
 };
-
-size_t system_get_total_heap_size();
 
 void system_image_info_get(struct system_image_info *info);
 void system_info_get(struct system_info *info);
 void system_status_get(struct system_status *status);
+
+/* Memory */
+size_t system_get_total_heap_size();
+
+void system_update_maximum_free_heap_size();
+size_t system_get_maximum_free_heap_size();
 
 /* Return string for reset reason */
 const char *esp_reset_reason_str(esp_reset_reason_t reason);

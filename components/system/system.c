@@ -12,9 +12,25 @@
 
 #define IDF_NAME "ESP8266_RTOS_SDK"
 
+static size_t maximum_free_heap_size = 0;
+
 size_t system_get_total_heap_size()
 {
   return heap_caps_get_total_size(MALLOC_CAP_32BIT);
+}
+
+void system_update_maximum_free_heap_size()
+{
+  size_t free_heap_size = esp_get_free_heap_size();
+
+  if (free_heap_size > maximum_free_heap_size) {
+    maximum_free_heap_size = free_heap_size;
+  }
+}
+
+size_t system_get_maximum_free_heap_size()
+{
+  return maximum_free_heap_size;
 }
 
 void system_image_info_get(struct system_image_info *info)
@@ -66,4 +82,5 @@ void system_status_get(struct system_status *status)
   status->total_heap_size = system_get_total_heap_size();
   status->free_heap_size = esp_get_free_heap_size();
   status->minimum_free_heap_size = esp_get_minimum_free_heap_size();
+  status->maximum_free_heap_size = maximum_free_heap_size;
 }

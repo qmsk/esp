@@ -52,7 +52,8 @@ static int system_api_write_status_object(struct json_writer *w)
     JSON_WRITE_MEMBER_UINT(w, "cpu_frequency", status.cpu_frequency) ||
     JSON_WRITE_MEMBER_UINT(w, "heap_size", status.total_heap_size) ||
     JSON_WRITE_MEMBER_UINT(w, "heap_free", status.free_heap_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "heap_free_min", status.minimum_free_heap_size)
+    JSON_WRITE_MEMBER_UINT(w, "heap_free_min", status.minimum_free_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "heap_free_max", status.maximum_free_heap_size)
   );
 }
 

@@ -62,16 +62,23 @@ table.tasks td.stack-free {
           <dt>Free</dt>
           <dd>{{ status.heap_free | kib }}</dd>
 
-          <dt>Usage</dt>
+          <dt>Boot</dt>
           <dd>
-            <meter min="0" :max="status.heap_size" :value="status.heap_size - status.heap_free">
+            <meter min="0" :max="status.heap_size" :value="status.heap_size - status.heap_free_max" :title="status.heap_size - status.heap_free_max | kib">
+              {{ status.heap_size - status.heap_free_max | kib }} used / {{ status.heap_size | kib }} total
+            </meter>
+          </dd>
+
+          <dt>Current</dt>
+          <dd>
+            <meter min="0" :max="status.heap_size" :value="status.heap_size - status.heap_free" :title="status.heap_size - status.heap_free | kib">
               {{ status.heap_size - status.heap_free | kib }} used / {{ status.heap_size | kib }} total
             </meter>
           </dd>
 
-          <dt>High</dt>
+          <dt>Maximum</dt>
           <dd>
-            <meter min="0" :max="status.heap_size" :value="status.heap_size - status.heap_free_min">
+            <meter min="0" :max="status.heap_size" :value="status.heap_size - status.heap_free_min" :title="status.heap_size - status.heap_free_min | kib">
               {{ status.heap_size - status.heap_free_min | kib }} used / {{ status.heap_size | kib }} total
             </meter>
           </dd>

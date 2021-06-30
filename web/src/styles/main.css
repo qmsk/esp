@@ -206,6 +206,22 @@ table {
   border-collapse: collapse;
 }
 
+table caption {
+  background-color: #888;
+  color: #111;
+
+  text-align: left;
+  font-size: 24px;
+  font-weight: bold;
+
+  margin: 0;
+  padding: 0.25em;
+}
+
+table caption button {
+  float: right;
+}
+
 table th {
   padding: 0.25em;
 
@@ -228,3 +244,29 @@ table td.ptr {
 table td.size {
   text-align: right;
 }
+
+ /* Spinner */
+ .spin {
+   display: inline-block;
+
+   width: 1em;
+   height: 1em;
+
+   text-align: center;
+}
+
+.spin.active {
+   animation-name: spin;
+   animation-duration: 5000ms;
+   animation-iteration-count: infinite;;
+   animation-timing-function: linear;
+ }
+
+ @keyframes spin {
+   from {
+     transform:rotate(0turn);
+   }
+   to {
+     transform:rotate(1turn);
+   }
+ }

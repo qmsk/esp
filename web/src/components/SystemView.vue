@@ -107,15 +107,20 @@ table.tasks td.stack-free {
         </table>
       </template>
       <template v-if="tasks">
-        <h2>Tasks</h2>
         <table class="tasks">
+          <caption>
+            Tasks
+
+            <button @click="loadTasks"><span :class="{spin: true, active: loadingTasks}">&#10227;</span></button>
+          </caption>
           <thead>
             <tr>
               <th>#</th>
               <th>Name</th>
               <th>State</th>
               <th>Priority</th>
-              <th>CPU</th>
+              <th>CPU now</th>
+              <th>CPU total</th>
               <th>Stack</th>
               <th>Stack Usage</th>
               <th>Stack Free</th>
@@ -130,7 +135,12 @@ table.tasks td.stack-free {
                 <span v-if="task.current_priority != task.base_priority">{{ task.base_priority }} &rarr; {{ task.current_priority }}</span>
                 <span v-else>{{ task.base_priority }}</span>
               </td>
-              <td class="cpu">{{ task.runtime / task.total_runtime | percentage }}</td>
+              <td class="cpu">
+                <template v-if="task.prev_runtime">{{ (task.runtime - task.prev_runtime) / (task.total_runtime - task.prev_total_runtime) | percentage }}</template>
+              </td>
+              <td class="cpu">
+                {{ task.runtime / task.total_runtime | percentage }}
+              </td>
               <td class="stack">{{ task.stack_size | kib }}</td>
               <td>
                 <meter min="0" :max="task.stack_size" :value="task.stack_size - task.stack_highwater_mark">
@@ -158,6 +168,7 @@ table.tasks td.stack-free {
 export default {
   data: () => ({
     loading: true,
+    loadingTasks: false,
     restarting: false,
   }),
   created() {
@@ -235,6 +246,15 @@ export default {
         this.loading = false;
       }
     },
+    async loadTasks() {
+      this.loadingTasks = true;
+
+      try {
+        await this.$store.dispatch('loadSystemTasks');
+      } finally {
+        this.loadingTasks = false;
+      }
+    },
     async restartSubmit(event) {
       this.restarting = true;
 
@@ -251,7 +271,7 @@ export default {
       tasks.sort((a, b) => a.number - b.number);
 
       return tasks;
-    }
+    },
   }
 }
 </script>

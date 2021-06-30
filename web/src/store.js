@@ -39,6 +39,11 @@ export default new Vuex.Store({
 
       commit('updateSystem', data);
     },
+    async loadSystemTasks({ commit }) {
+      const data = await systemService.getTasks();
+
+      commit('updateSystemTasks', data);
+    },
     async restartSystem({ dispatch }) {
       await systemService.restart();
 
@@ -51,6 +56,26 @@ export default new Vuex.Store({
     },
     updateSystem(state, system) {
       state.system = system;
+    },
+    updateSystemTasks(state, tasks) {
+      let prevTasks = new Map();
+
+      if (state.system && state.system.tasks) {
+        for (const task of state.system.tasks) {
+          prevTasks.set(task.number, task);
+        }
+      }
+
+      for (const task of tasks) {
+        const prevTask = prevTasks.get(task.number);
+
+        if (prevTask) {
+          task.prev_runtime = prevTask.runtime;
+          task.prev_total_runtime = prevTask.total_runtime;
+        }
+      }
+
+      state.system.tasks = tasks;
     },
   },
 });

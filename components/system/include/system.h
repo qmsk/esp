@@ -1,9 +1,11 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
-#include <stddef.h>
-#include <esp_system.h>
 #include <esp_ota_ops.h>
+#include <esp_partition.h>
+#include <esp_system.h>
+
+#include <stddef.h>
 
 struct system_image_info {
   void *iram_start, *dram_start, *flash_start;
@@ -49,5 +51,7 @@ void system_status_get(struct system_status *status);
 /* Return string for reset reason */
 const char *esp_reset_reason_str(esp_reset_reason_t reason);
 const char *esp_chip_model_str(esp_chip_model_t model);
+const char *esp_partition_type_str(esp_partition_type_t type);
+const char *esp_partition_subtype_str(esp_partition_type_t type, esp_partition_subtype_t subtype);
 
 #endif

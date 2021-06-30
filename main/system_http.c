@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int system_api_write_info(struct json_writer *w)
+static int system_api_write_info_object(struct json_writer *w)
 {
   struct system_info info;
 
@@ -36,7 +36,45 @@ int system_api_write_info(struct json_writer *w)
   );
 }
 
-int system_api_write_status(struct json_writer *w)
+static int system_api_write_partition_object(struct json_writer *w, const esp_partition_t *p)
+{
+  const char *type = esp_partition_type_str(p->type);
+  const char *subtype = esp_partition_subtype_str(p->type, p->subtype);
+
+  return (
+    JSON_WRITE_MEMBER_STRING(w, "label", p->label) ||
+    (type ? JSON_WRITE_MEMBER_STRING(w, "type", type) : JSON_WRITE_MEMBER_INT(w, "type", p->type)) ||
+    (subtype ? JSON_WRITE_MEMBER_STRING(w, "subtype", subtype) : JSON_WRITE_MEMBER_INT(w, "subtype", p->subtype)) ||
+    JSON_WRITE_MEMBER_UINT(w, "start", p->address) ||
+    JSON_WRITE_MEMBER_UINT(w, "end", p->address + p->size) ||
+    JSON_WRITE_MEMBER_UINT(w, "size", p->size) ||
+    JSON_WRITE_MEMBER_BOOL(w, "encrypted", p->encrypted)
+  );
+}
+
+static int system_api_write_partitions_array(struct json_writer *w)
+{
+  int err;
+  esp_partition_iterator_t it = NULL;
+
+  for (it = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL); it; it = esp_partition_next(it)) {
+    const esp_partition_t *p = esp_partition_get(it);
+
+    if ((err = JSON_WRITE_OBJECT(w, system_api_write_partition_object(w, p)))) {
+      LOG_ERROR("system_api_write_partition_object");
+      goto error;
+    }
+  }
+
+error:
+  if (it) {
+    esp_partition_iterator_release(it);
+  }
+
+  return err;
+}
+
+static int system_api_write_status_object(struct json_writer *w)
 {
   struct system_status status;
 
@@ -52,11 +90,12 @@ int system_api_write_status(struct json_writer *w)
   );
 }
 
-int system_api_write(struct json_writer *w)
+static int system_api_write(struct json_writer *w)
 {
   return JSON_WRITE_OBJECT(w,
-    JSON_WRITE_MEMBER_OBJECT(w, "info", system_api_write_info(w)) ||
-    JSON_WRITE_MEMBER_OBJECT(w, "status", system_api_write_status(w))
+    JSON_WRITE_MEMBER_OBJECT(w, "info", system_api_write_info_object(w)) ||
+    JSON_WRITE_MEMBER_OBJECT(w, "status", system_api_write_status_object(w)) ||
+    JSON_WRITE_MEMBER_ARRAY(w, "partitions", system_api_write_partitions_array(w))
   );
 }
 

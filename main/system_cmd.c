@@ -3,6 +3,7 @@
 #include <logging.h>
 #include <system.h>
 
+#include <esp_partition.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
@@ -41,6 +42,53 @@ static int system_memory_cmd(int argc, char **argv, void *ctx)
   printf("IRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.iram_start, (unsigned) image_info.iram_end, image_info.iram_usage);
   printf("IRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.iram_heap_start, (unsigned) image_info.iram_heap_start + image_info.iram_heap_size, image_info.iram_heap_size);
   printf("Flash Image %#08x - %#08x = %8u\n", (unsigned) image_info.flash_start, (unsigned) image_info.flash_end, image_info.flash_usage);
+
+  return 0;
+}
+
+static int system_partitions_cmd(int argc, char **argv, void *ctx)
+{
+  esp_partition_iterator_t it;
+
+  printf("%16s %4s %8s %8s %8s %8s %s\n", "NAME", "TYPE", "SUBTYPE", "START", "END", "SIZE", "FLAGS");
+
+  for (it = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL); it; it = esp_partition_next(it)) {
+    const esp_partition_t *p = esp_partition_get(it);
+    const char *type = esp_partition_type_str(p->type);
+    const char *subtype = esp_partition_subtype_str(p->type, p->subtype);
+
+    if (type && subtype) {
+      printf("%16s %4s %8s %#08x %#08x %#08x %s\n",
+        p->label,
+        type,
+        subtype,
+        p->address,
+        p->address + p->size,
+        p->size,
+        p->encrypted ? "E" : ""
+      );
+    } else if (type) {
+      printf("%16s %4s %#08x %#08x %#08x %#08x %s\n",
+        p->label,
+        type,
+        p->subtype,
+        p->address,
+        p->address + p->size,
+        p->size,
+        p->encrypted ? "E" : ""
+      );
+    } else {
+      printf("%16s %#04x %#08x %#08x %#08x %#08x %s\n",
+        p->label,
+        p->type,
+        p->subtype,
+        p->address,
+        p->address + p->size,
+        p->size,
+        p->encrypted ? "E" : ""
+      );
+    }
+  }
 
   return 0;
 }
@@ -186,11 +234,12 @@ static int system_restart_cmd(int argc, char **argv, void *ctx)
 }
 
 static const struct cmd system_commands[] = {
-  { "info",     system_info_cmd,    .describe = "Print system info" },
-  { "memory",   system_memory_cmd,  .describe = "Print system memory" },
-  { "status",   system_status_cmd,  .describe = "Print system status" },
-  { "tasks",    system_tasks_cmd,   .describe = "Print system tasks" },
-  { "restart",  system_restart_cmd, .describe = "Restart system" },
+  { "info",       system_info_cmd,        .describe = "Print system info" },
+  { "memory",     system_memory_cmd,      .describe = "Print system memory" },
+  { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
+  { "status",     system_status_cmd,      .describe = "Print system status" },
+  { "tasks",      system_tasks_cmd,       .describe = "Print system tasks" },
+  { "restart",    system_restart_cmd,     .describe = "Restart system" },
   {}
 };
 

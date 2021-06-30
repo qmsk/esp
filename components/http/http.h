@@ -7,8 +7,11 @@ struct http {
     /* Stream IO */
     struct stream *read, *write;
 
-    /* Used by FILE io for state */
-    size_t content_length, chunk_size;
+    /* Used by http_file_read */
+    size_t *read_content_length;
+
+    /* Used by http_read_chunked_file */
+    size_t chunk_size;
 };
 
 #endif

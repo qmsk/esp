@@ -199,7 +199,7 @@ int http_response_open (struct http_response *response, FILE **filep)
       return -1;
   }
 
-  // Set Connection: close
+  // TODO: Transfer-Encoding: chunked
   LOG_DEBUG("using connection close");
 
   response->close = true;
@@ -212,7 +212,7 @@ int http_response_open (struct http_response *response, FILE **filep)
     return err;
   }
 
-  return http_file_open(response->http, 0, HTTP_STREAM_WRITE, filep);
+  return http_file_open(response->http, HTTP_STREAM_WRITE, NULL, filep);
 }
 
 int http_response_redirect (struct http_response *response, const char *host, const char *fmt, ...)

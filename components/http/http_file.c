@@ -157,35 +157,33 @@ int http_read_chunked_file (struct http *http, int fd)
 int http_file_read (void *cookie, char *buf, size_t len)
 {
   struct http *http = cookie;
-  size_t size = len;
   int err;
 
   LOG_DEBUG("http=%p len=%u", http, len);
 
-  if ((err = stream_read(http->read, buf, &size)) < 0) {
+  if (http->read_content_length && len > *http->read_content_length) {
+    LOG_DEBUG("limit len -> content_length=%u", *http->read_content_length);
+
+    len = *http->read_content_length;
+  }
+
+  if (len == 0) {
+    // EOF
+    return 0;
+  }
+
+  if ((err = stream_read(http->read, buf, &len)) < 0) {
     return -1;
   } else if (err) {
     // EOF
     return 0;
-  } else {
-    return size;
-  }
-}
-
-/* Limit read to given content_length */
-int http_file_read_content_length (void *cookie, char *buf, size_t len)
-{
-  struct http *http = cookie;
-
-  LOG_DEBUG("http=%p len=%u", http, len);
-
-  if (http->content_length == 0) {
-    return 0; // EOF
-  } else if (len > http->content_length) {
-    len = http->content_length;
   }
 
-  return http_file_read(http, buf, len);
+  if (*http->read_content_length) {
+    *http->read_content_length -= len;
+  }
+
+  return len;
 }
 
 int http_file_write (void *cookie, const char *buf, size_t len)
@@ -206,7 +204,7 @@ int http_file_write (void *cookie, const char *buf, size_t len)
   }
 }
 
-int http_file_open (struct http *http, size_t content_length, int flags, FILE **filep)
+int http_file_open (struct http *http, int flags, size_t *read_content_length, FILE **filep)
 {
   const char *mode;
   cookie_io_functions_t functions = {};
@@ -214,14 +212,8 @@ int http_file_open (struct http *http, size_t content_length, int flags, FILE **
   if (flags & HTTP_STREAM_READ) {
     mode = "r";
 
-    if (flags & HTTP_STREAM_READ_CONTENT_LENGTH) {
-      http->content_length = content_length;
-      functions.read = http_file_read_content_length;
-    } else {
-      // to EOF
-      http->content_length = 0;
-      functions.read = http_file_read;
-    }
+    http->read_content_length = read_content_length;
+    functions.read = http_file_read;
   }
 
   if (flags & HTTP_STREAM_WRITE) {

@@ -7,9 +7,7 @@
 
 enum {
   HTTP_STREAM_READ                = 0x01,
-  HTTP_STREAM_READ_CONTENT_LENGTH = 0x04,
-
-  HTTP_STREAM_WRITE         = 0x10,
+  HTTP_STREAM_WRITE               = 0x02,
 };
 
  /*
@@ -37,12 +35,12 @@ int http_read_chunked_file (struct http *http, int fd);
  * Open an stdio FILE to read/write the HTTP request/response.
  *
  * @param http context
- * @param content_length limit read request length if HTTP_STREAM_READ_CONTENT_LENGTH
- * @param flags HTTP_STREAM_READ/WRITE_EOF/CHUNKED
+ * @param read_content_length limit read request length, update bytes remaining
+ * @param flags HTTP_STREAM_READ/WRITE
  * @param filep returned FILE *
  *
  * @return 0 on success, <0 on error
  */
- int http_file_open (struct http *http, size_t content_length, int flags, FILE **filep);
+ int http_file_open (struct http *http, int flags, size_t *read_content_length, FILE **filep);
 
 #endif

@@ -20,7 +20,7 @@
 
 // max line size
 #define CLI_BUF_SIZE 512
-#define CLI_TASK_STACK 2048 // bytes
+#define CLI_TASK_STACK 4096 // bytes
 #define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static struct cli *cli;

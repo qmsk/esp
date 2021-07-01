@@ -1,7 +1,7 @@
 #ifndef __CLI_H__
 #define __CLI_H__
 
-#include "cmd.h"
+#include <cmd.h>
 
 #include <stddef.h>
 
@@ -13,9 +13,9 @@ struct cli;
 int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size);
 
 /*
- * Evaluate CLI command.
+ * Run the CLI read-eval loop.
  */
-int cli_cmd(struct cli *cli, char *line);
+void cli_main(struct cli *cli);
 
 /*
  * Print help output.

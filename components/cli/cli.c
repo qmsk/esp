@@ -1,26 +1,11 @@
+#include "cli.h"
 #include <cli.h>
-#include <cmd.h>
 #include <logging.h>
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/queue.h>
-
-#define CLI_BUF_SIZE 512
-#define CLI_TASK_STACK 2048 // bytes
-#define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-
-struct cli {
-  xTaskHandle task;
-
-  char *buf;
-  size_t size;
-
-  struct cmdtab cmdtab;
-};
 
 static void cli_print_ctx(const struct cmdctx *ctx)
 {
@@ -128,7 +113,7 @@ static int cli_read(struct cli *cli)
     } else if (c == '\n') {
       *ptr = '\0';
 
-      return cli_cmd(cli, cli->buf);
+      return 0;
     } else {
       // copy
       *ptr++ = c;
@@ -139,15 +124,37 @@ static int cli_read(struct cli *cli)
   return 1;
 }
 
-void cli_main(void *arg)
+static int cli_eval(struct cli *cli)
 {
-  struct cli *cli = arg;
+  const char *line = cli->buf;
+  int err;
 
-  LOG_DEBUG("init cli=%p", cli);
+  if ((err = cmd_eval(&cli->cmdtab, line)) < 0) {
+    LOG_ERROR("cmd_eval %s: %s", line, cmd_strerror(-err));
+  } else if (err) {
+    LOG_ERROR("cmd %s: %d", line, err);
+  }
+
+  return err;
+}
+
+void cli_main(struct cli *cli)
+{
+  int err;
+
+  LOG_DEBUG("cli=%p", cli);
 
   for (;;) {
     // read lines of input, ignore errors
-    cli_read(cli);
+    if ((err = cli_read(cli))) {
+      LOG_WARN("cli_read");
+      return err;
+    }
+
+    // evaluatate
+    if ((err = cli_eval(cli))) {
+      return err;
+    }
   }
 }
 
@@ -174,11 +181,6 @@ int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size)
     .error_handler = cli_cmd_error,
   };
 
-  if ((err = xTaskCreate(&cli_main, "cli", CLI_TASK_STACK, cli, CLI_TASK_PRIORITY, &cli->task)) <= 0) {
-    LOG_ERROR("xTaskCreate: %d", err);
-    return -1;
-  }
-
   *clip = cli;
 
   return 0;
@@ -189,19 +191,6 @@ error:
   }
 
   free(cli);
-
-  return err;
-}
-
-int cli_cmd(struct cli *cli, char *line)
-{
-  int err;
-
-  if ((err = cmd_eval(&cli->cmdtab, line)) < 0) {
-    LOG_ERROR("cmd_eval %s: %s", line, cmd_strerror(-err));
-  } else if (err) {
-    LOG_ERROR("cmd %s: %d", line, err);
-  }
 
   return err;
 }

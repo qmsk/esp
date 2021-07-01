@@ -12,13 +12,19 @@
 #include <logging.h>
 #include <cli.h>
 #include <esp_log.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
 
 #include <stdio.h>
 
 // max line size
-#define CLI_BUF_SIZE 256
+#define CLI_BUF_SIZE 512
+#define CLI_TASK_STACK 2048 // bytes
+#define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static struct cli *cli;
+static xTaskHandle _cli_task;
 
 static int help_cmd(int argc, char **arv, void *ctx)
 {
@@ -54,6 +60,15 @@ static const struct cmd commands[] = {
   { },
 };
 
+void cli_task(void *arg)
+{
+  struct cli *cli = arg;
+
+  for (;;) {
+    cli_main(cli);
+  }
+}
+
 int init_cli()
 {
   // unbuffered input
@@ -65,6 +80,11 @@ int init_cli()
   // interactive CLI on stdin/stdout
   if (cli_init(&cli, commands, CLI_BUF_SIZE)) {
     LOG_ERROR("cli_init");
+    return -1;
+  }
+
+  if (xTaskCreate(&cli_task, "cli", CLI_TASK_STACK, cli, CLI_TASK_PRIORITY, &_cli_task) <= 0) {
+    LOG_ERROR("xTaskCreate cli");
     return -1;
   }
 

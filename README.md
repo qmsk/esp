@@ -14,13 +14,13 @@ Build firmware image:
 
 Flash to correct nodeMCU device:
 
-    TTY_DEV=/dev/ttyUSB? docker-compose run --rm flash
+    ESPPORT=/dev/ttyUSB? docker-compose run --rm flash
 
 # Usage
 
 Connect to the serial console:
 
-    TTY_DEV=/dev/ttyUSB? docker-compose run --rm monitor
+    ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
 
 ## CLI
 

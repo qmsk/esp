@@ -31,6 +31,7 @@ const struct configtab artnet_configtab[] = {
     .bool_type = { .value = &artnet_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "universe",
+    .description = "Set base net/sub/uni address. Should be a multiple of 16.",
     .uint16_type = { .value = &artnet_config.universe },
   },
   {}

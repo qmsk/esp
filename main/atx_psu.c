@@ -39,6 +39,7 @@ const struct configtab atx_psu_configtab[] = {
     .uint16_type = { .value = &atx_psu_config.gpio, .max = ATX_PSU_GPIO_MAX },
   },
   { CONFIG_TYPE_UINT16, "timeout",
+    .description = "Power off ATX PSU after timeout seconds of idle",
     .uint16_type = { .value = &atx_psu_config.timeout },
   },
   {}

@@ -19,18 +19,26 @@
 
 const struct configmod config_modules[] = {
   { "activity_led",
+    .description = "Indicate spi-leds/dmx activity using a blinking LED",
     .table = activity_led_configtab,
   },
   { "atx_psu",
+    .description = (
+      "Control ATX-PSU based on spi-leds output."
+      "The ATX-PSU will be powered on when spi-led outputs are active,"
+      "and powered off into standby mode if all spi-led outputs are idle (zero-valued)."
+    ),
     .table = atx_psu_configtab,
   },
   { "wifi",
+    .description = "WiFi STA mode, connecting to an existing ssid.",
     .table = wifi_configtab,
   },
   { "http",
     .table = http_configtab,
   },
   { "artnet",
+    .description = "Art-Net receiver on UDP port 6454.",
     .table = artnet_configtab,
   },
   { "spi-leds0",
@@ -41,6 +49,11 @@ const struct configmod config_modules[] = {
     .table = spi_leds_configtab1,
   },
   { "dmx",
+    .description = (
+      "DMX output via UART1 -> RS-485 transceiver. "
+      "Because UART1 TX will spew debug messages reset/flash/boot, stable operation requires "
+      "a GPIO pin that is kept low during reset/boot to drive the RS-485 output-enable active-high for transmit. "
+    ),
     .table = dmx_configtab,
   },
   {}

@@ -33,6 +33,9 @@ const struct configtab dmx_configtab[] = {
    * This allows supressing the UART1 bootloader debug output.
    */
   { CONFIG_TYPE_UINT16, "output_enable_gpio",
+    .description = (
+      "GPIO pin will be taken high to enable output once the UART1 TX output is safe."
+    ),
     .uint16_type = { .value = &dmx_config.output_enable_gpio, .max = DMX_OUTUT_ENABLE_GPIO_MAX },
   },
 
@@ -40,6 +43,7 @@ const struct configtab dmx_configtab[] = {
     .bool_type = { .value = &dmx_config.artnet_enabled },
   },
   { CONFIG_TYPE_UINT16, "artnet_universe",
+    .description = "Output from [artnet] universe + 0..16. This should use the matching network/subnet as [artnet] universe.",
     .uint16_type = { .value = &dmx_config.artnet_universe },
   },
   {}

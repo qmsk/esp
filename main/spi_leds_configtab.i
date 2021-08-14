@@ -7,6 +7,7 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .enum_type = { .value = &SPI_LEDS_CONFIG.protocol, .values = spi_leds_protocol_enum },
   },
   { CONFIG_TYPE_ENUM, "rate",
+    .description = "Longer cable runs can be noisier, and may need a slower rate to work reliably.",
     .enum_type = { .value = &SPI_LEDS_CONFIG.spi_clock, .values = spi_leds_rate_enum },
   },
   { CONFIG_TYPE_UINT16, "count",
@@ -14,9 +15,11 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
   },
 
   { CONFIG_TYPE_ENUM, "gpio_mode",
+    .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",
     .enum_type = { .value = &SPI_LEDS_CONFIG.gpio_mode, .values = spi_leds_gpio_mode_enum },
   },
   { CONFIG_TYPE_UINT16, "gpio_pin",
+    .description = "GPIO pin to activate when transmitting on this output",
     .uint16_type = { .value = &SPI_LEDS_CONFIG.gpio_pin, .max = SPI_GPIO_CS_MAX_PIN },
   },
 
@@ -24,9 +27,11 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .bool_type = { .value = &SPI_LEDS_CONFIG.artnet_enabled },
   },
   { CONFIG_TYPE_UINT16, "artnet_universe",
+    .description = "Output from [artnet] universe + 0..16. This should use the matching network/subnet as [artnet] universe.",
     .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_universe },
   },
   { CONFIG_TYPE_ENUM, "artnet_mode",
+    .description = "Art-Net DMX channel mode",
     .enum_type = { .value = &SPI_LEDS_CONFIG.artnet_mode, .values = spi_leds_artnet_mode_enum },
   },
   {}

@@ -21,10 +21,13 @@
 
 int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
 {
+  bool cpol = (mode & SPI_MODE_CPOL_HIGH) ? true : false;
+  bool cpha = (mode & SPI_MODE_CPHA_HIGH) ? true : false;
+
   spi_master->mode = mode;
 
   SPI_DEV.pin.slave_mode = 0;
-  SPI_DEV.pin.ck_idle_edge = (mode & SPI_MODE_CPOL_HIGH) ? 1 : 0;
+  SPI_DEV.pin.ck_idle_edge = cpol ? 1 : 0;
 
   SPI_DEV.ctrl.fread_dual = 0;
   SPI_DEV.ctrl.fread_quad = 0;
@@ -42,7 +45,7 @@ int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
   SPI_DEV.user.cs_hold = 1;
   SPI_DEV.user.cs_setup = 1;
   SPI_DEV.user.ck_i_edge = 1;
-  SPI_DEV.user.ck_out_edge = (mode & SPI_MODE_CPOL_HIGH) == (mode & SPI_MODE_CPHA_HIGH) ? 0 : 1;
+  SPI_DEV.user.ck_out_edge = (cpol == cpha) ? 0 : 1;
   SPI_DEV.user.rd_byte_order = (mode & SPI_MODE_BE_ORDER) ? 1 : 0;
   SPI_DEV.user.wr_byte_order = (mode & SPI_MODE_BE_ORDER) ? 1 : 0;
   SPI_DEV.user.fwrite_dual = 0;

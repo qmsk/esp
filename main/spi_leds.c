@@ -8,7 +8,7 @@
 
 #include <logging.h>
 
-#define SPI_LEDS_MODE (SPI_MODE_0)
+#define SPI_LEDS_MODE (SPI_MODE_0) // varies by protocol
 #define SPI_LEDS_CLOCK (SPI_CLOCK_1MHZ)
 #define SPI_LEDS_PINS (SPI_PINS)
 
@@ -114,6 +114,7 @@ int config_spi_leds(const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
       .protocol = config->protocol,
+      .clock    = config->spi_clock,
       .count    = config->count,
   };
   int err;

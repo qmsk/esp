@@ -22,9 +22,13 @@ int spi_leds_init(struct spi_leds *spi_leds, struct spi_master *spi_master, cons
 
   switch(options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
+      spi_leds->spi_mode = APA102_SPI_MODE;
+
       return apa102_new_packet(&spi_leds->packet.apa102, &spi_leds->packet_size, options.count);
 
     case SPI_LEDS_PROTOCOL_P9813:
+      spi_leds->spi_mode = P9813_SPI_MODE;
+
       return p9813_new_packet(&spi_leds->packet.p9813, &spi_leds->packet_size, options.count);
 
     default:
@@ -141,12 +145,16 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 
 int spi_leds_tx(struct spi_leds *spi_leds)
 {
+  struct spi_write_options options = {
+    .mode   = SPI_MODE_SET | spi_leds->spi_mode,
+    .clock  = spi_leds->options.clock,
+  };
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;
   int ret;
 
   while (len) {
-    if ((ret = spi_master_write(spi_leds->spi_master, buf, len)) < 0) {
+    if ((ret = spi_master_write(spi_leds->spi_master, buf, len, options)) < 0) {
       LOG_ERROR("spi_master_write");
       return ret;
     }

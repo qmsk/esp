@@ -13,12 +13,13 @@ union spi_leds_packet {
 };
 
 struct spi_leds {
+  struct spi_leds_options options;
+
   // spi
   struct spi_master *spi_master;
 
   // protocol
-  struct spi_leds_options options;
-
+  enum spi_mode spi_mode;
   union spi_leds_packet packet;
   size_t packet_size;
 

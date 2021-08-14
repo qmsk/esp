@@ -3,6 +3,7 @@
 #include <spi_leds.h>
 
 #define APA102_STOPBYTE 0xff
+#define APA102_SPI_MODE (SPI_MODE_3)
 
 struct __attribute__((packed)) apa102_frame {
   uint8_t global;

@@ -3,6 +3,7 @@
 #include <spi_leds.h>
 
 #define P9813_STOPBYTE 0x00
+#define P9813_SPI_MODE (SPI_MODE_0)
 
 struct __attribute__((packed)) p9813_frame {
   uint8_t control;

@@ -192,6 +192,7 @@ static int config_api_write_configtab(struct json_writer *w, const struct config
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "name", tab->name) ||
+    (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0) ||
     JSON_WRITE_MEMBER_BOOL(w, "readonly", tab->readonly) ||
     JSON_WRITE_MEMBER_BOOL(w, "secret", tab->secret) ||
     config_api_write_configtab_value_members(w, tab)
@@ -216,6 +217,7 @@ static int config_api_write_configmod(struct json_writer *w, const struct config
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "name", mod->name) ||
+    (mod->description ? JSON_WRITE_MEMBER_STRING(w, "description", mod->description) : 0) ||
     JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod))
   );
 }

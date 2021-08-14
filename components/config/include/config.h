@@ -31,6 +31,7 @@ struct config_enum {
 struct configtab {
   enum config_type type;
   const char *name;
+  const char *description;
 
   bool readonly;
   bool secret;
@@ -61,6 +62,7 @@ struct configtab {
 
 struct configmod {
   const char *name;
+  const char *description;
 
   const struct configtab *table;
 

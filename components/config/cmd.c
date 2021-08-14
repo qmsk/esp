@@ -4,8 +4,18 @@
 #include <logging.h>
 #include <stdio.h>
 
-static int print_configtab(const struct configmod *mod, const struct configtab *tab)
+static void print_comment(const char *description)
 {
+  // TODO: line-wrapping?
+  printf("# %s\n", description);
+}
+
+static void print_configtab(const struct configmod *mod, const struct configtab *tab)
+{
+  if (tab->description) {
+    print_comment(tab->description);
+  }
+
   if (tab->secret) {
     printf("%s = ***\n", tab->name);
   } else {
@@ -13,30 +23,28 @@ static int print_configtab(const struct configmod *mod, const struct configtab *
     config_print(mod, tab, stdout);
     printf("\n");
   }
-
-  return 0;
 }
 
-static int print_configmod(const struct configmod *mod)
+static void print_configmod(const struct configmod *mod)
 {
+  if (mod->description) {
+    print_comment(mod->description);
+  }
+
+  printf("[%s]\n", mod->name);
+
   for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
     print_configtab(mod, tab);
   }
 
-  return 0;
+  printf("\n");
 }
 
-static int print_config(const struct config *config)
+static void print_config(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
-    printf("[%s]\n", mod->name);
-
     print_configmod(mod);
-
-    printf("\n");
   }
-
-  return 0;
 }
 
 int config_cmd_show(int argc, char **argv, void *ctx)

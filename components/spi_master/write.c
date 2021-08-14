@@ -30,6 +30,9 @@ static int spi_master_reconfigure(struct spi_master *spi_master, struct spi_writ
   if (options.mode && (options.mode & SPI_MODE_FLAGS) != spi_master->mode) {
     LOG_DEBUG("set mode=%02x", options.mode);
 
+    // clear CS before changing mode
+    spi_master_gpio_clear(spi_master);
+
     if ((err = spi_master_mode(spi_master, options.mode))) {
       LOG_ERROR("spi_master_mode");
       return err;
@@ -38,6 +41,9 @@ static int spi_master_reconfigure(struct spi_master *spi_master, struct spi_writ
 
   if (options.clock && options.clock != spi_master->clock) {
     LOG_DEBUG("set clock=%d", options.clock);
+
+    // clear CS before changing clock
+    spi_master_gpio_clear(spi_master);
 
     if ((err = spi_master_clock(spi_master, options.clock))) {
       LOG_ERROR("spi_master_clock");
@@ -73,7 +79,7 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
     goto error;
   }
 
-  // seutp CS outputs
+  // setup CS outputs
   spi_master_gpio_set(spi_master, options.gpio);
 
   // usr command structure: mosi only

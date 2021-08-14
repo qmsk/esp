@@ -24,7 +24,7 @@ int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
   bool cpol = (mode & SPI_MODE_CPOL_HIGH) ? true : false;
   bool cpha = (mode & SPI_MODE_CPHA_HIGH) ? true : false;
 
-  spi_master->mode = mode;
+  spi_master->mode = (mode & SPI_MODE_FLAGS);
 
   SPI_DEV.pin.slave_mode = 0;
   SPI_DEV.pin.ck_idle_edge = cpol ? 1 : 0;
@@ -56,6 +56,7 @@ int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
   SPI_DEV.user.usr_miso_highpart = 0;
 
   SPI_DEV.slave.slave_mode = 0;
+  SPI_DEV.slave.sync_reset = 1;
 
   return 0;
 }

@@ -4,6 +4,8 @@
 #include <driver/gpio.h>
 #include <stdbool.h>
 
+#define STATUS_LED_GPIO_MAX GPIO_NUM_16
+
 struct status_led_options {
   gpio_num_t gpio;
 

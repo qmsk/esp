@@ -121,7 +121,8 @@ static int config_api_write_configtab_uint16_members(struct json_writer *w, cons
 {
   return (
     JSON_WRITE_MEMBER_STRING(w, "type", "uint16") ||
-    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_UINT(w, "uint16", *tab->uint16_type.value))
+    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_UINT(w, "uint16", *tab->uint16_type.value)) ||
+    (tab->uint16_type.max ? JSON_WRITE_MEMBER_UINT(w, "max", tab->uint16_type.max) : 0)
   );
 }
 

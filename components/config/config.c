@@ -106,6 +106,8 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
         return -1;
       } else if (uvalue > UINT16_MAX) {
         return -1;
+      } else if (tab->uint16_type.max && uvalue > tab->uint16_type.max) {
+        return -1;
       } else {
         *tab->uint16_type.value = (uint16_t) uvalue;
         break;

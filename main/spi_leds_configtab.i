@@ -17,8 +17,7 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .enum_type = { .value = &SPI_LEDS_CONFIG.gpio_mode, .values = spi_leds_gpio_mode_enum },
   },
   { CONFIG_TYPE_UINT16, "gpio_pin",
-    // TODO: max value
-    .uint16_type = { .value = &SPI_LEDS_CONFIG.gpio_pin },
+    .uint16_type = { .value = &SPI_LEDS_CONFIG.gpio_pin, .max = SPI_GPIO_CS_MAX_PIN },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",

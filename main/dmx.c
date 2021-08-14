@@ -8,6 +8,8 @@
 #include <logging.h>
 #include <uart1.h>
 
+#define DMX_OUTUT_ENABLE_GPIO_MAX GPIO_NUM_16
+
 static const size_t DMX_TX_BUFFER_SIZE = 1 + 512; // fit one complete DMX frame
 static const unsigned DMX_BREAK_US = 92, DMX_MARK_US = 12;
 
@@ -31,7 +33,7 @@ const struct configtab dmx_configtab[] = {
    * This allows supressing the UART1 bootloader debug output.
    */
   { CONFIG_TYPE_UINT16, "output_enable_gpio",
-    .uint16_type = { .value = &dmx_config.output_enable_gpio },
+    .uint16_type = { .value = &dmx_config.output_enable_gpio, .max = DMX_OUTUT_ENABLE_GPIO_MAX },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",

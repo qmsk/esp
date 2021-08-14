@@ -18,7 +18,7 @@ const struct configtab activity_led_configtab[] = {
     .bool_type = { .value = &activity_led_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "gpio",
-    .uint16_type = { .value = &activity_led_config.gpio },
+    .uint16_type = { .value = &activity_led_config.gpio, .max = STATUS_LED_GPIO_MAX },
   },
   { CONFIG_TYPE_BOOL, "inverted",
     .bool_type = { .value = &activity_led_config.inverted },

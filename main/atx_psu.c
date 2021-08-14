@@ -7,6 +7,8 @@
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
 
+#define ATX_PSU_GPIO_MAX GPIO_NUM_16
+
 #define ATX_PSU_BIT(bit) (1 << bit)
 #define ATX_PSU_BITS() ((1 << ATX_PSU_BIT_COUNT) - 1)
 #define ATX_PSU_TIMEOUT 10 // s
@@ -34,7 +36,7 @@ const struct configtab atx_psu_configtab[] = {
     .bool_type = { .value = &atx_psu_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "gpio",
-    .uint16_type = { .value = &atx_psu_config.gpio },
+    .uint16_type = { .value = &atx_psu_config.gpio, .max = ATX_PSU_GPIO_MAX },
   },
   { CONFIG_TYPE_UINT16, "timeout",
     .uint16_type = { .value = &atx_psu_config.timeout },

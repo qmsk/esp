@@ -51,6 +51,9 @@ enum spi_pins {
   SPI_PINS        = SPI_PINS_CLK | SPI_PINS_MOSI | SPI_PINS_MISO | SPI_PINS_CS,
 };
 
+// GPIO16 is not supported
+#define SPI_GPIO_CS_MAX_PIN 15
+
 enum spi_gpio {
   SPI_GPIO0_CS    = 1 << 0,
   SPI_GPIO1_CS    = 1 << 1,

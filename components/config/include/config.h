@@ -38,6 +38,9 @@ struct configtab {
   union {
     struct {
       uint16_t *value;
+
+      /* inclusive, default 0 -> unlimited */
+      uint16_t max;
     } uint16_type;
 
     struct {

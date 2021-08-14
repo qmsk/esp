@@ -14,6 +14,7 @@ enum spi_leds_protocol {
 struct spi_leds_options {
   enum spi_leds_protocol protocol;
   enum spi_clock clock;
+  enum spi_gpio gpio;
   unsigned count;
 };
 

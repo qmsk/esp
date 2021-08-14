@@ -10,7 +10,8 @@
 
 #define SPI_LEDS_MODE (SPI_MODE_0) // varies by protocol
 #define SPI_LEDS_CLOCK (SPI_CLOCK_1MHZ)
-#define SPI_LEDS_PINS (SPI_PINS)
+#define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
+#define SPI_LEDS_GPIO_OFF (-1)
 
 struct spi_leds_config {
   bool enabled;
@@ -18,14 +19,20 @@ struct spi_leds_config {
   int spi_clock;
   uint16_t count;
 
+  int gpio_mode;
+  uint16_t gpio_pin;
+
   bool artnet_enabled;
   uint16_t artnet_universe;
   int artnet_mode;
 };
 
 struct spi_leds_config spi_leds_config = {
-  .spi_clock   = SPI_LEDS_CLOCK,
   .protocol    = SPI_LEDS_PROTOCOL_APA102,
+  .spi_clock   = SPI_LEDS_CLOCK,
+
+  .gpio_mode   = SPI_LEDS_GPIO_OFF,
+
   .artnet_mode = SPI_LEDS_BGR,
 };
 
@@ -51,6 +58,13 @@ const struct config_enum spi_leds_rate_enum[] = {
   {}
 };
 
+const struct config_enum spi_leds_gpio_mode_enum[] = {
+  { "OFF",  SPI_LEDS_GPIO_OFF         },
+  { "HIGH", SPI_GPIO_CS_ACTIVE_HIGH   },
+  { "LOW",  SPI_GPIO_CS_ACTIVE_LOW    },
+  {}
+};
+
 const struct config_enum spi_leds_artnet_mode_enum[] = {
   { "RGB", SPI_LEDS_RGB  },
   { "BGR", SPI_LEDS_BGR  },
@@ -73,6 +87,16 @@ const struct configtab spi_leds_configtab[] = {
   { CONFIG_TYPE_UINT16, "count",
     .value  = { .uint16 = &spi_leds_config.count },
   },
+
+  { CONFIG_TYPE_ENUM, "gpio_mode",
+    .enum_values = spi_leds_gpio_mode_enum,
+    .value       = { .enum_value = &spi_leds_config.gpio_mode },
+  },
+  { CONFIG_TYPE_UINT16, "gpio_pin",
+    // TODO: max value
+    .value  = { .uint16 = &spi_leds_config.gpio_pin },
+  },
+
   { CONFIG_TYPE_BOOL, "artnet_enabled",
     .value  = { .boolean = &spi_leds_config.artnet_enabled },
   },
@@ -100,7 +124,11 @@ int config_spi_master(const struct spi_leds_config *config)
   };
   int err;
 
-  LOG_INFO("mode=%02x clock=%u pins=%02x", options.mode, options.clock, options.pins);
+  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && spi_gpio_from_pin(config->gpio_pin)) {
+    options.gpio = spi_gpio_from_pin(config->gpio_pin) | (config->gpio_mode);
+  }
+
+  LOG_INFO("mode=%02x clock=%u pins=%02x gpio=%04x", options.mode, options.clock, options.pins, options.gpio);
 
   if ((err = spi_master_new(&spi_master, options))) {
     LOG_ERROR("spi_master_new");
@@ -119,7 +147,11 @@ int config_spi_leds(const struct spi_leds_config *config)
   };
   int err;
 
-  LOG_INFO("protocol=%u count=%u", options.protocol, options.count);
+  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && spi_gpio_from_pin(config->gpio_pin)) {
+    options.gpio = spi_gpio_from_pin(config->gpio_pin) | (config->gpio_mode);
+  }
+
+  LOG_INFO("protocol=%u clock=%u gpio=%04x count=%u", options.protocol, options.clock, options.gpio, options.count);
 
   if ((err = spi_leds_new(&spi_leds, spi_master, options))) {
     LOG_ERROR("spi_leds_new");

@@ -148,6 +148,7 @@ int spi_leds_tx(struct spi_leds *spi_leds)
   struct spi_write_options options = {
     .mode   = SPI_MODE_SET | spi_leds->spi_mode,
     .clock  = spi_leds->options.clock,
+    .gpio   = spi_leds->options.gpio,
   };
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;

@@ -5,18 +5,6 @@
 
 #define SPI_BYTES_MAX 64
 
-/*
- * Wait for in-progress transfer to complete.
- */
-static inline void spi_master_wait(struct spi_master *spi_master)
-{
-  LOG_DEBUG("spi_master=%p: usr=%d", spi_master, SPI_DEV.cmd.usr);
-
-  while (SPI_DEV.cmd.usr) {
-    ;
-  }
-}
-
 static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data, unsigned bits)
 {
   LOG_DEBUG("spi_master=%p data=%p bits=%u", spi_master, data, bits);
@@ -62,7 +50,7 @@ static int spi_master_reconfigure(struct spi_master *spi_master, struct spi_writ
 
 int spi_master_write(struct spi_master *spi_master, void *data, size_t len, struct spi_write_options options)
 {
-  int err;
+  int ret;
 
   LOG_DEBUG("spi_master=%p data=%p len=%u", spi_master, data, len);
 
@@ -70,11 +58,19 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
     len = SPI_BYTES_MAX;
   }
 
-  spi_master_wait(spi_master);
+  if (!xSemaphoreTake(spi_master->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
 
-  if ((err = spi_master_reconfigure(spi_master, options))) {
+  if ((ret = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
+    LOG_ERROR("spi_master_interrupt_wait_trans");
+    goto error;
+  }
+
+  if ((ret = spi_master_reconfigure(spi_master, options))) {
     LOG_ERROR("spi_master_reconfigure");
-    return err;
+    goto error;
   }
 
   // usr command structure: mosi only
@@ -88,6 +84,13 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
   spi_master_mosi(spi_master, data, len * 8);
 
   spi_master_start(spi_master);
+
+  ret = len;
+
+error:
+  if (!xSemaphoreGive(spi_master->mutex)) {
+    LOG_WARN("xSemaphoreGive");
+  }
 
   return len;
 }

@@ -118,6 +118,10 @@ int spi_master_init(struct spi_master *spi_master, const struct spi_options opti
 {
   int err;
 
+  if (!(spi_master->mutex = xSemaphoreCreateMutex())) {
+    LOG_ERROR("xSemaphoreCreateMutex");
+  }
+
   if ((err = spi_master_mode(spi_master, options.mode))) {
     LOG_ERROR("spi_master_mode");
     return err;

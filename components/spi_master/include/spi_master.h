@@ -51,12 +51,39 @@ enum spi_pins {
   SPI_PINS        = SPI_PINS_CLK | SPI_PINS_MOSI | SPI_PINS_MISO | SPI_PINS_CS,
 };
 
+enum spi_gpio {
+  SPI_GPIO0_CS    = 1 << 0,
+  SPI_GPIO1_CS    = 1 << 1,
+  SPI_GPIO2_CS    = 1 << 2,
+  SPI_GPIO3_CS    = 1 << 3,
+  SPI_GPIO4_CS    = 1 << 4,
+  SPI_GPIO5_CS    = 1 << 5,
+  SPI_GPIO6_CS    = 1 << 6,
+  SPI_GPIO7_CS    = 1 << 7,
+  SPI_GPIO8_CS    = 1 << 8,
+  SPI_GPIO9_CS    = 1 << 9,
+  SPI_GPIO10_CS   = 1 << 10,
+  SPI_GPIO11_CS   = 1 << 11,
+  SPI_GPIO12_CS   = 1 << 12,
+  SPI_GPIO13_CS   = 1 << 13,
+  SPI_GPIO14_CS   = 1 << 14,
+  SPI_GPIO15_CS   = 1 << 15,
+
+  SPI_GPIO_CS_MASK   = 0xffff,
+
+  SPI_GPIO_CS_ACTIVE_HIGH  = 0x10000,
+  SPI_GPIO_CS_ACTIVE_LOW   = 0x00000,
+};
+
 struct spi_options {
   enum spi_mode mode;
   enum spi_clock clock;
 
   /* Should be set to SPI_PINS by default, to enable all pins */
   enum spi_pins pins;
+
+  /* bitmask of GPIO pins to use for chip-select */
+  enum spi_gpio gpio;
 };
 
 struct spi_write_options {
@@ -65,7 +92,13 @@ struct spi_write_options {
 
   /* ignored if 0 */
   enum spi_clock clock;
+
+  /* bitmask of GPIO pins to use for chip-select */
+  enum spi_gpio gpio;
 };
+
+/* Return spi_gpio bitmask for numbered pin, or 0 if invalid */
+enum spi_gpio spi_gpio_from_pin(unsigned pin);
 
 struct spi_master;
 

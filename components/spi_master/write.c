@@ -73,6 +73,9 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
     goto error;
   }
 
+  // seutp CS outputs
+  spi_master_gpio_set(spi_master, options.gpio);
+
   // usr command structure: mosi only
   SPI_DEV.user.usr_command = 0;
   SPI_DEV.user.usr_addr = 0;

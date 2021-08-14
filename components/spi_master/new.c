@@ -14,6 +14,11 @@ int spi_master_new(struct spi_master **spi_masterp, const struct spi_options opt
     return -1;
   }
 
+  if ((err = spi_master_gpio_init(spi_master, options.gpio))) {
+    LOG_ERROR("spi_master_gpio_init");
+    goto error;
+  }
+
   if ((err = spi_master_init(spi_master, options))) {
     LOG_ERROR("spi_master_init");
     goto error;

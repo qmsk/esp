@@ -8,7 +8,6 @@
 #include <logging.h>
 
 #define SPI_LEDS_MODE (SPI_MODE_0) // varies by protocol
-#define SPI_LEDS_CLOCK (SPI_CLOCK_1MHZ)
 #define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
 
 struct spi_master *spi_master;

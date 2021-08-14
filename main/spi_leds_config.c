@@ -3,11 +3,13 @@
 struct spi_leds_config spi_leds_configs[SPI_LEDS_COUNT] = {
   [0] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
+    .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
     .artnet_mode = SPI_LEDS_BGR,
   },
   [1] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
+    .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
     .artnet_mode = SPI_LEDS_BGR,
   },

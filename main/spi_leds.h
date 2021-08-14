@@ -11,6 +11,7 @@
 #include <freertos/queue.h>
 
 #define SPI_LEDS_GPIO_OFF (-1)
+#define SPI_LEDS_CLOCK (SPI_CLOCK_1MHZ)
 
 enum spi_leds_artnet_mode {
   SPI_LEDS_RGB,

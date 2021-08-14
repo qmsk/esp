@@ -16,7 +16,7 @@
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
               <input v-if="tab.type == 'uint16'" type="number"
                 :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="tab.value.uint16" min="0" max="65536"
+                :value="tab.value.uint16" min="0" :max="tab.max ? tab.max : 65536"
                 :readonly="tab.readonly">
               <input v-if="tab.type == 'string' && !tab.secret" type="text"
                 :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"

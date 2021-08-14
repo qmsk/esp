@@ -26,9 +26,17 @@ enum spi_clock {
   SPI_CLOCK_20MHZ       = 4,
   SPI_CLOCK_10MHZ       = 8,
   SPI_CLOCK_8MHZ        = 10,
+  SPI_CLOCK_5MHZ        = 16,
   SPI_CLOCK_4MHZ        = 20,
   SPI_CLOCK_2MHZ        = 40,
   SPI_CLOCK_1MHZ        = 80,
+  SPI_CLOCK_500KHZ      = 160,
+  SPI_CLOCK_200KHZ      = 400,
+  SPI_CLOCK_100KHZ      = 800,
+  SPI_CLOCK_50KHZ       = 1600,
+  SPI_CLOCK_20KHZ       = 4000,
+  SPI_CLOCK_10KHZ       = 8000,
+  SPI_CLOCK_1KHZ        = 80000,
 };
 
 enum spi_pins {

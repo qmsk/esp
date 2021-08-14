@@ -57,17 +57,27 @@ static int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
 
 static int spi_master_clock(struct spi_master *spi_master, enum spi_clock clock)
 {
+  int div, cnt;
+
   if (clock == 1) {
     SET_PERI_REG_MASK(PERIPHS_IO_MUX_CONF_U, SPI_CLK_EQU_SYS_CLK);
   } else {
     CLEAR_PERI_REG_MASK(PERIPHS_IO_MUX_CONF_U, SPI_CLK_EQU_SYS_CLK);
   }
 
+  if (clock > 40) {
+    div = (clock / 40);
+    cnt = (clock / div);
+  } else {
+    div = 1;
+    cnt = clock;
+  }
+
   SPI_DEV.clock.clk_equ_sysclk = (clock == 1) ? 1 : 0;
-  SPI_DEV.clock.clkdiv_pre = (clock >> 6);
-  SPI_DEV.clock.clkcnt_n = (clock & 0x3f) - 1;
-  SPI_DEV.clock.clkcnt_h = (clock & 0x3f) / 2 - 1;
-  SPI_DEV.clock.clkcnt_l = (clock & 0x3f) - 1;
+  SPI_DEV.clock.clkdiv_pre = div - 1;
+  SPI_DEV.clock.clkcnt_n = cnt - 1;
+  SPI_DEV.clock.clkcnt_h = cnt / 2 - 1;
+  SPI_DEV.clock.clkcnt_l = cnt - 1;
 
   return 0;
 }

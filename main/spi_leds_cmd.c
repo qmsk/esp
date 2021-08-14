@@ -3,27 +3,28 @@
 #include <logging.h>
 #include <spi_leds.h>
 
-extern struct spi_leds *spi_leds;
-
 int spi_leds_cmd_clear(int argc, char **argv, void *ctx)
 {
+  struct spi_led_color spi_led_color = { }; // off
   int err;
 
-  if (!spi_leds) {
-    LOG_WARN("disabled");
-    return 1;
-  }
+  for (int i = 0; i < SPI_LEDS_COUNT; i++) {
+    const struct spi_leds_config *config = &spi_leds_configs[i];
+    struct spi_leds_state *state = &spi_leds_states[i];
 
-  struct spi_led_color spi_led_color = { }; // off
+    if (!config->enabled || !state->spi_leds) {
+      continue;
+    }
 
-  if ((err = spi_leds_set_all(spi_leds, spi_led_color))) {
-    LOG_ERROR("spi_leds_set_all");
-    return err;
-  }
+    if ((err = spi_leds_set_all(state->spi_leds, spi_led_color))) {
+      LOG_ERROR("spi_leds_set_all");
+      return err;
+    }
 
-  if ((err = update_spi_leds())) {
-    LOG_ERROR("update_spi_leds");
-    return err;
+    if ((err = update_spi_leds(state))) {
+      LOG_ERROR("update_spi_leds");
+      return err;
+    }
   }
 
   return 0;
@@ -33,11 +34,6 @@ int spi_leds_cmd_all(int argc, char **argv, void *ctx)
 {
   int rgb, a = 0xff;
   int err;
-
-  if (!spi_leds) {
-    LOG_WARN("disabled");
-    return 1;
-  }
 
   if ((err = cmd_arg_int(argc, argv, 1, &rgb)))
     return err;
@@ -52,14 +48,23 @@ int spi_leds_cmd_all(int argc, char **argv, void *ctx)
     .parameters.brightness = a,
   };
 
-  if ((err = spi_leds_set_all(spi_leds, spi_led_color))) {
-    LOG_ERROR("spi_leds_set_all");
-    return err;
-  }
+  for (int i = 0; i < SPI_LEDS_COUNT; i++) {
+    const struct spi_leds_config *config = &spi_leds_configs[i];
+    struct spi_leds_state *state = &spi_leds_states[i];
 
-  if ((err = update_spi_leds())) {
-    LOG_ERROR("update_spi_leds");
-    return err;
+    if (!config->enabled || !state->spi_leds) {
+      continue;
+    }
+
+    if ((err = spi_leds_set_all(state->spi_leds, spi_led_color))) {
+      LOG_ERROR("spi_leds_set_all");
+      return err;
+    }
+
+    if ((err = update_spi_leds(state))) {
+      LOG_ERROR("update_spi_leds");
+      return err;
+    }
   }
 
   return 0;
@@ -67,20 +72,17 @@ int spi_leds_cmd_all(int argc, char **argv, void *ctx)
 
 int spi_leds_cmd_set(int argc, char **argv, void *ctx)
 {
-  unsigned index;
+  unsigned output, index;
   int rgb, a = 0xff;
   int err;
 
-  if (!spi_leds) {
-    LOG_WARN("disabled");
-    return 1;
-  }
-
-  if ((err = cmd_arg_uint(argc, argv, 1, &index)))
+  if ((err = cmd_arg_uint(argc, argv, 1, &output)))
     return err;
-  if ((err = cmd_arg_int(argc, argv, 2, &rgb)))
+  if ((err = cmd_arg_uint(argc, argv, 2, &index)))
     return err;
-  if ((argc > 3) && (err = cmd_arg_int(argc, argv, 3, &a)))
+  if ((err = cmd_arg_int(argc, argv, 3, &rgb)))
+    return err;
+  if ((argc > 4) && (err = cmd_arg_int(argc, argv, 4, &a)))
     return err;
 
   struct spi_led_color spi_led_color = {
@@ -91,12 +93,25 @@ int spi_leds_cmd_set(int argc, char **argv, void *ctx)
     .parameters.brightness = a,
   };
 
-  if ((err = spi_leds_set(spi_leds, index, spi_led_color))) {
+  if (output >= SPI_LEDS_COUNT) {
+    LOG_ERROR("output=%u does not exist", output);
+    return CMD_ERR_ARGV;
+  }
+
+  const struct spi_leds_config *config = &spi_leds_configs[output];
+  struct spi_leds_state *state = &spi_leds_states[output];
+
+  if (!config->enabled || !state->spi_leds) {
+    LOG_WARN("output=%u is not enabled", output);
+    return 0;
+  }
+
+  if ((err = spi_leds_set(state->spi_leds, index, spi_led_color))) {
     LOG_ERROR("spi_leds_set");
     return err;
   }
 
-  if ((err = update_spi_leds())) {
+  if ((err = update_spi_leds(state))) {
     LOG_ERROR("update_spi_leds");
     return err;
   }
@@ -105,9 +120,9 @@ int spi_leds_cmd_set(int argc, char **argv, void *ctx)
 }
 
 const struct cmd spi_leds_commands[] = {
-  { "clear",  spi_leds_cmd_clear, .usage = "",               .describe = "Clear values" },
-  { "all",    spi_leds_cmd_all,   .usage = "RGB [A]",        .describe = "Set all pixels to values" },
-  { "set",    spi_leds_cmd_set,   .usage = "INDEX RGB [A]",  .describe = "Set one pixel to value" },
+  { "clear",  spi_leds_cmd_clear, .usage = "",               .describe = "Clear all output values" },
+  { "all",    spi_leds_cmd_all,   .usage = "RGB [A]",        .describe = "Set all output pixels to value" },
+  { "set",    spi_leds_cmd_set,   .usage = "OUTPUT INDEX RGB [A]",  .describe = "Set one output pixel to value" },
   { }
 };
 

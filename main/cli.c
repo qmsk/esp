@@ -1,6 +1,6 @@
 #include "cli.h"
 
-#include "spi_leds.h"
+#include "spi_leds_cmd.h"
 #include "config.h"
 #include "dmx.h"
 #include "spiffs.h"

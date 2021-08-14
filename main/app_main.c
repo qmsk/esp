@@ -7,7 +7,7 @@
 #include "http.h"
 #include "user_led.h"
 #include "uart.h"
-#include "spi_leds.h"
+#include "spi_leds_init.h"
 #include "wifi.h"
 
 #include <logging.h>

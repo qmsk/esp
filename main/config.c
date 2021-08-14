@@ -5,7 +5,7 @@
 #include "atx_psu.h"
 #include "dmx.h"
 #include "http.h"
-#include "spi_leds.h"
+#include "spi_leds_config.h"
 #include "spiffs.h"
 #include "wifi.h"
 
@@ -33,8 +33,12 @@ const struct configmod config_modules[] = {
   { "artnet",
     .table = artnet_configtab,
   },
-  { "spi_leds",
-    .table = spi_leds_configtab,
+  { "spi-leds0",
+    .table = spi_leds_configtab0,
+    .alias = "spi_leds",
+  },
+  { "spi-leds1",
+    .table = spi_leds_configtab1,
   },
   { "dmx",
     .table = dmx_configtab,

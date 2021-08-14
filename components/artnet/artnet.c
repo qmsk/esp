@@ -11,6 +11,10 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
 
+  if (options.universe & 0xF) {
+    LOG_WARN("address has universe bits set: %04x", options.universe);
+  }
+
   artnet->options = options;
 
   if ((err = artnet_listen(&artnet->socket, options.port))) {

@@ -10,8 +10,7 @@ int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue)
   }
 
   if ((addr & 0xFFF0) != artnet->options.universe) {
-    LOG_ERROR("port address=%u mismatch with artnet.universe=%u", addr, artnet->options.universe);
-    return -1;
+    LOG_WARN("port address=%04x mismatch with artnet.universe=%04x", addr, artnet->options.universe);
   }
 
   LOG_INFO("port=%u addr=%u", artnet->output_count, addr);

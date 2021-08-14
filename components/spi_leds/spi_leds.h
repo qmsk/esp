@@ -14,11 +14,10 @@ union spi_leds_packet {
 
 struct spi_leds {
   // spi
-  spi_host_t spi_host;
+  struct spi_master *spi_master;
 
   // protocol
-  enum spi_leds_protocol protocol;
-  unsigned count;
+  struct spi_leds_options options;
 
   union spi_leds_packet packet;
   size_t packet_size;
@@ -27,4 +26,4 @@ struct spi_leds {
   bool active;
 };
 
-int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *options);
+int spi_leds_init(struct spi_leds *spi_leds, struct spi_master *spi_master, const struct spi_leds_options options);

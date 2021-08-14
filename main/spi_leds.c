@@ -3,12 +3,13 @@
 #include "activity_led.h"
 #include "atx_psu.h"
 
+#include <spi_master.h>
 #include <spi_leds.h>
 
 #include <logging.h>
 
-#define SPI_LEDS_SPI_HOST HSPI_HOST
-#define SPI_LEDS_SPI_CLK_DIV SPI_2MHz_DIV
+#define SPI_MODE (SPI_MODE_0)
+#define SPI_CLOCK (SPI_CLOCK_2MHZ)
 
 struct spi_leds_config {
   bool enabled;
@@ -20,8 +21,6 @@ struct spi_leds_config {
   int artnet_mode;
 };
 
-struct spi_leds *spi_leds;
-bool spi_leds_activated;
 struct spi_leds_config spi_leds_config = {
   .protocol    = SPI_LEDS_PROTOCOL_APA102,
   .artnet_mode = SPI_LEDS_BGR,
@@ -63,18 +62,37 @@ const struct configtab spi_leds_configtab[] = {
   {}
 };
 
+struct spi_master *spi_master;
+struct spi_leds *spi_leds;
+
+bool spi_leds_activated;
+
+int config_spi_master(const struct spi_leds_config *config)
+{
+  struct spi_options options = {
+      .mode   = SPI_MODE,
+      .clock  = SPI_CLOCK,
+      .pins   = SPI_PINS,
+  };
+  int err;
+
+  if ((err = spi_master_new(&spi_master, options))) {
+    LOG_ERROR("spi_master_new");
+    return err;
+  }
+
+  return 0;
+}
+
 int config_spi_leds(const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
-      .spi_host = SPI_LEDS_SPI_HOST,
-      .spi_clk_div = SPI_LEDS_SPI_CLK_DIV,
-
       .protocol = config->protocol,
       .count    = config->count,
   };
   int err;
 
-  if ((err = spi_leds_new(&spi_leds, &options))) {
+  if ((err = spi_leds_new(&spi_leds, spi_master, options))) {
     LOG_ERROR("spi_leds_new");
     return err;
   }
@@ -96,6 +114,11 @@ int init_spi_leds()
   if (!spi_leds_config.enabled) {
     LOG_INFO("disabled");
     return 0;
+  }
+
+  if ((err = config_spi_master(&spi_leds_config))) {
+    LOG_ERROR("config_spi_master");
+    return err;
   }
 
   if ((err = config_spi_leds(&spi_leds_config))) {

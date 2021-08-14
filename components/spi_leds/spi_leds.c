@@ -9,62 +9,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SPI_LEDS_SPI_CPOL 0
-#define SPI_LEDS_SPI_CPHA 0
-#define SPI_LEDS_SPI_BIT_ORDER 0
-#define SPI_LEDS_SPI_BYTE_ORDER 0
-
-// 512 bits = 64 bytes
-#define SPI_TRANS_SIZE 64
-
 static inline bool spi_led_color_active (struct spi_led_color color)
 {
   return (color.r) || (color.g) || (color.b);
 }
 
-int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *options)
+int spi_leds_init(struct spi_leds *spi_leds, struct spi_master *spi_master, const struct spi_leds_options options)
 {
-  spi_config_t spi_config = {
-    .interface.cpol = SPI_LEDS_SPI_CPOL,
-    .interface.cpha = SPI_LEDS_SPI_CPHA,
-    .interface.bit_tx_order = SPI_LEDS_SPI_BIT_ORDER,
-    .interface.bit_rx_order = SPI_LEDS_SPI_BIT_ORDER,
-    .interface.byte_tx_order = SPI_LEDS_SPI_BYTE_ORDER,
-    .interface.byte_rx_order = SPI_LEDS_SPI_BYTE_ORDER,
-    .interface.mosi_en = 1,
-    .interface.miso_en = 0,
-    .interface.cs_en = 0,
-
-    .mode = SPI_MASTER_MODE,
-
-    .clk_div = options->spi_clk_div,
-  };
-  esp_err_t err;
-
-  if ((err = spi_init(options->spi_host, &spi_config))) {
-    LOG_ERROR("spi_init: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  spi_leds->spi_host = options->spi_host;
-  spi_leds->protocol = options->protocol;
-  spi_leds->count = options->count;
+  spi_leds->spi_master = spi_master;
+  spi_leds->options = options;
   spi_leds->active = 0;
 
-  switch(options->protocol) {
+  switch(options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      return apa102_new_packet(&spi_leds->packet.apa102, &spi_leds->packet_size, options->count);
+      return apa102_new_packet(&spi_leds->packet.apa102, &spi_leds->packet_size, options.count);
 
     case SPI_LEDS_PROTOCOL_P9813:
-      return p9813_new_packet(&spi_leds->packet.p9813, &spi_leds->packet_size, options->count);
+      return p9813_new_packet(&spi_leds->packet.p9813, &spi_leds->packet_size, options.count);
 
     default:
-      LOG_ERROR("unknown protocol=%#x", options->protocol);
+      LOG_ERROR("unknown protocol=%#x", options.protocol);
       return -1;
   }
 }
 
-int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options)
+int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, const struct spi_leds_options options)
 {
   struct spi_leds *spi_leds;
   int err;
@@ -74,7 +43,7 @@ int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *opt
     return -1;
   }
 
-  if ((err = spi_leds_init(spi_leds, options))) {
+  if ((err = spi_leds_init(spi_leds, spi_master, options))) {
     LOG_ERROR("spi_leds_init");
     free(spi_leds);
     return -1;
@@ -87,7 +56,7 @@ int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *opt
 
 unsigned spi_leds_count(struct spi_leds *spi_leds)
 {
-  return spi_leds->count;
+  return spi_leds->options.count;
 }
 
 unsigned spi_leds_active(struct spi_leds *spi_leds)
@@ -95,17 +64,17 @@ unsigned spi_leds_active(struct spi_leds *spi_leds)
   unsigned active = 0;
 
   if (spi_leds->active) {
-    switch(spi_leds->protocol) {
+    switch(spi_leds->options.protocol) {
       case SPI_LEDS_PROTOCOL_APA102:
-        active = apa102_count_active(spi_leds->packet.apa102, spi_leds->count);
+        active = apa102_count_active(spi_leds->packet.apa102, spi_leds->options.count);
         break;
 
       case SPI_LEDS_PROTOCOL_P9813:
-        active = p9813_count_active(spi_leds->packet.p9813, spi_leds->count);
+        active = p9813_count_active(spi_leds->packet.p9813, spi_leds->options.count);
         break;
 
       default:
-        LOG_ERROR("unknown protocol=%#x", spi_leds->protocol);
+        LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
         abort();
     }
 
@@ -121,8 +90,8 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, color.parameters.parameter, color.r, color.g, color.b);
 
-  if (index >= spi_leds->count) {
-    LOG_WARN("index %u >= count %u", index, spi_leds->count);
+  if (index >= spi_leds->options.count) {
+    LOG_WARN("index %u >= count %u", index, spi_leds->options.count);
     return -1;
   }
 
@@ -130,7 +99,7 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
     spi_leds->active = true;
   }
 
-  switch(spi_leds->protocol) {
+  switch(spi_leds->options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
       apa102_set_frame(spi_leds->packet.apa102, index, color);
       return 0;
@@ -140,14 +109,14 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
       return 0;
 
     default:
-      LOG_ERROR("unknown protocol=%#x", spi_leds->protocol);
+      LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
       return -1;
   }
 }
 
 int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 {
-  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", spi_leds->count, color.parameters.parameter, color.r, color.g, color.b);
+  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", spi_leds->options.count, color.parameters.parameter, color.r, color.g, color.b);
 
   if (spi_led_color_active(color)) {
     spi_leds->active = true;
@@ -155,17 +124,17 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
     spi_leds->active = 0;
   }
 
-  switch(spi_leds->protocol) {
+  switch(spi_leds->options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      apa102_set_frames(spi_leds->packet.apa102, spi_leds->count, color);
+      apa102_set_frames(spi_leds->packet.apa102, spi_leds->options.count, color);
       return 0;
 
     case SPI_LEDS_PROTOCOL_P9813:
-      p9813_set_frames(spi_leds->packet.p9813, spi_leds->count, color);
+      p9813_set_frames(spi_leds->packet.p9813, spi_leds->options.count, color);
       return 0;
 
     default:
-      LOG_ERROR("unknown protocol=%#x", spi_leds->protocol);
+      LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
       return -1;
   }
 }
@@ -174,25 +143,16 @@ int spi_leds_tx(struct spi_leds *spi_leds)
 {
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;
-  esp_err_t err;
+  int ret;
 
   while (len) {
-    // esp8266 SPI transmits up to 512-bit/16-byte blocks
-    unsigned trans_size = len > SPI_TRANS_SIZE ? SPI_TRANS_SIZE : len;
-
-    // buf, len and size must always be 32-bit aligned
-    spi_trans_t trans = {
-      .mosi = (uint32_t *) buf,
-      .bits.mosi = trans_size * 8,
-    };
-
-    if ((err = spi_trans(spi_leds->spi_host, &trans))) {
-      LOG_ERROR("spi_trans: %s", esp_err_to_name(err));
-      return -1;
+    if ((ret = spi_master_write(spi_leds->spi_master, buf, len)) < 0) {
+      LOG_ERROR("spi_master_write");
+      return ret;
     }
 
-    buf += trans_size;
-    len -= trans_size;
+    buf += ret;
+    len -= ret;
   }
 
   return 0;

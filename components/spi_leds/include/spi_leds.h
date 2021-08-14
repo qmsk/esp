@@ -1,7 +1,8 @@
 #ifndef __SPI_LEDS_H__
 #define __SPI_LEDS_H__
 
-#include <driver/spi.h>
+#include <spi_master.h>
+#include <stdint.h>
 
 struct spi_leds;
 
@@ -11,9 +12,6 @@ enum spi_leds_protocol {
 };
 
 struct spi_leds_options {
-  spi_host_t spi_host;
-  spi_clk_div_t spi_clk_div;
-
   enum spi_leds_protocol protocol;
   unsigned count;
 };
@@ -28,7 +26,7 @@ struct spi_led_color {
 };
 
 
-int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options);
+int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, const struct spi_leds_options options);
 
 /* Get LED count */
 unsigned spi_leds_count(struct spi_leds *spi_leds);

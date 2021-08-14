@@ -19,8 +19,10 @@
 #define SPI_PERIPHS_IO_MUX_CS (PERIPHS_IO_MUX_MTDO_U)
 #define SPI_FUNC_CS (FUNC_HSPI_CS0)
 
-static int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
+int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
 {
+  spi_master->mode = mode;
+
   SPI_DEV.pin.slave_mode = 0;
   SPI_DEV.pin.ck_idle_edge = (mode & SPI_MODE_CPOL_HIGH) ? 1 : 0;
 
@@ -55,9 +57,11 @@ static int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
   return 0;
 }
 
-static int spi_master_clock(struct spi_master *spi_master, enum spi_clock clock)
+int spi_master_clock(struct spi_master *spi_master, enum spi_clock clock)
 {
   int div, cnt;
+
+  spi_master->clock = clock;
 
   if (clock == 1) {
     SET_PERI_REG_MASK(PERIPHS_IO_MUX_CONF_U, SPI_CLK_EQU_SYS_CLK);
@@ -82,7 +86,7 @@ static int spi_master_clock(struct spi_master *spi_master, enum spi_clock clock)
   return 0;
 }
 
-static int spi_master_pins(struct spi_master *spi_master, enum spi_pins pins)
+int spi_master_pins(struct spi_master *spi_master, enum spi_pins pins)
 {
   if (pins & SPI_PINS_CLK) {
     PIN_PULLUP_EN(SPI_PERIPHS_IO_MUX_CLK);

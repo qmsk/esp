@@ -14,6 +14,9 @@ enum spi_mode {
   SPI_MODE_LE_ORDER    = 0x00,
   SPI_MODE_BE_ORDER    = 0x08,
 
+  SPI_MODE_FLAGS       = 0x0ff,
+  SPI_MODE_SET         = 0x100,
+
   SPI_MODE_0           = SPI_MODE_CPOL_LOW | SPI_MODE_CPHA_LOW,
   SPI_MODE_1           = SPI_MODE_CPOL_LOW | SPI_MODE_CPHA_HIGH,
   SPI_MODE_2           = SPI_MODE_CPOL_HIGH | SPI_MODE_CPHA_HIGH,
@@ -56,6 +59,14 @@ struct spi_options {
   enum spi_pins pins;
 };
 
+struct spi_write_options {
+  /* ignored if 0, use SPI_MODE_SET to override SPI_MODE_0 */
+  enum spi_mode mode;
+
+  /* ignored if 0 */
+  enum spi_clock clock;
+};
+
 struct spi_master;
 
 /*
@@ -66,12 +77,14 @@ int spi_master_new(struct spi_master **spi_masterp, const struct spi_options opt
 /*
  * Send up to 64 bytes of data out via SPI MOSI.
  *
+ * The spi master is reconfigured to use given options, if given and different from previous configuration.
+ *
  * Does not wait for transfer to complete when returning. When called, waits for any in-progress transfer to complete.
  *
  * The data MUST be uint32_t (4-byte) aligned.
  *
  * Returns bytes written, or <0 on error.
  */
-int spi_master_write(struct spi_master *spi_master, void *data, size_t len);
+int spi_master_write(struct spi_master *spi_master, void *data, size_t len, struct spi_write_options options);
 
 #endif

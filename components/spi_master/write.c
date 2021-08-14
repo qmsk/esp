@@ -35,8 +35,35 @@ static inline void spi_master_start(struct spi_master *spi_master)
   SPI_DEV.cmd.usr = 1;
 }
 
-int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
+static int spi_master_reconfigure(struct spi_master *spi_master, struct spi_write_options options)
 {
+  int err = 0;
+
+  if (options.mode && (options.mode & SPI_MODE_FLAGS) != spi_master->mode) {
+    LOG_DEBUG("set mode=%02x", options.mode);
+
+    if ((err = spi_master_mode(spi_master, options.mode))) {
+      LOG_ERROR("spi_master_mode");
+      return err;
+    }
+  }
+
+  if (options.clock && options.clock != spi_master->clock) {
+    LOG_DEBUG("set clock=%d", options.clock);
+
+    if ((err = spi_master_clock(spi_master, options.clock))) {
+      LOG_ERROR("spi_master_clock");
+      return err;
+    }
+  }
+
+  return err;
+}
+
+int spi_master_write(struct spi_master *spi_master, void *data, size_t len, struct spi_write_options options)
+{
+  int err;
+
   LOG_DEBUG("spi_master=%p data=%p len=%u", spi_master, data, len);
 
   if (len > SPI_BYTES_MAX) {
@@ -45,6 +72,12 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 
   spi_master_wait(spi_master);
 
+  if ((err = spi_master_reconfigure(spi_master, options))) {
+    LOG_ERROR("spi_master_reconfigure");
+    return err;
+  }
+
+  // usr command structure: mosi only
   SPI_DEV.user.usr_command = 0;
   SPI_DEV.user.usr_addr = 0;
   SPI_DEV.user.usr_dummy = 0;

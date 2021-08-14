@@ -28,17 +28,24 @@ form fieldset legend {
   font-weight: bold;
 }
 
+form fieldset p.module-description {
+  grid-column: 1 / 4;
+  font-style: italic;
+  font-size: small;
+}
+
+/* TODO: stretch background, vertically align content? */
 form fieldset label {
   grid-column: 1 / 2;
-  align-self: center;
 }
 
-form fieldset input {
+form fieldset div {
   grid-column: 2 / 3;
 }
 
-form fieldset select {
-  grid-column: 2 / 3;
+form fieldset p.description {
+  font-style: italic;
+  font-size: small;
 }
 
 form fieldset progress.input {

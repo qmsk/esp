@@ -11,36 +11,40 @@
         <form action="/api/config" method="post">
           <fieldset v-for="mod in config.modules" :key="mod.name">
             <legend>{{ mod.name }}</legend>
+            <p class="module-description" v-if="mod.description">{{ mod.description }}</p>
 
             <template v-for="tab in mod.table">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
-              <input v-if="tab.type == 'uint16'" type="number"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="tab.value.uint16" min="0" :max="tab.max ? tab.max : 65536"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'string' && !tab.secret" type="text"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="tab.value.string"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'string' && tab.secret" type="password"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="tab.value.string"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'bool'" type="hidden"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="false"
-                >
-              <input v-if="tab.type == 'bool'" type="checkbox"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :value="true" :checked=tab.value.bool
-                :readonly="tab.readonly">
+              <div>
+                <input v-if="tab.type == 'uint16'" type="number"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :value="tab.value.uint16" min="0" :max="tab.max ? tab.max : 65536"
+                  :readonly="tab.readonly">
+                <input v-if="tab.type == 'string' && !tab.secret" type="text"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :value="tab.value.string"
+                  :readonly="tab.readonly">
+                <input v-if="tab.type == 'string' && tab.secret" type="password"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :value="tab.value.string"
+                  :readonly="tab.readonly">
+                <input v-if="tab.type == 'bool'" type="hidden"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :value="false"
+                  >
+                <input v-if="tab.type == 'bool'" type="checkbox"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :value="true" :checked=tab.value.bool
+                  :readonly="tab.readonly">
 
-              <select v-if="tab.type == 'enum'"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
-                :disabled="tab.readonly">
-                <option v-for="value in tab.enum_values" :value="value">{{ value }}</option>
-              </select>
+                <select v-if="tab.type == 'enum'"
+                  :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)"
+                  :disabled="tab.readonly">
+                  <option v-for="value in tab.enum_values" :value="value">{{ value }}</option>
+                </select>
 
+                <p class="description" v-if="tab.description">{{ tab.description }}</p>
+              </div>
             </template>
           </fieldset>
 

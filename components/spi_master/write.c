@@ -10,6 +10,8 @@
  */
 static inline void spi_master_wait(struct spi_master *spi_master)
 {
+  LOG_DEBUG("spi_master=%p: usr=%d", spi_master, SPI_DEV.cmd.usr);
+
   while (SPI_DEV.cmd.usr) {
     ;
   }
@@ -17,7 +19,9 @@ static inline void spi_master_wait(struct spi_master *spi_master)
 
 static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data, unsigned bits)
 {
-  SPI_DEV.user1.usr_mosi_bitlen = bits;
+  LOG_DEBUG("spi_master=%p data=%p bits=%u", spi_master, data, bits);
+
+  SPI_DEV.user1.usr_mosi_bitlen = bits - 1;
 
   for (unsigned i = 0; i < bits / 32 && i < 16; i++) {
     SPI_DEV.data_buf[i] = data[i];
@@ -26,11 +30,15 @@ static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data
 
 static inline void spi_master_start(struct spi_master *spi_master)
 {
+  LOG_DEBUG("spi_master=%p", spi_master);
+
   SPI_DEV.cmd.usr = 1;
 }
 
 int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 {
+  LOG_DEBUG("spi_master=%p data=%p len=%u", spi_master, data, len);
+
   if (len > SPI_BYTES_MAX) {
     len = SPI_BYTES_MAX;
   }

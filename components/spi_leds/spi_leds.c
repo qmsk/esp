@@ -151,6 +151,8 @@ int spi_leds_tx(struct spi_leds *spi_leds)
       return ret;
     }
 
+    LOG_DEBUG("write %p @ %u -> %d", buf, len, ret);
+
     buf += ret;
     len -= ret;
   }

@@ -32,17 +32,28 @@ struct configtab {
   enum config_type type;
   const char *name;
 
-  size_t size;
-  const struct config_enum *enum_values;
   bool readonly;
   bool secret;
 
   union {
-    uint16_t *uint16;
-    char *string;
-    bool *boolean;
-    int *enum_value;
-  } value;
+    struct {
+      uint16_t *value;
+    } uint16_type;
+
+    struct {
+      char *value;
+      size_t size;
+    } string_type;
+
+    struct {
+      bool *value;
+    } bool_type;
+
+    struct {
+      int *value;
+      const struct config_enum *values;
+    } enum_type;
+  };
 };
 
 struct configmod {

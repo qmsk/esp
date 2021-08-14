@@ -74,12 +74,12 @@ int config_set_enum(const struct configmod *mod, const struct configtab *tab, co
 {
   const struct config_enum *e;
 
-  if (config_enum_lookup(tab->enum_values, value, &e)) {
+  if (config_enum_lookup(tab->enum_type.values, value, &e)) {
     LOG_WARN("%s.%s: unknown value: %s", mod->name, tab->name, value);
     return -1;
   }
 
-  *tab->value.enum_value = e->value;
+  *tab->enum_type.value = e->value;
 
   return 0;
 }
@@ -95,7 +95,7 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
 
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
-      if (snprintf(tab->value.string, tab->size, "%s", value) >= tab->size) {
+      if (snprintf(tab->string_type.value, tab->string_type.size, "%s", value) >= tab->string_type.size) {
         return -1;
       } else {
         break;
@@ -107,15 +107,15 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
       } else if (uvalue > UINT16_MAX) {
         return -1;
       } else {
-        *tab->value.uint16 = (uint16_t) uvalue;
+        *tab->uint16_type.value = (uint16_t) uvalue;
         break;
       }
 
     case CONFIG_TYPE_BOOL:
       if (strcmp(value, "true") == 0) {
-        *tab->value.boolean = true;
+        *tab->bool_type.value = true;
       } else if (strcmp(value, "false") == 0) {
-        *tab->value.boolean = false;
+        *tab->bool_type.value = false;
       } else {
         return -1;
       }
@@ -136,8 +136,8 @@ int config_get_enum(const struct configmod *mod, const struct configtab *tab, ch
 {
   const struct config_enum *e;
 
-  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
-    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->value.enum_value);
+  if (config_enum_find_by_value(tab->enum_type.values, *tab->enum_type.value, &e)) {
+    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->enum_type.value);
     return -1;
   }
 
@@ -155,21 +155,21 @@ int config_get(const struct configmod *mod, const struct configtab *tab, char *b
       break;
 
     case CONFIG_TYPE_STRING:
-      if (snprintf(buf, size, "%s", tab->value.string) >= size) {
+      if (snprintf(buf, size, "%s", tab->string_type.value) >= size) {
         return -1;
       } else {
         break;
       }
 
     case CONFIG_TYPE_UINT16:
-      if (snprintf(buf, size, "%u", *tab->value.uint16) >= size) {
+      if (snprintf(buf, size, "%u", *tab->uint16_type.value) >= size) {
         return -1;
       } else {
         break;
       }
 
     case CONFIG_TYPE_BOOL:
-      if (snprintf(buf, size, "%s", *tab->value.boolean ? "true" : "false") >= size) {
+      if (snprintf(buf, size, "%s", *tab->bool_type.value ? "true" : "false") >= size) {
         return -1;
       } else {
         break;
@@ -189,12 +189,12 @@ static int config_print_enum(const struct configmod *mod, const struct configtab
 {
   const struct config_enum *e;
 
-  if (config_enum_find_by_value(tab->enum_values, *tab->value.enum_value, &e)) {
-    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->value.enum_value);
+  if (config_enum_find_by_value(tab->enum_type.values, *tab->enum_type.value, &e)) {
+    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, *tab->enum_type.value);
     return -1;
   }
 
-  LOG_DEBUG("%s.%s: value=%#x enum=%s", mod->name, tab->name, *tab->value.enum_value, e->name);
+  LOG_DEBUG("%s.%s: value=%#x enum=%s", mod->name, tab->name, *tab->enum_type.value, e->name);
 
   if (fprintf(file, "%s", e->name) < 0) {
     return -1;
@@ -212,19 +212,19 @@ int config_print(const struct configmod *mod, const struct configtab *tab, FILE 
     break;
 
   case CONFIG_TYPE_UINT16:
-    if (fprintf(file, "%u", *tab->value.uint16) < 0) {
+    if (fprintf(file, "%u", *tab->uint16_type.value) < 0) {
       return -1;
     }
     break;
 
   case CONFIG_TYPE_STRING:
-    if (fprintf(file, "%s", tab->value.string) < 0) {
+    if (fprintf(file, "%s", tab->string_type.value) < 0) {
       return -1;
     }
     break;
 
   case CONFIG_TYPE_BOOL:
-    if (fprintf(file, "%s", *tab->value.boolean ? "true" : "false") < 0) {
+    if (fprintf(file, "%s", *tab->bool_type.value ? "true" : "false") < 0) {
       return -1;
     }
     break;

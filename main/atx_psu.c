@@ -31,13 +31,13 @@ struct atx_psu_config atx_psu_config = {
 
 const struct configtab atx_psu_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .value  = { .boolean = &atx_psu_config.enabled },
+    .bool_type = { .value = &atx_psu_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "gpio",
-    .value  = { .uint16 = &atx_psu_config.gpio },
+    .uint16_type = { .value = &atx_psu_config.gpio },
   },
   { CONFIG_TYPE_UINT16, "timeout",
-    .value  = { .uint16 = &atx_psu_config.timeout },
+    .uint16_type = { .value = &atx_psu_config.timeout },
   },
   {}
 };

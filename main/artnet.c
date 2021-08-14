@@ -28,11 +28,10 @@ struct artnet *artnet;
 
 const struct configtab artnet_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .value  = { .boolean = &artnet_config.enabled },
+    .bool_type = { .value = &artnet_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "universe",
-    .size   = sizeof(artnet_config.universe),
-    .value  = { .uint16 = &artnet_config.universe },
+    .uint16_type = { .value = &artnet_config.universe },
   },
   {}
 };

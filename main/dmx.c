@@ -24,21 +24,21 @@ struct dmx_config {
 
 const struct configtab dmx_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .value  = { .boolean = &dmx_config.enabled },
+    .bool_type = { .value = &dmx_config.enabled },
   },
   /*
    * This should be a GPIO pin that's active low on boot, and used to drive the RS-485 transceiver's driver/output enable pin.
    * This allows supressing the UART1 bootloader debug output.
    */
   { CONFIG_TYPE_UINT16, "output_enable_gpio",
-    .value  = { .uint16 = &dmx_config.output_enable_gpio },
+    .uint16_type = { .value = &dmx_config.output_enable_gpio },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",
-    .value  = { .boolean = &dmx_config.artnet_enabled },
+    .bool_type = { .value = &dmx_config.artnet_enabled },
   },
   { CONFIG_TYPE_UINT16, "artnet_universe",
-    .value  = { .uint16 = &dmx_config.artnet_universe },
+    .uint16_type = { .value = &dmx_config.artnet_universe },
   },
   {}
 };

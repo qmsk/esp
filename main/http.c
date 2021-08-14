@@ -45,23 +45,20 @@ struct http_config {
 
 const struct configtab http_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .value  = { .boolean = &http_config.enabled },
+    .bool_type = { .value = &http_config.enabled },
   },
   { CONFIG_TYPE_STRING, "host",
-    .size   = sizeof(http_config.host),
-    .value  = { .string = http_config.host },
+    .string_type = { .value = http_config.host, .size = sizeof(http_config.host) },
   },
   { CONFIG_TYPE_UINT16, "port",
-    .value  = { .uint16 = &http_config.port },
+    .uint16_type = { .value = &http_config.port },
   },
   { CONFIG_TYPE_STRING, "username",
-    .size   = sizeof(http_config.username),
-    .value  = { .string = http_config.username },
+    .string_type = { .value = http_config.username, .size = sizeof(http_config.username) },
   },
   { CONFIG_TYPE_STRING, "password",
-    .size   = sizeof(http_config.password),
+    .string_type = { .value = http_config.password, .size = sizeof(http_config.password) },
     .secret = true,
-    .value  = { .string = http_config.password },
   },
   {}
 };

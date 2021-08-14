@@ -15,13 +15,13 @@ struct activity_led_config activity_led_config = {
 
 const struct configtab activity_led_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .value  = { .boolean = &activity_led_config.enabled },
+    .bool_type = { .value = &activity_led_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "gpio",
-    .value  = { .uint16 = &activity_led_config.gpio },
+    .uint16_type = { .value = &activity_led_config.gpio },
   },
   { CONFIG_TYPE_BOOL, "inverted",
-    .value  = { .boolean = &activity_led_config.inverted },
+    .bool_type = { .value = &activity_led_config.inverted },
   },
   {}
 };

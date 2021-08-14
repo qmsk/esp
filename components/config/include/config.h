@@ -49,6 +49,9 @@ struct configmod {
   const char *name;
 
   const struct configtab *table;
+
+  /* Migrate from old name */
+  const char *alias;
 };
 
 struct config {

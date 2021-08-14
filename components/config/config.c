@@ -34,6 +34,13 @@ int configmod_lookup(const struct configmod *mod, const char *name, const struct
       *modp = mod;
       return 0;
     }
+
+    if (mod->alias && strcmp(mod->alias, name) == 0) {
+      LOG_WARN("using deprecated %s alias -> %s", name, mod->name);
+
+      *modp = mod;
+      return 0;
+    }
   }
 
   return 1;

@@ -28,10 +28,10 @@ form fieldset legend {
   font-weight: bold;
 }
 
-form fieldset p.module-description {
+form fieldset div.module-description {
   grid-column: 1 / 4;
-  font-style: italic;
-  font-size: small;
+
+  margin: 0em 1em;
 }
 
 /* TODO: stretch background, vertically align content? */
@@ -41,11 +41,6 @@ form fieldset label {
 
 form fieldset div {
   grid-column: 2 / 3;
-}
-
-form fieldset p.description {
-  font-style: italic;
-  font-size: small;
 }
 
 form fieldset progress.input {
@@ -62,6 +57,11 @@ form fieldset button {
 }
 
 /* general styles */
+form p {
+  font-style: italic;
+  font-size: small;
+}
+
 form label {
   margin-left: 1em;
   padding: 0.5em;

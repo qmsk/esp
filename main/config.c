@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "activity_led.h"
+#include "alert_led.h"
 #include "artnet.h"
 #include "atx_psu.h"
 #include "dmx.h"
@@ -21,6 +22,10 @@ const struct configmod config_modules[] = {
   { "activity_led",
     .description = "Indicate spi-leds/dmx activity using a blinking LED.",
     .table = activity_led_configtab,
+  },
+  { "alert_led",
+    .description = "Indicate errors using a blinking LED.",
+    .table = alert_led_configtab,
   },
   { "atx_psu",
     .description = (

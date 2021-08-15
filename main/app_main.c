@@ -1,4 +1,5 @@
 #include "activity_led.h"
+#include "alert_led.h"
 #include "artnet.h"
 #include "atx_psu.h"
 #include "cli.h"
@@ -45,6 +46,11 @@ void app_main()
 
   if (init_activity_led()) {
     LOG_ERROR("init_activity_led");
+    abort();
+  }
+
+  if (init_alert_led()) {
+    LOG_ERROR("init_alert_led");
     abort();
   }
 

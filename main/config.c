@@ -19,22 +19,28 @@
 
 const struct configmod config_modules[] = {
   { "activity_led",
-    .description = "Indicate spi-leds/dmx activity using a blinking LED",
+    .description = "Indicate spi-leds/dmx activity using a blinking LED.",
     .table = activity_led_configtab,
   },
   { "atx_psu",
     .description = (
       "Control ATX-PSU based on spi-leds output."
+      "\n"
       "The ATX-PSU will be powered on when spi-led outputs are active,"
-      "and powered off into standby mode if all spi-led outputs are idle (zero-valued)."
+      " and powered off into standby mode if all spi-led outputs are idle (zero-valued)."
     ),
     .table = atx_psu_configtab,
   },
   { "wifi",
-    .description = "WiFi STA mode, connecting to an existing ssid.",
+    .description = (
+      "WiFi station mode, connecting to an SSID with optional PSK."
+      "\n"
+      "Uses DHCP for IPv4 addressing."
+    ),
     .table = wifi_configtab,
   },
   { "http",
+    .description = "HTTP API + Web frontend with optional HTTP basic authentication.",
     .table = http_configtab,
   },
   { "artnet",
@@ -42,17 +48,30 @@ const struct configmod config_modules[] = {
     .table = artnet_configtab,
   },
   { "spi-leds0",
+    .description = (
+      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
+      "\n"
+      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
+      " an external driver chip with active-high/low output-enable GPIO lines."
+    ),
     .table = spi_leds_configtab0,
     .alias = "spi_leds",
   },
   { "spi-leds1",
+    .description = (
+      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
+      "\n"
+      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
+      " an external driver chip with active-high/low output-enable GPIO lines."
+    ),
     .table = spi_leds_configtab1,
   },
   { "dmx",
     .description = (
-      "DMX output via UART1 -> RS-485 transceiver. "
-      "Because UART1 TX will spew debug messages reset/flash/boot, stable operation requires "
-      "a GPIO pin that is kept low during reset/boot to drive the RS-485 output-enable active-high for transmit. "
+      "DMX output via UART1 -> RS-485 transceiver."
+      "\n"
+      "Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using"
+      " a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable."
     ),
     .table = dmx_configtab,
   },

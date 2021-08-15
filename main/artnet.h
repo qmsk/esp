@@ -9,6 +9,9 @@ extern const struct configtab artnet_configtab[];
 
 int init_artnet();
 
-int add_artnet_output(uint16_t addr, xQueueHandle queue);
+/*
+ * universe: 0-15 combined with net/subnet
+ */
+int add_artnet_output(uint16_t universe, xQueueHandle queue);
 
 int start_artnet();

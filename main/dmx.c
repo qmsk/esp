@@ -2,6 +2,7 @@
 #include "dmx_protocol.h"
 
 #include "activity_led.h"
+#include <artnet.h>
 
 #include <driver/gpio.h>
 #include <esp_err.h>
@@ -43,8 +44,8 @@ const struct configtab dmx_configtab[] = {
     .bool_type = { .value = &dmx_config.artnet_enabled },
   },
   { CONFIG_TYPE_UINT16, "artnet_universe",
-    .description = "Output from [artnet] universe + 0..16. This should use the matching network/subnet as [artnet] universe.",
-    .uint16_type = { .value = &dmx_config.artnet_universe },
+    .description = "Output from universe (0-15) within [artnet] net/subnet.",
+    .uint16_type = { .value = &dmx_config.artnet_universe, .max = ARTNET_UNIVERSE_MAX },
   },
   {}
 };

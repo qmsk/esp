@@ -2,35 +2,36 @@
 
 #include <logging.h>
 
-int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue)
+int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queue)
 {
   if (artnet->output_count >= ARTNET_OUTPUTS) {
     LOG_ERROR("too many outputs");
     return -1;
   }
 
-  if ((addr & 0xFFF0) != artnet->options.universe) {
-    LOG_WARN("port address=%04x mismatch with artnet.universe=%04x", addr, artnet->options.universe);
+  if ((address & 0xFFF0) != artnet->options.address) {
+    LOG_ERROR("port address=%04x mismatch with artnet.universe=%04x", address, artnet->options.address);
+    return -1;
   }
 
-  LOG_INFO("port=%u addr=%u", artnet->output_count, addr);
+  LOG_INFO("port=%u address=%04x", artnet->output_count, address);
 
   artnet->output_ports[artnet->output_count] = (struct artnet_output){
-    .addr  = addr,
-    .type  = ARTNET_PORT_TYPE_DMX,
-    .queue = queue,
+    .address  = address,
+    .type     = ARTNET_PORT_TYPE_DMX,
+    .queue    = queue,
   };
   artnet->output_count++;
 
   return 0;
 }
 
-int artnet_find_output(struct artnet *artnet, uint16_t addr, struct artnet_output **outputp)
+int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp)
 {
   for (unsigned port = 0; port < artnet->output_count; port++) {
     struct artnet_output *output = &artnet->output_ports[port];
 
-    if (output->addr == addr) {
+    if (output->address == address) {
       *outputp = output;
       return 0;
     }
@@ -46,7 +47,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
     output->seq = 0;
 
   } else if (seq <= output->seq && output->seq - seq < 128) {
-    LOG_WARN("skip addr=%d seq=%d < %d", output->addr, seq, output->seq);
+    LOG_WARN("skip address=%04x seq=%d < %d", output->address, seq, output->seq);
     return 0;
 
   } else {
@@ -55,7 +56,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
   }
 
   if (!xQueueOverwrite(output->queue, dmx)) {
-    LOG_WARN("addr=%u seq=%d xQueueOverwrite", output->addr, seq);
+    LOG_WARN("address=%04x seq=%d xQueueOverwrite", output->address, seq);
   }
 
   return 0;

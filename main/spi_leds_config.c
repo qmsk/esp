@@ -1,5 +1,7 @@
 #include "spi_leds.h"
 
+#include <artnet.h>
+
 struct spi_leds_config spi_leds_configs[SPI_LEDS_COUNT] = {
   [0] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,

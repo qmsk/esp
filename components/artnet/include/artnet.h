@@ -7,6 +7,10 @@
 #define ARTNET_PORT 6454
 #define ARTNET_DMX_SIZE 512
 
+#define ARTNET_NET_MAX 127
+#define ARTNET_SUBNET_MAX 15
+#define ARTNET_UNIVERSE_MAX 15
+
 struct artnet;
 
 struct artnet_options {
@@ -14,7 +18,7 @@ struct artnet_options {
   uint16_t port;
 
   // all output ports must be within the same sub-net (lower 4 bits)
-  uint16_t universe;
+  uint16_t address;
 
   // only used for poll reply, not listen()
   uint8_t ip_address[4];
@@ -27,6 +31,11 @@ struct artnet_dmx {
   uint16_t len;
   uint8_t data[ARTNET_DMX_SIZE];
 };
+
+/*
+ * Pack artnet address from net + subnet + uni.
+ */
+uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
 
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 

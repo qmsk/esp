@@ -14,15 +14,13 @@ static const wifi_interface_t artnet_wifi_interface = ESP_IF_WIFI_STA;
 
 static const char artnet_product[] = "https://github.com/SpComb/esp-projects";
 
-#define ARTNET_CONFIG_UNIVERSE 0
-
 struct artnet_config {
   bool enabled;
-  uint16_t universe;
+  uint16_t net, subnet;
 };
 
 struct artnet_config artnet_config = {
-  .universe = ARTNET_CONFIG_UNIVERSE,
+
 };
 struct artnet *artnet;
 
@@ -30,14 +28,18 @@ const struct configtab artnet_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &artnet_config.enabled },
   },
-  { CONFIG_TYPE_UINT16, "universe",
-    .description = "Set base net/sub/uni address. Should be a multiple of 16.",
-    .uint16_type = { .value = &artnet_config.universe },
+  { CONFIG_TYPE_UINT16, "net",
+    .description = "Set network address, 0-127.",
+    .uint16_type = { .value = &artnet_config.net, .max = ARTNET_NET_MAX },
+  },
+  { CONFIG_TYPE_UINT16, "subnet",
+    .description = "Set sub-net address, 0-16.",
+    .uint16_type = { .value = &artnet_config.subnet, .max = ARTNET_SUBNET_MAX },
   },
   {}
 };
 
-static int init_artnet_options(struct artnet_options *options)
+static int init_artnet_options(struct artnet_options *options, const struct artnet_config *config)
 {
   const char *hostname;
   tcpip_adapter_ip_info_t ip_info;
@@ -60,7 +62,7 @@ static int init_artnet_options(struct artnet_options *options)
   }
 
   options->port = ARTNET_PORT;
-  options->universe = artnet_config.universe;
+  options->address = artnet_address(config->net, config->subnet, 0);
 
   options->ip_address[0] = ip4_addr1(&ip_info.ip);
   options->ip_address[1] = ip4_addr2(&ip_info.ip);
@@ -90,9 +92,7 @@ int init_artnet()
     return 0;
   }
 
-  LOG_INFO("enabled: universe=%u", artnet_config.universe);
-
-  if ((err = init_artnet_options(&options))) {
+  if ((err = init_artnet_options(&options, &artnet_config))) {
     LOG_ERROR("init_artnet_options");
     return err;
   }
@@ -105,10 +105,14 @@ int init_artnet()
   return 0;
 }
 
-int add_artnet_output(uint16_t addr, xQueueHandle queue)
+int add_artnet_output(uint16_t universe, xQueueHandle queue)
 {
+  const struct artnet_config *config = &artnet_config;
+
+  uint16_t address = artnet_address(config->net, config->subnet, universe);
+
   if (artnet) {
-    return artnet_add_output(artnet, addr, queue);
+    return artnet_add_output(artnet, address, queue);
   } else {
     return 0;
   }

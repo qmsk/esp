@@ -45,8 +45,8 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   memcpy(reply->ip_address, artnet->options.ip_address, 4);
 
   reply->port_number = artnet_pack_u16lh(artnet->options.port);
-  reply->net_switch = (artnet->options.universe & 0x7F00) >> 8;
-  reply->sub_switch = (artnet->options.universe & 0x00F0) >> 0;
+  reply->net_switch = (artnet->options.address & 0x7F00) >> 8;
+  reply->sub_switch = (artnet->options.address & 0x00F0) >> 0;
 
   strncpy((char *) reply->short_name, artnet->options.short_name, sizeof(reply->short_name) - 1);
   strncpy((char *) reply->long_name, artnet->options.long_name, sizeof(reply->long_name) - 1);
@@ -56,9 +56,14 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   for (int port = 0; port < artnet->output_count; port++) {
     struct artnet_output *output = &artnet->output_ports[port];
 
+    if ((output->address & 0x7F00) != artnet->options.address) {
+      LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->address, artnet->options.address);
+      continue;
+    }
+
     reply->port_types[port] = output->type | ARTNET_PORT_TYPE_OUTPUT;
     reply->good_output[port] = ARTNET_OUTPUT_TRANSMITTING;
-    reply->sw_out[port] = output->addr & 0x0F;
+    reply->sw_out[port] = (output->address & 0x000F);
   }
 
   memcpy(reply->mac, artnet->options.mac_address, 6);
@@ -101,11 +106,6 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   uint8_t phy = dmx_headers->physical;
   uint8_t seq = dmx_headers->sequence;
   uint16_t dmx_len = artnet_unpack_u16hl(dmx_headers->length);
-
-  if ((addr & 0xFFF0) != artnet->options.universe) {
-    LOG_DEBUG("unknown universe addr=%u", addr);
-    return 0;
-  }
 
   if (recv->len < sizeof(*dmx_headers) + dmx_len) {
     LOG_WARN("short packet payload");

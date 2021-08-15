@@ -7,12 +7,20 @@
 #define ARTNET_TASK_STACK 1024
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
+uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
+{
+  return ((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0) | (uni & 0x000F);
+}
+
 int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
 
-  if (options.universe & 0xF) {
-    LOG_WARN("address has universe bits set: %04x", options.universe);
+  LOG_INFO("port=%u address=%04x", options.port, options.address);
+
+  if (options.address & 0xF) {
+    LOG_ERROR("address=%04X has universe bits set", options.address);
+    return -1;
   }
 
   artnet->options = options;
@@ -22,7 +30,6 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
     return err;
   }
 
-  LOG_INFO("port=%u universe=%u", options.port, options.universe);
 
   return 0;
 }

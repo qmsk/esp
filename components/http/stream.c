@@ -359,7 +359,7 @@ int stream_read (struct stream *stream, char *buf, size_t *sizep)
   return 0;
 }
 
-int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep)
+int stream_peek (struct stream *stream, char **bufp, size_t *sizep)
 {
     int err;
 
@@ -387,6 +387,43 @@ int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep)
     } else {
         // EOF
         return 1;
+    }
+
+    return 0;
+}
+
+int stream_discard (struct stream *stream, size_t *sizep)
+{
+    if (*sizep == 0) {
+      *sizep = stream->length - stream->offset;
+
+      // consume all
+      stream->offset = stream->length;
+
+      return 0;
+
+    } else if (stream->offset + *sizep > stream->length) {
+      *sizep = stream->length - stream->offset;
+
+      // consume all
+      stream->offset = stream->length;
+
+      return 1;
+
+    } else {
+      // consumed partial
+      stream->offset += *sizep;
+
+      return 0;
+    }
+}
+
+int stream_read_ptr (struct stream *stream, char **bufp, size_t *sizep)
+{
+    int err;
+
+    if ((err = stream_peek(stream, bufp, sizep))) {
+      return err;
     }
 
     // consumed

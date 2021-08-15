@@ -55,7 +55,36 @@ int stream_create (const struct stream_type *type, struct stream **streamp, size
 int stream_read (struct stream *stream, char *buf, size_t *sizep);
 
 /*
- * Read binary data from the stream, returning a pointer to the internal buffer.
+ * Peek binary data from the stream, returning a pointer to the internal buffer.
+ *
+ * Does not consume the data from the buffer, use stream_consume().
+ *
+ * *sizep may be passed as 0 to read as much data as available, or a maximum amount to return.
+ *
+ * The amount of data available is returned in *sizep, and may be less on EOF.
+ *
+ * Returns 1 on EOF, <0 on error.
+ */
+int stream_peek (struct stream *stream, char **bufp, size_t *sizep);
+
+/*
+ * Discard data from internal buffer.
+ *
+ * Invalidates any pointer returned by stream_peek().
+ *
+ * *sizep may be passed as 0 to discard all data buffered.
+ *
+ * The amount of data consumed is returned in *sizep, and may be less if the buffer is shorter.
+ *
+ * Returns 1 if consumed less than requested, <0 on error.
+ */
+int stream_discard (struct stream *stream, size_t *sizep);
+
+/*
+ * Read binary data from the stream, returning a pointer to the internal buffer, and consume it.
+ *
+ * The read data is consumed, and the pointer will be invalidated on any following read.
+ * Equivalent to stream_peek() + stream_discard().
  *
  * *sizep may be passed as 0 to read as much data as available, or a maximum amount to return.
  *
@@ -76,6 +105,8 @@ int stream_read_line (struct stream *stream, char **linep);
  * Read stream as a string, returning a pointer to the NUL-terminated data.
  *
  * The maximum size to read should be given in len, or 0 to read to EOF.
+ *
+ * Fails if len does not fit in stream buffer.
  *
  * Returns 1 on EOF, <0 on error.
  */

@@ -100,6 +100,8 @@ int http_read_header (struct http *http, const char **headerp, const char **valu
  *
  * The maximum size to read should be given in len, or 0 to read to EOF.
  *
+ * Fails if len does not fit in stream buffer.
+ *
  * NOTE: does not support chunked read.
  *
  * Returns 1 on EOF, <0 on error.

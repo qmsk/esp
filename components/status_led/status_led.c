@@ -1,10 +1,11 @@
 #include <status_led.h>
+#include "status_led.h"
+
+#include <logging.h>
 
 #include <driver/gpio.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/queue.h>
-#include <logging.h>
+#include <esp8266/gpio_struct.h>
+#include <esp_err.h>
 
 // 100ms on / 1800ms off
 #define STATUS_LED_BLINK_SLOW_PERIOD_ON 100
@@ -18,17 +19,6 @@
 
 #define STATUS_LED_TASK_STACK 256
 #define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-
-struct status_led {
-  struct status_led_options options;
-
-  xTaskHandle task;
-  xQueueHandle queue;
-  portTickType tick;
-
-  enum status_led_mode mode;
-  unsigned state;
-};
 
 static inline void status_led_off(struct status_led *led)
 {
@@ -153,6 +143,22 @@ void status_led_task(void *arg)
   }
 }
 
+int status_led_init_gpio(struct status_led *led, const struct status_led_options options)
+{
+  gpio_config_t config = {
+      .pin_bit_mask = (1 << options.gpio),
+      .mode         = GPIO_MODE_OUTPUT,
+  };
+  esp_err_t err;
+
+  if ((err = gpio_config(&config))) {
+    LOG_ERROR("gpio_config: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 int status_led_new(struct status_led **ledp, const struct status_led_options options, enum status_led_mode mode)
 {
   struct status_led *led;
@@ -165,10 +171,14 @@ int status_led_new(struct status_led **ledp, const struct status_led_options opt
 
   led->options = options;
 
-  gpio_set_direction(options.gpio, GPIO_MODE_OUTPUT);
-
   // set initial state
   status_led_update(led, mode);
+
+  // enable GPIo output
+  if ((err = status_led_init_gpio(led, options))) {
+    LOG_ERROR("status_led_init_gpio");
+    goto error;
+  }
 
   // setup task
   if ((led->queue = xQueueCreate(1, sizeof(enum status_led_mode))) == NULL) {

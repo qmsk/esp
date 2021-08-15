@@ -26,7 +26,7 @@ int artnet_header_parse(struct artnet_packet_header *header, size_t len)
 
   LOG_DEBUG("id=%.8s opcode=%04x version=%u",
     header->id,
-    header->opcode,
+    artnet_unpack_u16lh(header->opcode),
     version
   );
 
@@ -113,7 +113,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   }
 
 #ifdef DEBUG
-  LOG_DEBUG("seq=%u phy=%u addr=%u len=%u",
+  LOG_DEBUG("seq=%u phy=%u addr=%04x len=%u",
     seq,
     phy,
     addr,
@@ -132,7 +132,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   struct artnet_output *output;
 
   if (artnet_find_output(artnet, addr, &output)) {
-    LOG_DEBUG("unknown subnet addr=%u", addr);
+    LOG_DEBUG("unknown output addr=%04x", addr);
     return 0;
   }
 

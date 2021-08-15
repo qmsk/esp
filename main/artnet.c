@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define ARTNET_TASK_NAME "artnet"
-#define ARTNET_TASK_STACK 1024
+#define ARTNET_TASK_STACK 2048
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
 static const tcpip_adapter_if_t artnet_tcpip_adapter_if = TCPIP_ADAPTER_IF_STA;

@@ -236,7 +236,7 @@ int _stream_insert (struct stream *stream, char c, size_t i)
     memmove(stream_writebuf_ptr(stream) + i + 1, stream_writebuf_ptr(stream) + i, stream_writebuf_size(stream) - i);
 
     // insert
-    *(stream_writebuf_ptr(stream) + i) = c;
+    stream_writebuf_ptr(stream)[i] = c;
 
     // mark
     stream_read_mark(stream, 1);
@@ -452,83 +452,99 @@ int stream_read_line (struct stream *stream, char **linep)
             }
         }
 
-        // needs moar bytez in mah buffers
-        // XXX: should we return the last line on EOF, or expect a trailing \r\n?
-        if ((err = _stream_read(stream)))
-            return err;
+        if (!stream_readbuf_size(stream)) {
+          LOG_WARN("read does not fit into stream buffer at %u bytes", stream_writebuf_size(stream));
+          return -1;
+        }
+
+        // read more into buffer
+        if ((err = _stream_read(stream)) < 0) {
+          LOG_WARN("_stream_read");
+          return err;
+        } else if (err) {
+          LOG_WARN("EOF");
+          return err;
+        }
     }
 
 out:
-    // start of line
+    // return start of line
     *linep = stream_writebuf_ptr(stream);
 
-    // past end of line
+    // consume past end of line
     stream_write_mark(stream, c - stream_writebuf_ptr(stream) + 1);
 
     return 0;
 }
 
-int stream_read_string (struct stream *stream, char **strp, size_t len)
+int stream_read_string (struct stream *stream, char **strp, size_t *sizep, char delim)
 {
-    int err;
+  size_t len = 0;
+  int err;
 
-    // make room if needed
-    if ((err = _stream_clear(stream)))
-        return err;
+  // make room if needed
+  if ((err = _stream_clear(stream)))
+    return err;
 
-    LOG_DEBUG("%zu / %zu + %zu", len, stream_writebuf_size(stream), stream_readbuf_size(stream));
+  while (true) {
+    LOG_DEBUG("%u writebuf / %u size + %u readbuf", stream_writebuf_size(stream), *sizep, stream_readbuf_size(stream));
 
-    // fill 'er up
-    while (!len || stream_writebuf_size(stream) < len) {
-        // needs moar bytez in mah buffers
-        if (!stream_readbuf_size(stream)) {
-            LOG_DEBUG("buffer became full while reading %zu of %zu", stream_writebuf_size(stream), len);
-            return -1;
-        }
+    // scan for delim
+    for (int i = 0; i < stream_writebuf_size(stream); i++) {
+      char *c = stream_writebuf_ptr(stream) + i;
 
-        if ((err = _stream_read(stream)) < 0)
-            return err;
+      if (*c != delim) {
+        continue;
+      }
 
-        // handle EOF
-        if (!err) {
-            LOG_DEBUG("%zu of %zu", stream_writebuf_size(stream), len);
-            continue;
+      // found
+      *c = '\0';
+      len = i + 1;
 
-        } else if (!stream_writebuf_size(stream)) {
-            LOG_DEBUG("eof at start");
-            return 1;
+      // return start of line
+      *strp = stream_writebuf_ptr(stream);
+      *sizep = len;
 
-        } else if (!len) {
-            LOG_DEBUG("read-to-eof gave %zu bytes", stream_writebuf_size(stream));
-            break;
+      // consume NUL
+      stream_write_mark(stream, len);
 
-        } else {
-            LOG_DEBUG("eof when reading %zu of %zu", stream_writebuf_size(stream), len);
-            return 1;
-        }
+      return 0;
     }
 
-    // terminate with NUL
-    if (len) {
-        if (_stream_insert(stream, '\0', len)) {
-            LOG_DEBUG("stream writebuf became full when insrting NUL");
-            return -1;
-        }
-    } else {
-        if (_stream_append(stream, '\0')) {
-            LOG_DEBUG("stream writebuf became full when appending NUL");
-            return -1;
-        }
+    // check full read
+    if (*sizep && stream_writebuf_size(stream) >= *sizep) {
+      len = *sizep;
+
+      if (_stream_insert(stream, '\0', len)) {
+          LOG_WARN("stream writebuf became full when inserting NUL");
+          return -1;
+      }
+
+      // return start of line
+      *strp = stream_writebuf_ptr(stream);
+      *sizep = len;
+
+      // consume data + NUL
+      stream_write_mark(stream, len + 1);
+
+      return 0;
     }
 
-    *strp = stream_writebuf_ptr(stream);
+    // read more
+    if (!stream_readbuf_size(stream)) {
+      LOG_WARN("read does not fit into stream buffer at %u bytes", stream_writebuf_size(stream));
+      return -1;
+    }
 
-    LOG_DEBUG("%s", *strp);
+    if ((err = _stream_read(stream)) < 0) {
+      LOG_WARN("_stream_read");
+      return err;
 
-    // consume
-    stream_write_consume(stream);
-
-    return 0;
+    } else if (err) {
+      LOG_WARN("EOF");
+      return err;
+    }
+  }
 }
 
 int stream_read_file (struct stream *stream, int fd, size_t *sizep)

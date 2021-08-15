@@ -27,6 +27,14 @@ Connect to the serial console:
 
     ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
 
+### Reset
+
+Recover from a broken configuration:
+
+    ESPPORT=/dev/ttyUSB? docker-compose run --rm config-reset
+
+Erases the config spiffs partition.
+
 ## CLI
 
 From `help` output:

@@ -4,10 +4,41 @@
 #include <logging.h>
 #include <stdio.h>
 
-static void print_comment(const char *description)
+static void print_comment(const char *comment)
 {
-  // TODO: line-wrapping?
-  printf("# %s\n", description);
+  bool start = true;
+
+  // support linebreaks for multi-line output
+  for (const char *c = comment; *c; c++) {
+    if (start) {
+      printf("# ");
+    }
+
+    putchar(*c);
+
+    if (*c == '\n') {
+      start = true;
+    } else {
+      start = false;
+    }
+  }
+
+  if (!start) {
+    printf("\n");
+  }
+}
+
+static void print_enum_comment(const struct configtab *tab)
+{
+  printf(" #");
+
+  for (const struct config_enum * e = tab->enum_type.values; e->name; e++) {
+    if (e->value == *tab->enum_type.value) {
+      printf(" [%s]", e->name);
+    } else {
+      printf(" %s", e->name);
+    }
+  }
 }
 
 static void print_configtab(const struct configmod *mod, const struct configtab *tab)
@@ -20,7 +51,13 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
     printf("%s = ***\n", tab->name);
   } else {
     printf("%s = ", tab->name);
+
     config_print(mod, tab, stdout);
+
+    if (tab->type == CONFIG_TYPE_ENUM) {
+      print_enum_comment(tab);
+    }
+
     printf("\n");
   }
 }

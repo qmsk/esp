@@ -12,7 +12,7 @@
           <fieldset v-for="mod in config.modules" :key="mod.name">
             <legend>{{ mod.name }}</legend>
             <div class="module-description" v-if="mod.description">
-              <p>{{ mod.description }}</p>
+              <p v-for="line in splitlines(mod.description)">{{ line }}</p>
             </div>
 
             <template v-for="tab in mod.table">
@@ -101,6 +101,9 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+    splitlines(description) {
+      return description.split('\n');
     },
     fieldName(mod, tab) {
       return '[' + mod.name + ']' + tab.name;

@@ -98,15 +98,17 @@ int http_read_header (struct http *http, const char **headerp, const char **valu
 /*
  * Read the response body as a NUL-terminated string.
  *
- * The maximum size to read should be given in len, or 0 to read to EOF.
+ * Reads up to an optional delimiter char, which is replaced with NUL.
  *
- * Fails if len does not fit in stream buffer.
+ * Reads up to *lenp bytes, or 0 to read to EOF. Subtracts read bytes from *lepn.
+ *
+ * Fails if string does not fit in stream buffer.
  *
  * NOTE: does not support chunked read.
  *
  * Returns 1 on EOF, <0 on error.
  */
-int http_read_string (struct http *http, char **bufp, size_t len);
+ int http_read_string (struct http *http, char **bufp, size_t *lenp, char delim);
 
 /*
  * Read chunked header indicating chunk size.

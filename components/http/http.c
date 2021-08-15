@@ -390,9 +390,23 @@ int http_read_header (struct http *http, const char **headerp, const char **valu
     return http_parse_header(line, headerp, valuep);
 }
 
-int http_read_string (struct http *http, char **bufp, size_t len)
+int http_read_string (struct http *http, char **bufp, size_t *lenp, char delim)
 {
-    return stream_read_string(http->read, bufp, len);
+    size_t size = *lenp;
+    int err;
+
+    if ((err = stream_read_string(http->read, bufp, &size, delim))) {
+      LOG_ERROR("stream_read_string");
+      return err;
+    }
+
+    if (*lenp) {
+      LOG_DEBUG("len=%u - size=%u", *lenp, size);
+
+      *lenp -= size;
+    }
+
+    return 0;
 }
 
 int http_read_chunk_header (struct http *http, size_t *sizep)

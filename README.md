@@ -6,7 +6,12 @@ Prepare the SDK/toolchain:
 
     $ docker-compose build sdk
 
-Build firmware image:
+Build webapp:
+
+    $ USER_ID=$UID docker-compose run --rm npm install
+    $ USER_ID=$UID docker-compose run --rm npm run build
+
+Build firmware images (bootloader + app + web-dist):
 
     $ USER_ID=$UID docker-compose run --rm build
 

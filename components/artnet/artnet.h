@@ -7,7 +7,6 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
-#include <freertos/task.h>
 #include <lwip/sockets.h>
 
 /* network.c */
@@ -47,6 +46,4 @@ struct artnet {
 
   int socket;
   union artnet_packet packet;
-
-  xTaskHandle task;
 };

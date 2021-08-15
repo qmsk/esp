@@ -47,12 +47,16 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options);
  * @param addr Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
  * @param output struct artnet_dmx queue of size 1, written from the artnet task
  *
- * NOT concurrent-safe, must be called between artnet_new() and artnet_start()!
+ * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue);
 
-/** Start artnet task.
+/** Run artnet mainloop.
+ *
+ * Logs warnings for protocol errors.
+ *
+ * Returns on network error.
  */
-int artnet_start(struct artnet *artnet);
+int artnet_main(struct artnet *artnet);
 
 #endif

@@ -4,10 +4,16 @@
 #include <logging.h>
 
 #include <esp_err.h>
-#include <tcpip_adapter.h>
 #include <esp_wifi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <tcpip_adapter.h>
 
 #include <string.h>
+
+#define ARTNET_TASK_NAME "artnet"
+#define ARTNET_TASK_STACK 1024
+#define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
 static const tcpip_adapter_if_t artnet_tcpip_adapter_if = TCPIP_ADAPTER_IF_STA;
 static const wifi_interface_t artnet_wifi_interface = ESP_IF_WIFI_STA;
@@ -118,11 +124,33 @@ int add_artnet_output(uint16_t universe, xQueueHandle queue)
   }
 }
 
+// task
+xTaskHandle _artnet_task;
+
+static void artnet_task(void *ctx)
+{
+  struct artnet *artnet = ctx;
+  int err;
+
+  if ((err = artnet_main(artnet))) {
+    LOG_ERROR("artnet_main");
+  }
+}
+
 int start_artnet()
 {
-  if (artnet) {
-    return artnet_start(artnet);
-  } else {
+  int err;
+
+  if (!artnet) {
     return 0;
   }
+
+  if ((err = xTaskCreate(&artnet_task, ARTNET_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &_artnet_task)) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  } else {
+    LOG_DEBUG("artnet task=%p", _artnet_task);
+  }
+
+  return 0;
 }

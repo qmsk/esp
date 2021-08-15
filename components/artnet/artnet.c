@@ -3,10 +3,6 @@
 #include <logging.h>
 #include <stdlib.h>
 
-#define ARTNET_TASK_NAME "artnet"
-#define ARTNET_TASK_STACK 1024
-#define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
-
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
 {
   return ((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0) | (uni & 0x000F);
@@ -55,9 +51,8 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options)
   return 0;
 }
 
-void artnet_task(void *arg)
+int artnet_main(struct artnet *artnet)
 {
-  struct artnet *artnet = arg;
   int err;
 
   LOG_DEBUG("artnet=%p", artnet);
@@ -70,22 +65,10 @@ void artnet_task(void *arg)
 
     if ((err = artnet_recv(artnet->socket, &sendrecv))) {
       LOG_WARN("artnet_recv");
+      return err;
     } else if ((err = artnet_sendrecv(artnet, &sendrecv))) {
       LOG_WARN("artnet_sendrecv");
+      continue;
     }
   }
-}
-
-int artnet_start(struct artnet *artnet)
-{
-  int err;
-
-  if ((err = xTaskCreate(&artnet_task, ARTNET_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet->task)) <= 0) {
-    LOG_ERROR("xTaskCreate");
-    return -1;
-  } else {
-    LOG_DEBUG("artnet task=%p", artnet->task);
-  }
-
-  return 0;
 }

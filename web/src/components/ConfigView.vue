@@ -41,7 +41,7 @@
               <select v-if="tab.type == 'enum'"
                 :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                 :disabled="tab.readonly">
-                <option v-for="value in tab.enum_values" :value="value">{{ value }}</option>
+                <option v-for="value in tab.enum_values" :value="value" :selected="tab.value.enum == value">{{ value }}</option>
               </select>
             </template>
           </fieldset>

@@ -40,6 +40,9 @@ struct http_request {
     /* Decoded request version, or HTTP_10 if unknown. */
     enum http_version version;
 
+    /* Request is a POST request */
+    bool post;
+
     /* Decoded request headers */
     struct http_request_headers headers;
 
@@ -52,15 +55,10 @@ struct http_request {
     bool headers_done;
     bool headers_hook;
     bool body;
+    bool body_form; // reading form body
 
     /* XXX: Decoding GET params in-place from url.query */
     char *get_query;
-
-    /* Request is a POST request */
-    bool post;
-
-    /* Decoding POST params */
-    char *post_form;
 };
 
 #endif

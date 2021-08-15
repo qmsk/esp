@@ -225,14 +225,14 @@ int http_request_headers (struct http_request *request, const struct http_reques
 
 int http_request_form (struct http_request *request, char **keyp, char **valuep)
 {
-    LOG_DEBUG("request=%p", request);
+    char *ptr;
 
     if (!request->headers_done) {
         LOG_ERROR("reading request form data before headers?");
         return -1;
     }
 
-    if (request->post_form) {
+    if (request->body_form) {
         // continue using it
 
     } else if (request->body) {
@@ -244,20 +244,28 @@ int http_request_form (struct http_request *request, char **keyp, char **valuep)
         return 411;
 
     } else {
-        // read in request body; either exactly content_length or to EOF
-        if (http_read_string(request->http, &request->post_form, request->headers.content_length)) {
-            LOG_WARN("http_read_string");
-            return -1;
-        }
-
-        // completed body
-        request->body = true;
+      // start reading
+      request->body = true;
+      request->body_form = true;
     }
 
-    LOG_DEBUG("%s", request->post_form);
+    LOG_DEBUG("request=%p: content_length=%u", request, request->headers.content_length);
 
-    // returns 1 after last param
-    return url_decode(&request->post_form, keyp, valuep);
+    if (!request->headers.content_length) {
+      // end-of-request
+      return 1;
+    }
+
+    // read up to next form delimiter, or up to request EOF
+    if (http_read_string(request->http, &ptr, &request->headers.content_length, '&')) {
+        LOG_WARN("http_read_string");
+        return -1;
+    }
+
+    LOG_DEBUG("request=%p: ptr=%s content_length=%u", request, ptr, request->headers.content_length);
+
+    // returns if empty
+    return url_decode(&ptr, keyp, valuep);
 }
 
 int http_request_param (struct http_request *request, char **keyp, char **valuep)

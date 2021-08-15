@@ -43,6 +43,19 @@ services:
     environment:
       ESPPORT: "${ESPPORT}"
 
+  config-reset:
+    image: qmsk/esp8266-sdk
+    volumes:
+      - .:/build
+    working_dir: /build
+    user: build
+    command: make config-reset
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      ESPPORT: "${ESPPORT}"
+
   monitor:
     image: qmsk/esp8266-sdk
     volumes:

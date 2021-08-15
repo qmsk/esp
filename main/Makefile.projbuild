@@ -1,0 +1,7 @@
+CONFIG_PARTITION := config
+CONFIG_PARTITION_OFFSET_SIZE = $(shell $(GET_PART_INFO) --partition-table-file $(PARTITION_TABLE_BIN) \
+  get_partition_info --partition-name $(CONFIG_PARTITION) --info offset size)
+
+config-reset: $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash)
+	@echo "Erasing config on serial port $(ESPPORT) ($(CONFIG_PARTITION) at $(CONFIG_PARTITION_OFFSET_SIZE))..."
+	$(ESPTOOLPY_SERIAL) erase_region $(CONFIG_PARTITION_OFFSET_SIZE)

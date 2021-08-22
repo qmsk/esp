@@ -4,18 +4,34 @@
 #include <stddef.h>
 
 enum spi_mode {
-  SPI_MODE_CPOL_LOW    = 0x00,
-  SPI_MODE_CPOL_HIGH   = 0x01,
-  SPI_MODE_CPHA_LOW    = 0x00,
-  SPI_MODE_CPHA_HIGH   = 0x02,
+  SPI_MODE_CPOL_LOW     = 0x00,
+  SPI_MODE_CPOL_HIGH    = 0x01,
+  SPI_MODE_CPHA_LOW     = 0x00,
+  SPI_MODE_CPHA_HIGH    = 0x02,
 
-  SPI_MODE_MSB_FIRST   = 0x00,
-  SPI_MODE_LSB_FIRST   = 0x04,
-  SPI_MODE_LE_ORDER    = 0x00,
-  SPI_MODE_BE_ORDER    = 0x08,
+  SPI_MODE_MSB_FIRST    = 0x00,
+  SPI_MODE_LSB_FIRST    = 0x04,
+  SPI_MODE_LE_ORDER     = 0x00,
+  SPI_MODE_BE_ORDER     = 0x08,
 
-  SPI_MODE_FLAGS       = 0x0ff,
-  SPI_MODE_SET         = 0x100,
+  /* Delay MOSI by 0-7 system clock cycles */
+  SPI_MODE_MOSI_DELAY_1     = 0x0100,
+  SPI_MODE_MOSI_DELAY_2     = 0x0200,
+  SPI_MODE_MOSI_DELAY_4     = 0x0400,
+  SPI_MODE_MOSI_DELAY_MASK  = 0x0700,
+  SPI_MODE_MOSI_DELAY_SHIFT = 8,
+  SPI_MODE_MOSI_DELAY_MAX   = 7,
+
+  /* Delay MISO by 0-7 system clock cycles */
+  SPI_MODE_MISO_DELAY_1     = 0x1000,
+  SPI_MODE_MISO_DELAY_2     = 0x2000,
+  SPI_MODE_MISO_DELAY_4     = 0x4000,
+  SPI_MODE_MISO_DELAY_MASK  = 0x7000,
+  SPI_MODE_MISO_DELAY_SHIFT = 12,
+  SPI_MODE_MISO_DELAY_MAX   = 7,
+
+  SPI_MODE_FLAGS       = 0x0ffff,
+  SPI_MODE_SET         = 0x10000,
 
   SPI_MODE_0           = SPI_MODE_CPOL_LOW | SPI_MODE_CPHA_LOW,
   SPI_MODE_1           = SPI_MODE_CPOL_LOW | SPI_MODE_CPHA_HIGH,

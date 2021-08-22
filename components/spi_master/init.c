@@ -38,8 +38,8 @@ int spi_master_mode(struct spi_master *spi_master, enum spi_mode mode)
   SPI_DEV.ctrl.wr_bit_order = (mode & SPI_MODE_LSB_FIRST) ? 1 : 0;
 
   // TODO: ctrl2.{miso,mosi,cs}_delay_{mode,num}?
-  SPI_DEV.ctrl2.mosi_delay_num = 0;
-  SPI_DEV.ctrl2.miso_delay_num = 1;
+  SPI_DEV.ctrl2.mosi_delay_num = (mode & SPI_MODE_MOSI_DELAY_MASK) >> SPI_MODE_MOSI_DELAY_SHIFT;
+  SPI_DEV.ctrl2.miso_delay_num = (mode & SPI_MODE_MISO_DELAY_MASK) >> SPI_MODE_MISO_DELAY_SHIFT;
 
   SPI_DEV.user.flash_mode = 0;
   SPI_DEV.user.cs_hold = 1;

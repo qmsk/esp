@@ -7,7 +7,7 @@
 
 #include <logging.h>
 
-#define SPI_LEDS_MODE (SPI_MODE_0) // varies by protocol
+#define SPI_LEDS_MODE 0 // varies by protocol
 #define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
 
 struct spi_master *spi_master;
@@ -53,17 +53,21 @@ static int init_spi_master()
 static int init_spi_leds_state(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
-      .protocol = config->protocol,
-      .clock    = config->spi_clock,
-      .count    = config->count,
+      .protocol   = config->protocol,
+      .clock      = config->spi_clock,
+      .count      = config->count,
   };
   int err;
+
+  if (config->delay) {
+    options.mode_bits |= (config->delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
+  }
 
   if (config->gpio_mode != SPI_LEDS_GPIO_OFF && spi_gpio_from_pin(config->gpio_pin)) {
     options.gpio = spi_gpio_from_pin(config->gpio_pin) | (config->gpio_mode);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u clock=%u gpio=%04x count=%u", index, options.protocol, options.clock, options.gpio, options.count);
+  LOG_INFO("spi-leds%d: protocol=%u mode_bits=%04x clock=%u gpio=%04x count=%u", index, options.protocol, options.mode_bits, options.clock, options.gpio, options.count);
 
   if ((err = spi_leds_new(&state->spi_leds, spi_master, options))) {
     LOG_ERROR("spi-leds%d: spi_leds_new", index);

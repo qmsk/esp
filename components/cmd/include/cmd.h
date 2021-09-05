@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define CMD_ARGS_MAX 8
-
 struct cmd;
 struct cmdtab;
 struct cmdctx;
@@ -36,6 +34,11 @@ struct cmdctx {
   cmdtab_error_func error_handler;
 };
 
+struct cmd_eval {
+  size_t size;
+  char *argv[];
+};
+
 enum cmd_error {
   CMD_ERR_USAGE       = 0x01000000,
   CMD_ERR_OK          = 0,
@@ -44,7 +47,8 @@ enum cmd_error {
   CMD_ERR_ARGC        = 2 | CMD_ERR_USAGE, // wrong number of arguments
   CMD_ERR_ARGV        = 3 | CMD_ERR_USAGE, // invalid argument value
 
-  CMD_ERR_ARGS_MAX    = 0x100,
+  CMD_ERR_ALLOC      = 0x100,
+  CMD_ERR_ARGS_MAX,
   CMD_ERR_NOT_FOUND,
   CMD_ERR_NOT_IMPLEMENTED,
   CMD_ERR_MISSING_SUBCOMMAND,
@@ -52,7 +56,8 @@ enum cmd_error {
   CMD_ERR_TIMEOUT,
 };
 
-int cmd_eval(const struct cmdtab *cmdtab, char *line);
+int cmd_eval_new(struct cmd_eval **evalp, size_t size);
+int cmd_eval(struct cmd_eval *eval, const struct cmdtab *cmdtab, char *line);
 
 int cmd_arg_str(int argc, char **argv, int arg, const char **strp);
 int cmd_arg_strncpy(int argc, char **argv, int arg, char *buf, size_t len);

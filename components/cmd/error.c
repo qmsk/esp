@@ -12,6 +12,8 @@ const char *cmd_strerror(enum cmd_error err)
     case CMD_ERR_ARGV:
       return "invalid argument value";
 
+    case CMD_ERR_ALLOC:
+      return "memory allocation failed";
     case CMD_ERR_ARGS_MAX:
       return "maximum number of arguments exceeded";
     case CMD_ERR_NOT_FOUND:

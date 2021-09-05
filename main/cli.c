@@ -20,6 +20,7 @@
 
 // max line size
 #define CLI_BUF_SIZE 512
+#define CLI_MAX_ARGS 16
 #define CLI_TASK_STACK 4096 // bytes
 #define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
@@ -78,7 +79,7 @@ int init_cli()
   setvbuf(stdout, NULL, _IOLBF, 0);
 
   // interactive CLI on stdin/stdout
-  if (cli_init(&cli, commands, CLI_BUF_SIZE)) {
+  if (cli_init(&cli, commands, CLI_BUF_SIZE, CLI_MAX_ARGS)) {
     LOG_ERROR("cli_init");
     return -1;
   }

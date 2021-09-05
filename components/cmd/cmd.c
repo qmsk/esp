@@ -1,9 +1,10 @@
 #include "cmd.h"
 #include <ctype.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
-static int cmd_parse(char *line, char **argv, int arg_max)
+static int cmd_parse(char *line, char **argv, size_t size)
 {
   char *ptr = line;
   const char *arg = NULL;
@@ -18,7 +19,7 @@ static int cmd_parse(char *line, char **argv, int arg_max)
       argc++;
     }
 
-    if (argc >= arg_max) {
+    if (argc >= size) {
       return -CMD_ERR_ARGS_MAX;
     }
   }
@@ -70,13 +71,27 @@ static int cmd_call(const struct cmdtab *cmdtab, int argc, char **argv, const st
   }
 }
 
-int cmd_eval(const struct cmdtab *cmdtab, char *line)
+int cmd_eval_new(struct cmd_eval **evalp, size_t size)
+{
+  struct cmd_eval *eval;
+
+  if (!(eval = malloc(sizeof(*eval) + (size * sizeof(*eval->argv))))) {
+    return -CMD_ERR_ALLOC;
+  }
+
+  eval->size = size;
+
+  *evalp = eval;
+
+  return 0;
+}
+
+int cmd_eval(struct cmd_eval *eval, const struct cmdtab *cmdtab, char *line)
 {
   int argc;
-  char *argv[CMD_ARGS_MAX];
   int ret;
 
-  if ((ret = cmd_parse(line, argv, CMD_ARGS_MAX)) < 0) {
+  if ((ret = cmd_parse(line, eval->argv, eval->size)) < 0) {
     return ret;
   } else if (ret == 0) {
     return 0;
@@ -84,5 +99,5 @@ int cmd_eval(const struct cmdtab *cmdtab, char *line)
     argc = ret;
   }
 
-  return cmd_call(cmdtab, argc, argv, NULL);
+  return cmd_call(cmdtab, argc, eval->argv, NULL);
 }

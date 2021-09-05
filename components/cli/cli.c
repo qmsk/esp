@@ -126,10 +126,10 @@ static int cli_read(struct cli *cli)
 
 static int cli_eval(struct cli *cli)
 {
-  const char *line = cli->buf;
+  char *line = cli->buf;
   int err;
 
-  if ((err = cmd_eval(&cli->cmdtab, line)) < 0) {
+  if ((err = cmd_eval(cli->cmd_eval, &cli->cmdtab, line)) < 0) {
     LOG_ERROR("cmd_eval %s: %s", line, cmd_strerror(-err));
   } else if (err) {
     LOG_ERROR("cmd %s: %d", line, err);
@@ -148,17 +148,17 @@ void cli_main(struct cli *cli)
     // read lines of input, ignore errors
     if ((err = cli_read(cli))) {
       LOG_WARN("cli_read");
-      return err;
+      continue;
     }
 
     // evaluatate
     if ((err = cli_eval(cli))) {
-      return err;
+      continue;
     }
   }
 }
 
-int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size)
+int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, size_t max_args)
 {
   struct cli *cli;
   int err = 0;
@@ -172,6 +172,11 @@ int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size)
 
   if (!(cli->buf = malloc(buf_size))) {
     LOG_ERROR("malloc buf");
+    goto error;
+  }
+
+  if ((err = cmd_eval_new(&cli->cmd_eval, max_args))) {
+    LOG_ERROR("cmd_eval_new");
     goto error;
   }
 

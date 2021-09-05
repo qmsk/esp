@@ -10,7 +10,7 @@ struct cli;
 /*
  * Allocate cli and start task for reading and evaluating CLI commands.
  */
-int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size);
+int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, size_t max_args);
 
 /*
  * Run the CLI read-eval loop.

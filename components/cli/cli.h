@@ -8,4 +8,5 @@ struct cli {
   size_t size;
 
   struct cmdtab cmdtab;
+  struct cmd_eval *cmd_eval;
 };

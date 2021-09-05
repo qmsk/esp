@@ -4,7 +4,7 @@
 #include "alert_led.h"
 #include "artnet.h"
 #include "atx_psu.h"
-#include "dmx.h"
+#include "dmx_config.h"
 #include "http.h"
 #include "spi_leds_config.h"
 #include "spiffs.h"
@@ -77,14 +77,23 @@ const struct configmod config_modules[] = {
     ),
     .table = spi_leds_configtab1,
   },
-  { "dmx",
+  { "dmx0",
     .description = (
       "DMX output via UART1 -> RS-485 transceiver."
       "\n"
       "Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using"
       " a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable."
     ),
-    .table = dmx_configtab,
+    .table = dmx_configtab0,
+  },
+  { "dmx1",
+    .description = (
+      "DMX output via UART1 -> RS-485 transceiver."
+      "\n"
+      "Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using"
+      " a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable."
+    ),
+    .table = dmx_configtab1,
   },
   {}
 };

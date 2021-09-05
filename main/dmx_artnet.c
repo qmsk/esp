@@ -4,36 +4,25 @@
 #include <artnet.h>
 #include <logging.h>
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/queue.h>
-
 #define DMX_ARTNET_TASK_NAME "dmx-artnet"
 #define DMX_ARTNET_TASK_STACK 1024
 #define DMX_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
-struct dmx_artnet {
-  xTaskHandle task;
-  xQueueHandle queue;
-
-  struct artnet_dmx artnet_dmx;
-} *dmx_artnet;
-
-static int dmx_artnet_dmx(struct dmx_artnet *dmx_artnet, struct artnet_dmx *artnet_dmx)
+static int dmx_artnet_dmx(struct dmx_state *state, struct artnet_dmx *artnet_dmx)
 {
   LOG_DEBUG("len=%u", artnet_dmx->len);
 
-  return output_dmx(artnet_dmx->data, artnet_dmx->len);
+  return output_dmx(state, artnet_dmx->data, artnet_dmx->len);
 }
 
 static void dmx_artnet_task(void *ctx)
 {
-  struct dmx_artnet *dmx_artnet = ctx;
+  struct dmx_state *state = ctx;
 
   for (;;) {
-    if (!xQueueReceive(dmx_artnet->queue, &dmx_artnet->artnet_dmx, portMAX_DELAY)) {
+    if (!xQueueReceive(state->artnet.queue, &state->artnet.artnet_dmx, portMAX_DELAY)) {
       LOG_WARN("xQueueReceive");
-    } else if (dmx_artnet_dmx(dmx_artnet, &dmx_artnet->artnet_dmx)) {
+    } else if (dmx_artnet_dmx(state, &state->artnet.artnet_dmx)) {
       LOG_WARN("dmx_artnet_dmx");
     }
   }
@@ -61,14 +50,9 @@ int dmx_artnet_init(struct dmx_artnet *dmx_artnet, uint16_t universe)
   return 0;
 }
 
-int init_dmx_artnet(uint16_t universe)
+int init_dmx_artnet(struct dmx_state *state, int index, const struct dmx_config *config)
 {
-  LOG_INFO("universe=%u", universe);
+  LOG_INFO("%d: artnet_universe=%u", index, config->artnet_universe);
 
-  if (!(dmx_artnet = calloc(1, sizeof(*dmx_artnet)))) {
-    LOG_ERROR("calloc");
-    return -1;
-  }
-
-  return dmx_artnet_init(dmx_artnet, universe);
+  return dmx_artnet_init(&state->artnet, config->artnet_universe);
 }

@@ -4,7 +4,7 @@
 #include "atx_psu.h"
 #include "cli.h"
 #include "config.h"
-#include "dmx.h"
+#include "dmx_init.h"
 #include "http.h"
 #include "user_led.h"
 #include "uart.h"

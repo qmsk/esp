@@ -3,10 +3,13 @@
 #include <uart1.h>
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <freertos/stream_buffer.h>
 #include <freertos/task.h>
 
 struct uart1 {
+  SemaphoreHandle_t mutex;
+
   StreamBufferHandle_t tx_buffer;
   TaskHandle_t txfifo_empty_notify_task;
 };

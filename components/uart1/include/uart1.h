@@ -40,11 +40,14 @@ struct uart1_options {
   enum uart1_parity_bits parity_bits;
   enum uart1_stop_bits stop_bits;
   bool inverted;
-
-  size_t tx_buffer_size;
 };
 
-int uart1_new(struct uart1 **uart1p, struct uart1_options options);
+int uart1_new(struct uart1 **uart1p, struct uart1_options options, size_t tx_buffer_size);
+
+/*
+ * Acquire mutex on uart, flush to ensure idle, and set mode.
+ */
+int uart1_open(struct uart1 *uart1, struct uart1_options options);
 
 /*
  * Write one byte. Blocks if TX buffer is full.
@@ -75,5 +78,10 @@ int uart1_flush(struct uart1 *uart1);
  * Return <0 on error.
  */
 int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us);
+
+/*
+ * Flush TX and release mutex on uart.
+ */
+int uart1_close(struct uart1 *uart1);
 
 #endif

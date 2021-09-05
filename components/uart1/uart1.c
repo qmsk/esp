@@ -9,11 +9,15 @@
 
 #include <rom/ets_sys.h>
 
-static int uart1_init(struct uart1 *uart1, struct uart1_options options)
+static int uart1_init(struct uart1 *uart1, size_t tx_buffer_size)
 {
-  LOG_DEBUG("tx_buffer_size=%u", options.tx_buffer_size);
+  LOG_DEBUG("tx_buffer_size=%u", tx_buffer_size);
 
-  if (!(uart1->tx_buffer = xStreamBufferCreate(options.tx_buffer_size, 1))) {
+  if (!(uart1->mutex = xSemaphoreCreateMutex())) {
+    LOG_ERROR("xSemaphoreCreateMutex");
+  }
+
+  if (!(uart1->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }
@@ -21,7 +25,7 @@ static int uart1_init(struct uart1 *uart1, struct uart1_options options)
   return 0;
 }
 
-int uart1_new(struct uart1 **uart1p, struct uart1_options options)
+int uart1_new(struct uart1 **uart1p, struct uart1_options options, size_t tx_buffer_size)
 {
   struct uart1 *uart1;
   int err;
@@ -31,18 +35,10 @@ int uart1_new(struct uart1 **uart1p, struct uart1_options options)
     return -1;
   }
 
-  if ((err = uart1_init(uart1, options))) {
+  if ((err = uart1_init(uart1, tx_buffer_size))) {
     LOG_ERROR("uart1_init");
     goto error;
   }
-
-  LOG_DEBUG("clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x inverted=%x",
-    options.clock_div,
-    options.data_bits,
-    options.parity_bits,
-    options.stop_bits,
-    options.inverted
-  );
 
   uart1_tx_setup(options);
   uart1_intr_setup(options);
@@ -60,6 +56,25 @@ error:
   free(uart1);
 
   return err;
+}
+
+int uart1_open(struct uart1 *uart1, struct uart1_options options)
+{
+  int err;
+
+  if (!xSemaphoreTake(uart1->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
+
+  if ((err = uart1_tx_flush(uart1))) {
+    LOG_ERROR("uart1_tx_flush");
+    return err;
+  }
+
+  uart1_tx_setup(options);
+
+  return 0;
 }
 
 int uart1_putc(struct uart1 *uart1, int ch)
@@ -131,6 +146,23 @@ int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us)
   uart1_wait(mark_us);
 
   LOG_DEBUG("done");
+
+  return 0;
+}
+
+int uart1_close(struct uart1 *uart1)
+{
+  int err;
+
+  if ((err = uart1_tx_flush(uart1))) {
+    LOG_ERROR("uart1_tx_flush");
+    return err;
+  }
+
+  if (!xSemaphoreGive(uart1->mutex)) {
+    LOG_ERROR("xSemaphoreGive");
+    return -1;
+  }
 
   return 0;
 }

@@ -17,6 +17,14 @@
 
 void uart1_tx_setup(struct uart1_options options)
 {
+  LOG_DEBUG("clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x inverted=%x",
+    options.clock_div,
+    options.data_bits,
+    options.parity_bits,
+    options.stop_bits,
+    options.inverted
+  );
+
   taskENTER_CRITICAL();
 
   uart1.clk_div.div_int = options.clock_div;

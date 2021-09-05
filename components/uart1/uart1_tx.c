@@ -120,18 +120,16 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-int uart1_tx_break(struct uart1 *uart)
+int uart1_tx_flush(struct uart1 *uart)
 {
   TaskHandle_t task = xTaskGetCurrentTaskHandle();
 
   taskENTER_CRITICAL();
 
-  uart1.conf0.txd_brk = 1;
-
   // notify task once complete
-  uart->tx_break_task = task;
+  uart->txfifo_empty_notify_task = task;
 
-  LOG_ISR_DEBUG("wait tx break task=%p", uart->tx_break_task);
+  LOG_ISR_DEBUG("wait tx break task=%p", uart->txfifo_empty_notify_task);
 
   if (xStreamBufferIsEmpty(uart->tx_buffer)) {
     // enable TX interrupts with low empty threshold, to interrupt once TX queue is empty
@@ -150,6 +148,18 @@ int uart1_tx_break(struct uart1 *uart)
 
   return 0;
 }
+
+void uart1_tx_break(struct uart1 *uart)
+{
+  taskENTER_CRITICAL();
+
+  LOG_ISR_DEBUG(" ");
+
+  uart1.conf0.txd_brk = 1;
+
+  taskEXIT_CRITICAL();
+}
+
 
 void uart1_tx_mark(struct uart1 *uart)
 {
@@ -202,23 +212,23 @@ void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken)
   LOG_ISR_DEBUG("xStreamBufferReceiveFromISR size=%u: len=%u", tx_size, tx_len);
 
   if (tx_len == 0) {
-    if (!uart->tx_break_task) {
-      LOG_ISR_DEBUG("buffer empty, no tx_break_task");
+    if (!uart->txfifo_empty_notify_task) {
+      LOG_ISR_DEBUG("buffer empty, no txfifo_empty_notify_task");
 
       // buffer is empty, nothing to queue, allow it to empty
       uart1_tx_intr_disable();
 
     } else if (uart1_tx_len() > 0) {
-      LOG_ISR_DEBUG("wait tx_break_task=%p fifo empty", uart->tx_break_task);
+      LOG_ISR_DEBUG("wait txfifo_empty_notify_task=%p fifo empty", uart->txfifo_empty_notify_task);
 
-      // tx_break_task waiting for FIFO to empty
+      // task waiting for FIFO to empty
       uart1_tx_intr_enable(1);
 
     } else {
-      LOG_ISR_DEBUG("notify tx_break_task=%p", uart->tx_break_task);
+      LOG_ISR_DEBUG("notify txfifo_empty_notify_task=%p", uart->txfifo_empty_notify_task);
 
-      // FIFO is empty, break is active
-      vTaskNotifyGiveFromISR(uart->tx_break_task, task_woken);
+      // FIFO is empty, notify task
+      vTaskNotifyGiveFromISR(uart->txfifo_empty_notify_task, task_woken);
 
       uart1_tx_intr_disable();
     }

@@ -97,6 +97,11 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
   return write;
 }
 
+int uart1_flush(struct uart1 *uart1)
+{
+  return uart1_tx_flush(uart1);
+}
+
 static inline void uart1_wait(unsigned us)
 {
   // ESP8266_RTOS_SDK timers are shit:
@@ -115,8 +120,9 @@ int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us)
 
   LOG_DEBUG("break_us=%u mark_us=%u", break_us, mark_us);
 
-  if ((err = uart1_tx_break(uart1))) {
-    LOG_ERROR("uart1_tx_break");
+  uart1_tx_break(uart1);
+  if ((err = uart1_tx_flush(uart1))) {
+    LOG_ERROR("uart1_tx_flush");
     return err;
   }
   uart1_wait(break_us);

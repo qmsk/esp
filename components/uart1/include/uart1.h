@@ -61,6 +61,11 @@ int uart1_putc(struct uart1 *uart1, int ch);
 ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len);
 
 /*
+ * Wait for TX buffer + FIFO to empty.
+ */
+int uart1_flush(struct uart1 *uart1);
+
+/*
  * Send break once TX completes, and hold for >= break_us.
  * After break, hold mark for >= mark_us.
  *

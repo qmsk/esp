@@ -7,23 +7,25 @@
 #include <logging.h>
 #include <uart1.h>
 
+// fit one complete DMX frame into the uart1 TX buffer
+#define DMX_TX_BUFFER_SIZE (512 + 1)
+
 struct uart1 *dmx_uart1;
 struct gpio_out dmx_gpio_out;
 struct dmx_state dmx_states[DMX_COUNT];
 
 static int dmx_init_uart1 ()
 {
+  // these do not really matter, they get overriden for each DMX output
   struct uart1_options uart1_options = {
-    .clock_div   = DMX_BAUD_RATE,
-    .data_bits   = DMX_DATA_BITS,
-    .parity_bits = DMX_PARTITY_BITS,
-    .stop_bits   = DMX_STOP_BITS,
-
-    .tx_buffer_size = DMX_TX_BUFFER_SIZE,
+    .clock_div   = UART1_BAUD_250000,
+    .data_bits   = UART1_DATA_BITS_8,
+    .parity_bits = UART1_PARTIY_DISABLE,
+    .stop_bits   = UART1_STOP_BITS_2,
   };
   int err;
 
-  if ((err = uart1_new(&dmx_uart1, uart1_options))) {
+  if ((err = uart1_new(&dmx_uart1, uart1_options, DMX_TX_BUFFER_SIZE))) {
     LOG_ERROR("uart1_new");
     return err;
   }
@@ -133,7 +135,7 @@ int init_dmx()
 int output_dmx(struct dmx_state *state, void *data, size_t len)
 {
   int err;
-  
+
   if (!state->dmx_output) {
     LOG_WARN("disabled");
     return -1;
@@ -141,11 +143,6 @@ int output_dmx(struct dmx_state *state, void *data, size_t len)
 
   for (int i = 0; i < len; i++) {
     LOG_DEBUG("[%03d] %02x", i, ((uint8_t *) data)[i]);
-  }
-
-  if ((err = dmx_output_enable(state->dmx_output))) {
-    LOG_ERROR("dmx_output_enable");
-    return err;
   }
 
   activity_led_event();

@@ -152,12 +152,17 @@ int spi_leds_tx(struct spi_leds *spi_leds)
   };
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;
-  int ret;
+  int ret, err;
+
+  if ((err = spi_master_open(spi_leds->spi_master, options))) {
+    LOG_ERROR("spi_master_open");
+    return err;
+  }
 
   while (len) {
-    if ((ret = spi_master_write(spi_leds->spi_master, buf, len, options)) < 0) {
+    if ((ret = spi_master_write(spi_leds->spi_master, buf, len)) < 0) {
       LOG_ERROR("spi_master_write");
-      return ret;
+      goto error;
     }
 
     LOG_DEBUG("spi_leds=%p write %p @ %u -> %d", spi_leds, buf, len, ret);
@@ -166,5 +171,13 @@ int spi_leds_tx(struct spi_leds *spi_leds)
     len -= ret;
   }
 
-  return 0;
+  ret = 0;
+
+error:
+  if ((err = spi_master_close(spi_leds->spi_master))) {
+    LOG_ERROR("spi_master_close");
+    return err;
+  }
+
+  return ret;
 }

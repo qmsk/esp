@@ -127,9 +127,14 @@ struct spi_master;
 int spi_master_new(struct spi_master **spi_masterp, const struct spi_options options);
 
 /*
- * Send up to 64 bytes of data out via SPI MOSI.
+ * Lock spi master, wait done, set mode, set gpio
  *
  * The spi master is reconfigured to use given options, if given and different from previous configuration.
+ */
+int spi_master_open(struct spi_master *spi_master, struct spi_write_options options);
+
+/*
+ * Send up to 64 bytes of data out via SPI MOSI.
  *
  * Does not wait for transfer to complete when returning. When called, waits for any in-progress transfer to complete.
  *
@@ -137,6 +142,12 @@ int spi_master_new(struct spi_master **spi_masterp, const struct spi_options opt
  *
  * Returns bytes written, or <0 on error.
  */
-int spi_master_write(struct spi_master *spi_master, void *data, size_t len, struct spi_write_options options);
+int spi_master_write(struct spi_master *spi_master, void *data, size_t len);
+
+/*
+ * wait done, clear gpio, release
+ */
+int spi_master_close(struct spi_master *spi_master);
+
 
 #endif

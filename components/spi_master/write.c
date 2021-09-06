@@ -23,40 +23,58 @@ static inline void spi_master_start(struct spi_master *spi_master)
   SPI_DEV.cmd.usr = 1;
 }
 
-static int spi_master_reconfigure(struct spi_master *spi_master, struct spi_write_options options)
+int spi_master_open(struct spi_master *spi_master, struct spi_write_options options)
 {
-  int err = 0;
+  int err;
 
+  if (!xSemaphoreTake(spi_master->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
+
+  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
+    LOG_ERROR("spi_master_interrupt_wait_trans");
+    goto error;
+  }
+
+  // clear CS outputs
+  spi_master_gpio_clear(spi_master);
+
+  // reconfigure
   if (options.mode && (options.mode & SPI_MODE_FLAGS) != spi_master->mode) {
     LOG_DEBUG("set mode=%02x", options.mode);
 
-    // clear CS before changing mode
-    spi_master_gpio_clear(spi_master);
-
     if ((err = spi_master_mode(spi_master, options.mode))) {
       LOG_ERROR("spi_master_mode");
-      return err;
+      goto error;
     }
   }
 
   if (options.clock && options.clock != spi_master->clock) {
     LOG_DEBUG("set clock=%d", options.clock);
 
-    // clear CS before changing clock
-    spi_master_gpio_clear(spi_master);
-
     if ((err = spi_master_clock(spi_master, options.clock))) {
       LOG_ERROR("spi_master_clock");
-      return err;
+      goto error;
     }
+  }
+
+  // setup CS outputs
+  spi_master_gpio_set(spi_master, options.gpio);
+
+  return 0;
+
+error:
+  if (!xSemaphoreGive(spi_master->mutex)) {
+    LOG_WARN("xSemaphoreGive");
   }
 
   return err;
 }
 
-int spi_master_write(struct spi_master *spi_master, void *data, size_t len, struct spi_write_options options)
+int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 {
-  int ret;
+  int err;
 
   LOG_DEBUG("spi_master=%p data=%p len=%u", spi_master, data, len);
 
@@ -64,23 +82,11 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
     len = SPI_BYTES_MAX;
   }
 
-  if (!xSemaphoreTake(spi_master->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTake");
-    return -1;
-  }
-
-  if ((ret = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
+  // wait
+  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
     LOG_ERROR("spi_master_interrupt_wait_trans");
-    goto error;
+    return err;
   }
-
-  if ((ret = spi_master_reconfigure(spi_master, options))) {
-    LOG_ERROR("spi_master_reconfigure");
-    goto error;
-  }
-
-  // setup CS outputs
-  spi_master_gpio_set(spi_master, options.gpio);
 
   // usr command structure: mosi only
   SPI_DEV.user.usr_command = 0;
@@ -94,12 +100,27 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len, stru
 
   spi_master_start(spi_master);
 
-  ret = len;
+  return len;
+}
+
+int spi_master_close(struct spi_master *spi_master)
+{
+  int err;
+
+  // wait
+  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
+    LOG_ERROR("spi_master_interrupt_wait_trans");
+    goto error;
+  }
+
+  // clear CS outputs
+  spi_master_gpio_clear(spi_master);
 
 error:
   if (!xSemaphoreGive(spi_master->mutex)) {
     LOG_WARN("xSemaphoreGive");
+    err = 1;
   }
 
-  return len;
+  return err;
 }

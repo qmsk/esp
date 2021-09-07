@@ -15,6 +15,18 @@ struct spi_leds_config spi_leds_configs[SPI_LEDS_COUNT] = {
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
     .artnet_mode = SPI_LEDS_BGR,
   },
+  [2] = {
+    .protocol    = SPI_LEDS_PROTOCOL_APA102,
+    .spi_clock   = SPI_LEDS_CLOCK,
+    .gpio_mode   = SPI_LEDS_GPIO_OFF,
+    .artnet_mode = SPI_LEDS_BGR,
+  },
+  [3] = {
+    .protocol    = SPI_LEDS_PROTOCOL_APA102,
+    .spi_clock   = SPI_LEDS_CLOCK,
+    .gpio_mode   = SPI_LEDS_GPIO_OFF,
+    .artnet_mode = SPI_LEDS_BGR,
+  },
 };
 
 const struct config_enum spi_leds_protocol_enum[] = {
@@ -61,6 +73,18 @@ const struct config_enum spi_leds_artnet_mode_enum[] = {
 
 #define SPI_LEDS_CONFIGTAB spi_leds_configtab1
 #define SPI_LEDS_CONFIG spi_leds_configs[1]
+#include "spi_leds_configtab.i"
+#undef SPI_LEDS_CONFIGTAB
+#undef SPI_LEDS_CONFIG
+
+#define SPI_LEDS_CONFIGTAB spi_leds_configtab2
+#define SPI_LEDS_CONFIG spi_leds_configs[2]
+#include "spi_leds_configtab.i"
+#undef SPI_LEDS_CONFIGTAB
+#undef SPI_LEDS_CONFIG
+
+#define SPI_LEDS_CONFIGTAB spi_leds_configtab3
+#define SPI_LEDS_CONFIG spi_leds_configs[3]
 #include "spi_leds_configtab.i"
 #undef SPI_LEDS_CONFIGTAB
 #undef SPI_LEDS_CONFIG

@@ -77,6 +77,25 @@ const struct configmod config_modules[] = {
     ),
     .table = spi_leds_configtab1,
   },
+  { "spi-leds2",
+    .description = (
+      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
+      "\n"
+      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
+      " an external driver chip with active-high/low output-enable GPIO lines."
+    ),
+    .table = spi_leds_configtab2,
+    .alias = "spi_leds",
+  },
+  { "spi-leds3",
+    .description = (
+      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
+      "\n"
+      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
+      " an external driver chip with active-high/low output-enable GPIO lines."
+    ),
+    .table = spi_leds_configtab3,
+  },
   { "dmx0",
     .description = (
       "DMX output via UART1 -> RS-485 transceiver."

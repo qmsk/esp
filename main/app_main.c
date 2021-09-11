@@ -6,6 +6,7 @@
 #include "config.h"
 #include "dmx_init.h"
 #include "http.h"
+#include "mdns.h"
 #include "user_led.h"
 #include "uart.h"
 #include "spi_leds_init.h"
@@ -61,6 +62,11 @@ void app_main()
 
   if (init_wifi()) {
     LOG_ERROR("init_wifi");
+    abort();
+  }
+
+  if (init_mdns()) {
+    LOG_ERROR("init_mdns");
     abort();
   }
 

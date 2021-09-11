@@ -1,5 +1,6 @@
 #include <artnet.h>
 #include "artnet.h"
+#include "system.h"
 
 #include <logging.h>
 
@@ -14,9 +15,6 @@
 #define ARTNET_TASK_NAME "artnet"
 #define ARTNET_TASK_STACK 2048
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
-
-static const tcpip_adapter_if_t artnet_tcpip_adapter_if = TCPIP_ADAPTER_IF_STA;
-static const wifi_interface_t artnet_wifi_interface = ESP_IF_WIFI_STA;
 
 static const char artnet_product[] = "https://github.com/SpComb/esp-projects";
 
@@ -47,33 +45,33 @@ const struct configtab artnet_configtab[] = {
 
 static int init_artnet_options(struct artnet_options *options, const struct artnet_config *config)
 {
-  const char *hostname;
-  tcpip_adapter_ip_info_t ip_info;
-  uint8_t mac[6];
-  esp_err_t err;
+  uint8_t mac[6] = {};
+  const char *hostname = NULL;
+  ip4_addr_t ip_addr = {};
+  int err;
 
-  if ((err = tcpip_adapter_get_hostname(artnet_tcpip_adapter_if, &hostname))) {
-    LOG_ERROR("tcpip_adapter_get_hostname: %s", esp_err_to_name(err));
-    return -1;
+  if ((err = get_system_mac(mac)) < 0) {
+    LOG_ERROR("get_system_mac");
+    return err;
   }
 
-  if ((err = tcpip_adapter_get_ip_info(artnet_tcpip_adapter_if, &ip_info))) {
-    LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
-    return -1;
+  if ((err = get_system_hostname(&hostname)) < 0) {
+    LOG_ERROR("get_system_hostname");
+    return err;
   }
 
-  if ((err = esp_wifi_get_mac(artnet_wifi_interface, mac))) {
-    LOG_ERROR("esp_wifi_get_mac: %s", esp_err_to_name(err));
-    return -1;
+  if ((err = get_system_ipv4_addr(&ip_addr)) < 0) {
+    LOG_ERROR("get_system_ipv4_addr");
+    return err;
   }
 
   options->port = ARTNET_PORT;
   options->address = artnet_address(config->net, config->subnet, 0);
 
-  options->ip_address[0] = ip4_addr1(&ip_info.ip);
-  options->ip_address[1] = ip4_addr2(&ip_info.ip);
-  options->ip_address[2] = ip4_addr3(&ip_info.ip);
-  options->ip_address[3] = ip4_addr4(&ip_info.ip);
+  options->ip_address[0] = ip4_addr1(&ip_addr);
+  options->ip_address[1] = ip4_addr2(&ip_addr);
+  options->ip_address[2] = ip4_addr3(&ip_addr);
+  options->ip_address[3] = ip4_addr4(&ip_addr);
 
   options->mac_address[0] = mac[0];
   options->mac_address[1] = mac[1];
@@ -82,7 +80,7 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
   options->mac_address[4] = mac[4];
   options->mac_address[5] = mac[5];
 
-  snprintf(options->short_name, sizeof(options->short_name), "%s", hostname);
+  snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
   snprintf(options->long_name, sizeof(options->long_name), "%s", artnet_product);
 
   return 0;

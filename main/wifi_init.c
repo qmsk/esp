@@ -58,30 +58,36 @@ int init_wifi_sta()
 
 int init_wifi()
 {
+  int err;
 
-  if (init_tcpip_adapter()) {
+  if ((err = init_tcpip_adapter())) {
     LOG_ERROR("init_tcpip_adapter");
-    return -1;
+    return err;
   }
 
-  if (init_esp_event()) {
+  if ((err = init_esp_event())) {
     LOG_ERROR("init_esp_event");
-    return -1;
+    return err;
   }
 
-  if (init_wifi_events()) {
+  if ((err = init_wifi_events())) {
     LOG_ERROR("init_wifi_events");
-    return -1;
+    return err;
   }
 
-  if (init_wifi_sta()) {
+  if ((err = init_wifi_sta())) {
     LOG_ERROR("init_wifi_sta");
-    return -1;
+    return err;
   }
 
-  if (init_wifi_config(&wifi_config)) {
+  if ((err = init_wifi_hostname(&wifi_config))) {
+    LOG_ERROR("init_wifi_hostname");
+    return err;
+  }
+
+  if ((err = init_wifi_config(&wifi_config))) {
     LOG_ERROR("init_wifi_config");
-    return -1;
+    return err;
   }
 
   return 0;

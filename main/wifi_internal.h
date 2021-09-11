@@ -13,8 +13,10 @@ extern struct wifi_config {
   bool enabled;
   char ssid[32];
   char password[64];
+  char hostname[32];
 } wifi_config;
 
+int init_wifi_hostname(const struct wifi_config *config);
 int init_wifi_config(const struct wifi_config *config);
 int init_wifi_events();
 

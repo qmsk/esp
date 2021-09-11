@@ -6,10 +6,11 @@
 #include <string.h>
 
 struct wifi_config wifi_config = {
-  .mode       = WIFI_MODE_NULL,
-  .auth_mode  = WIFI_AUTHMODE_THRESHOLD,
+  .mode       = WIFI_MODE_AP,
+  .auth_mode  = WIFI_AUTH_WPA2_PSK,
 };
 
+#define WIFI_SSID_FMT "qmsk-esp-%02x%02x%02x"
 #define WIFI_HOSTNAME_FMT "qmsk-esp-%02x%02x%02x"
 
 const struct config_enum wifi_mode_enum[] = {
@@ -45,7 +46,7 @@ const struct configtab wifi_configtab[] = {
   { CONFIG_TYPE_STRING, "ssid",
     .description = (
       "For STA mode: connect to AP with given SSID\n"
-      "For AP mode: start AP with given SSID\n"
+      "For AP mode: start AP with given SSID, or use default\n"
     ),
     .string_type = { .value = wifi_config.ssid, .size = sizeof(wifi_config.ssid) },
   },
@@ -184,6 +185,7 @@ static int start_wifi_sta(const struct wifi_config *config)
 
 static int start_wifi_ap(const struct wifi_config *config)
 {
+  uint8_t mac[6];
   wifi_config_t wifi_config = {
     .ap = {
       .authmode = config->auth_mode,
@@ -192,8 +194,22 @@ static int start_wifi_ap(const struct wifi_config *config)
   };
   esp_err_t err;
 
-  strncpy((char *) wifi_config.ap.ssid, config->ssid, sizeof(wifi_config.ap.ssid));
   strncpy((char *) wifi_config.ap.password, config->password, sizeof(wifi_config.ap.password));
+
+  if (config->ssid[0]) {
+    LOG_INFO("Using config ssid: %s", config->ssid);
+
+    strncpy((char *) wifi_config.ap.ssid, config->ssid, sizeof(wifi_config.ap.ssid));
+
+  } else if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
+    LOG_ERROR("esp_wifi_get_mac WIFI_IF_AP: %s", esp_err_to_name(err));
+    return -1;
+
+  } else {
+    LOG_INFO("Using default ssid: " WIFI_SSID_FMT, mac[3], mac[4], mac[5]);
+
+    snprintf((char *) wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), WIFI_SSID_FMT, mac[3], mac[4], mac[5]);
+  }
 
   if (!config->password[0]) {
     wifi_config.ap.authmode = WIFI_AUTH_OPEN;

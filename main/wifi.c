@@ -249,6 +249,7 @@ static int wifi_info_ap()
 {
   uint8_t mac[6];
   wifi_config_t config;
+  wifi_sta_list_t sta_list;
   esp_err_t err;
 
   if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
@@ -273,7 +274,23 @@ static int wifi_info_ap()
   printf("\t%-20s: %d\n", "Max Connection", config.ap.max_connection);
   printf("\t%-20s: %d\n", "Beacon Interval", config.ap.beacon_interval);
 
-  /* TODO: connected STA info */
+  /* connected STA info */
+  if ((err = esp_wifi_ap_get_sta_list(&sta_list))) {
+    LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  printf("WiFi AP: %d stations connected\n", sta_list.num);
+
+  for (wifi_sta_info_t *sta_info = sta_list.sta; sta_info < sta_list.sta + sta_list.num; sta_info++) {
+    printf("\t%02x:%02x:%02x:%02x:%02x:%02x: %c%c%c%c\n",
+      sta_info->mac[0], sta_info->mac[1], sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5],
+      sta_info->phy_11b ? 'b' : ' ',
+      sta_info->phy_11g ? 'g' : ' ',
+      sta_info->phy_11n ? 'n' : ' ',
+      sta_info->phy_lr  ? 'L' : ' '
+    );
+  }
 
   return 0;
 }

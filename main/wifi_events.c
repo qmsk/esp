@@ -7,16 +7,6 @@
 #include <esp_err.h>
 #include <esp_event.h>
 
-const char *tcpip_adapter_if_str(tcpip_adapter_if_t adapter_if) {
-  switch (adapter_if) {
-    case TCPIP_ADAPTER_IF_STA:  return "STA";
-    case TCPIP_ADAPTER_IF_AP:   return "AP";
-    case TCPIP_ADAPTER_IF_ETH:  return "ETH";
-    case TCPIP_ADAPTER_IF_TEST: return "TEST";
-    default:                    return "?";
-  }
-}
-
 const char *wifi_err_reason_str(wifi_err_reason_t reason) {
   switch (reason) {
     case WIFI_REASON_UNSPECIFIED: return "UNSPECIFIED";
@@ -109,7 +99,45 @@ static void on_sta_bss_rssi_low(wifi_event_bss_rssi_low_t *event)
   LOG_INFO("rssi=%d", event->rssi);
 }
 
-static void on_sta_got_ip(ip_event_got_ip_t *event)
+static void on_ap_start()
+{
+  LOG_INFO(" ");
+
+  user_event(USER_EVENT_CONNECTED);
+}
+
+static void on_ap_stop()
+{
+  LOG_INFO(" ");
+
+  user_event(USER_EVENT_DISCONNECTED);
+}
+
+static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
+{
+  LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
+    event->aid,
+    event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
+  );
+}
+
+static void on_ap_sta_disconnected(wifi_event_ap_stadisconnected_t *event)
+{
+  LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
+    event->aid,
+    event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
+  );
+}
+
+static void on_ap_probe_req_recved(wifi_event_ap_probe_req_rx_t *event)
+{
+  LOG_INFO("rssi=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
+    event->rssi,
+    event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
+  );
+}
+
+static void on_ip_sta_got_ip(ip_event_got_ip_t *event)
 {
   LOG_INFO("if=%s ip=%d.%d.%d.%d changed=%s",
     tcpip_adapter_if_str(event->if_index),
@@ -120,7 +148,7 @@ static void on_sta_got_ip(ip_event_got_ip_t *event)
   user_event(USER_EVENT_CONNECTED);
 }
 
-static void on_sta_lost_ip()
+static void on_ip_sta_lost_ip()
 {
   LOG_INFO(" ");
 
@@ -132,10 +160,10 @@ static void tcpip_adapter_event_handler(void *arg, esp_event_base_t event_base, 
 {
   switch (event_id) {
     case IP_EVENT_STA_GOT_IP:
-      return on_sta_got_ip(event_data);
+      return on_ip_sta_got_ip(event_data);
 
     case IP_EVENT_STA_LOST_IP:
-      return on_sta_lost_ip();
+      return on_ip_sta_lost_ip();
   }
 }
 
@@ -165,6 +193,21 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
 
     case WIFI_EVENT_STA_BSS_RSSI_LOW:
       return on_sta_bss_rssi_low(event_data);
+
+    case WIFI_EVENT_AP_START:
+      return on_ap_start(event_data);
+
+    case WIFI_EVENT_AP_STOP:
+      return on_ap_stop(event_data);
+
+    case WIFI_EVENT_AP_STACONNECTED:
+      return on_ap_sta_connected(event_data);
+
+    case WIFI_EVENT_AP_STADISCONNECTED:
+      return on_ap_sta_disconnected(event_data);
+
+    case WIFI_EVENT_AP_PROBEREQRECVED:
+      return on_ap_probe_req_recved(event_data);
   }
 }
 

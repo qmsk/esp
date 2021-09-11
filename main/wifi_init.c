@@ -45,19 +45,13 @@ int init_wifi()
     return err;
   }
 
-  if ((err = init_wifi_sta())) {
-    LOG_ERROR("init_wifi_sta");
+  if ((err = config_wifi(&wifi_config))) {
+    LOG_ERROR("config_wifi");
     return err;
   }
 
-  if ((err = init_wifi_hostname(&wifi_config))) {
-    LOG_ERROR("init_wifi_hostname");
-    return err;
-  }
-
-
-  if ((err = init_wifi_config(&wifi_config))) {
-    LOG_ERROR("init_wifi_config");
+  if ((err = start_wifi(&wifi_config))) {
+    LOG_ERROR("start_wifi");
     return err;
   }
 

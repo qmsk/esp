@@ -7,6 +7,17 @@
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 
+const char *wifi_mode_str(wifi_mode_t mode)
+{
+  switch(mode) {
+    case WIFI_MODE_NULL:      return "NULL";
+    case WIFI_MODE_STA:       return "STA";
+    case WIFI_MODE_AP:        return "AP";
+    case WIFI_MODE_APSTA:     return "APSTA";
+    default:                  return "?";
+  }
+}
+
 const char *wifi_auth_mode_str(wifi_auth_mode_t auth_mode) {
   switch (auth_mode) {
     case WIFI_AUTH_OPEN:            return "OPEN";
@@ -32,6 +43,17 @@ const char *wifi_cipher_type_str(wifi_cipher_type_t cipher_type) {
     case WIFI_CIPHER_TYPE_AES_CMAC128:  return "AES-CMAC128";
     case WIFI_CIPHER_TYPE_UNKNOWN:      return "UNKNOWN";
     default:                            return "?";
+  }
+}
+
+const char *tcpip_adapter_if_str(tcpip_adapter_if_t tcpip_if)
+{
+  switch(tcpip_if) {
+    case TCPIP_ADAPTER_IF_STA:    return "STA";
+    case TCPIP_ADAPTER_IF_AP:     return "AP";
+    case TCPIP_ADAPTER_IF_ETH:    return "ETH";
+    case TCPIP_ADAPTER_IF_TEST:   return "TEST";
+    default:                      return "?";
   }
 }
 
@@ -154,7 +176,7 @@ int wifi_connect(wifi_config_t *config)
   );
 
   if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, config))) {
-    LOG_ERROR("esp_wifi_set_config: %s", esp_err_to_name(err));
+    LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_STA: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -168,7 +190,14 @@ int wifi_connect(wifi_config_t *config)
   return 0;
 }
 
-int wifi_info()
+static int wifi_info_null()
+{
+  printf("Wifi OFF\n");
+
+  return 0;
+}
+
+static int wifi_info_sta()
 {
   uint8_t mac[6];
   wifi_ap_record_t ap;
@@ -188,7 +217,7 @@ int wifi_info()
     }
   }
 
-  printf("Station %02x:%02x:%02x:%02x:%02x:%02x: %s\n",
+  printf("WiFi STA %02x:%02x:%02x:%02x:%02x:%02x: %s\n",
     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
     err ? "Not Connected" : "Connected"
   );
@@ -215,7 +244,67 @@ int wifi_info()
   return 0;
 }
 
-int tcpip_adapter_info()
+
+static int wifi_info_ap()
+{
+  uint8_t mac[6];
+  wifi_config_t config;
+  esp_err_t err;
+
+  if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
+    LOG_ERROR("esp_wifi_get_mac: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_get_config(WIFI_IF_AP, &config))) {
+    LOG_ERROR("esp_wifi_get_config: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  printf("WiFi AP %02x:%02x:%02x:%02x:%02x:%02x:\n",
+    mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+  );
+
+  printf("\t%-20s: %.32s\n", "SSID", config.ap.ssid);
+  printf("\t%-20s: %.32s\n", "Password", "***");
+  printf("\t%-20s: %d\n", "Channel", config.ap.channel);
+  printf("\t%-20s: %s\n", "AuthMode", wifi_auth_mode_str(config.ap.authmode));
+  printf("\t%-20s: %s\n", "Hidden", config.ap.ssid_hidden ? "true" : "false");
+  printf("\t%-20s: %d\n", "Max Connection", config.ap.max_connection);
+  printf("\t%-20s: %d\n", "Beacon Interval", config.ap.beacon_interval);
+
+  /* TODO: connected STA info */
+
+  return 0;
+}
+
+int wifi_info()
+{
+  wifi_mode_t mode;
+  esp_err_t err;
+
+  if ((err = esp_wifi_get_mode(&mode))) {
+    LOG_ERROR("esp_wifi_get_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  switch (mode) {
+    case WIFI_MODE_NULL:
+      return wifi_info_null();
+
+    case WIFI_MODE_STA:
+      return wifi_info_sta();
+
+    case WIFI_MODE_AP:
+      return wifi_info_ap();
+
+    default:
+      LOG_ERROR("Unknown wifi mode=%d", mode);
+      return -1;
+  }
+}
+
+int tcpip_adapter_info(tcpip_adapter_if_t tcpip_if)
 {
   const char *hostname;
   tcpip_adapter_dhcp_status_t dhcp_status;
@@ -223,37 +312,42 @@ int tcpip_adapter_info()
   tcpip_adapter_dns_info_t dns_info_main, dns_info_backup, dns_info_fallback;
   esp_err_t err;
 
-  if ((err = tcpip_adapter_get_hostname(TCPIP_ADAPTER_IF_STA, &hostname))) {
-    LOG_ERROR("tcpip_adapter_get_hostname TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+  if (!tcpip_adapter_is_netif_up(tcpip_if)) {
+    printf("TCP/IP %s: DOWN\n", tcpip_adapter_if_str(tcpip_if));
+    return 0;
+  }
+
+  if ((err = tcpip_adapter_get_hostname(tcpip_if, &hostname))) {
+    LOG_ERROR("tcpip_adapter_get_hostname: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &dhcp_status))) {
-    LOG_ERROR("tcpip_adapter_dhcpc_get_status TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_dhcpc_get_status(tcpip_if, &dhcp_status))) {
+    LOG_ERROR("tcpip_adapter_dhcpc_get_status: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info))) {
-    LOG_ERROR("tcpip_adapter_get_ip_info TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_get_ip_info(tcpip_if, &ip_info))) {
+    LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_MAIN, &dns_info_main))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &dns_info_main))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_BACKUP, &dns_info_backup))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_BACKUP, &dns_info_backup))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = tcpip_adapter_get_dns_info(TCPIP_ADAPTER_IF_STA, TCPIP_ADAPTER_DNS_FALLBACK, &dns_info_fallback))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_IF_STA TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_FALLBACK, &dns_info_fallback))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
     return -1;
   }
 
-  printf("TCP/IP:\n");
+  printf("TCP/IP %s: UP\n", tcpip_adapter_if_str(tcpip_if));
   printf("\t%-20s: %s\n", "Hostname", hostname ? hostname : "(null)");
   printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcp_status));
   print_ip4_info("IP", &ip_info.ip);

@@ -249,7 +249,8 @@ static int wifi_info_ap()
 {
   uint8_t mac[6];
   wifi_config_t config;
-  wifi_sta_list_t sta_list;
+  wifi_sta_list_t wifi_sta_list;
+  tcpip_adapter_sta_list_t tcpip_sta_list;
   esp_err_t err;
 
   if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
@@ -275,20 +276,31 @@ static int wifi_info_ap()
   printf("\t%-20s: %d\n", "Beacon Interval", config.ap.beacon_interval);
 
   /* connected STA info */
-  if ((err = esp_wifi_ap_get_sta_list(&sta_list))) {
+  if ((err = esp_wifi_ap_get_sta_list(&wifi_sta_list))) {
     LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
     return -1;
   }
+  if ((err = tcpip_adapter_get_sta_list(&wifi_sta_list, &tcpip_sta_list))) {
+    LOG_ERROR("tcpip_adapter_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
 
-  printf("WiFi AP: %d stations connected\n", sta_list.num);
+  printf("WiFi AP: %d stations connected\n", wifi_sta_list.num);
 
-  for (wifi_sta_info_t *sta_info = sta_list.sta; sta_info < sta_list.sta + sta_list.num; sta_info++) {
-    printf("\t%02x:%02x:%02x:%02x:%02x:%02x: %c%c%c%c\n",
-      sta_info->mac[0], sta_info->mac[1], sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5],
-      sta_info->phy_11b ? 'b' : ' ',
-      sta_info->phy_11g ? 'g' : ' ',
-      sta_info->phy_11n ? 'n' : ' ',
-      sta_info->phy_lr  ? 'L' : ' '
+  for (int i = 0; i < wifi_sta_list.num && i < tcpip_sta_list.num; i++) {
+    wifi_sta_info_t *wifi_sta_info = &wifi_sta_list.sta[i];
+    tcpip_adapter_sta_info_t *tcpip_sta_info = &tcpip_sta_list.sta[i];
+
+    printf("\t%02x:%02x:%02x:%02x:%02x:%02x\t%c%c%c%c\t%u.%u.%u.%u\n",
+      wifi_sta_info->mac[0], wifi_sta_info->mac[1], wifi_sta_info->mac[2], wifi_sta_info->mac[3], wifi_sta_info->mac[4], wifi_sta_info->mac[5],
+      wifi_sta_info->phy_11b ? 'b' : ' ',
+      wifi_sta_info->phy_11g ? 'g' : ' ',
+      wifi_sta_info->phy_11n ? 'n' : ' ',
+      wifi_sta_info->phy_lr  ? 'L' : ' ',
+      ip4_addr1(&tcpip_sta_info->ip),
+      ip4_addr2(&tcpip_sta_info->ip),
+      ip4_addr3(&tcpip_sta_info->ip),
+      ip4_addr4(&tcpip_sta_info->ip)
     );
   }
 

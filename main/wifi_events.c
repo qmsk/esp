@@ -156,6 +156,29 @@ static void on_ip_sta_lost_ip()
   user_event(USER_EVENT_DISCONNECTED);
 }
 
+static void on_ip_ap_sta_ip_assigned(ip_event_ap_staipassigned_t *event)
+{
+  LOG_INFO("ip=%d.%d.%d.%d",
+    ip4_addr1_val(event->ip), ip4_addr2_val(event->ip), ip4_addr3_val(event->ip), ip4_addr4_val(event->ip)
+  );
+}
+
+static void on_ip_got_ip6(ip_event_got_ip6_t *event)
+{
+  LOG_INFO("if=%s ip=%4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x",
+    tcpip_adapter_if_str(event->if_index),
+    IP6_ADDR_BLOCK1(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK2(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK3(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK4(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK5(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK6(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK7(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK8(&event->ip6_info.ip)
+  );
+
+}
+
 static void tcpip_adapter_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
   switch (event_id) {
@@ -164,6 +187,12 @@ static void tcpip_adapter_event_handler(void *arg, esp_event_base_t event_base, 
 
     case IP_EVENT_STA_LOST_IP:
       return on_ip_sta_lost_ip();
+
+    case IP_EVENT_AP_STAIPASSIGNED:
+      return on_ip_ap_sta_ip_assigned(event_data);
+
+    case IP_EVENT_GOT_IP6:
+      return on_ip_got_ip6(event_data);
   }
 }
 

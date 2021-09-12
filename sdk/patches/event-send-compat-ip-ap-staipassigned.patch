@@ -1,0 +1,21 @@
+commit 9b1aafb4ea639e689ae902542dde10812a164685 (HEAD -> patches)
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Sun Sep 12 02:55:33 2021 +0300
+
+    esp_event: fix legacy SYSTEM_EVENT_AP_STAIPASSIGNED compat member
+
+    See https://github.com/espressif/ESP8266_RTOS_SDK/issues/880#issuecomment-618804535
+
+diff --git a/components/esp_event/event_send_compat.inc b/components/esp_event/event_send_compat.inc
+index a920eee2..65c7f26b 100644
+--- a/components/esp_event/event_send_compat.inc
++++ b/components/esp_event/event_send_compat.inc
+@@ -92,7 +92,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
+         HANDLE_SYS_EVENT_ARG(IP, STA_GOT_IP, got_ip);
+         HANDLE_SYS_EVENT(IP, STA_LOST_IP);
+         HANDLE_SYS_EVENT_ARG(IP, GOT_IP6, got_ip6);
+-        HANDLE_SYS_EVENT(IP, AP_STAIPASSIGNED);
++        HANDLE_SYS_EVENT_ARG(IP, AP_STAIPASSIGNED, ap_staipassigned);
+         default:
+             return ESP_ERR_NOT_SUPPORTED;
+     }

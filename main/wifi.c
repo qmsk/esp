@@ -336,7 +336,7 @@ int wifi_info()
 int tcpip_adapter_info(tcpip_adapter_if_t tcpip_if)
 {
   const char *hostname;
-  tcpip_adapter_dhcp_status_t dhcp_status;
+  tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
   tcpip_adapter_ip_info_t ip_info;
   tcpip_adapter_dns_info_t dns_info_main, dns_info_backup, dns_info_fallback;
   esp_err_t err;
@@ -351,7 +351,12 @@ int tcpip_adapter_info(tcpip_adapter_if_t tcpip_if)
     return -1;
   }
 
-  if ((err = tcpip_adapter_dhcpc_get_status(tcpip_if, &dhcp_status))) {
+  if ((err = tcpip_adapter_dhcps_get_status(tcpip_if, &dhcps_status))) {
+    LOG_ERROR("tcpip_adapter_dhcps_get_status: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_dhcpc_get_status(tcpip_if, &dhcpc_status))) {
     LOG_ERROR("tcpip_adapter_dhcpc_get_status: %s", esp_err_to_name(err));
     return -1;
   }
@@ -378,7 +383,8 @@ int tcpip_adapter_info(tcpip_adapter_if_t tcpip_if)
 
   printf("TCP/IP %s: UP\n", tcpip_adapter_if_str(tcpip_if));
   printf("\t%-20s: %s\n", "Hostname", hostname ? hostname : "(null)");
-  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcp_status));
+  printf("\t%-20s: %s\n", "DHCP Server", tcpip_adapter_dhcp_status_str(dhcps_status));
+  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcpc_status));
   print_ip4_info("IP", &ip_info.ip);
   print_ip4_info("Netmask", &ip_info.netmask);
   print_ip4_info("Gateway", &ip_info.gw);

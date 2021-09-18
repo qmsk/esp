@@ -21,67 +21,76 @@ void app_main()
   // heap usage is likely to be lowest at app_main() start
   system_update_maximum_free_heap_size();
 
-  LOG_INFO("start");
+  // system-level boot stage, abort on failures
+  LOG_INFO("boot");
 
   if (init_status_leds()) {
     LOG_ERROR("init_status_leds");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
   if (init_uart()) {
     LOG_ERROR("uart_init");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
   if (init_cli()) {
     LOG_ERROR("init_cli");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
+
+  // config stage, terminate on failure
+  LOG_INFO("boot");
 
   if (init_config()) {
     LOG_ERROR("init_config");
-    abort();
+    user_alert(USER_ALERT_ERROR_CONFIG);
+    return; // skip remaining
   }
 
+  // setup stage, continue on failure
   if (init_atx_psu()) {
     LOG_ERROR("init_atx_psu");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_wifi()) {
     LOG_ERROR("init_wifi");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_mdns()) {
     LOG_ERROR("init_mdns");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_http()) {
     LOG_ERROR("init_http");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_artnet()) {
     LOG_ERROR("init_artnet");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_spi_leds()) {
     LOG_ERROR("init_spi_leds");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   if (init_dmx()) {
     LOG_ERROR("init_dmx");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 
   LOG_INFO("complete");
 
   if (start_artnet()) {
     LOG_ERROR("start_artnet");
-    abort();
+    user_alert(USER_ALERT_ERROR_SETUP);
   }
 }

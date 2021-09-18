@@ -42,8 +42,8 @@ enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
 
 enum status_led_mode user_alert_led_mode[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_BOOT]         = STATUS_LED_ON,
-  [USER_ALERT_ERROR_CONFIG]       = STATUS_LED_SLOW,
-  [USER_ALERT_ERROR_SETUP]        = STATUS_LED_FAST,
+  [USER_ALERT_ERROR_CONFIG]       = STATUS_LED_FAST,
+  [USER_ALERT_ERROR_SETUP]        = STATUS_LED_SLOW,
 };
 
 #ifdef USER_LED

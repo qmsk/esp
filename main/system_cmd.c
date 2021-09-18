@@ -226,6 +226,17 @@ static inline void print_ip4_info(const char *title, ip4_addr_t *ip)
   );
 }
 
+static inline void print_ip4_cidr(const char *title, ip4_addr_t *ip, unsigned prefixlen)
+{
+  printf("\t%-20s: %u.%u.%u.%u/%u\n", title,
+    ip4_addr1(ip),
+    ip4_addr2(ip),
+    ip4_addr3(ip),
+    ip4_addr4(ip),
+    prefixlen
+  );
+}
+
 static inline void print_ip6_info(const char *title, ip6_addr_t *ip)
 {
   printf("\t%-20s: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", title,
@@ -268,6 +279,7 @@ int print_interface_info(tcpip_adapter_if_t tcpip_if)
   printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(info.dhcpc_status));
   print_ip4_info("IP", &info.ipv4.ip);
   print_ip4_info("Netmask", &info.ipv4.netmask);
+  print_ip4_cidr("Network", &info.ipv4_network, info.ipv4_prefixlen);
   print_ip4_info("Gateway", &info.ipv4.gw);
   print_ip_info("DNS (main)", &info.dns_main.ip);
   print_ip_info("DNS (backup)", &info.dns_backup.ip);

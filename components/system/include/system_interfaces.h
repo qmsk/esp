@@ -11,7 +11,11 @@ const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status);
 struct system_interface_info {
   const char *hostname;
   tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
+
   tcpip_adapter_ip_info_t ipv4;
+  ip4_addr_t ipv4_network;
+  unsigned ipv4_prefixlen;
+
   tcpip_adapter_dns_info_t dns_main, dns_backup, dns_fallback;
 };
 

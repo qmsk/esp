@@ -164,6 +164,8 @@ static int system_api_write_interface_object(struct json_writer *w, tcpip_adapte
     JSON_WRITE_MEMBER_STRING(w, "dhcp_client_status", tcpip_adapter_dhcp_status_str(info.dhcpc_status)) ||
     JSON_WRITE_MEMBER_IPV4(w, "ipv4_address", &info.ipv4.ip) ||
     JSON_WRITE_MEMBER_IPV4(w, "ipv4_netmask", &info.ipv4.netmask) ||
+    JSON_WRITE_MEMBER_IPV4(w, "ipv4_network", &info.ipv4_network) ||
+    JSON_WRITE_MEMBER_UINT(w, "ipv4_prefixlen", info.ipv4_prefixlen) ||
     JSON_WRITE_MEMBER_IPV4(w, "ipv4_gateway", &info.ipv4.gw) ||
     JSON_WRITE_MEMBER_IP(w, "dns_main", &info.dns_main.ip) ||
     JSON_WRITE_MEMBER_IP(w, "dns_backup", &info.dns_backup.ip) ||

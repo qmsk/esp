@@ -25,6 +25,22 @@ const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
   }
 }
 
+static unsigned ipv4_netmask_prefixlen(const struct ip4_addr *ip)
+{
+  u32_t addr = lwip_htonl(ip4_addr_get_u32(ip));
+  unsigned len = 0;
+
+  for (u32_t mask = 1 << 31; mask; mask >>= 1) {
+    if (addr & mask) {
+      len++;
+    } else {
+      break;
+    }
+  }
+
+  return len;
+}
+
 int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t tcpip_if)
 {
   esp_err_t err;
@@ -52,6 +68,9 @@ int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t
     LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
     return -1;
   }
+
+  ip4_addr_get_network(&info->ipv4_network, &info->ipv4.ip, &info->ipv4.netmask);
+  info->ipv4_prefixlen = ipv4_netmask_prefixlen(&info->ipv4.netmask);
 
   if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &info->dns_main))) {
     LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));

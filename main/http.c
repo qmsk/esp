@@ -275,7 +275,7 @@ int init_http()
 
   if (!http_config.enabled) {
     LOG_INFO("disabled");
-    return 1;
+    return 0;
   }
 
   if ((err = http_server_create(&http.server, HTTP_LISTEN_BACKLOG, HTTP_STREAM_SIZE))) {

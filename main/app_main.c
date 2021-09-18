@@ -58,7 +58,7 @@ void app_main()
     abort();
   }
 
-  if (init_http() < 0) {
+  if (init_http()) {
     LOG_ERROR("init_http");
     abort();
   }

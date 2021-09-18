@@ -55,6 +55,18 @@ int init_spiffs_partition_formatted(const char *base_path, const char *partition
   return 0;
 }
 
+int format_spiffs_partition(const char *partition_label)
+{
+  esp_err_t err;
+
+  if ((err = esp_spiffs_format(partition_label))) {
+    LOG_ERROR("esp_spiffs_format: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 int spiffs_info_cmd (int argc, char **argv, void *ctx)
 {
   const char *label;
@@ -88,11 +100,12 @@ int spiffs_format_cmd (int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = esp_spiffs_format(label))) {
-    LOG_ERROR("esp_spiffs_format: %s", esp_err_to_name(err));
+  if (format_spiffs_partition(label)) {
+    LOG_ERROR("format_spiffs_partition");
+    return -1;
+  } else {
+    printf("SPIFFS partition(%s) formatted\n", label ? label : "");
   }
-
-  printf("SPIFFS partition(%s) formatted\n", label ? label : "");
 
   return 0;
 }

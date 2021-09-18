@@ -15,4 +15,9 @@ int init_spiffs_partition(const char *base_path, const char *partition_label, si
  */
 int init_spiffs_partition_formatted(const char *base_path, const char *partition_label, size_t max_files);
 
+/*
+ * Format partition
+ */
+int format_spiffs_partition(const char *partition_label);
+
 extern const struct cmdtab spiffs_cmdtab;

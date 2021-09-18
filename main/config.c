@@ -139,6 +139,32 @@ int init_config()
   return 0;
 }
 
+void reset_config()
+{
+  int err;
+
+  // attempt to remove the config boot.ini file
+  if ((err = config_reset(&config)) < 0) {
+    LOG_ERROR("config_reset");
+  } else if (err > 0) {
+    LOG_INFO("no config file: %s", config.filename);
+    return;
+  } else {
+    LOG_WARN("removed config file: %s", config.filename);
+    return;
+  }
+
+  // if spiffs is corrupted enough, format entire partition
+  if ((err = format_spiffs_partition(CONFIG_PARTITON_LABEL))) {
+    LOG_ERROR("format_spiffs_partition");
+  } else {
+    LOG_WARN("formatted config filesystem: %s", CONFIG_PARTITON_LABEL);
+    return;
+  }
+
+  LOG_WARN("unable to reset configuration!");
+}
+
 const struct cmdtab config_cmdtab = {
   .arg      = &config,
   .commands = config_commands,

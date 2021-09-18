@@ -83,6 +83,7 @@ int configmod_lookup(const struct configmod *mod, const char *name, const struct
 int configtab_lookup(const struct configtab *tab, const char *name, const struct configtab **tabp);
 int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp);
 
+int config_clear(const struct configmod *mod, const struct configtab *tab);
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value);
 int config_get(const struct configmod *mod, const struct configtab *tab, char *buf, size_t size);
 int config_print(const struct configmod *mod, const struct configtab *tab, FILE *file);

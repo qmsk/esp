@@ -70,6 +70,37 @@ int config_lookup(const struct config *config, const char *module, const char *n
     return 0;
 }
 
+int config_clear(const struct configmod *mod, const struct configtab *tab)
+{
+  if (tab->readonly) {
+    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
+    return -1;
+  }
+
+  switch (tab->type) {
+    case CONFIG_TYPE_STRING:
+      memset(tab->string_type.value, '\0', tab->string_type.size);
+      break;
+
+    case CONFIG_TYPE_UINT16:
+      *tab->uint16_type.value = 0;
+      break;
+
+    case CONFIG_TYPE_BOOL:
+      *tab->bool_type.value = false;
+      break;
+
+    case CONFIG_TYPE_ENUM:
+      *tab->enum_type.value = 0;
+      break;
+
+    default:
+      return -1;
+  }
+
+  return 0;
+}
+
 int config_set_enum(const struct configmod *mod, const struct configtab *tab, const char *value)
 {
   const struct config_enum *e;

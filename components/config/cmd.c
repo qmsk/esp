@@ -178,6 +178,40 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int config_cmd_clear(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+  int err;
+
+  const struct configmod *mod;
+  const struct configtab *tab;
+  const char *section, *name;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &section))) {
+    return err;
+  }
+  if ((err = cmd_arg_str(argc, argv, 2, &name))) {
+    return err;
+  }
+
+  if (config_lookup(config, section, name, &mod, &tab)) {
+    LOG_ERROR("Unkown config: %s.%s", section, name);
+    return -CMD_ERR_ARGV;
+  }
+
+  if (config_clear(mod, tab)) {
+    LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+    return -CMD_ERR_ARGV;
+  }
+
+  if (config_save(config)) {
+    LOG_ERROR("Failed writing config");
+    return -CMD_ERR;
+  }
+
+  return 0;
+}
+
 int config_cmd_reset(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
@@ -191,9 +225,10 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "show",              config_cmd_show, .usage = "[SECTION]",           .describe = "Show config settings"  },
-  { "get",               config_cmd_get,  .usage = "SECTION NAME",        .describe = "Get config setting"    },
-  { "set",               config_cmd_set,  .usage = "SECTION NAME VALUE",  .describe = "Set and write config"  },
-  { "reset",             config_cmd_reset,                                .describe = "Remove stored config and reset to defaults" },
+  { "show",              config_cmd_show,   .usage = "[SECTION]",           .describe = "Show config settings"  },
+  { "get",               config_cmd_get,    .usage = "SECTION NAME",        .describe = "Get config setting"    },
+  { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE",  .describe = "Set and write config"  },
+  { "clear",             config_cmd_clear,  .usage = "SECTION NAME",        .describe = "Clear and write config"  },
+  { "reset",             config_cmd_reset,                                  .describe = "Remove stored config and reset to defaults" },
   {}
 };

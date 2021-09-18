@@ -3,6 +3,7 @@
 #include <logging.h>
 #include <system.h>
 #include <system_tasks.h>
+#include <system_interfaces.h>
 
 #include <esp_partition.h>
 #include <freertos/FreeRTOS.h>
@@ -215,6 +216,117 @@ error:
   return err;
 }
 
+static inline void print_ip4_info(const char *title, ip4_addr_t *ip)
+{
+  printf("\t%-20s: %u.%u.%u.%u\n", title,
+    ip4_addr1(ip),
+    ip4_addr2(ip),
+    ip4_addr3(ip),
+    ip4_addr4(ip)
+  );
+}
+
+static inline void print_ip6_info(const char *title, ip6_addr_t *ip)
+{
+  printf("\t%-20s: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", title,
+    IP6_ADDR_BLOCK1(ip),
+    IP6_ADDR_BLOCK2(ip),
+    IP6_ADDR_BLOCK3(ip),
+    IP6_ADDR_BLOCK4(ip),
+    IP6_ADDR_BLOCK5(ip),
+    IP6_ADDR_BLOCK6(ip),
+    IP6_ADDR_BLOCK7(ip),
+    IP6_ADDR_BLOCK8(ip)
+ );
+}
+
+static inline void print_ip_info(const char *title, ip_addr_t *ip)
+{
+  if (IP_IS_V4(ip)) {
+    print_ip4_info(title, ip_2_ip4(ip));
+  } else if (IP_IS_V6(ip)) {
+    print_ip6_info(title, ip_2_ip6(ip));
+  }
+}
+
+int print_interface_info(tcpip_adapter_if_t tcpip_if)
+{
+  const char *hostname;
+  tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
+  tcpip_adapter_ip_info_t ip_info;
+  tcpip_adapter_dns_info_t dns_info_main, dns_info_backup, dns_info_fallback;
+  esp_err_t err;
+
+  if (!tcpip_adapter_is_netif_up(tcpip_if)) {
+    printf("TCP/IP %s: DOWN\n", tcpip_adapter_if_str(tcpip_if));
+    return 0;
+  }
+
+  if ((err = tcpip_adapter_get_hostname(tcpip_if, &hostname))) {
+    LOG_ERROR("tcpip_adapter_get_hostname: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_dhcps_get_status(tcpip_if, &dhcps_status))) {
+    LOG_ERROR("tcpip_adapter_dhcps_get_status: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_dhcpc_get_status(tcpip_if, &dhcpc_status))) {
+    LOG_ERROR("tcpip_adapter_dhcpc_get_status: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_ip_info(tcpip_if, &ip_info))) {
+    LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &dns_info_main))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_BACKUP, &dns_info_backup))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_FALLBACK, &dns_info_fallback))) {
+    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  printf("TCP/IP %s: UP\n", tcpip_adapter_if_str(tcpip_if));
+  printf("\t%-20s: %s\n", "Hostname", hostname ? hostname : "(null)");
+  printf("\t%-20s: %s\n", "DHCP Server", tcpip_adapter_dhcp_status_str(dhcps_status));
+  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcpc_status));
+  print_ip4_info("IP", &ip_info.ip);
+  print_ip4_info("Netmask", &ip_info.netmask);
+  print_ip4_info("Gateway", &ip_info.gw);
+  print_ip_info("DNS (main)", &dns_info_main.ip);
+  print_ip_info("DNS (backup)", &dns_info_backup.ip);
+  print_ip_info("DNS (fallback)", &dns_info_fallback.ip);
+
+  return 0;
+}
+
+static int system_interfaces_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = print_interface_info(TCPIP_ADAPTER_IF_STA))) {
+    LOG_ERROR("tcpip_adapter_info");
+    return err;
+  }
+
+  if ((err = print_interface_info(TCPIP_ADAPTER_IF_AP))) {
+    LOG_ERROR("tcpip_adapter_info");
+    return err;
+  }
+
+  return 0;
+}
 
 static int system_restart_cmd(int argc, char **argv, void *ctx)
 {
@@ -227,6 +339,7 @@ static const struct cmd system_commands[] = {
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
   { "status",     system_status_cmd,      .describe = "Print system status" },
   { "tasks",      system_tasks_cmd,       .describe = "Print system tasks" },
+  { "interfaces", system_interfaces_cmd,  .describe = "Print system network interfaces" },
   { "restart",    system_restart_cmd,     .describe = "Restart system" },
   {}
 };

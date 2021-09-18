@@ -53,16 +53,6 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = tcpip_adapter_info(TCPIP_ADAPTER_IF_STA))) {
-    LOG_ERROR("tcpip_adapter_info");
-    return err;
-  }
-
-  if ((err = tcpip_adapter_info(TCPIP_ADAPTER_IF_AP))) {
-    LOG_ERROR("tcpip_adapter_info");
-    return err;
-  }
-
   return 0;
 }
 

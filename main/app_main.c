@@ -8,6 +8,7 @@
 #include "uart.h"
 #include "spi_leds_init.h"
 #include "status_leds.h"
+#include "system.h"
 #include "wifi.h"
 
 #include <logging.h>
@@ -34,6 +35,12 @@ void app_main()
 
   if (init_uart()) {
     LOG_ERROR("uart_init");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if (init_system()) {
+    LOG_ERROR("init_system");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

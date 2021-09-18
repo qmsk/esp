@@ -5,6 +5,12 @@
 
 extern const struct cmdtab system_cmdtab;
 
+/*
+ * Initialize system components
+ */
+int init_system();
+
+
 /* get WiFI AP/STA MAC address.
  *
  * @return <0 on error, 1 if not available

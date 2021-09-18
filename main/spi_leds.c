@@ -131,7 +131,7 @@ int init_spi_leds()
 
 static void update_spi_leds_active()
 {
-  bool active;
+  bool active = false;
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {

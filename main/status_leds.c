@@ -7,7 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define STATUS_LEDS_TASK_STACK 1024
+#define STATUS_LEDS_TASK_STACK 2048
 #define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static struct status_led *user_led;
@@ -155,9 +155,9 @@ static void set_alert_led(enum status_led_mode mode)
   }
 }
 
-static void status_leds_main(void *arg)
+void status_leds_main(void *arg)
 {
-  static int flash_boot = 1, flash_held = 0, flash_released = 0;
+  int flash_boot = 1, flash_held = 0, flash_released = 0;
   int ret;
 
   for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_FLASH_READ_PERIOD / portTICK_RATE_MS)) {

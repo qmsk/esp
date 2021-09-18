@@ -74,12 +74,14 @@ int config_save(struct config *config)
 
 int config_reset(struct config *config)
 {
-  LOG_INFO("%s", config->filename);
-
-  if (remove(config->filename)) {
+  if (remove(config->filename) == 0) {
+    LOG_INFO("remove %s", config->filename);
+    return 0;
+  } else if (errno == ENOENT) {
+    LOG_WARN("remove %s: %s", config->filename, strerror(errno));
+    return 1;
+  } else {
     LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
     return -1;
   }
-
-  return 0;
 }

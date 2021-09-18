@@ -93,6 +93,10 @@ int config_write(struct config *config, FILE *file);
 
 int config_load(struct config *config);
 int config_save(struct config *config);
+
+/*
+ * Returns <0 on error, 0 if reset, >0 if nothing to reset.
+ */
 int config_reset(struct config *config);
 
 extern const struct cmd config_commands[];

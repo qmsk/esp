@@ -18,6 +18,8 @@
 
 void app_main()
 {
+  int err;
+
   // heap usage is likely to be lowest at app_main() start
   system_update_maximum_free_heap_size();
 
@@ -45,10 +47,12 @@ void app_main()
   // config stage, terminate on failure
   LOG_INFO("boot");
 
-  if (init_config()) {
+  if ((err = init_config()) < 0) {
     LOG_ERROR("init_config");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  } else if (err > 0) {
+    LOG_WARN("init_config: not configured");
     user_alert(USER_ALERT_ERROR_CONFIG);
-    return; // skip remaining
   }
 
   // setup stage, continue on failure

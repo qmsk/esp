@@ -139,7 +139,7 @@ int init_config()
   if (config_load(&config)) {
     if (errno == ENOENT) {
       LOG_WARN("No configuration available");
-      return 0;
+      return 1;
     } else {
       LOG_ERROR("Load config failed");
       return -1;

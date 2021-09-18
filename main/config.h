@@ -12,6 +12,11 @@ extern struct config config;
  */
 void disable_config();
 
+/*
+ * initialize config SPIFFS partition, and load config.
+ *
+ * Returns <0 on error, 0 on success, >1 if no config loaded.
+ */
 int init_config();
 
 /*

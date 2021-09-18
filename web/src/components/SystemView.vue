@@ -95,7 +95,7 @@ table.tasks td.stack-free {
             <dt>IPv4 Address</dt>
             <dd>{{ info.ipv4_address }}</dd>
 
-            <dt>Network (IPv4)</dt>
+            <dt>IPv4 Network</dt>
             <dd>{{ info.ipv4_network }}/{{ info.ipv4_prefixlen }}</dd>
 
             <dt>IPv4 Gateway</dt>

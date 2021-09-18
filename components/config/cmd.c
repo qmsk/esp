@@ -182,8 +182,8 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
 
-  if (config_clear(config)) {
-    LOG_ERROR("Failed clearing config");
+  if (config_reset(config)) {
+    LOG_ERROR("config_reset");
     return -CMD_ERR;
   }
 

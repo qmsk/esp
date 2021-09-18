@@ -72,7 +72,7 @@ int config_save(struct config *config)
   return err;
 }
 
-int config_clear(struct config *config)
+int config_reset(struct config *config)
 {
   LOG_INFO("%s", config->filename);
 

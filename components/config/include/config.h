@@ -92,7 +92,7 @@ int config_write(struct config *config, FILE *file);
 
 int config_load(struct config *config);
 int config_save(struct config *config);
-int config_clear(struct config *config);
+int config_reset(struct config *config);
 
 extern const struct cmd config_commands[];
 

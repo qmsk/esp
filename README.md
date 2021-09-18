@@ -15,19 +15,13 @@ Build firmware images (bootloader + app + web-dist):
 
     $ USER_ID=$UID docker-compose run --rm build
 
-# Install
+# Flash
 
 Flash to correct nodeMCU device:
 
     ESPPORT=/dev/ttyUSB? docker-compose run --rm flash
 
-# Usage
-
-Connect to the serial console:
-
-    ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
-
-### Reset
+## Config Reset
 
 Recover from a broken configuration:
 
@@ -35,79 +29,235 @@ Recover from a broken configuration:
 
 Erases the config spiffs partition.
 
+# Usage
+
+## USB Console
+
+Connect to the serial console:
+
+    ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
+
+## Status LEDs
+
+Designed for NodeMCU ESP8266 boards with the following fixed-function pins:
+
+* D0 (GPIO16): USER_LED (active-low with pull-up)
+* D3 (GPIO0): FLASH_LED (active-low with pull-up) + button
+* D8 (GPIO15): ALERT_LED (active-high with pull-down)
+
+The active-low LEDs should be connected from +3.3V to the GPIO pin.
+The active-high LEDs should be connected from the GPIO pin to GND.
+
+### User LED
+
+* Off: Boot / reset
+* Fast blinking: WiFi connecting
+* Slow blinking: WiFi disconnected
+* On:: WiFi connected
+
+### Flash LED
+
+Flashes for ~10ms on each spi-leds/dmx update.
+
+### Alert LED
+
+* On: Boot failed
+* Slow: Missing configuration
+* Fast: Invalid configuration
+
+## Flash Button
+
+The FLASH button on GPIO0 is used to trigger a config reset.
+Press and hold FLASH button for >5s until the USER LED stops flashing, and the system restarts.
+
+If the FLASH button is pressed at boot, the configuration will not be loaded, and the Alert LED will flash slowly.
+
 ## CLI
 
 From `help` output:
 
 ```
- help: Show commands
- system info: Print system info
- system status: Print system status
- system tasks: Print system tasks
- system restart: Restart system
- user-led off: Turn off LED
- user-led on: Turn on LED
- user-led slow: Blink LED slowly
- user-led fast: Blink LED fast
- user-led flash: Blink LED once
- spiffs info [LABEL]: Show SPIFFS partition
- spiffs format [LABEL]: Format SPIFFS partition
- vfs ls PATH: List files
- config show [SECTION]: Show config settings
- config get SECTION NAME: Get config setting
- config set SECTION NAME VALUE: Set and write config
- config reset: Remove stored config and reset to defaults
- wifi scan [SSID]: Scan available APs
- wifi connect [SSID] [PSK]: Connect AP
- wifi info : Show connected AP
- spi-leds clear : Clear values
- spi-leds all RGB [A]: Set all pixels to values
- spi-leds set INDEX RGB [A]: Set one pixel to value
- dmx zero COUNT: Output COUNT channels at zero
- dmx all COUNT VALUE: Output COUNT channels at VALUE
- dmx count COUNT: Output COUNT channels with 0..COUNT as value
- dmx out VALUE...: Output given VALUEs as channels
+help: Show commands
+system info: Print system info
+system memory: Print system memory
+system partitions: Print system partitions
+system status: Print system status
+system tasks: Print system tasks
+system interfaces: Print system network interfaces
+system restart: Restart system
+status-leds off: Turn off USER LED
+status-leds on: Turn on USER LED
+status-leds slow: Blink USER LED slowly
+status-leds fast: Blink USER LED fast
+status-leds flash: Blink FLASH LED once
+status-leds read: Read FLASH button
+status-leds alert: Turn on ALERT LED
+spiffs info [LABEL]: Show SPIFFS partition
+spiffs format [LABEL]: Format SPIFFS partition
+vfs ls PATH: List files
+config show [SECTION]: Show config settings
+config get SECTION NAME: Get config setting
+config set SECTION NAME VALUE: Set and write config
+config clear SECTION NAME: Clear and write config
+config reset: Remove stored config and reset to defaults
+wifi scan [SSID]: Scan available APs
+wifi connect [SSID] [PSK]: Connect AP
+wifi info : Show connected AP
+spi-leds clear : Clear all output values
+spi-leds all RGB [A]: Set all output pixels to value
+spi-leds set OUTPUT INDEX RGB [A]: Set one output pixel to value
+dmx zero COUNT: Output COUNT channels at zero on all output
+dmx all COUNT VALUE: Output COUNT channels at VALUE on all outputs
+dmx out OUTPUT VALUE...: Output given VALUEs as channels on output
+dmx count OUTPUT COUNT: Output COUNT channels with 0..COUNT as value
 ```
 
 ## Configuration
 From `config show`, `GET /config.ini` output:
 
 ```
-[activity_led]
-enabled = false
-gpio = 0
-inverted = false
-
+# Control ATX-PSU based on spi-leds output.
+# The ATX-PSU will be powered on when spi-led outputs are active, and powered off into standby mode if all spi-led outputs are idle (zero-valued).
 [atx_psu]
 enabled = false
 gpio = 0
+# Power off ATX PSU after timeout seconds of idle
 timeout = 10
 
+# WiFi station mode, connecting to an SSID with optional PSK.
+# Uses DHCP for IPv4 addressing.
 [wifi]
-enabled = true
-ssid = qmsk-iot
+mode = AP # OFF STA [AP] APSTA
+# For STA mode: minimum threshold for AP provided auth level
+# For AP mode: provided auth level
+auth_mode = WPA2-PSK # OPEN WEP WPA-PSK [WPA2-PSK] WPA-WPA2-PSK WPA3-PSK WPA2-WPA3-PSK
+# For STA mode: connect to AP with given SSID
+# For AP mode: start AP with given SSID, or use default
+ssid =
 password = ***
+hostname =
 
+# HTTP API + Web frontend with optional HTTP basic authentication.
 [http]
+enabled = true
 host = 0.0.0.0
 port = 80
+# Optional HTTP basic authentication username/password
+username =
+# Optional HTTP basic authentication username/password
+password = ***
 
+# Art-Net receiver on UDP port 6454.
+# Art-Net addresses consist of the net (0-127) + subnet (0-15) + universe (0-15). All outputs share the same net/subnet, each output uses a different universe. Up to four outputs are supported.
 [artnet]
 enabled = false
-universe = 0
+# Set network address, 0-127.
+net = 0
+# Set sub-net address, 0-16.
+subnet = 0
 
-[spi_leds]
-enabled = true
-count = 1
-protocol = APA102
-artnet_enabled = false
-artnet_universe = 0
-artnet_mode = BGR
-
-[dmx]
+# Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net.
+# Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control an external driver chip with active-high/low output-enable GPIO lines.
+[spi-leds0]
 enabled = false
-output_enable_gpio = 5
+protocol = APA102 # [APA102] P9813
+# Longer cable runs can be noisier, and may need a slower rate to work reliably.
+rate = 1M # 20M 10M 5M 2M [1M] 500K 200K 100K 50K 20K 10K 1K
+# Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.
+delay = 0
+count = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+# GPIO pin to activate when transmitting on this output
+gpio_pin = 0
 artnet_enabled = false
+# Output from artnet universe (0-15) within [artnet] net/subnet.
+artnet_universe = 0
+# Art-Net DMX channel mode
+artnet_mode = BGR # RGB [BGR] GRB
+
+# Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net.
+# Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control an external driver chip with active-high/low output-enable GPIO lines.
+[spi-leds1]
+enabled = false
+protocol = APA102 # [APA102] P9813
+# Longer cable runs can be noisier, and may need a slower rate to work reliably.
+rate = 1M # 20M 10M 5M 2M [1M] 500K 200K 100K 50K 20K 10K 1K
+# Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.
+delay = 0
+count = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+# GPIO pin to activate when transmitting on this output
+gpio_pin = 0
+artnet_enabled = false
+# Output from artnet universe (0-15) within [artnet] net/subnet.
+artnet_universe = 0
+# Art-Net DMX channel mode
+artnet_mode = BGR # RGB [BGR] GRB
+
+# Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net.
+# Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control an external driver chip with active-high/low output-enable GPIO lines.
+[spi-leds2]
+enabled = false
+protocol = APA102 # [APA102] P9813
+# Longer cable runs can be noisier, and may need a slower rate to work reliably.
+rate = 1M # 20M 10M 5M 2M [1M] 500K 200K 100K 50K 20K 10K 1K
+# Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.
+delay = 0
+count = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+# GPIO pin to activate when transmitting on this output
+gpio_pin = 0
+artnet_enabled = false
+# Output from artnet universe (0-15) within [artnet] net/subnet.
+artnet_universe = 0
+# Art-Net DMX channel mode
+artnet_mode = BGR # RGB [BGR] GRB
+
+# Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net.
+# Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control an external driver chip with active-high/low output-enable GPIO lines.
+[spi-leds3]
+enabled = false
+protocol = APA102 # [APA102] P9813
+# Longer cable runs can be noisier, and may need a slower rate to work reliably.
+rate = 1M # 20M 10M 5M 2M [1M] 500K 200K 100K 50K 20K 10K 1K
+# Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.
+delay = 0
+count = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+# GPIO pin to activate when transmitting on this output
+gpio_pin = 0
+artnet_enabled = false
+# Output from artnet universe (0-15) within [artnet] net/subnet.
+artnet_universe = 0
+# Art-Net DMX channel mode
+artnet_mode = BGR # RGB [BGR] GRB
+
+# DMX output via UART1 -> RS-485 transceiver.
+# Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable.
+[dmx0]
+enabled = false
+# GPIO pin will be taken high to enable output once the UART1 TX output is safe.
+gpio_pin = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+artnet_enabled = false
+# Output from universe (0-15) within [artnet] net/subnet.
+artnet_universe = 0
+
+# DMX output via UART1 -> RS-485 transceiver.
+# Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable.
+[dmx1]
+enabled = false
+# GPIO pin will be taken high to enable output once the UART1 TX output is safe.
+gpio_pin = 0
+# Multiplex between multiple active-high/low GPIO-controlled outputs
+gpio_mode = OFF # [OFF] HIGH LOW
+artnet_enabled = false
+# Output from universe (0-15) within [artnet] net/subnet.
 artnet_universe = 0
 ```
 
@@ -211,10 +361,6 @@ aa:bb:cc:dd:ee:ff	qmsk-guest                      	11:0 	-61 	WPA/2-PSK 	TKIP-CC
 aa:bb:cc:dd:ee:ff	qmsk-iot                        	11:0 	-61 	WPA2-PSK  	CCMP      /CCMP      bgn  
 ```
 
-### `activity_led`
-
-Blink an activity LED on dmx/spi-leds updates.
-
 ### `atx_psu`
 
 Control an ATX PSU `#PS_EN` via GPIO. Powers on the PSU whenever SPI-LED output is active, with a configurable shutdown timeout.
@@ -229,19 +375,33 @@ Supports up to four Art-NET outputs on the [Art-Net Sub-Net](https://art-net.org
 
 Art-NET DMX output via UART1 TX.
 
-Integrates with `activity_led`.
+Supports up to two multiplex outputs using active-high/low GPIOs.
+
+The FLASH LED will flash on DMX updates.
 
 ### `spi_leds`
 
 Art-NET DMX controller for SPI-compatible RGB LEDs.
 
-Integrates with `activity_led` and `atx_psu`.
+Supports up to four multiplex outouts using active-high/low GPIOs.
+
+The FLASH LED will flash on SPI-LEDs updates.
+
+The ATX PSU output will enable when any SPI-LEDs are active.
 
 # HTTP
+
+### `GET /`
+
+Load the integrated Web UI.
 
 ### `GET /config.ini`
 
 Returns the boot config in INI form.
+
+### `POST /config.ini`
+
+Load the running config from INI form.
 
 ### `GET /api/config`
 
@@ -250,3 +410,21 @@ Returns a JSON structure describing the config schema and current values.
 ### `POST /api/config`
 
 Accepts `application/x-www-form-urlencoded` form parameters in a `[module]name=value` format, as per `config set ...`.
+
+### `GET /api/system`
+
+Returns a JSON object describing the system info, state and status.
+
+* `info`
+* `status`
+* `partitions`
+* `tasks`
+* `interfaces`
+
+### `GET /api/system/tasks`
+
+Refresh the running tasks info.
+
+### `POST /api/system/restart`
+
+Restart the system.

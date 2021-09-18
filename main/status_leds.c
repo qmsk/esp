@@ -36,10 +36,7 @@ enum status_led_mode user_event_led_mode[USER_EVENT_MAX] = {
   [USER_EVENT_CONNECTING]       = STATUS_LED_FAST,
   [USER_EVENT_CONNECTED]        = STATUS_LED_ON,
   [USER_EVENT_DISCONNECTED]     = STATUS_LED_SLOW,
-
-  [USER_EVENT_RESET_REQUESTED]  = STATUS_LED_FAST,
-  [USER_EVENT_RESET_CONFIRMED]  = STATUS_LED_ON,
-  [USER_EVENT_RESET_CANCELED]   = STATUS_LED_OFF,
+  [USER_EVENT_RESET]            = STATUS_LED_OFF,
 };
 
 #ifdef USER_LED
@@ -102,6 +99,55 @@ static int init_alert_led()
 }
 #endif
 
+static enum status_led_mode user_led_mode;
+
+static void set_user_led(enum status_led_mode mode)
+{
+  user_led_mode = mode;
+
+  if (!user_led) {
+    return;
+  } else if (status_led_mode(user_led, mode)) {
+    LOG_WARN("status_led_mode");
+  }
+}
+
+static void override_user_led(enum status_led_mode mode)
+{
+  if (!user_led) {
+    return;
+  } else if (status_led_mode(user_led, mode)) {
+    LOG_WARN("status_led_mode");
+  }
+}
+
+static void revert_user_led()
+{
+  if (!user_led) {
+    return;
+  } else if (status_led_mode(user_led, user_led_mode)) {
+    LOG_WARN("status_led_mode");
+  }
+}
+
+static void set_flash_led(enum status_led_mode mode)
+{
+  if (!flash_led) {
+    return;
+  } else if (status_led_mode(flash_led, mode)) {
+    LOG_WARN("status_led_mode");
+  }
+}
+
+static void set_alert_led(enum status_led_mode mode)
+{
+  if (!alert_led) {
+    return;
+  } else if (status_led_mode(alert_led, mode)) {
+    LOG_WARN("status_led_mode");
+  }
+}
+
 static void status_leds_main(void *arg)
 {
   static int flash_boot = 1, flash_held = 0, flash_released = 0;
@@ -114,7 +160,7 @@ static void status_leds_main(void *arg)
       // ignore if held at boot, assume waking up after reset
       LOG_WARN("FLASH ignored immediately after boot");
     } else if (ret) {
-      LOG_WARN("FLASH held");
+      LOG_INFO("FLASH held");
       flash_held++;
     } else if (flash_held > 0) {
       LOG_INFO("FLASH released");
@@ -122,19 +168,22 @@ static void status_leds_main(void *arg)
       flash_held = 0;
     } else if (flash_boot) {
       // reset boot state, accept press
-      LOG_DEBUG("FLASH post-boot");
+      LOG_INFO("FLASH armed");
       flash_boot = 0;
     }
 
     // flash must be held for threshold samples to reset, and is cancled if released before that
     if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
-      user_event(USER_EVENT_RESET_CONFIRMED);
+      LOG_WARN("confirm reset");
+      user_event(USER_EVENT_RESET);
       user_reset();
     } else if (flash_held == 1) {
       // only set once, to keep flash pattern consistent
-      user_event(USER_EVENT_RESET_REQUESTED);
+      LOG_WARN("request reset");
+      override_user_led(STATUS_LED_FAST);
     } else if (flash_released > 0) {
-      user_event(USER_EVENT_RESET_CANCELED);
+      LOG_WARN("cancel reset");
+      revert_user_led();
     }
 
     flash_released = 0;
@@ -184,24 +233,6 @@ int init_status_leds()
   return 0;
 }
 
-static void set_user_led(enum status_led_mode mode)
-{
-  if (!user_led) {
-    return;
-  } else if (status_led_mode(user_led, mode)) {
-    LOG_WARN("status_led_mode");
-  }
-}
-
-static void set_flash_led(enum status_led_mode mode)
-{
-  if (!flash_led) {
-    return;
-  } else if (status_led_mode(flash_led, mode)) {
-    LOG_WARN("status_led_mode");
-  }
-}
-
 static void read_flash_led()
 {
   int ret;
@@ -214,15 +245,6 @@ static void read_flash_led()
     LOG_INFO("active");
   } else {
     LOG_INFO("inactive");
-  }
-}
-
-static void set_alert_led(enum status_led_mode mode)
-{
-  if (!alert_led) {
-    return;
-  } else if (status_led_mode(alert_led, mode)) {
-    LOG_WARN("status_led_mode");
   }
 }
 

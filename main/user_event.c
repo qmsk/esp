@@ -20,7 +20,16 @@ static const char *user_event_str(enum user_event event)
 
 void user_event(enum user_event event)
 {
-  LOG_INFO("%s", user_event_str(event));
+  if (event < USER_EVENT_MAX) {
+    LOG_INFO("user %s", user_event_str(event));
+  } else if (event & USER_EVENT_FLASH) {
+    // activity is expected to be verbose
+    LOG_DEBUG("flash %05x", event);
+  } else if (event & USER_EVENT_ALERT) {
+    LOG_WARN("alert %05x", event);
+  } else {
+    LOG_DEBUG("unknown %08x", event);
+  }
 
   status_led_event(event);
 }

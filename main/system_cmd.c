@@ -251,62 +251,27 @@ static inline void print_ip_info(const char *title, ip_addr_t *ip)
 
 int print_interface_info(tcpip_adapter_if_t tcpip_if)
 {
-  const char *hostname;
-  tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
-  tcpip_adapter_ip_info_t ip_info;
-  tcpip_adapter_dns_info_t dns_info_main, dns_info_backup, dns_info_fallback;
-  esp_err_t err;
+  struct system_interface_info info;
+  int err;
 
-  if (!tcpip_adapter_is_netif_up(tcpip_if)) {
+  if ((err = system_interface_info(&info, tcpip_if)) < 0) {
+    LOG_ERROR("system_interface_info %s", tcpip_adapter_if_str(tcpip_if));
+    return err;
+  } else if (err > 0) {
     printf("TCP/IP %s: DOWN\n", tcpip_adapter_if_str(tcpip_if));
     return 0;
   }
 
-  if ((err = tcpip_adapter_get_hostname(tcpip_if, &hostname))) {
-    LOG_ERROR("tcpip_adapter_get_hostname: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_dhcps_get_status(tcpip_if, &dhcps_status))) {
-    LOG_ERROR("tcpip_adapter_dhcps_get_status: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_dhcpc_get_status(tcpip_if, &dhcpc_status))) {
-    LOG_ERROR("tcpip_adapter_dhcpc_get_status: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_get_ip_info(tcpip_if, &ip_info))) {
-    LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &dns_info_main))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_BACKUP, &dns_info_backup))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_FALLBACK, &dns_info_fallback))) {
-    LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
-    return -1;
-  }
-
   printf("TCP/IP %s: UP\n", tcpip_adapter_if_str(tcpip_if));
-  printf("\t%-20s: %s\n", "Hostname", hostname ? hostname : "(null)");
-  printf("\t%-20s: %s\n", "DHCP Server", tcpip_adapter_dhcp_status_str(dhcps_status));
-  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(dhcpc_status));
-  print_ip4_info("IP", &ip_info.ip);
-  print_ip4_info("Netmask", &ip_info.netmask);
-  print_ip4_info("Gateway", &ip_info.gw);
-  print_ip_info("DNS (main)", &dns_info_main.ip);
-  print_ip_info("DNS (backup)", &dns_info_backup.ip);
-  print_ip_info("DNS (fallback)", &dns_info_fallback.ip);
+  printf("\t%-20s: %s\n", "Hostname", info.hostname ? info.hostname : "(null)");
+  printf("\t%-20s: %s\n", "DHCP Server", tcpip_adapter_dhcp_status_str(info.dhcps_status));
+  printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(info.dhcpc_status));
+  print_ip4_info("IP", &info.ipv4.ip);
+  print_ip4_info("Netmask", &info.ipv4.netmask);
+  print_ip4_info("Gateway", &info.ipv4.gw);
+  print_ip_info("DNS (main)", &info.dns_main.ip);
+  print_ip_info("DNS (backup)", &info.dns_backup.ip);
+  print_ip_info("DNS (fallback)", &info.dns_fallback.ip);
 
   return 0;
 }

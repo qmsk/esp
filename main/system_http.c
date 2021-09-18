@@ -2,8 +2,10 @@
 
 #include <logging.h>
 #include <json.h>
+#include <json_lwip.h>
 #include <system.h>
 #include <system_tasks.h>
+#include <system_interfaces.h>
 
 #include <errno.h>
 #include <esp_system.h>
@@ -143,13 +145,48 @@ error:
   return err;
 }
 
+static int system_api_write_interface_object(struct json_writer *w, tcpip_adapter_if_t tcpip_if)
+{
+  struct system_interface_info info;
+  int err;
+
+  if ((err = system_interface_info(&info, tcpip_if)) < 0) {
+    LOG_ERROR("system_interface_info %s", tcpip_adapter_if_str(tcpip_if));
+    return err;
+  } else if (err > 0) {
+    return JSON_WRITE_MEMBER_STRING(w, "state", "DOWN");
+  }
+
+  return (
+    JSON_WRITE_MEMBER_STRING(w, "state", "UP") ||
+    (info.hostname ? JSON_WRITE_MEMBER_STRING(w, "hostname", info.hostname) : JSON_WRITE_MEMBER_NULL(w, "hostname")) ||
+    JSON_WRITE_MEMBER_STRING(w, "dhcp_server_status", tcpip_adapter_dhcp_status_str(info.dhcps_status)) ||
+    JSON_WRITE_MEMBER_STRING(w, "dhcp_client_status", tcpip_adapter_dhcp_status_str(info.dhcpc_status)) ||
+    JSON_WRITE_MEMBER_IPV4(w, "ipv4_address", &info.ipv4.ip) ||
+    JSON_WRITE_MEMBER_IPV4(w, "ipv4_netmask", &info.ipv4.netmask) ||
+    JSON_WRITE_MEMBER_IPV4(w, "ipv4_gateway", &info.ipv4.gw) ||
+    JSON_WRITE_MEMBER_IP(w, "dns_main", &info.dns_main.ip) ||
+    JSON_WRITE_MEMBER_IP(w, "dns_backup", &info.dns_backup.ip) ||
+    JSON_WRITE_MEMBER_IP(w, "dns_fallback", &info.dns_fallback.ip)
+  );
+}
+
+static int system_api_write_interfaces_object(struct json_writer *w)
+{
+  return (
+    JSON_WRITE_MEMBER_OBJECT(w, "STA", system_api_write_interface_object(w, TCPIP_ADAPTER_IF_STA)) ||
+    JSON_WRITE_MEMBER_OBJECT(w, "AP", system_api_write_interface_object(w, TCPIP_ADAPTER_IF_AP))
+  );
+}
+
 static int system_api_write(struct json_writer *w)
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_OBJECT(w, "info", system_api_write_info_object(w)) ||
     JSON_WRITE_MEMBER_OBJECT(w, "status", system_api_write_status_object(w)) ||
     JSON_WRITE_MEMBER_ARRAY(w, "partitions", system_api_write_partitions_array(w)) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "tasks", system_api_write_tasks_array(w))
+    JSON_WRITE_MEMBER_ARRAY(w, "tasks", system_api_write_tasks_array(w)) ||
+    JSON_WRITE_MEMBER_OBJECT(w, "interfaces", system_api_write_interfaces_object(w))
   );
 }
 

@@ -218,9 +218,7 @@ error:
 
 static int system_restart_cmd(int argc, char **argv, void *ctx)
 {
-  LOG_INFO("restarting...");
-
-  esp_restart();
+  system_restart();
 }
 
 static const struct cmd system_commands[] = {

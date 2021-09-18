@@ -3,6 +3,7 @@
 #include <logging.h>
 
 #include <tcpip_adapter.h>
+#include <esp_system.h>
 #include <esp_wifi.h>
 
 int get_system_mac(uint8_t mac[6])
@@ -120,4 +121,11 @@ int get_system_ipv4_addr(ip4_addr_t *ip_addr)
       LOG_WARN("unknown wifi_mode=%d", wifi_mode);
       return 1;
   }
+}
+
+void system_restart()
+{
+  LOG_INFO("restarting...");
+
+  esp_restart();
 }

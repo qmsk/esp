@@ -24,3 +24,8 @@ int get_system_hostname(const char **hostnamep);
  * @return <0 on error, 1 if not available
  */
 int get_system_ipv4_addr(ip4_addr_t *ip_addr);
+
+/*
+ * Soft system reset.
+ */
+void system_restart() __attribute__ ((noreturn));

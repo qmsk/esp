@@ -21,19 +21,17 @@ Flash to correct nodeMCU device:
 
     ESPPORT=/dev/ttyUSB? docker-compose run --rm flash
 
-## Config Reset
-
-Recover from a broken configuration:
-
-    ESPPORT=/dev/ttyUSB? docker-compose run --rm config-reset
-
-Erases the config spiffs partition.
-
 # Usage
+
+By default, the ESP8266 will establish an (open) WiFi Access-Point with a `qmsk-esp-******` name.
+
+Once connected to the `qmsk-esp-******` WiFi network, the integrated Web UI will be available at the matching `http://qmsk-esp-******.local` address.
+
+Please configure a WiFi password, and optionally a HTTP username/password.
 
 ## USB Console
 
-Connect to the serial console:
+Connect to the serial console to access boot/app logs and the CLI:
 
     ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
 
@@ -53,7 +51,7 @@ The active-high LEDs should be connected from the GPIO pin to GND.
 * Off: Boot / reset
 * Fast blinking: WiFi connecting
 * Slow blinking: WiFi disconnected
-* On:: WiFi connected
+* On: WiFi connected
 
 ### Flash LED
 
@@ -70,7 +68,7 @@ Flashes for ~10ms on each spi-leds/dmx update.
 The FLASH button on GPIO0 is used to trigger a config reset.
 Press and hold FLASH button for >5s until the USER LED stops flashing, and the system restarts.
 
-If the FLASH button is pressed at boot, the configuration will not be loaded, and the Alert LED will flash slowly.
+If the FLASH button is held pressed at boot, the configuration will not be loaded, and the Alert LED will flash slowly.
 
 ## CLI
 
@@ -260,6 +258,12 @@ artnet_enabled = false
 # Output from universe (0-15) within [artnet] net/subnet.
 artnet_universe = 0
 ```
+
+### Configuration Reset
+
+To recover from a broken configuration, either press and hold the FLASH button, or erase the SPIFFS partition using the USB bootloader:
+
+    ESPPORT=/dev/ttyUSB? docker-compose run --rm config-reset
 
 # Components
 

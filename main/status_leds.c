@@ -104,17 +104,26 @@ static int init_alert_led()
 
 static void status_leds_main(void *arg)
 {
-  static int flash_held = 0, flash_released = 0;
+  static int flash_boot = 1, flash_held = 0, flash_released = 0;
   int ret;
 
   for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_FLASH_READ_PERIOD / portTICK_RATE_MS)) {
     if ((ret = status_led_read(flash_led)) < 0) {
       LOG_WARN("status_led_read");
+    } else if (ret && flash_boot) {
+      // ignore if held at boot, assume waking up after reset
+      LOG_WARN("FLASH ignored immediately after boot");
     } else if (ret) {
+      LOG_WARN("FLASH held");
       flash_held++;
     } else if (flash_held > 0) {
+      LOG_INFO("FLASH released");
       flash_released = flash_held;
       flash_held = 0;
+    } else if (flash_boot) {
+      // reset boot state, accept press
+      LOG_DEBUG("FLASH post-boot");
+      flash_boot = 0;
     }
 
     // flash must be held for threshold samples to reset, and is cancled if released before that

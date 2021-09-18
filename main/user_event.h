@@ -7,6 +7,10 @@ enum user_event {
   USER_EVENT_CONNECTED,
   USER_EVENT_DISCONNECTED,
 
+  USER_EVENT_RESET_REQUESTED,
+  USER_EVENT_RESET_CONFIRMED,
+  USER_EVENT_RESET_CANCELED,
+
   USER_EVENT_MAX,
 
   // events
@@ -20,3 +24,8 @@ enum user_event {
 
 // distribute events
 void user_event(enum user_event event);
+
+/*
+ * Hard config reset + system restart.
+ */
+void user_reset();

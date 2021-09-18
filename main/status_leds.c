@@ -3,9 +3,21 @@
 #include <status_led.h>
 #include <logging.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+#define STATUS_LEDS_TASK_STACK 1024
+#define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
+
 static struct status_led *user_led;
 static struct status_led *flash_led;
 static struct status_led *alert_led;
+
+static xTaskHandle status_leds_task;
+
+// read FLASH every 1s, reset if held for >5s
+#define STATUS_LEDS_FLASH_READ_PERIOD 1000
+#define STATUS_LEDS_FLASH_RESET_THRESHOLD 5
 
 #define USER_LED
 #define USER_LED_GPIO      GPIO_NUM_16  // integrated LED on NodeMCU
@@ -24,6 +36,10 @@ enum status_led_mode user_event_led_mode[USER_EVENT_MAX] = {
   [USER_EVENT_CONNECTING]       = STATUS_LED_FAST,
   [USER_EVENT_CONNECTED]        = STATUS_LED_OFF,
   [USER_EVENT_DISCONNECTED]     = STATUS_LED_SLOW,
+
+  [USER_EVENT_RESET_REQUESTED]  = STATUS_LED_FAST,
+  [USER_EVENT_RESET_CONFIRMED]  = STATUS_LED_ON,
+  [USER_EVENT_RESET_CANCELED]   = STATUS_LED_OFF,
 };
 
 #ifdef USER_LED
@@ -86,6 +102,46 @@ static int init_alert_led()
 }
 #endif
 
+static void status_leds_main(void *arg)
+{
+  static int flash_held = 0, flash_released = 0;
+  int ret;
+
+  for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_FLASH_READ_PERIOD / portTICK_RATE_MS)) {
+    if ((ret = status_led_read(flash_led)) < 0) {
+      LOG_WARN("status_led_read");
+    } else if (ret) {
+      flash_held++;
+    } else if (flash_held > 0) {
+      flash_released = flash_held;
+      flash_held = 0;
+    }
+
+    // flash must be held for threshold samples to reset, and is cancled if released before that
+    if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
+      user_event(USER_EVENT_RESET_CONFIRMED);
+      user_reset();
+    } else if (flash_held == 1) {
+      // only set once, to keep flash pattern consistent
+      user_event(USER_EVENT_RESET_REQUESTED);
+    } else if (flash_released > 0) {
+      user_event(USER_EVENT_RESET_CANCELED);
+    }
+
+    flash_released = 0;
+  }
+}
+
+static int init_status_leds_task()
+{
+  if (xTaskCreate(&status_leds_main, "status-leds", STATUS_LEDS_TASK_STACK, NULL, STATUS_LEDS_TASK_PRIORITY, &status_leds_task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  }
+
+  return 0;
+}
+
 int init_status_leds()
 {
   int err;
@@ -110,6 +166,11 @@ int init_status_leds()
     return err;
   }
 #endif
+
+  if ((err = init_status_leds_task())) {
+    LOG_ERROR("init_status_leds_task");
+    return err;
+  }
 
   return 0;
 }

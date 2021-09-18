@@ -20,10 +20,10 @@ static struct status_led *alert_led;
 #define ALERT_LED_INVERTED  false       // active-high with pull-down
 
 enum status_led_mode user_event_led_mode[USER_EVENT_MAX] = {
-  [USER_EVENT_BOOT]         = STATUS_LED_ON,
-  [USER_EVENT_CONNECTING]   = STATUS_LED_FAST,
-  [USER_EVENT_CONNECTED]    = STATUS_LED_SLOW,
-  [USER_EVENT_DISCONNECTED] = STATUS_LED_OFF,
+  [USER_EVENT_BOOT]             = STATUS_LED_ON,
+  [USER_EVENT_CONNECTING]       = STATUS_LED_FAST,
+  [USER_EVENT_CONNECTED]        = STATUS_LED_OFF,
+  [USER_EVENT_DISCONNECTED]     = STATUS_LED_SLOW,
 };
 
 #ifdef USER_LED

@@ -86,7 +86,7 @@ static void on_sta_disconnected(wifi_event_sta_disconnected_t *event)
     wifi_err_reason_str(event->reason)
   );
 
-  user_event(USER_EVENT_DISCONNECTED);
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_sta_authmode_change(wifi_event_sta_authmode_change_t *event)
@@ -103,14 +103,14 @@ static void on_ap_start()
 {
   LOG_INFO(" ");
 
-  user_event(USER_EVENT_CONNECTED);
+  user_state(USER_STATE_CONNECTED);
 }
 
 static void on_ap_stop()
 {
   LOG_INFO(" ");
 
-  user_event(USER_EVENT_DISCONNECTED);
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
@@ -145,7 +145,7 @@ static void on_ip_sta_got_ip(ip_event_got_ip_t *event)
     event->ip_changed ? "true" : "false"
   );
 
-  user_event(USER_EVENT_CONNECTED);
+  user_state(USER_STATE_CONNECTED);
 }
 
 static void on_ip_sta_lost_ip()
@@ -153,7 +153,7 @@ static void on_ip_sta_lost_ip()
   LOG_INFO(" ");
 
   // XXX: ???
-  user_event(USER_EVENT_DISCONNECTED);
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_ip_ap_sta_ip_assigned(ip_event_ap_staipassigned_t *event)

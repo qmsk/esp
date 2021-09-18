@@ -159,7 +159,7 @@ int update_spi_leds(struct spi_leds_state *state)
   LOG_DEBUG("active=%u", state->active);
 
   update_spi_leds_active();
-  user_event(USER_EVENT_ACTIVITY_SPI_LEDS);
+  user_activity(USER_ACTIVITY_SPI_LEDS);
 
   if ((err = spi_leds_tx(state->spi_leds))) {
     LOG_ERROR("spi_leds_tx");

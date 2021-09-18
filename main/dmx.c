@@ -145,7 +145,7 @@ int output_dmx(struct dmx_state *state, void *data, size_t len)
     LOG_DEBUG("[%03d] %02x", i, ((uint8_t *) data)[i]);
   }
 
-  user_event(USER_EVENT_ACTIVITY_DMX);
+  user_activity(USER_ACTIVITY_DMX);
 
   if ((err = dmx_output_cmd(state->dmx_output, DMX_CMD_DIMMER, data, len))) {
     LOG_ERROR("dmx_output_cmd");

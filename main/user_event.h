@@ -1,26 +1,34 @@
 #pragma once
 
-enum user_event {
+enum user_state {
   // states
-  USER_EVENT_BOOT,
-  USER_EVENT_CONNECTING,
-  USER_EVENT_CONNECTED,
-  USER_EVENT_DISCONNECTED,
-  USER_EVENT_RESET,
+  USER_STATE_BOOT,
+  USER_STATE_CONNECTING,
+  USER_STATE_CONNECTED,
+  USER_STATE_DISCONNECTED,
+  USER_STATE_RESET,
 
-  USER_EVENT_MAX,
+  USER_STATE_MAX
+};
 
-  // events
-  USER_EVENT_FLASH              = 0x10000,
-  USER_EVENT_ACTIVITY_SPI_LEDS,
-  USER_EVENT_ACTIVITY_DMX,
+enum user_activity {
+  USER_ACTIVITY_SPI_LEDS,
+  USER_ACTIVITY_DMX,
 
-  USER_EVENT_ALERT          = 0x20000,
-  USER_EVENT_ERROR,
+  USER_ACTIVITY_MAX
+};
+
+enum user_alert {
+  USER_ALERT_ERROR_BOOT,
+  USER_ALERT_ERROR_CONFIG,
+  USER_ALERT_ERROR_SETUP,
+  USER_ALERT_MAX
 };
 
 // distribute events
-void user_event(enum user_event event);
+void user_state(enum user_state state);
+void user_activity(enum user_activity activity);
+void user_alert(enum user_alert alert);
 
 /*
  * Hard config reset + system restart.

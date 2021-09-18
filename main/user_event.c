@@ -6,32 +6,73 @@
 
 #include <logging.h>
 
-static const char *user_event_str(enum user_event event)
+static const char *user_state_str(enum user_state state)
 {
-  switch (event) {
-    case USER_EVENT_BOOT:             return "BOOT";
-    case USER_EVENT_CONNECTING:       return "CONNECTING";
-    case USER_EVENT_CONNECTED:        return "CONNECTED";
-    case USER_EVENT_DISCONNECTED:     return "DISCONNECTED";
-    case USER_EVENT_RESET:            return "RESET";
-    default:                          return "?";
+  switch (state) {
+    case USER_STATE_BOOT:             return "BOOT";
+    case USER_STATE_CONNECTING:       return "CONNECTING";
+    case USER_STATE_CONNECTED:        return "CONNECTED";
+    case USER_STATE_DISCONNECTED:     return "DISCONNECTED";
+    case USER_STATE_RESET:            return "RESET";
+    default:                          return NULL;
   }
 }
 
-void user_event(enum user_event event)
+static const char *user_activity_str(enum user_activity activity)
 {
-  if (event < USER_EVENT_MAX) {
-    LOG_INFO("user %s", user_event_str(event));
-  } else if (event & USER_EVENT_FLASH) {
-    // activity is expected to be verbose
-    LOG_DEBUG("flash %05x", event);
-  } else if (event & USER_EVENT_ALERT) {
-    LOG_WARN("alert %05x", event);
+  switch (activity) {
+    default:                          return NULL;
+  }
+}
+
+static const char *user_alert_str(enum user_alert alert)
+{
+  switch (alert) {
+    case USER_ALERT_ERROR_BOOT:       return "ERROR_BOOT";
+    case USER_ALERT_ERROR_CONFIG:     return "ERROR_CONFIG";
+    case USER_ALERT_ERROR_SETUP:      return "ERROR_SETUP";
+    default:                          return NULL;
+  }
+}
+
+void user_state(enum user_state state)
+{
+  const char *str = user_state_str(state);
+
+  if (str) {
+    LOG_INFO("%s", str);
   } else {
-    LOG_DEBUG("unknown %08x", event);
+    LOG_INFO("%d", state);
   }
 
-  status_led_event(event);
+  status_leds_state(state);
+}
+
+void user_activity(enum user_activity activity)
+{
+  const char *str = user_activity_str(activity);
+
+  // activity is expected to be verbose
+  if (str) {
+    LOG_DEBUG("%s", str);
+  } else {
+    LOG_DEBUG("%05x", activity);
+  }
+
+  status_leds_activity(activity);
+}
+
+void user_alert(enum user_alert alert)
+{
+  const char *str = user_alert_str(alert);
+
+  if (str) {
+    LOG_WARN("%s", str);
+  } else {
+    LOG_WARN("%d", alert);
+  }
+
+  status_leds_alert(alert);
 }
 
 void user_reset()

@@ -229,7 +229,7 @@ static int start_wifi_ap(const struct wifi_config *config)
     return -1;
   }
 
-  user_event(USER_EVENT_CONNECTING);
+  user_state(USER_STATE_CONNECTING);
 
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
@@ -248,7 +248,7 @@ int start_wifi(const struct wifi_config *config)
 {
   switch(config->mode) {
     case WIFI_MODE_NULL:
-      user_event(USER_EVENT_DISCONNECTED);
+      user_state(USER_STATE_DISCONNECTED);
 
       return 0;
 

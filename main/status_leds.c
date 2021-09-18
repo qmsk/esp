@@ -31,12 +31,18 @@ static xTaskHandle status_leds_task;
 #define ALERT_LED_GPIO      GPIO_NUM_15 // XXX: shared with spi_master CS
 #define ALERT_LED_INVERTED  false       // active-high with pull-down
 
-enum status_led_mode user_event_led_mode[USER_EVENT_MAX] = {
-  [USER_EVENT_BOOT]             = STATUS_LED_OFF,
-  [USER_EVENT_CONNECTING]       = STATUS_LED_FAST,
-  [USER_EVENT_CONNECTED]        = STATUS_LED_ON,
-  [USER_EVENT_DISCONNECTED]     = STATUS_LED_SLOW,
-  [USER_EVENT_RESET]            = STATUS_LED_OFF,
+enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
+  [USER_STATE_BOOT]             = STATUS_LED_OFF,
+  [USER_STATE_CONNECTING]       = STATUS_LED_FAST,
+  [USER_STATE_CONNECTED]        = STATUS_LED_ON,
+  [USER_STATE_DISCONNECTED]     = STATUS_LED_SLOW,
+  [USER_STATE_RESET]            = STATUS_LED_OFF,
+};
+
+enum status_led_mode user_alert_led_mode[USER_ALERT_MAX ] = {
+  [USER_ALERT_ERROR_BOOT]         = STATUS_LED_ON,
+  [USER_ALERT_ERROR_CONFIG]       = STATUS_LED_SLOW,
+  [USER_ALERT_ERROR_SETUP]        = STATUS_LED_FAST,
 };
 
 #ifdef USER_LED
@@ -46,7 +52,7 @@ static int init_user_led()
     .gpio     = USER_LED_GPIO,
     .inverted = USER_LED_INVERTED,
   };
-  const enum status_led_mode led_mode = user_event_led_mode[USER_EVENT_BOOT];
+  const enum status_led_mode led_mode = user_state_led_mode[USER_STATE_BOOT];
 
   LOG_INFO("gpio=%u inverted=%d", led_options.gpio, led_options.inverted);
 
@@ -175,7 +181,7 @@ static void status_leds_main(void *arg)
     // flash must be held for threshold samples to reset, and is cancled if released before that
     if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
       LOG_WARN("confirm reset");
-      user_event(USER_EVENT_RESET);
+      user_state(USER_STATE_RESET);
       user_reset();
     } else if (flash_held == 1) {
       // only set once, to keep flash pattern consistent
@@ -248,17 +254,23 @@ static void read_flash_led()
   }
 }
 
-void status_led_event(enum user_event event)
+void status_leds_state(enum user_state state)
 {
-  if (event < USER_EVENT_MAX) {
-    set_user_led(user_event_led_mode[event]);
+  if (state < USER_STATE_MAX) {
+    set_user_led(user_state_led_mode[state]);
   }
+}
 
-  if (event & USER_EVENT_FLASH) {
-    set_flash_led(STATUS_LED_FLASH);
-  }
+void status_leds_activity(enum user_activity activity)
+{
+  set_flash_led(STATUS_LED_FLASH);
+}
 
-  if (event & USER_EVENT_ALERT) {
+void status_leds_alert(enum user_alert alert)
+{
+  if (alert < USER_ALERT_MAX) {
+    set_alert_led(user_alert_led_mode[alert]);
+  } else {
     set_alert_led(STATUS_LED_ON);
   }
 }

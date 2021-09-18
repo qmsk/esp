@@ -185,7 +185,7 @@ int wifi_connect(wifi_config_t *config)
     return -1;
   }
 
-  user_event(USER_EVENT_CONNECTING);
+  user_state(USER_STATE_CONNECTING);
 
   return 0;
 }

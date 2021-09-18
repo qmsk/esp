@@ -113,8 +113,7 @@ static int json_start_write(struct json_writer *w, enum json_token token)
   }
 }
 
-/* Raw char */
-static int json_writec(struct json_writer *w, enum json_token token)
+int json_writec(struct json_writer *w, enum json_token token)
 {
   if (json_start_write(w, token)) {
     return -1;
@@ -128,8 +127,7 @@ static int json_writec(struct json_writer *w, enum json_token token)
   return 0;
 }
 
-/* Raw string */
-static int json_writef(struct json_writer *w, enum json_token token, const char *fmt, ...)
+int json_writef(struct json_writer *w, enum json_token token, const char *fmt, ...)
 {
   va_list args;
   int ret;
@@ -166,7 +164,6 @@ static int json_writev(struct json_writer *w, enum json_token token, const char 
   return 0;
 }
 
-/* Quoted string */
 static int json_writeq(struct json_writer *w,  enum json_token token, const char *string)
 {
   if (json_start_write(w, token)) {

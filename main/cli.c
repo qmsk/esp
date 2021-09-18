@@ -4,8 +4,8 @@
 #include "config.h"
 #include "dmx.h"
 #include "spiffs.h"
+#include "status_leds.h"
 #include "system.h"
-#include "user_led.h"
 #include "vfs.h"
 #include "wifi.h"
 
@@ -37,8 +37,8 @@ static const struct cmd commands[] = {
   { "system", .describe = "System",
       .subcommands = &system_cmdtab,
   },
-  { "user-led", .describe = "User LED",
-      .subcommands = &user_led_cmdtab,
+  { "status-leds", .describe = "Status LEDs",
+      .subcommands = &status_leds_cmdtab,
   },
   { "spiffs", .describe = "SPIFFS",
       .subcommands = &spiffs_cmdtab,

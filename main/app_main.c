@@ -1,5 +1,3 @@
-#include "activity_led.h"
-#include "alert_led.h"
 #include "artnet.h"
 #include "atx_psu.h"
 #include "cli.h"
@@ -7,9 +5,9 @@
 #include "dmx_init.h"
 #include "http.h"
 #include "mdns.h"
-#include "user_led.h"
 #include "uart.h"
 #include "spi_leds_init.h"
+#include "status_leds.h"
 #include "wifi.h"
 
 #include <logging.h>
@@ -25,8 +23,8 @@ void app_main()
 
   LOG_INFO("start");
 
-  if (init_user_led()) {
-    LOG_ERROR("init_user_led");
+  if (init_status_leds()) {
+    LOG_ERROR("init_status_leds");
     abort();
   }
 
@@ -42,16 +40,6 @@ void app_main()
 
   if (init_config()) {
     LOG_ERROR("init_config");
-    abort();
-  }
-
-  if (init_activity_led()) {
-    LOG_ERROR("init_activity_led");
-    abort();
-  }
-
-  if (init_alert_led()) {
-    LOG_ERROR("init_alert_led");
     abort();
   }
 

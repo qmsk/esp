@@ -1,5 +1,5 @@
 #include "user_event.h"
-#include "user_led.h"
+#include "status_leds.h"
 
 #include <logging.h>
 
@@ -18,5 +18,5 @@ void user_event(enum user_event event)
 {
   LOG_INFO("%s", user_event_str(event));
 
-  user_led_event(event);
+  status_led_event(event);
 }

@@ -85,6 +85,27 @@ table.tasks td.stack-free {
 
         </dl>
       </template>
+      <template v-for="(info, name) in interfaces">
+        <h2>Interface {{ name }} <span class="state">({{ info.state }})</span></h2>
+        <dl>
+          <template v-if="info.state == 'UP'">
+            <dt>Hostname</dt>
+            <dd>{{ info.hostname }}</dd>
+
+            <dt>IPv4 Address</dt>
+            <dd>{{ info.ipv4_address }}</dd>
+
+            <dt>Network (IPv4)</dt>
+            <dd>{{ info.ipv4_network }}/{{ info.ipv4_prefixlen }}</dd>
+
+            <dt>IPv4 Gateway</dt>
+            <dd>{{ info.ipv4_gateway }}</dd>
+
+            <dt>DNS (IPV4)</dt>
+            <dd>{{ info.dns_main }} / {{ info.dns_backup }} / {{ info.dns_fallback }}</dd>
+          </template>
+        </dl>
+      </template>
       <template v-if="partitions">
         <h2>Partitions</h2>
         <table>
@@ -199,6 +220,11 @@ export default {
         return this.sortTasks(this.$store.state.system.tasks);
       }
     },
+    interfaces() {
+      if (this.$store.state.system.interfaces) {
+        return this.$store.state.system.interfaces;
+      }
+    }
   },
   filters: {
     mhz: function(value) {

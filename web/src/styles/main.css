@@ -41,6 +41,13 @@ h3 {
   padding: 0.25em;
 }
 
+h1 span.state,
+h2 span.state,
+h3 span.state {
+  font-weight: lighter;
+  font-style: italic;
+}
+
 /* Structure */
 .app {
   width: 100%;

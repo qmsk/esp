@@ -1,4 +1,5 @@
 #include "status_leds.h"
+#include "config.h"
 
 #include <status_led.h>
 #include <logging.h>
@@ -39,7 +40,7 @@ enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
   [USER_STATE_RESET]            = STATUS_LED_OFF,
 };
 
-enum status_led_mode user_alert_led_mode[USER_ALERT_MAX ] = {
+enum status_led_mode user_alert_led_mode[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_BOOT]         = STATUS_LED_ON,
   [USER_ALERT_ERROR_CONFIG]       = STATUS_LED_SLOW,
   [USER_ALERT_ERROR_SETUP]        = STATUS_LED_FAST,
@@ -163,8 +164,8 @@ static void status_leds_main(void *arg)
     if ((ret = status_led_read(flash_led)) < 0) {
       LOG_WARN("status_led_read");
     } else if (ret && flash_boot) {
-      // ignore if held at boot, assume waking up after reset
-      LOG_WARN("FLASH ignored immediately after boot");
+      // do not initiate config reset if held during boot, assume waking up after reset
+      LOG_WARN("FLASH held, but still disarmed after boot");
     } else if (ret) {
       LOG_INFO("FLASH held");
       flash_held++;
@@ -198,6 +199,17 @@ static void status_leds_main(void *arg)
 
 static int init_status_leds_task()
 {
+  int ret;
+
+  if ((ret = status_led_read(flash_led)) < 0) {
+    LOG_WARN("status_led_read");
+  } else if (ret) {
+    LOG_WARN("boot with FLASH held");
+
+    // temporarily disable configuration loading
+    disable_config();
+  }
+
   if (xTaskCreate(&status_leds_main, "status-leds", STATUS_LEDS_TASK_STACK, NULL, STATUS_LEDS_TASK_PRIORITY, &status_leds_task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
@@ -226,7 +238,7 @@ int init_status_leds()
 
 #ifdef ALERT_LED
   if ((err = init_alert_led())) {
-    LOG_ERROR("init_flash_led");
+    LOG_ERROR("init_alert_led");
     return err;
   }
 #endif

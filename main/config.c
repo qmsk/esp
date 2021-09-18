@@ -107,11 +107,18 @@ const struct configmod config_modules[] = {
   {}
 };
 
+static bool config_disabled = false;
 struct config config = {
   .filename = "/config/boot.ini",
 
   .modules = config_modules,
 };
+
+void disable_config()
+{
+  LOG_WARN("Disabling config loading");
+  config_disabled = true;
+}
 
 int init_config()
 {
@@ -122,6 +129,11 @@ int init_config()
   } else if (err) {
     LOG_WARN("No configuration partition available");
     return 0;
+  }
+
+  if (config_disabled) {
+    LOG_WARN("Configuration loading disabled");
+    return 1;
   }
 
   if (config_load(&config)) {

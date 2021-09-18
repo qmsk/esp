@@ -11,6 +11,7 @@ enum json_token {
   JSON                = '\0',
   JSON_COMMA          = ',',
 
+  JSON_RAW            = '?',
   JSON_STRING         = '"',
   JSON_NUMBER         = '0',
   JSON_TRUE           = 't',
@@ -33,6 +34,7 @@ struct json_writer {
 
 int json_writer_init(struct json_writer *w, FILE *f);
 
+int json_write_raw(struct json_writer *w, const char *fmt, ...);
 int json_write_string(struct json_writer *w, const char *value);
 int json_write_int(struct json_writer *w, int value);
 int json_write_int64(struct json_writer *w, int64_t value);
@@ -51,6 +53,7 @@ int json_close_array(struct json_writer *w);
 #define JSON_WRITE_OBJECT(w, write_members) (json_open_object(w) || (write_members) || json_close_object(w))
 #define JSON_WRITE_ARRAY(w, write_members) (json_open_array(w) || (write_members) || json_close_array(w))
 
+#define JSON_WRITE_MEMBER_RAW(w, name, ...) (json_open_object_member((w), (name)) || json_write_raw((w), __VA_ARGS__))
 #define JSON_WRITE_MEMBER_STRING(w, name, value) (json_open_object_member((w), (name)) || json_write_string((w), (value)))
 #define JSON_WRITE_MEMBER_INT(w, name, value) (json_open_object_member((w), (name)) || json_write_int((w), (value)))
 #define JSON_WRITE_MEMBER_INT64(w, name, value) (json_open_object_member((w), (name)) || json_write_int64((w), (value)))

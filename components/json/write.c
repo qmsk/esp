@@ -149,6 +149,23 @@ static int json_writef(struct json_writer *w, enum json_token token, const char 
   return 0;
 }
 
+static int json_writev(struct json_writer *w, enum json_token token, const char *fmt, va_list args)
+{
+  int ret;
+
+  if (json_start_write(w, token)) {
+    return -1;
+  }
+
+  ret = vfprintf(w->file, fmt, args);
+
+  if (ret < 0) {
+    return -1;
+  }
+
+  return 0;
+}
+
 /* Quoted string */
 static int json_writeq(struct json_writer *w,  enum json_token token, const char *string)
 {
@@ -203,6 +220,18 @@ static int json_writeq(struct json_writer *w,  enum json_token token, const char
   }
 
   return 0;
+}
+
+int json_write_raw(struct json_writer *w, const char *fmt, ...)
+{
+  va_list args;
+  int ret;
+
+  va_start(args, fmt);
+  ret = json_writev(w, JSON_RAW, fmt, args);
+  va_end(args);
+
+  return ret;
 }
 
 int json_write_string(struct json_writer *w, const char *value)

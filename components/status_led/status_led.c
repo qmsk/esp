@@ -21,7 +21,7 @@
 #define STATUS_LED_READ_WAIT_PERIOD 1
 #define STATUS_LED_READ_NOTIFY_BIT 0x1
 
-#define STATUS_LED_TASK_STACK 256
+#define STATUS_LED_TASK_STACK 512
 #define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static inline void status_led_output_mode(struct status_led *led)

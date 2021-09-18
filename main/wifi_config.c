@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_internal.h"
+#include "user_event.h"
 
 #include <logging.h>
 
@@ -228,6 +229,8 @@ static int start_wifi_ap(const struct wifi_config *config)
     return -1;
   }
 
+  user_event(USER_EVENT_CONNECTING);
+
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
@@ -245,6 +248,8 @@ int start_wifi(const struct wifi_config *config)
 {
   switch(config->mode) {
     case WIFI_MODE_NULL:
+      user_event(USER_EVENT_DISCONNECTED);
+
       return 0;
 
     case WIFI_MODE_STA:

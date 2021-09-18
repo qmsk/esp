@@ -18,11 +18,26 @@ enum status_led_mode {
     STATUS_LED_SLOW,   // blink slow
     STATUS_LED_FAST,   // blink fast
     STATUS_LED_FLASH,  // blink once
+    STATUS_LED_READ,   // temporary floating/input mode
 };
 
 struct status_led;
 
 int status_led_new(struct status_led **ledp, const struct status_led_options options, enum status_led_mode mode);
+
+/*
+ * Change output mode. Newest update wins.
+ */
 int status_led_mode(struct status_led *led, enum status_led_mode mode);
+
+/*
+ * Briefly set GPIO as input, and read level set by external pull-up/down or switch.
+ *
+ * This will block concurrent status_led_mode() changes for one tick during the read.
+ * After the read, the output will remain floating.
+ *
+ * Returns <0 on error, 0 if idle, >0 if set.
+ */
+int status_led_read(struct status_led *led);
 
 #endif

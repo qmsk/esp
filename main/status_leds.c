@@ -132,6 +132,21 @@ static void set_flash_led(enum status_led_mode mode)
   }
 }
 
+static void read_flash_led()
+{
+  int ret;
+
+  if (!flash_led) {
+    return;
+  } else if ((ret = status_led_read(flash_led)) < 0) {
+    LOG_WARN("status_led_mode");
+  } else if (ret) {
+    LOG_INFO("active");
+  } else {
+    LOG_INFO("inactive");
+  }
+}
+
 static void set_alert_led(enum status_led_mode mode)
 {
   if (!alert_led) {
@@ -192,6 +207,13 @@ int status_leds_flash_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int status_leds_read_cmd(int argc, char **argv, void *ctx)
+{
+  read_flash_led();
+
+  return 0;
+}
+
 int status_leds_alert_cmd(int argc, char **argv, void *ctx)
 {
   set_alert_led(STATUS_LED_ON);
@@ -205,6 +227,7 @@ const struct cmd status_leds_commands[] = {
   { "slow",   status_leds_slow_cmd,     .describe = "Blink USER LED slowly" },
   { "fast",   status_leds_fast_cmd,     .describe = "Blink USER LED fast" },
   { "flash",  status_leds_flash_cmd,    .describe = "Blink FLASH LED once" },
+  { "read",   status_leds_read_cmd,     .describe = "Read FLASH button" },
   { "alert",  status_leds_alert_cmd,    .describe = "Turn on ALERT LED" },
   {}
 };

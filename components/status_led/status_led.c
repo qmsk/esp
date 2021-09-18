@@ -17,8 +17,17 @@
 // 100ms on
 #define STATUS_LED_BLINK_PERIOD 10
 
+// 10ms read wait
+#define STATUS_LED_READ_WAIT_PERIOD 1
+#define STATUS_LED_READ_NOTIFY_BIT 0x1
+
 #define STATUS_LED_TASK_STACK 256
 #define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
+
+static inline void status_led_output_mode(struct status_led *led)
+{
+  gpio_set_direction(led->options.gpio, GPIO_MODE_OUTPUT);
+}
 
 static inline void status_led_off(struct status_led *led)
 {
@@ -30,14 +39,28 @@ static inline void status_led_on(struct status_led *led)
   gpio_set_level(led->options.gpio, led->options.inverted ? 0 : 1);
 }
 
+static inline void status_led_input_mode(struct status_led *led)
+{
+  gpio_set_direction(led->options.gpio, GPIO_MODE_INPUT);
+}
+
+static inline int status_led_input(struct status_led *led)
+{
+  int level = gpio_get_level(led->options.gpio);
+
+  return led->options.inverted ? !level : level;
+}
+
 static void status_led_update(struct status_led *led, enum status_led_mode mode)
 {
   switch(led->mode = mode) {
     case STATUS_LED_OFF:
+      status_led_output_mode(led);
       status_led_off(led);
       break;
 
     case STATUS_LED_ON:
+      status_led_output_mode(led);
       status_led_on(led);
       break;
 
@@ -45,9 +68,21 @@ static void status_led_update(struct status_led *led, enum status_led_mode mode)
     case STATUS_LED_FAST:
     case STATUS_LED_FLASH:
       led->state = 0;
+      status_led_output_mode(led);
       status_led_on(led);
       break;
+
+    case STATUS_LED_READ:
+      led->state = 0;
+      status_led_off(led);
+      status_led_input_mode(led);
+      break;
   }
+}
+
+static void status_led_notify(struct status_led *led, int level)
+{
+  xTaskNotify(led->read_task, level ? STATUS_LED_READ_NOTIFY_BIT : 0, eSetBits);
 }
 
 static portTickType status_led_tick(struct status_led *led)
@@ -85,6 +120,17 @@ static portTickType status_led_tick(struct status_led *led)
       } else {
         led->state = 1;
         return STATUS_LED_BLINK_PERIOD / portTICK_RATE_MS;
+      }
+
+    case STATUS_LED_READ:
+      if (led->state) {
+        // read input and notify waiting task
+        status_led_notify(led, status_led_input(led));
+        return 0;
+      } else {
+        // wait for input to settle
+        led->state = 1;
+        return STATUS_LED_READ_WAIT_PERIOD;
       }
 
     default:
@@ -180,6 +226,13 @@ int status_led_new(struct status_led **ledp, const struct status_led_options opt
     goto error;
   }
 
+  // setup mutex
+  if (!(led->mutex = xSemaphoreCreateMutex())) {
+    LOG_ERROR("xSemaphoreCreateMutex");
+    err = -1;
+    goto error;
+  }
+
   // setup task
   if ((led->queue = xQueueCreate(1, sizeof(enum status_led_mode))) == NULL) {
     LOG_ERROR("xQueueCreate");
@@ -205,10 +258,63 @@ error:
 
 int status_led_mode(struct status_led *led, enum status_led_mode mode)
 {
-  if (xQueueOverwrite(led->queue, &mode) <= 0) {
-    LOG_ERROR("xQueueOverwrite");
+  int err = 0;
+
+  if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
     return -1;
   }
 
-  return 0;
+  if (xQueueOverwrite(led->queue, &mode) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+    err = -1;
+    goto error;
+  }
+
+error:
+  if (!xSemaphoreGive(led->mutex)) {
+    LOG_WARN("xSemaphoreGive");
+  }
+
+  return err;
+}
+
+int status_led_read(struct status_led *led)
+{
+  enum status_led_mode mode = STATUS_LED_READ;
+  uint32_t notify_value;
+  int ret = 0;
+
+  if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
+
+  // request notify
+  led->read_task = xTaskGetCurrentTaskHandle();
+
+  // set input mode and read
+  if (xQueueOverwrite(led->queue, &mode) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+    ret = -1;
+    goto error;
+  }
+
+  // wait
+  if (!xTaskNotifyWait(STATUS_LED_READ_NOTIFY_BIT, STATUS_LED_READ_NOTIFY_BIT, &notify_value, portMAX_DELAY)) {
+    LOG_ERROR("xTaskNotifyWait");
+    ret = -1;
+    goto error;
+  }
+
+  if (notify_value & STATUS_LED_READ_NOTIFY_BIT) {
+    ret = 1;
+  }
+
+error:
+  if (!xSemaphoreGive(led->mutex)) {
+    LOG_WARN("xSemaphoreGive");
+  }
+
+  return ret;
 }

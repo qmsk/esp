@@ -221,7 +221,7 @@ export default {
       }
     },
     interfaces() {
-      if (this.$store.state.system.interfaces) {
+      if (this.$store.state.system) {
         return this.$store.state.system.interfaces;
       }
     }

@@ -2,6 +2,8 @@
 #include <json_lwip.h>
 #include "write.h"
 
+#include <logging.h>
+
 #define JSON_QUOTE "\""
 
 int json_write_ipv4(struct json_writer *w, ip4_addr_t *ip)
@@ -30,11 +32,15 @@ int json_write_ipv6(struct json_writer *w, ip6_addr_t *ip)
 
 int json_write_ip(struct json_writer *w, ip_addr_t *ip)
 {
-  if (IP_IS_V4(ip)) {
-    return json_write_ipv4(w, ip_2_ip4(ip));
-  } else if (IP_IS_V6(ip)) {
-    return json_write_ipv6(w, ip_2_ip6(ip));
-  } else {
-    return 1;
+  switch (IP_GET_TYPE(ip)) {
+    case IPADDR_TYPE_V4:
+      return json_write_ipv4(w, ip_2_ip4(ip));
+
+    case IPADDR_TYPE_V6:
+      return json_write_ipv6(w, ip_2_ip6(ip));
+
+    default:
+      LOG_ERROR("unknown IP type=%d", IP_GET_TYPE(ip));
+      return -1;
   }
 }

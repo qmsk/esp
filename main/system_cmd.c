@@ -257,6 +257,8 @@ static inline void print_ip_info(const char *title, ip_addr_t *ip)
     print_ip4_info(title, ip_2_ip4(ip));
   } else if (IP_IS_V6(ip)) {
     print_ip6_info(title, ip_2_ip6(ip));
+  } else {
+    LOG_WARN("invalid title=(%s) ip type=%d", title, IP_GET_TYPE(ip));
   }
 }
 

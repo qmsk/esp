@@ -40,7 +40,7 @@ int json_write_ip(struct json_writer *w, ip_addr_t *ip)
       return json_write_ipv6(w, ip_2_ip6(ip));
 
     default:
-      LOG_ERROR("unknown IP type=%d", IP_GET_TYPE(ip));
-      return -1;
+      LOG_WARN("unknown IP type=%d", IP_GET_TYPE(ip));
+      return json_write_null(w);
   }
 }

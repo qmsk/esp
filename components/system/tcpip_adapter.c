@@ -72,6 +72,11 @@ int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t
   ip4_addr_get_network(&info->ipv4_network, &info->ipv4.ip, &info->ipv4.netmask);
   info->ipv4_prefixlen = ipv4_netmask_prefixlen(&info->ipv4.netmask);
 
+  // initialize ip_addr_t type
+  info->dns_main = (tcpip_adapter_dns_info_t){ };
+  info->dns_backup = (tcpip_adapter_dns_info_t){ };
+  info->dns_fallback = (tcpip_adapter_dns_info_t){ };
+
   if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &info->dns_main))) {
     LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
     return -1;

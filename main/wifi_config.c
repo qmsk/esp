@@ -6,6 +6,8 @@
 
 #include <string.h>
 
+#define WIFI_CONFIG_CHANNEL_MAX 13
+
 struct wifi_config wifi_config = {
   .mode       = WIFI_MODE_AP,
   .auth_mode  = WIFI_AUTH_WPA2_PSK,
@@ -43,6 +45,13 @@ const struct configtab wifi_configtab[] = {
       "For AP mode: provided auth level\n"
     ),
     .enum_type = { .value = &wifi_config.auth_mode, .values = wifi_auth_mode_enum },
+  },
+  { CONFIG_TYPE_UINT16, "channel",
+    .description = (
+      "For STA mode: connect to AP with given SSID\n"
+      "For AP mode: start AP on given channel\n"
+    ),
+    .uint16_type = { .value = &wifi_config.channel, .max = WIFI_CONFIG_CHANNEL_MAX },
   },
   { CONFIG_TYPE_STRING, "ssid",
     .description = (
@@ -150,6 +159,7 @@ static int start_wifi_sta(const struct wifi_config *config)
 {
   wifi_config_t wifi_config = {
     .sta = {
+      .channel = config->channel,
       .threshold = {
         .authmode = config->auth_mode,
       },
@@ -189,6 +199,7 @@ static int start_wifi_ap(const struct wifi_config *config)
   uint8_t mac[6];
   wifi_config_t wifi_config = {
     .ap = {
+      .channel = config->channel,
       .authmode = config->auth_mode,
       .max_connection = WIFI_AP_MAX_CONNECTION,
     }
@@ -216,7 +227,8 @@ static int start_wifi_ap(const struct wifi_config *config)
     wifi_config.ap.authmode = WIFI_AUTH_OPEN;
   }
 
-  LOG_INFO("ssid=%.32s password=%s authmode=%s ssid_hidden=%s max_connection=%d",
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s ssid_hidden=%s max_connection=%d",
+    wifi_config.ap.channel,
     wifi_config.ap.ssid,
     wifi_config.ap.password[0] ? "***" : "",
     wifi_auth_mode_str(wifi_config.ap.authmode),

@@ -115,7 +115,8 @@ int wifi_connect(wifi_config_t *config)
 {
   esp_err_t err;
 
-  LOG_INFO("ssid=%.32s password=%s authmode=%s",
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s",
+    config->sta.channel,
     config->sta.ssid,
     config->sta.password[0] ? "***" : "",
     wifi_auth_mode_str(config->sta.threshold.authmode)

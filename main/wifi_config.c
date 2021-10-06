@@ -129,6 +129,12 @@ static int config_wifi_sta(const struct wifi_config *config)
     sta_config.threshold.authmode = WIFI_AUTH_OPEN;
   }
 
+  // ignore default AP mode/config
+  if ((err = esp_wifi_set_mode(WIFI_MODE_STA))) {
+    LOG_ERROR("esp_wifi_set_mode WIFI_MODE_STA: %s", esp_err_to_name(err));
+    return -1;
+  }
+
   if (wifi_connect(&sta_config)) {
     LOG_ERROR("wifi_connect");
     return -1;

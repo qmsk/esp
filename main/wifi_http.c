@@ -2,6 +2,7 @@
 
 #include <logging.h>
 #include <json.h>
+#include <json_lwip.h>
 #include <system_wifi.h>
 
 #include <esp_err.h>
@@ -111,6 +112,44 @@ static int wifi_api_write_sta_object(struct json_writer *w)
   );
 }
 
+static int wifi_api_write_ap_sta_object(struct json_writer *w, const wifi_sta_info_t *wifi_sta, const tcpip_adapter_sta_info_t *tcpip_sta)
+{
+  return (
+    JSON_WRITE_MEMBER_BSSID(w, "mac", wifi_sta->mac) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11b", wifi_sta->phy_11b) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11g", wifi_sta->phy_11g) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11n", wifi_sta->phy_11n) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_lr", wifi_sta->phy_lr) ||
+    JSON_WRITE_MEMBER_IPV4(w, "ipv4", &tcpip_sta->ip)
+  );
+}
+
+static int wifi_api_write_ap_sta_array(struct json_writer *w)
+{
+  wifi_sta_list_t wifi_sta_list;
+  tcpip_adapter_sta_list_t tcpip_sta_list;
+  esp_err_t err;
+
+  if ((err = esp_wifi_ap_get_sta_list(&wifi_sta_list))) {
+    LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_get_sta_list(&wifi_sta_list, &tcpip_sta_list))) {
+    LOG_ERROR("tcpip_adapter_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  for (int i = 0; i < wifi_sta_list.num && i < tcpip_sta_list.num; i++) {
+    if ((err = JSON_WRITE_OBJECT(w, wifi_api_write_ap_sta_object(w, &wifi_sta_list.sta[i], &tcpip_sta_list.sta[i])))) {
+      LOG_ERROR("wifi_api_write_ap_sta_object");
+      return err;
+    }
+  }
+
+  return 0;
+}
+
 static int wifi_api_write_ap_object(struct json_writer *w)
 {
   uint8_t mac[6];
@@ -129,7 +168,7 @@ static int wifi_api_write_ap_object(struct json_writer *w)
 
   return (
     JSON_WRITE_MEMBER_BSSID(w, "mac", mac) ||
-    JSON_WRITE_MEMBER_OBJECT(w, "config", (
+    JSON_WRITE_MEMBER_OBJECT(w, "config",
       JSON_WRITE_MEMBER_RAW(w, "ssid", "\"%.32s\"", config.ap.ssid) ||
       JSON_WRITE_MEMBER_RAW(w, "password", "\"%.64s\"", config.ap.password) ||
       JSON_WRITE_MEMBER_UINT(w, "channel", config.ap.channel) ||
@@ -137,7 +176,8 @@ static int wifi_api_write_ap_object(struct json_writer *w)
       JSON_WRITE_MEMBER_BOOL(w, "ssid_hidden", config.ap.ssid_hidden) ||
       JSON_WRITE_MEMBER_UINT(w, "max_connection", config.ap.max_connection) ||
       JSON_WRITE_MEMBER_UINT(w, "beacon_interval_ms", config.ap.beacon_interval)
-    ))
+    ) ||
+    JSON_WRITE_MEMBER_ARRAY(w, "sta", wifi_api_write_ap_sta_array(w))
   );
 }
 

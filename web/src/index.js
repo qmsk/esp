@@ -5,6 +5,7 @@ import Vuex from 'vuex'
 import App from "./App"
 import ConfigView from "./components/ConfigView"
 import SystemView from "./components/SystemView"
+import WiFiView from "./components/WiFiView"
 
 Vue.use(VueRouter);
 
@@ -12,8 +13,9 @@ const router = new VueRouter({
   linkActiveClass: 'active',
 
   routes: [
-    { path: '/config', component: ConfigView },
-    { path: '/system', component: SystemView },
+    { path: '/config',  component: ConfigView },
+    { path: '/wifi',    component: WiFiView },
+    { path: '/system',  component: SystemView },
   ],
 });
 

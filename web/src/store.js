@@ -5,10 +5,12 @@ import { createLogger } from 'vuex'
 import APIService from './services/api.service'
 import ConfigService from './services/config.service'
 import SystemService from './services/system.service'
+import WiFiService from './services/wifi.service'
 
 const apiService = new APIService();
 const configService = new ConfigService(apiService);
 const systemService = new SystemService(apiService);
+const wifiService = new WiFiService(apiService);
 
 Vue.use(Vuex);
 
@@ -16,6 +18,7 @@ export default new Vuex.Store({
   state: {
     config: null,
     system: null,
+    wifi: null,
   },
   plugins: [
     // XXX: only during development
@@ -48,7 +51,14 @@ export default new Vuex.Store({
       await systemService.restart();
 
       await dispatch('loadSystem');
-    }
+    },
+
+    /* wifi */
+    async loadWiFi({ commit }) {
+      const data = await wifiService.get();
+
+      commit('updateWiFi', data);
+    },
   },
   mutations: {
     loadConfig (state, config) {
@@ -76,6 +86,9 @@ export default new Vuex.Store({
       }
 
       state.system.tasks = tasks;
+    },
+    updateWiFi(state, wifi) {
+      state.wifi = wifi;
     },
   },
 });

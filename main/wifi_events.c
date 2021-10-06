@@ -1,8 +1,9 @@
 #include "wifi.h"
-#include "wifi_internal.h"
 #include "user_event.h"
 
 #include <logging.h>
+#include <system_interfaces.h>
+#include <system_wifi.h>
 
 #include <esp_err.h>
 #include <esp_event.h>

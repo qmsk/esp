@@ -7,7 +7,7 @@
 #include "status_leds.h"
 #include "system.h"
 #include "vfs.h"
-#include "wifi.h"
+#include "wifi_cmd.h"
 
 #include <logging.h>
 #include <cli.h>

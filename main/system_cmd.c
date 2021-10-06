@@ -295,12 +295,12 @@ static int system_interfaces_cmd(int argc, char **argv, void *ctx)
   int err;
 
   if ((err = print_interface_info(TCPIP_ADAPTER_IF_STA))) {
-    LOG_ERROR("tcpip_adapter_info");
+    LOG_ERROR("print_interface_info STA");
     return err;
   }
 
   if ((err = print_interface_info(TCPIP_ADAPTER_IF_AP))) {
-    LOG_ERROR("tcpip_adapter_info");
+    LOG_ERROR("print_interface_info AP");
     return err;
   }
 

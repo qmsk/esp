@@ -6,7 +6,7 @@
 #include "http.h"
 #include "spi_leds_config.h"
 #include "spiffs.h"
-#include "wifi.h"
+#include "wifi_config.h"
 
 #include <config.h>
 #include <errno.h>

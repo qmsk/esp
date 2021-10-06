@@ -1,8 +1,9 @@
 #include "wifi.h"
-#include "wifi_internal.h"
+#include "wifi_config.h"
 #include "user_event.h"
 
 #include <logging.h>
+#include <system_wifi.h>
 
 #include <string.h>
 

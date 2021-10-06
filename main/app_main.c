@@ -9,7 +9,7 @@
 #include "spi_leds_init.h"
 #include "status_leds.h"
 #include "system.h"
-#include "wifi.h"
+#include "wifi_init.h"
 
 #include <logging.h>
 #include <system.h>

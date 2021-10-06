@@ -1,3 +1,4 @@
+#include "wifi.h"
 #include "http_routes.h"
 
 #include <logging.h>
@@ -53,7 +54,24 @@ static int write_json_response(struct http_response *response, int(*f)(struct js
   }
 
   return 0;
+}
 
+static int wifi_api_write_sta_ap(struct json_writer *w, const wifi_ap_record_t *ap)
+{
+  return (
+    JSON_WRITE_MEMBER_BSSID(w, "bssid", ap->bssid) ||
+    JSON_WRITE_MEMBER_RAW(w, "ssid", "\"%.32s\"", ap->ssid) ||
+    JSON_WRITE_MEMBER_UINT(w, "channel", ap->primary) ||
+    JSON_WRITE_MEMBER_INT(w, "rssi", ap->rssi) ||
+    JSON_WRITE_MEMBER_STRING(w, "authmode", wifi_auth_mode_str(ap->authmode)) ||
+    JSON_WRITE_MEMBER_STRING(w, "pairwise_cipher", wifi_cipher_type_str(ap->pairwise_cipher)) ||
+    JSON_WRITE_MEMBER_STRING(w, "group_cipher", wifi_cipher_type_str(ap->group_cipher)) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11b", ap->phy_11b) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11g", ap->phy_11g) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_11n", ap->phy_11n) ||
+    JSON_WRITE_MEMBER_BOOL(w, "phy_lr", ap->phy_lr) ||
+    JSON_WRITE_MEMBER_BOOL(w, "wps", ap->wps)
+  );
 }
 
 static int wifi_api_write_sta_object(struct json_writer *w)
@@ -95,20 +113,7 @@ static int wifi_api_write_sta_object(struct json_writer *w)
       JSON_WRITE_MEMBER_UINT(w, "threshold_rssi", config.sta.threshold.rssi) ||
       JSON_WRITE_MEMBER_STRING(w, "threshold_authmode", wifi_auth_mode_str(config.sta.threshold.authmode))
     )) ||
-    (ap_connected ? JSON_WRITE_MEMBER_OBJECT(w, "ap", (
-      JSON_WRITE_MEMBER_BSSID(w, "bssid", ap.bssid) ||
-      JSON_WRITE_MEMBER_RAW(w, "ssid", "\"%.32s\"", ap.ssid) ||
-      JSON_WRITE_MEMBER_UINT(w, "channel", ap.primary) ||
-      JSON_WRITE_MEMBER_INT(w, "rssi", ap.rssi) ||
-      JSON_WRITE_MEMBER_STRING(w, "authmode", wifi_auth_mode_str(ap.authmode)) ||
-      JSON_WRITE_MEMBER_STRING(w, "pairwise_cipher", wifi_cipher_type_str(ap.pairwise_cipher)) ||
-      JSON_WRITE_MEMBER_STRING(w, "group_cipher", wifi_cipher_type_str(ap.group_cipher)) ||
-      JSON_WRITE_MEMBER_BOOL(w, "phy_11b", ap.phy_11b) ||
-      JSON_WRITE_MEMBER_BOOL(w, "phy_11g", ap.phy_11g) ||
-      JSON_WRITE_MEMBER_BOOL(w, "phy_11n", ap.phy_11n) ||
-      JSON_WRITE_MEMBER_BOOL(w, "phy_lr", ap.phy_lr) ||
-      JSON_WRITE_MEMBER_BOOL(w, "wps", ap.wps)
-    )) : JSON_WRITE_MEMBER_NULL(w, "ap"))
+    (ap_connected ? JSON_WRITE_MEMBER_OBJECT(w, "ap", wifi_api_write_sta_ap(w, &ap)) : JSON_WRITE_MEMBER_NULL(w, "ap"))
   );
 }
 
@@ -198,6 +203,36 @@ static int wifi_api_write(struct json_writer *w)
   );
 }
 
+int write_wifi_scan_ap(wifi_ap_record_t *ap, void *ctx)
+{
+  struct json_writer *w = ctx;
+
+  return JSON_WRITE_OBJECT(w, wifi_api_write_sta_ap(w, ap));
+}
+
+static int wifi_api_scan_write(struct json_writer *w)
+{
+  wifi_scan_config_t scan_config = {};
+  int err;
+
+  if ((err = json_open_array(w))) {
+    LOG_ERROR("json_open_array");
+    return err;
+  }
+
+  if ((err = wifi_scan(&scan_config, write_wifi_scan_ap, w))) {
+    LOG_ERROR("wifi_scan");
+    return err;
+  }
+
+  if ((err = json_close_array(w))) {
+    LOG_ERROR("json_close_array");
+    return err;
+  }
+
+  return 0;
+}
+
 int wifi_api_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
   int err;
@@ -208,6 +243,23 @@ int wifi_api_handler(struct http_request *request, struct http_response *respons
   }
 
   if ((err = write_json_response(response, wifi_api_write))) {
+    LOG_WARN("write_json_response -> wifi_api_write");
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_api_scan_handler(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = write_json_response(response, wifi_api_scan_write))) {
     LOG_WARN("write_json_response -> wifi_api_write");
     return err;
   }

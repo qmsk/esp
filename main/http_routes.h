@@ -23,3 +23,4 @@ int system_api_restart_handler(struct http_request *request, struct http_respons
 
 /* wifi_http.c */
 int wifi_api_handler(struct http_request *request, struct http_response *response, void *ctx);
+int wifi_api_scan_handler(struct http_request *request, struct http_response *response, void *ctx);

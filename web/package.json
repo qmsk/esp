@@ -9,7 +9,7 @@
     "start": "webpack serve --mode development"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "normalize.css": "^8.0.1",
     "vue": "^2.6.12",
     "vue-router": "^3.4.9",

@@ -23,6 +23,8 @@ int start_wifi();
 int stop_wifi();
 
 int wifi_scan(const wifi_scan_config_t *scan_config, int (*cb)(wifi_ap_record_t *ap, void *ctx), void *ctx);
-int wifi_connect(const wifi_sta_config_t *config);
 int wifi_listen(const wifi_ap_config_t *config);
-int wifi_close();
+int wifi_connect(const wifi_sta_config_t *config);
+int wifi_disconnect();
+int wifi_reconnect();
+int wifi_disable();

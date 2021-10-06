@@ -135,13 +135,36 @@ int wifi_disconnect_cmd(int argc, char **argv, void *ctx)
 {
   int err;
 
-  if ((err = wifi_close())) {
-    LOG_ERROR("wifi_close");
+  if ((err = wifi_disconnect())) {
+    LOG_ERROR("wifi_disconnect");
     return err;
   }
 
   return 0;
+}
 
+int wifi_reconnect_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = wifi_reconnect())) {
+    LOG_ERROR("wifi_reconnect");
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_disable_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = wifi_disable())) {
+    LOG_ERROR("wifi_disable");
+    return err;
+  }
+
+  return 0;
 }
 
 static int print_wifi_info_null()
@@ -292,12 +315,14 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
 }
 
 const struct cmd wifi_commands[] = {
-  { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"  },
-  { "stop",       wifi_stop_cmd,        .usage = "",              .describe = "Stop WiFi system"  },
+  { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"   },
+  { "stop",       wifi_stop_cmd,        .usage = "",              .describe = "Stop WiFi system"    },
   { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },
-  { "connect",    wifi_connect_cmd,     .usage = "[SSID] [PSK]",  .describe = "Connect to AP"  },
   { "listen",     wifi_listen_cmd,      .usage = "[SSID] [PSK]",  .describe = "Establish AP"        },
-  { "disconnect", wifi_disconnect_cmd,  .usage = "",              .describe = "Disconnect from AP"       },
+  { "connect",    wifi_connect_cmd,     .usage = "[SSID] [PSK]",  .describe = "Connect to AP"       },
+  { "disconnect", wifi_disconnect_cmd,  .usage = "",              .describe = "Disconnect from AP"  },
+  { "reconnect",  wifi_reconnect_cmd,   .usage = "",              .describe = "Reconnect to AP"     },
+  { "disable",    wifi_disable_cmd,     .usage = "",              .describe = "Disable STA/AP"      },
   { "info",       wifi_info_cmd,        .usage = "",              .describe = "Show connected AP"   },
   {}
 };

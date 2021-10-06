@@ -144,8 +144,8 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
     wifi_auth_mode_str(config.sta.threshold.authmode)
   );
 
-  if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, &config))) {
-    LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_STA: %s", esp_err_to_name(err));
+  if ((err = esp_wifi_set_config(WIFI_IF_STA, &config))) {
+    LOG_ERROR("esp_wifi_set_config WIFI_IF_STA: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -153,6 +153,58 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
     LOG_ERROR("start_wifi");
     return err;
   }
+
+  if ((err = esp_wifi_connect())) {
+    LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  user_state(USER_STATE_CONNECTING);
+
+  return 0;
+}
+
+int wifi_disconnect()
+{
+  esp_err_t err;
+
+  if ((err = esp_wifi_disconnect())) {
+    LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_reconnect()
+{
+  wifi_config_t config;
+  wifi_ap_record_t ap;
+  esp_err_t err;
+
+  if ((err = esp_wifi_get_config(WIFI_IF_STA, &config))) {
+    LOG_ERROR("esp_wifi_get_config: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_sta_get_ap_info(&ap))) {
+    if (err == ESP_ERR_WIFI_NOT_CONNECT) {
+      LOG_DEBUG("disconnected");
+    } else {
+      LOG_ERROR("esp_wifi_sta_get_ap_info: %s", esp_err_to_name(err));
+      return -1;
+    }
+  } else {
+    LOG_WARN("already connected to ssid=%.32s", ap.ssid);
+    return 1;
+  }
+
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s",
+    config.sta.channel,
+    config.sta.ssid,
+    config.sta.password[0] ? "***" : "",
+    wifi_auth_mode_str(config.sta.threshold.authmode)
+  );
 
   if ((err = esp_wifi_connect())) {
     LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
@@ -198,7 +250,7 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
   return 0;
 }
 
-int wifi_close()
+int wifi_disable()
 {
   esp_err_t err;
 

@@ -104,8 +104,8 @@ static int config_wifi_interface(const struct wifi_config *config, wifi_interfac
 
 static int config_wifi_off(const struct wifi_config *config)
 {
-  if (wifi_close()) {
-    LOG_ERROR("wifi_close");
+  if (wifi_disable()) {
+    LOG_ERROR("wifi_disable");
     return -1;
   }
 

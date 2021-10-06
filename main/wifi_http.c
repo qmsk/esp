@@ -198,8 +198,8 @@ static int wifi_api_write(struct json_writer *w)
 
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "mode", wifi_mode_str(mode)) ||
-    (mode == WIFI_MODE_STA ? JSON_WRITE_MEMBER_OBJECT(w, "sta", wifi_api_write_sta_object(w)) : 0) ||
-    (mode == WIFI_MODE_AP ? JSON_WRITE_MEMBER_OBJECT(w, "ap", wifi_api_write_ap_object(w)) : 0)
+    ((mode == WIFI_MODE_STA || mode == WIFI_MODE_APSTA) ? JSON_WRITE_MEMBER_OBJECT(w, "sta", wifi_api_write_sta_object(w)) : 0) ||
+    ((mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) ? JSON_WRITE_MEMBER_OBJECT(w, "ap", wifi_api_write_ap_object(w)) : 0)
   );
 }
 

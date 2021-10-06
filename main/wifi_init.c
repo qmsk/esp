@@ -27,6 +27,11 @@ int init_wifi()
 {
   int err;
 
+  if ((err = init_wifi_timer())) {
+    LOG_ERROR("init_wifi_timer");
+    return err;
+  }
+
   if ((err = init_wifi_events())) {
     LOG_ERROR("init_wifi_events");
     return err;

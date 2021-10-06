@@ -16,11 +16,17 @@ extern struct wifi_config {
 
 int init_wifi_events();
 int init_wifi_system();
+int init_wifi_timer();
 
 int config_wifi(const struct wifi_config *config);
 
 int start_wifi();
 int stop_wifi();
+
+void enable_wifi_reconnect();
+void disable_wifi_reconnect();
+void start_wifi_reconnect();
+void cancel_wifi_reconnect();
 
 int wifi_scan(const wifi_scan_config_t *scan_config, int (*cb)(wifi_ap_record_t *ap, void *ctx), void *ctx);
 int wifi_listen(const wifi_ap_config_t *config);

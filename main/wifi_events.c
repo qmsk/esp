@@ -88,6 +88,8 @@ static void on_sta_disconnected(wifi_event_sta_disconnected_t *event)
   );
 
   user_state(USER_STATE_DISCONNECTED);
+
+  start_wifi_reconnect();
 }
 
 static void on_sta_authmode_change(wifi_event_sta_authmode_change_t *event)
@@ -153,8 +155,9 @@ static void on_ip_sta_lost_ip()
 {
   LOG_INFO(" ");
 
-  // XXX: ???
   user_state(USER_STATE_DISCONNECTED);
+
+  start_wifi_reconnect();
 }
 
 static void on_ip_ap_sta_ip_assigned(ip_event_ap_staipassigned_t *event)

@@ -37,7 +37,7 @@
         </dl>
       </template>
       <template v-if="wifi && wifi.ap && wifi.ap.sta">
-        <h2>AP STA</h2>
+        <h2>AP: STA Connected</h2>
         <table>
           <thead>
             <tr>
@@ -118,6 +118,43 @@
           </dd>
         </dl>
       </template>
+      <template>
+        <table class="scan">
+          <caption>
+            STA: AP Scanned
+
+            <button @click="scan"><span :class="{spin: true, active: scanning}">&#10227;</span></button>
+          </caption>
+          <thead>
+            <tr>
+              <th>BSSID</th>
+              <th>SSID</th>
+              <th>Channel</th>
+              <th>RSSI</th>
+              <th>Authentication</th>
+              <th>Ciphers</th>
+              <th>Mode</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="ap in wifi_scan" :key="ap.bssid">
+              <td>{{ ap.bssid }}</td>
+              <td class="ssid">{{ ap.ssid }}</td>
+              <td>{{ ap.channel }}</td>
+              <td>{{ ap.rssi }}</td>
+              <td>{{ ap.authmode }}</td>
+              <td>{{ ap.pairwise_cipher }} / {{ ap.group_cipher }}</td>
+              <td>
+                <span v-if="ap.phy_11b">b</span>
+                <span v-if="ap.phy_11g">g</span>
+                <span v-if="ap.phy_11n">n</span>
+                <span v-if="ap.phy_lr">LR</span>
+                <span v-if="ap.wps">WPS</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </div>
   </main>
 </template>
@@ -125,7 +162,7 @@
 export default {
   data: () => ({
     loading: true,
-    restarting: false,
+    scanning: false,
   }),
   created() {
     this.load();
@@ -134,6 +171,11 @@ export default {
     wifi() {
       if (this.$store.state.wifi) {
         return this.$store.state.wifi;
+      }
+    },
+    wifi_scan() {
+      if (this.$store.state.wifi_scan) {
+        return this.$store.state.wifi_scan;
       }
     },
   },
@@ -145,6 +187,15 @@ export default {
         await this.$store.dispatch('loadWiFi');
       } finally {
         this.loading = false;
+      }
+    },
+    async scan() {
+      this.scanning = true;
+
+      try {
+        await this.$store.dispatch('scanWiFi');
+      } finally {
+        this.scanning = false;
       }
     },
   }

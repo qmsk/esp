@@ -19,6 +19,7 @@ export default new Vuex.Store({
     config: null,
     system: null,
     wifi: null,
+    wifi_scan: null,
   },
   plugins: [
     // XXX: only during development
@@ -59,6 +60,11 @@ export default new Vuex.Store({
 
       commit('updateWiFi', data);
     },
+    async scanWiFi({ commit }) {
+      const data = await wifiService.scan();
+
+      commit('updateWiFiScan', data);
+    },
   },
   mutations: {
     loadConfig (state, config) {
@@ -89,6 +95,9 @@ export default new Vuex.Store({
     },
     updateWiFi(state, wifi) {
       state.wifi = wifi;
+    },
+    updateWiFiScan(state, wifi_scan) {
+      state.wifi_scan = wifi_scan;
     },
   },
 });

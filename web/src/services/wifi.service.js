@@ -8,4 +8,10 @@ export default class WiFiService {
 
     return response.data
   }
+
+  async scan() {
+    const response = await this.apiService.post('/api/wifi/scan');
+
+    return response.data
+  }
 }

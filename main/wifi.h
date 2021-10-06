@@ -19,7 +19,11 @@ int init_wifi_system();
 
 int config_wifi(const struct wifi_config *config);
 
-int wifi_scan(const wifi_scan_config_t *scan_config);
-int wifi_connect(const wifi_sta_config_t *config);
-int wifi_listen(const wifi_ap_config_t *config);
+/*
+ * Must free() after use.
+ */
+int wifi_scan(const wifi_scan_config_t *scan_config, int (*cb)(wifi_ap_record_t *ap, void *ctx), void *ctx);
+
+int wifi_connect(wifi_mode_t mode, const wifi_sta_config_t *config);
+int wifi_listen(wifi_mode_t mode, const wifi_ap_config_t *config);
 int wifi_close();

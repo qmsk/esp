@@ -22,7 +22,7 @@ const struct config_enum wifi_mode_enum[] = {
   { "OFF",    WIFI_MODE_NULL  },
   { "STA",    WIFI_MODE_STA   },
   { "AP",     WIFI_MODE_AP    },
-  //{ "APSTA",  WIFI_MODE_APSTA },
+  { "APSTA",  WIFI_MODE_APSTA },
   {}
 };
 
@@ -104,15 +104,8 @@ static int config_wifi_interface(const struct wifi_config *config, wifi_interfac
 
 static int config_wifi_off(const struct wifi_config *config)
 {
-  esp_err_t err;
-
   if (wifi_close()) {
     LOG_ERROR("wifi_close");
-    return -1;
-  }
-
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -136,7 +129,7 @@ static int config_wifi_sta(const struct wifi_config *config)
     sta_config.threshold.authmode = WIFI_AUTH_OPEN;
   }
 
-  if (wifi_connect(&sta_config)) {
+  if (wifi_connect(config->mode, &sta_config)) {
     LOG_ERROR("wifi_connect");
     return -1;
   }
@@ -187,7 +180,7 @@ static int config_wifi_ap(const struct wifi_config *config)
     ap_config.authmode = WIFI_AUTH_OPEN;
   }
 
-  if (wifi_listen(&ap_config)) {
+  if (wifi_listen(config->mode, &ap_config)) {
     LOG_ERROR("wifi_listen");
     return -1;
   }
@@ -217,6 +210,7 @@ int config_wifi(const struct wifi_config *config)
       return config_wifi_sta(config);
 
     case WIFI_MODE_AP:
+    case WIFI_MODE_APSTA:
       return config_wifi_ap(config);
 
     default:

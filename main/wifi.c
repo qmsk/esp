@@ -8,13 +8,71 @@
 #include <esp_wifi.h>
 #include <tcpip_adapter.h>
 
-int wifi_scan(const wifi_scan_config_t *scan_config)
+/*
+ * Switch state if needed for scanning.
+ */
+int wifi_scan_mode()
 {
-  wifi_ap_record_t *wifi_ap_records;
-  uint16_t number;
+  wifi_mode_t from_mode, to_mode;
+  wifi_state_t state = esp_wifi_get_state();
   esp_err_t err;
 
-  LOG_INFO("start: ssid=%s",
+  LOG_DEBUG("state=%d", state);
+
+  if ((err = esp_wifi_get_mode(&from_mode))) {
+    LOG_ERROR("esp_wifi_get_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  switch (from_mode) {
+    case WIFI_MODE_NULL:
+      to_mode = WIFI_MODE_STA;
+      break;
+
+    case WIFI_MODE_STA:
+      return 0;
+
+    case WIFI_MODE_AP:
+      to_mode = WIFI_MODE_APSTA;
+      break;
+
+    case WIFI_MODE_APSTA:
+      return 0;
+
+    default:
+      LOG_ERROR("unknown mode=%d", from_mode);
+      return -1;
+  }
+
+  LOG_INFO("switch from state=%d / mode=%s to mode=%s", state, wifi_mode_str(from_mode), wifi_mode_str(to_mode));
+
+  if ((err = esp_wifi_set_mode(to_mode))) {
+    LOG_ERROR("esp_wifi_set_mode %s: %s", wifi_mode_str(to_mode), esp_err_to_name(err));
+    return -1;
+  }
+
+  if (state == WIFI_STATE_START) {
+
+  } else if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_scan(const wifi_scan_config_t *scan_config, int (*cb)(wifi_ap_record_t *ap, void *ctx), void *ctx)
+{
+  wifi_ap_record_t *wifi_ap_records;
+  uint16_t ap_num;
+  int err;
+
+  if ((err = wifi_scan_mode())) {
+    LOG_ERROR("wifi_scan_mode");
+    return err;
+  }
+
+  LOG_INFO("scan: start ssid=%s",
     scan_config->ssid ? (const char *) scan_config->ssid : "*"
   );
 
@@ -23,48 +81,28 @@ int wifi_scan(const wifi_scan_config_t *scan_config)
     return -1;
   }
 
-  if ((err = esp_wifi_scan_get_ap_num(&number))) {
+  if ((err = esp_wifi_scan_get_ap_num(&ap_num))) {
     LOG_ERROR("esp_wifi_scan_get_ap_num: %s", esp_err_to_name(err));
     return -1;
   }
 
-  LOG_INFO("Scanned %u APs", number);
+  LOG_INFO("scan: get ap_num=%u APs", ap_num);
 
-  if (!(wifi_ap_records = calloc(number, sizeof(*wifi_ap_records)))) {
-    LOG_ERROR("calloc(%d)", number);
+  if (!(wifi_ap_records = calloc(ap_num, sizeof(*wifi_ap_records)))) {
+    LOG_ERROR("calloc(%d)", ap_num);
     return -1;
   }
 
-  if ((err = esp_wifi_scan_get_ap_records(&number, wifi_ap_records))) {
+  if ((err = esp_wifi_scan_get_ap_records(&ap_num, wifi_ap_records))) {
     LOG_ERROR("esp_wifi_scan_get_ap_records: %s", esp_err_to_name(err));
     goto error;
   }
 
-  printf("%-17s\t%-32s\t%5s\t%-4s\t%10s\t%21s\t%s\n",
-    "BSSID",
-    "SSID",
-    "CH:CH",
-    "RSSI",
-    "AUTHMODE",
-    "PAIRW/GROUP CIPH",
-    "FLAGS"
-  );
-
-  for (wifi_ap_record_t *ap = wifi_ap_records; ap < wifi_ap_records + number; ap++) {
-    printf("%02x:%02x:%02x:%02x:%02x:%02x\t%-32.32s\t%-2d:%-2d\t%-4d\t%-10s\t%-10s/%-10s\t%c%c%c%c%c\n",
-      ap->bssid[0], ap->bssid[1], ap->bssid[2], ap->bssid[3], ap->bssid[4], ap->bssid[5],
-      ap->ssid,
-      ap->primary, ap->second,
-      ap->rssi,
-      wifi_auth_mode_str(ap->authmode),
-      wifi_cipher_type_str(ap->pairwise_cipher),
-      wifi_cipher_type_str(ap->group_cipher),
-      ap->phy_11b ? 'b' : ' ',
-      ap->phy_11g ? 'g' : ' ',
-      ap->phy_11n ? 'n' : ' ',
-      ap->phy_lr  ? 'L' : ' ',
-      ap->wps     ? 'W' : ' '
-    );
+  for (int i = 0; i < ap_num; i++) {
+    if ((err = cb(&wifi_ap_records[i], ctx))) {
+      LOG_WARN("callback ret=%d", err);
+      goto error;
+    }
   }
 
 error:
@@ -73,13 +111,13 @@ error:
   return err;
 }
 
-int wifi_connect(const wifi_sta_config_t *sta_config)
+int wifi_connect(wifi_mode_t mode, const wifi_sta_config_t *sta_config)
 {
   wifi_config_t config = { .sta = *sta_config };
   esp_err_t err;
 
-  if ((err = esp_wifi_set_mode(WIFI_MODE_STA))) {
-    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+  if ((err = esp_wifi_set_mode(mode))) {
+    LOG_ERROR("esp_wifi_set_mode %s: %s", wifi_mode_str(mode), esp_err_to_name(err));
     return -1;
   }
 
@@ -105,13 +143,13 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
   return 0;
 }
 
-int wifi_listen(const wifi_ap_config_t *ap_config)
+int wifi_listen(wifi_mode_t mode, const wifi_ap_config_t *ap_config)
 {
   wifi_config_t config = { .ap = *ap_config };
   esp_err_t err;
 
-  if ((err = esp_wifi_set_mode(WIFI_MODE_AP))) {
-    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+  if ((err = esp_wifi_set_mode(mode))) {
+    LOG_ERROR("esp_wifi_set_mode %s: %s", wifi_mode_str(mode), esp_err_to_name(err));
     return -1;
   }
 

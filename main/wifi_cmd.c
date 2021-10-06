@@ -6,16 +6,76 @@
 
 #include <esp_wifi.h>
 
+int wifi_start_cmd(int argc, char **argv, void *ctx)
+{
+  esp_err_t err;
+
+  if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_stop_cmd(int argc, char **argv, void *ctx)
+{
+  esp_err_t err;
+
+  if ((err = esp_wifi_stop())) {
+    LOG_ERROR("esp_wifi_stop: %s", esp_err_to_name(err));
+    return err;
+  }
+
+  return 0;
+}
+
+int print_wifi_scan(wifi_ap_record_t *ap, void *ctx)
+{
+  int *countp = ctx;
+
+  // print header before first line
+  if ((*countp)++ == 0) {
+    printf("%-17s\t%-32s\t%5s\t%-4s\t%10s\t%21s\t%s\n",
+      "BSSID",
+      "SSID",
+      "CH:CH",
+      "RSSI",
+      "AUTHMODE",
+      "PAIRW/GROUP CIPH",
+      "FLAGS"
+    );
+  }
+
+  printf("%02x:%02x:%02x:%02x:%02x:%02x\t%-32.32s\t%-2d:%-2d\t%-4d\t%-10s\t%-10s/%-10s\t%c%c%c%c%c\n",
+    ap->bssid[0], ap->bssid[1], ap->bssid[2], ap->bssid[3], ap->bssid[4], ap->bssid[5],
+    ap->ssid,
+    ap->primary, ap->second,
+    ap->rssi,
+    wifi_auth_mode_str(ap->authmode),
+    wifi_cipher_type_str(ap->pairwise_cipher),
+    wifi_cipher_type_str(ap->group_cipher),
+    ap->phy_11b ? 'b' : ' ',
+    ap->phy_11g ? 'g' : ' ',
+    ap->phy_11n ? 'n' : ' ',
+    ap->phy_lr  ? 'L' : ' ',
+    ap->wps     ? 'W' : ' '
+  );
+
+  return 0;
+}
+
 int wifi_scan_cmd(int argc, char **argv, void *ctx)
 {
   wifi_scan_config_t scan_config = {};
+  int count = 0;
   int err;
 
   if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, (const char **) &scan_config.ssid))) {
     return err;
   }
 
-  if ((err = wifi_scan(&scan_config))) {
+  if ((err = wifi_scan(&scan_config, print_wifi_scan, &count))) {
     LOG_ERROR("wifi_scan");
     return err;
   }
@@ -39,7 +99,7 @@ int wifi_connect_cmd(int argc, char **argv, void *ctx)
     sta_config.threshold.authmode = WIFI_AUTHMODE_THRESHOLD;
   }
 
-  if ((err = wifi_connect(&sta_config))) {
+  if ((err = wifi_connect(WIFI_MODE_STA, &sta_config))) {
     LOG_ERROR("wifi_connect");
     return err;
   }
@@ -63,7 +123,7 @@ int wifi_listen_cmd(int argc, char **argv, void *ctx)
     ap_config.authmode = WIFI_AUTHMODE_THRESHOLD;
   }
 
-  if ((err = wifi_listen(&ap_config))) {
+  if ((err = wifi_listen(WIFI_MODE_AP, &ap_config))) {
     LOG_ERROR("wifi_listen");
     return err;
   }
@@ -220,6 +280,9 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
     case WIFI_MODE_AP:
       return print_wifi_info_ap();
 
+    case WIFI_MODE_APSTA:
+      return print_wifi_info_ap() || print_wifi_info_sta();
+
     default:
       LOG_ERROR("Unknown wifi mode=%d", mode);
       return -1;
@@ -229,6 +292,8 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
 }
 
 const struct cmd wifi_commands[] = {
+  { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"  },
+  { "stop",       wifi_stop_cmd,        .usage = "",              .describe = "Stop WiFi system"  },
   { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },
   { "connect",    wifi_connect_cmd,     .usage = "[SSID] [PSK]",  .describe = "Connect to AP"  },
   { "listen",     wifi_listen_cmd,      .usage = "[SSID] [PSK]",  .describe = "Establish AP"        },

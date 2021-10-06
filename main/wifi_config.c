@@ -129,15 +129,8 @@ static int config_wifi_sta(const struct wifi_config *config)
     sta_config.threshold.authmode = WIFI_AUTH_OPEN;
   }
 
-  if (wifi_connect(config->mode, &sta_config)) {
+  if (wifi_connect(&sta_config)) {
     LOG_ERROR("wifi_connect");
-    return -1;
-  }
-
-  LOG_INFO("start WiFi STA");
-
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -180,15 +173,8 @@ static int config_wifi_ap(const struct wifi_config *config)
     ap_config.authmode = WIFI_AUTH_OPEN;
   }
 
-  if (wifi_listen(config->mode, &ap_config)) {
+  if (wifi_listen(&ap_config)) {
     LOG_ERROR("wifi_listen");
-    return -1;
-  }
-
-  LOG_INFO("start WiFi AP");
-
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
   }
 

@@ -8,10 +8,10 @@
 
 int wifi_start_cmd(int argc, char **argv, void *ctx)
 {
-  esp_err_t err;
+  int err;
 
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+  if ((err = start_wifi())) {
+    LOG_ERROR("start_wifi");
     return err;
   }
 
@@ -20,10 +20,10 @@ int wifi_start_cmd(int argc, char **argv, void *ctx)
 
 int wifi_stop_cmd(int argc, char **argv, void *ctx)
 {
-  esp_err_t err;
+  int err;
 
-  if ((err = esp_wifi_stop())) {
-    LOG_ERROR("esp_wifi_stop: %s", esp_err_to_name(err));
+  if ((err = stop_wifi())) {
+    LOG_ERROR("stop_wifi");
     return err;
   }
 
@@ -99,7 +99,7 @@ int wifi_connect_cmd(int argc, char **argv, void *ctx)
     sta_config.threshold.authmode = WIFI_AUTHMODE_THRESHOLD;
   }
 
-  if ((err = wifi_connect(WIFI_MODE_STA, &sta_config))) {
+  if ((err = wifi_connect(&sta_config))) {
     LOG_ERROR("wifi_connect");
     return err;
   }
@@ -123,7 +123,7 @@ int wifi_listen_cmd(int argc, char **argv, void *ctx)
     ap_config.authmode = WIFI_AUTHMODE_THRESHOLD;
   }
 
-  if ((err = wifi_listen(WIFI_MODE_AP, &ap_config))) {
+  if ((err = wifi_listen(&ap_config))) {
     LOG_ERROR("wifi_listen");
     return err;
   }

@@ -15,8 +15,11 @@ extern struct wifi_config {
 } wifi_config;
 
 int init_wifi_events();
+int init_wifi_system();
+
 int config_wifi(const struct wifi_config *config);
-int start_wifi(const struct wifi_config *config);
 
 int wifi_scan(const wifi_scan_config_t *scan_config);
-int wifi_connect(wifi_config_t *config);
+int wifi_connect(const wifi_sta_config_t *config);
+int wifi_listen(const wifi_ap_config_t *config);
+int wifi_close();

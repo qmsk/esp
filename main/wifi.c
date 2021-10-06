@@ -73,18 +73,24 @@ error:
   return err;
 }
 
-int wifi_connect(wifi_config_t *config)
+int wifi_connect(const wifi_sta_config_t *sta_config)
 {
+  wifi_config_t config = { .sta = *sta_config };
   esp_err_t err;
 
+  if ((err = esp_wifi_set_mode(WIFI_MODE_STA))) {
+    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
   LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s",
-    config->sta.channel,
-    config->sta.ssid,
-    config->sta.password[0] ? "***" : "",
-    wifi_auth_mode_str(config->sta.threshold.authmode)
+    config.sta.channel,
+    config.sta.ssid,
+    config.sta.password[0] ? "***" : "",
+    wifi_auth_mode_str(config.sta.threshold.authmode)
   );
 
-  if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, config))) {
+  if ((err = esp_wifi_set_config(ESP_IF_WIFI_STA, &config))) {
     LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_STA: %s", esp_err_to_name(err));
     return -1;
   }
@@ -95,6 +101,50 @@ int wifi_connect(wifi_config_t *config)
   }
 
   user_state(USER_STATE_CONNECTING);
+
+  return 0;
+}
+
+int wifi_listen(const wifi_ap_config_t *ap_config)
+{
+  wifi_config_t config = { .ap = *ap_config };
+  esp_err_t err;
+
+  if ((err = esp_wifi_set_mode(WIFI_MODE_AP))) {
+    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s ssid_hidden=%s max_connection=%d",
+    config.ap.channel,
+    config.ap.ssid,
+    config.ap.password[0] ? "***" : "",
+    wifi_auth_mode_str(config.ap.authmode),
+    config.ap.ssid_hidden ? "true" : "false",
+    config.ap.max_connection
+  );
+
+  user_state(USER_STATE_CONNECTING);
+
+  if ((err = esp_wifi_set_config(ESP_IF_WIFI_AP, &config))) {
+    LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_AP: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_close()
+{
+  esp_err_t err;
+
+  if ((err = esp_wifi_set_mode(WIFI_MODE_NULL))) {
+    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // most likely also set via wifi_events
+  user_state(USER_STATE_DISCONNECTED);
 
   return 0;
 }

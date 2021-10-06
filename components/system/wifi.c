@@ -1,5 +1,13 @@
 #include <system_wifi.h>
 
+const char *wifi_interface_str(wifi_interface_t iface)
+{
+  switch(iface) {
+    case WIFI_IF_STA:     return "STA";
+    case WIFI_IF_AP:      return "AP";
+    default:              return "?";
+  }
+}
 const char *wifi_mode_str(wifi_mode_t mode)
 {
   switch(mode) {

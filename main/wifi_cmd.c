@@ -25,26 +25,63 @@ int wifi_scan_cmd(int argc, char **argv, void *ctx)
 
 int wifi_connect_cmd(int argc, char **argv, void *ctx)
 {
-  wifi_config_t config = {};
+  wifi_sta_config_t sta_config = {};
   int err;
 
-  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) config.ap.ssid, sizeof(config.sta.ssid)))) {
+  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) sta_config.ssid, sizeof(sta_config.ssid)))) {
     return err;
   }
-  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) config.ap.password, sizeof(config.sta.password)))) {
+  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) sta_config.password, sizeof(sta_config.password)))) {
     return err;
   }
 
-  if (config.sta.password[0]) {
-    config.sta.threshold.authmode = WIFI_AUTHMODE_THRESHOLD;
+  if (sta_config.password[0]) {
+    sta_config.threshold.authmode = WIFI_AUTHMODE_THRESHOLD;
   }
 
-  if ((err = wifi_connect(&config))) {
-    LOG_ERROR("wifi_info");
+  if ((err = wifi_connect(&sta_config))) {
+    LOG_ERROR("wifi_connect");
     return err;
   }
 
   return 0;
+}
+
+int wifi_listen_cmd(int argc, char **argv, void *ctx)
+{
+  wifi_ap_config_t ap_config = {};
+  int err;
+
+  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) ap_config.ssid, sizeof(ap_config.ssid)))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) ap_config.password, sizeof(ap_config.password)))) {
+    return err;
+  }
+
+  if (ap_config.password[0]) {
+    ap_config.authmode = WIFI_AUTHMODE_THRESHOLD;
+  }
+
+  if ((err = wifi_listen(&ap_config))) {
+    LOG_ERROR("wifi_listen");
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_disconnect_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = wifi_close())) {
+    LOG_ERROR("wifi_close");
+    return err;
+  }
+
+  return 0;
+
 }
 
 static int print_wifi_info_null()
@@ -192,9 +229,11 @@ int wifi_info_cmd(int argc, char **argv, void *ctx)
 }
 
 const struct cmd wifi_commands[] = {
-  { "scan",     wifi_scan_cmd,    .usage = "[SSID]",        .describe = "Scan available APs"  },
-  { "connect",  wifi_connect_cmd, .usage = "[SSID] [PSK]",  .describe = "Connect AP"          },
-  { "info",     wifi_info_cmd,    .usage = "",              .describe = "Show connected AP"   },
+  { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },
+  { "connect",    wifi_connect_cmd,     .usage = "[SSID] [PSK]",  .describe = "Connect to AP"  },
+  { "listen",     wifi_listen_cmd,      .usage = "[SSID] [PSK]",  .describe = "Establish AP"        },
+  { "disconnect", wifi_disconnect_cmd,  .usage = "",              .describe = "Disconnect from AP"       },
+  { "info",       wifi_info_cmd,        .usage = "",              .describe = "Show connected AP"   },
   {}
 };
 

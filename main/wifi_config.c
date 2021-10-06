@@ -3,6 +3,7 @@
 #include "user_event.h"
 
 #include <logging.h>
+#include <system_interfaces.h>
 #include <system_wifi.h>
 
 #include <string.h>
@@ -21,7 +22,7 @@ const struct config_enum wifi_mode_enum[] = {
   { "OFF",    WIFI_MODE_NULL  },
   { "STA",    WIFI_MODE_STA   },
   { "AP",     WIFI_MODE_AP    },
-  { "APSTA",  WIFI_MODE_APSTA },
+  //{ "APSTA",  WIFI_MODE_APSTA },
   {}
 };
 
@@ -71,33 +72,8 @@ const struct configtab wifi_configtab[] = {
   {}
 };
 
-int config_wifi(const struct wifi_config *config)
-{
-  wifi_init_config_t init_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_err_t err;
-
-  LOG_INFO("mode=%s", wifi_mode_str(config->mode));
-
-  if ((err = esp_wifi_init(&init_config))) {
-    LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
-    LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_set_mode(config->mode))) {
-    LOG_ERROR("esp_wifi_set_mode WIFI_MODE_STA: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
 /* Wifi must be started */
-static int config_wifi_sta(const struct wifi_config *config)
+static int config_wifi_interface(const struct wifi_config *config, wifi_interface_t wifi_if, tcpip_adapter_if_t tcpip_if)
 {
   char hostname[TCPIP_HOSTNAME_MAX_SIZE];
   uint8_t mac[6];
@@ -108,111 +84,94 @@ static int config_wifi_sta(const struct wifi_config *config)
 
     strlcpy(hostname, config->hostname, sizeof(hostname));
 
-  } else if ((err = esp_wifi_get_mac(WIFI_IF_STA, mac))) {
-    LOG_ERROR("esp_wifi_get_mac WIFI_IF_STA: %s", esp_err_to_name(err));
+  } else if ((err = esp_wifi_get_mac(wifi_if, mac))) {
+    LOG_ERROR("esp_wifi_get_mac %s: %s", wifi_interface_str(wifi_if), esp_err_to_name(err));
     return -1;
 
   } else {
-    LOG_INFO("Using STA default hostname: " WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
+    LOG_INFO("Using %s default hostname: " WIFI_HOSTNAME_FMT, wifi_interface_str(wifi_if), mac[3], mac[4], mac[5]);
 
     snprintf(hostname, sizeof(hostname), WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
   }
 
-  if ((err = tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, hostname))) {
-    LOG_ERROR("tcpip_adapter_set_hostname TCPIP_ADAPTER_IF_STA: %s", esp_err_to_name(err));
+  if ((err = tcpip_adapter_set_hostname(tcpip_if, hostname))) {
+    LOG_ERROR("tcpip_adapter_set_hostname %s: %s", tcpip_adapter_if_str(tcpip_if), esp_err_to_name(err));
     return -1;
   }
 
   return 0;
 }
 
-/* Wifi must be started */
-static int config_wifi_ap(const struct wifi_config *config)
+static int config_wifi_off(const struct wifi_config *config)
 {
-  char hostname[TCPIP_HOSTNAME_MAX_SIZE];
-  uint8_t mac[6];
   esp_err_t err;
 
-  if (config->hostname[0]) {
-    LOG_INFO("Using config hostname: %s", config->hostname);
-
-    strlcpy(hostname, config->hostname, sizeof(hostname));
-
-  } else if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
-    LOG_ERROR("esp_wifi_get_mac WIFI_IF_AP: %s", esp_err_to_name(err));
-    return -1;
-
-  } else {
-    LOG_INFO("Using AP default hostname: " WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
-
-    snprintf(hostname, sizeof(hostname), WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
-  }
-
-  if ((err = tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_AP, hostname))) {
-    LOG_ERROR("tcpip_adapter_set_hostname TCPIP_ADAPTER_IF_AP: %s", esp_err_to_name(err));
+  if (wifi_close()) {
+    LOG_ERROR("wifi_close");
     return -1;
   }
-
-  return 0;
-}
-
-static int start_wifi_sta(const struct wifi_config *config)
-{
-  wifi_config_t wifi_config = {
-    .sta = {
-      .channel = config->channel,
-      .threshold = {
-        .authmode = config->auth_mode,
-      },
-    },
-  };
-  esp_err_t err;
-
-  strncpy((char *) wifi_config.sta.ssid, config->ssid, sizeof(wifi_config.sta.ssid));
-  strncpy((char *) wifi_config.sta.password, config->password, sizeof(wifi_config.sta.password));
-
-  if (!config->password[0]) {
-    wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
-  }
-
-  LOG_INFO("Start Wifi Station");
 
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = config_wifi_sta(config))) {
-    LOG_ERROR("config_wifi_sta");
-    return err;
+  return 0;
+}
+
+static int config_wifi_sta(const struct wifi_config *config)
+{
+  wifi_sta_config_t sta_config = {
+    .channel = config->channel,
+    .threshold = {
+      .authmode = config->auth_mode,
+    },
+  };
+  esp_err_t err;
+
+  strncpy((char *) sta_config.ssid, config->ssid, sizeof(sta_config.ssid));
+  strncpy((char *) sta_config.password, config->password, sizeof(sta_config.password));
+
+  if (!config->password[0]) {
+    sta_config.threshold.authmode = WIFI_AUTH_OPEN;
   }
 
-  if (wifi_connect(&wifi_config)) {
+  if (wifi_connect(&sta_config)) {
     LOG_ERROR("wifi_connect");
     return -1;
+  }
+
+  LOG_INFO("start WiFi STA");
+
+  if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = config_wifi_interface(config, WIFI_IF_STA, TCPIP_ADAPTER_IF_STA))) {
+    LOG_ERROR("config_wifi_interface");
+    return err;
   }
 
   return 0;
 }
 
-static int start_wifi_ap(const struct wifi_config *config)
+static int config_wifi_ap(const struct wifi_config *config)
 {
   uint8_t mac[6];
-  wifi_config_t wifi_config = {
-    .ap = {
-      .channel = config->channel,
-      .authmode = config->auth_mode,
-      .max_connection = WIFI_AP_MAX_CONNECTION,
-    }
+  wifi_ap_config_t ap_config = {
+    .channel = config->channel,
+    .authmode = config->auth_mode,
+    .max_connection = WIFI_AP_MAX_CONNECTION,
   };
   esp_err_t err;
 
-  strncpy((char *) wifi_config.ap.password, config->password, sizeof(wifi_config.ap.password));
+  strncpy((char *) ap_config.password, config->password, sizeof(ap_config.password));
 
   if (config->ssid[0]) {
     LOG_INFO("Using config ssid: %s", config->ssid);
 
-    strncpy((char *) wifi_config.ap.ssid, config->ssid, sizeof(wifi_config.ap.ssid));
+    strncpy((char *) ap_config.ssid, config->ssid, sizeof(ap_config.ssid));
 
   } else if ((err = esp_wifi_get_mac(WIFI_IF_AP, mac))) {
     LOG_ERROR("esp_wifi_get_mac WIFI_IF_AP: %s", esp_err_to_name(err));
@@ -221,55 +180,44 @@ static int start_wifi_ap(const struct wifi_config *config)
   } else {
     LOG_INFO("Using default ssid: " WIFI_SSID_FMT, mac[3], mac[4], mac[5]);
 
-    snprintf((char *) wifi_config.ap.ssid, sizeof(wifi_config.ap.ssid), WIFI_SSID_FMT, mac[3], mac[4], mac[5]);
+    snprintf((char *) ap_config.ssid, sizeof(ap_config.ssid), WIFI_SSID_FMT, mac[3], mac[4], mac[5]);
   }
 
   if (!config->password[0]) {
-    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    ap_config.authmode = WIFI_AUTH_OPEN;
   }
 
-  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s ssid_hidden=%s max_connection=%d",
-    wifi_config.ap.channel,
-    wifi_config.ap.ssid,
-    wifi_config.ap.password[0] ? "***" : "",
-    wifi_auth_mode_str(wifi_config.ap.authmode),
-    wifi_config.ap.ssid_hidden ? "true" : "false",
-    wifi_config.ap.max_connection
-  );
-
-  if ((err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config))) {
-    LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_AP: %s", esp_err_to_name(err));
+  if (wifi_listen(&ap_config)) {
+    LOG_ERROR("wifi_listen");
     return -1;
   }
 
-  user_state(USER_STATE_CONNECTING);
+  LOG_INFO("start WiFi AP");
 
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
     return -1;
   }
 
-  if ((err = config_wifi_ap(config))) {
-    LOG_ERROR("config_wifi_ap");
+  if ((err = config_wifi_interface(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
+    LOG_ERROR("config_wifi_interface");
     return err;
   }
 
   return 0;
 }
 
-int start_wifi(const struct wifi_config *config)
+int config_wifi(const struct wifi_config *config)
 {
   switch(config->mode) {
     case WIFI_MODE_NULL:
-      user_state(USER_STATE_DISCONNECTED);
-
-      return 0;
+      return config_wifi_off(config);
 
     case WIFI_MODE_STA:
-      return start_wifi_sta(config);
+      return config_wifi_sta(config);
 
     case WIFI_MODE_AP:
-      return start_wifi_ap(config);
+      return config_wifi_ap(config);
 
     default:
       LOG_ERROR("Unkonwn mode=%d", config->mode);

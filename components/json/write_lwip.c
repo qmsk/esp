@@ -6,7 +6,7 @@
 
 #define JSON_QUOTE "\""
 
-int json_write_ipv4(struct json_writer *w, ip4_addr_t *ip)
+int json_write_ipv4(struct json_writer *w, const ip4_addr_t *ip)
 {
   return json_writef(w, JSON_STRING, (JSON_QUOTE "%u.%u.%u.%u" JSON_QUOTE),
     ip4_addr1(ip),
@@ -16,7 +16,7 @@ int json_write_ipv4(struct json_writer *w, ip4_addr_t *ip)
   );
 }
 
-int json_write_ipv6(struct json_writer *w, ip6_addr_t *ip)
+int json_write_ipv6(struct json_writer *w, const ip6_addr_t *ip)
 {
   return json_writef(w, JSON_STRING, (JSON_QUOTE "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x" JSON_QUOTE),
     IP6_ADDR_BLOCK1(ip),
@@ -30,7 +30,7 @@ int json_write_ipv6(struct json_writer *w, ip6_addr_t *ip)
  );
 }
 
-int json_write_ip(struct json_writer *w, ip_addr_t *ip)
+int json_write_ip(struct json_writer *w, const ip_addr_t *ip)
 {
   switch (IP_GET_TYPE(ip)) {
     case IPADDR_TYPE_V4:

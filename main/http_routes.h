@@ -20,3 +20,6 @@ int config_api_post(struct http_request *request, struct http_response *response
 int system_api_handler(struct http_request *request, struct http_response *response, void *ctx);
 int system_api_tasks_handler(struct http_request *request, struct http_response *response, void *ctx);
 int system_api_restart_handler(struct http_request *request, struct http_response *response, void *ctx);
+
+/* wifi_http.c */
+int wifi_api_handler(struct http_request *request, struct http_response *response, void *ctx);

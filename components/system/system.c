@@ -76,8 +76,11 @@ void system_info_get(struct system_info *info)
 
 void system_status_get(struct system_status *status)
 {
+  int64_t uptime = esp_timer_get_time();
+
   status->reset_reason = esp_reset_reason();
-  status->uptime = esp_timer_get_time();
+  status->uptime_s = (uptime / 1000000);
+  status->uptime_us = (uptime % 1000000);
   status->cpu_frequency = esp_clk_cpu_freq();
   status->total_heap_size = system_get_total_heap_size();
   status->free_heap_size = esp_get_free_heap_size();

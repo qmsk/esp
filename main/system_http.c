@@ -49,7 +49,8 @@ static int system_api_write_status_object(struct json_writer *w)
   system_status_get(&status);
 
   return (
-    JSON_WRITE_MEMBER_INT64(w, "uptime", status.uptime) ||
+    JSON_WRITE_MEMBER_UINT(w, "uptime_s", status.uptime_s) ||
+    JSON_WRITE_MEMBER_UINT(w, "uptime_us", status.uptime_us) ||
     JSON_WRITE_MEMBER_STRING(w, "reset_reason", esp_reset_reason_str(status.reset_reason)) ||
     JSON_WRITE_MEMBER_UINT(w, "cpu_frequency", status.cpu_frequency) ||
     JSON_WRITE_MEMBER_UINT(w, "heap_size", status.total_heap_size) ||

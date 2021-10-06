@@ -101,7 +101,7 @@ static int system_status_cmd(int argc, char **argv, void *ctx)
 
   system_status_get(&status);
 
-  printf("Uptime %ds\n", (int) (status.uptime / 1000 / 1000));
+  printf("Uptime %u.%03us\n", status.uptime_s, status.uptime_us / 1000);
   printf("Reset reason: %s\n", esp_reset_reason_str(status.reset_reason));
   printf("\n");
   printf("CPU frequency=%dMhz\n", status.cpu_frequency / 1000 / 1000);

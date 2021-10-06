@@ -51,7 +51,7 @@ table.tasks td.stack-free {
           <dd>{{ info.build_date }} @ {{ info.build_time }}</dd>
 
           <dt>Uptime</dt>
-          <dd>{{ status.uptime | uptime }}</dd>
+          <dd>{{ status.uptime_s | uptime }}</dd>
         </dl>
 
         <h2>Memory</h2>
@@ -236,8 +236,7 @@ export default {
     kib: function(value) {
       return (value / 1024).toFixed(1) + ' KiB';
     },
-    uptime: function(us) {
-      const s = Math.floor(us / 1000 / 1000);
+    uptime: function(s) {
       const m = Math.floor(s / 60);
       const h = Math.floor(m / 60);
       const d = Math.floor(h / 24);

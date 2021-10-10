@@ -1,5 +1,6 @@
 #include "user_event.h"
 
+#include "artnet.h"
 #include "config.h"
 #include "status_leds.h"
 #include "system.h"
@@ -73,6 +74,19 @@ void user_alert(enum user_alert alert)
   }
 
   status_leds_alert(alert);
+}
+
+void update_user_ipv4_address(ip4_addr_t ip_addr){
+  LOG_INFO("ip_addr=%d.%d.%d.%d",
+    ip4_addr1_val(ip_addr),
+    ip4_addr2_val(ip_addr),
+    ip4_addr3_val(ip_addr),
+    ip4_addr4_val(ip_addr)
+  );
+
+  if (update_artnet()) {
+    LOG_WARN("update_artnet");
+  }
 }
 
 void user_reset()

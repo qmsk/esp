@@ -39,6 +39,13 @@ uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
 
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 
+/**
+ * Update options for artnet discovery.
+ *
+ * NOTE: changing `port` will not work.
+ */
+ int artnet_update(struct artnet *artnet, struct artnet_options options);
+
 /** Patch output port.
  *
  * artnet supports a maximum of 4 output ports with addresses in the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.

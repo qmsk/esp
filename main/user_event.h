@@ -1,5 +1,7 @@
 #pragma once
 
+#include <lwip/ip_addr.h>
+
 enum user_state {
   // states
   USER_STATE_BOOT,
@@ -29,6 +31,9 @@ enum user_alert {
 void user_state(enum user_state state);
 void user_activity(enum user_activity activity);
 void user_alert(enum user_alert alert);
+
+// distribute config
+void update_user_ipv4_address(ip4_addr_t ip_addr);
 
 /*
  * Hard config reset + system restart.

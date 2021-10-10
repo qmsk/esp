@@ -12,8 +12,6 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
 
-  LOG_INFO("port=%u address=%04x", options.port, options.address);
-
   if (options.address & 0xF) {
     LOG_ERROR("address=%04X has universe bits set", options.address);
     return -1;
@@ -25,7 +23,6 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
     LOG_ERROR("artnet_listen port=%u", options.port);
     return err;
   }
-
 
   return 0;
 }
@@ -47,6 +44,14 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options)
   }
 
   *artnetp = artnet;
+
+  return 0;
+}
+
+int artnet_update(struct artnet *artnet, struct artnet_options options)
+{
+  // XXX: locking for artnet_send_poll_reply()?
+  artnet->options = options;
 
   return 0;
 }

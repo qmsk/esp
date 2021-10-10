@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "user_event.h"
+#include "system.h"
 
 #include <logging.h>
 #include <system_interfaces.h>
@@ -104,9 +105,22 @@ static void on_sta_bss_rssi_low(wifi_event_bss_rssi_low_t *event)
 
 static void on_ap_start()
 {
-  LOG_INFO(" ");
+  tcpip_adapter_ip_info_t ip_info = {};
+  esp_err_t err;
+
+  if ((err = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info))) {
+    LOG_WARN("tcpip_adapter_get_ip_info TCPIP_ADAPTER_IF_AP: %s", esp_err_to_name(err));
+  }
+
+  LOG_INFO("ip=%d.%d.%d.%d",
+    ip4_addr1_val(ip_info.ip),
+    ip4_addr2_val(ip_info.ip),
+    ip4_addr3_val(ip_info.ip),
+    ip4_addr4_val(ip_info.ip)
+  );
 
   user_state(USER_STATE_CONNECTED);
+  update_user_ipv4_address(ip_info.ip);
 }
 
 static void on_ap_stop()
@@ -149,6 +163,7 @@ static void on_ip_sta_got_ip(ip_event_got_ip_t *event)
   );
 
   user_state(USER_STATE_CONNECTED);
+  update_user_ipv4_address(event->ip_info.ip);
 }
 
 static void on_ip_sta_lost_ip()

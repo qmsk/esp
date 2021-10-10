@@ -83,6 +83,25 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
   snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
   snprintf(options->long_name, sizeof(options->long_name), "%s", artnet_product);
 
+  LOG_INFO("port=%u address=%04x",
+    options->port,
+    options->address
+  );
+  LOG_INFO("ip_address=%u.%u.%u.%u",
+    options->ip_address[0],
+    options->ip_address[1],
+    options->ip_address[2],
+    options->ip_address[3]
+  );
+  LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x",
+    options->mac_address[0],
+    options->mac_address[1],
+    options->mac_address[2],
+    options->mac_address[3],
+    options->mac_address[4],
+    options->mac_address[5]
+  );
+
   return 0;
 }
 
@@ -149,6 +168,30 @@ int start_artnet()
     return -1;
   } else {
     LOG_DEBUG("artnet task=%p", _artnet_task);
+  }
+
+  return 0;
+}
+
+int update_artnet()
+{
+  struct artnet_options options = {};
+  int err;
+
+  if (!artnet) {
+    return 0;
+  }
+
+  LOG_INFO("re-initialize artnet discovery options");
+
+  if ((err = init_artnet_options(&options, &artnet_config))) {
+    LOG_ERROR("init_artnet_options");
+    return err;
+  }
+
+  if ((err = artnet_update(artnet, options))) {
+    LOG_ERROR("artnet_update");
+    return err;
   }
 
   return 0;

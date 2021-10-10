@@ -14,4 +14,12 @@ int init_artnet();
  */
 int add_artnet_output(uint16_t universe, xQueueHandle queue);
 
+/*
+ * start artnet receiver, once outputs are setup.
+ */
 int start_artnet();
+
+/*
+ * reconfigure artnet receiver
+ */
+int update_artnet();

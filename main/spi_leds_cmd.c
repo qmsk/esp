@@ -119,10 +119,40 @@ int spi_leds_cmd_set(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int spi_leds_cmd_test(int argc, char **argv, void *ctx)
+{
+  unsigned output;
+  int err;
+
+  if ((err = cmd_arg_uint(argc, argv, 1, &output)))
+    return err;
+
+  if (output >= SPI_LEDS_COUNT) {
+    LOG_ERROR("output=%u does not exist", output);
+    return CMD_ERR_ARGV;
+  }
+
+  const struct spi_leds_config *config = &spi_leds_configs[output];
+  struct spi_leds_state *state = &spi_leds_states[output];
+
+  if (!config->enabled || !state->spi_leds) {
+    LOG_WARN("output=%u is not enabled", output);
+    return 0;
+  }
+
+  if ((err = test_spi_leds(state))) {
+    LOG_ERROR("test_spi_leds");
+    return err;
+  }
+
+  return 0;
+}
+
 const struct cmd spi_leds_commands[] = {
-  { "clear",  spi_leds_cmd_clear, .usage = "",               .describe = "Clear all output values" },
-  { "all",    spi_leds_cmd_all,   .usage = "RGB [A]",        .describe = "Set all output pixels to value" },
+  { "clear",  spi_leds_cmd_clear, .usage = "",                      .describe = "Clear all output values" },
+  { "all",    spi_leds_cmd_all,   .usage = "RGB [A]",               .describe = "Set all output pixels to value" },
   { "set",    spi_leds_cmd_set,   .usage = "OUTPUT INDEX RGB [A]",  .describe = "Set one output pixel to value" },
+  { "test",   spi_leds_cmd_test,  .usage = "OUTPUT",                .describe = "Output test patterns" },
   { }
 };
 

@@ -168,3 +168,25 @@ int update_spi_leds(struct spi_leds_state *state)
 
   return 0;
 }
+
+int test_spi_leds(struct spi_leds_state *state)
+{
+  int err;
+
+  state->active = true;
+
+  LOG_DEBUG("active=%u", state->active);
+
+  update_spi_leds_active();
+
+  for (enum spi_leds_test_mode mode = 0; mode < TEST_MODE_MAX; mode++) {
+    user_activity(USER_ACTIVITY_SPI_LEDS);
+
+    if ((err = spi_leds_test(state->spi_leds, mode))) {
+      LOG_ERROR("spi_leds_test");
+      return err;
+    }
+  }
+
+  return 0;
+}

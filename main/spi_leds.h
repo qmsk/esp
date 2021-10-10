@@ -53,5 +53,6 @@ extern struct spi_master *spi_master;
 extern struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
 int update_spi_leds(struct spi_leds_state *state);
+int test_spi_leds(struct spi_leds_state *state);
 
 int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const struct spi_leds_config *config);

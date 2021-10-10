@@ -10,7 +10,7 @@
 #define TEST_FRAME_TICKS (1000 / TEST_FRAME_RATE / portTICK_RATE_MS)
 
 #define TEST_MODE_COLOR_FRAMES 25
-#define TEST_MODE_CHASE_FRAMES 5
+#define TEST_MODE_CHASE_FRAMES 2
 
 int spi_leds_test_chase_frame(struct spi_leds *spi_leds, unsigned frame, struct spi_led_color color)
 {

@@ -38,5 +38,11 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .description = "Art-Net DMX channel mode",
     .enum_type = { .value = &SPI_LEDS_CONFIG.artnet_mode, .values = spi_leds_artnet_mode_enum },
   },
+
+  { CONFIG_TYPE_BOOL, "test_enabled",
+    .description = "Output test patterns at boot",
+    .bool_type = { .value = &SPI_LEDS_CONFIG.test_enabled },
+  },
+
   {}
 };

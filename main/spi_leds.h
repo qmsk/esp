@@ -29,6 +29,8 @@ struct spi_leds_config {
   int gpio_mode;
   uint16_t gpio_pin;
 
+  bool test_enabled;
+
   bool artnet_enabled;
   uint16_t artnet_universe;
   int artnet_mode;

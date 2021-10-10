@@ -74,13 +74,6 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
     return err;
   }
 
-  if (config->artnet_enabled) {
-    if ((err = init_spi_leds_artnet(state, index, config))) {
-      LOG_ERROR("spi-leds%d: init_spi_leds_artnet", index);
-      return err;
-    }
-  }
-
   return 0;
 }
 
@@ -114,15 +107,30 @@ int init_spi_leds()
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
+    struct spi_leds_state *state = &spi_leds_states[i];
     const struct spi_leds_config *config = &spi_leds_configs[i];
 
     if (!config->enabled) {
       continue;
     }
 
-    if ((err = init_spi_leds_state(&spi_leds_states[i], i, config))) {
+    if ((err = init_spi_leds_state(state, i, config))) {
       LOG_ERROR("spi-leds%d: config_spi_leds", i);
       return err;
+    }
+
+    if (config->test_enabled) {
+      if ((err = test_spi_leds(state))) {
+        LOG_ERROR("spi-leds%d: test_spi_leds", i);
+        return err;
+      }
+    }
+
+    if (config->artnet_enabled) {
+      if ((err = init_spi_leds_artnet(state, i, config))) {
+        LOG_ERROR("spi-leds%d: init_spi_leds_artnet", i);
+        return err;
+      }
     }
   }
 

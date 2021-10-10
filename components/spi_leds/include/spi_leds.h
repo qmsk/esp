@@ -33,6 +33,20 @@ struct spi_led_color {
   } parameters;
 };
 
+enum spi_leds_test_mode {
+  TEST_MODE_CHASE,
+
+  TEST_MODE_BLACK_RED,
+  TEST_MODE_RED_YELLOW,
+  TEST_MODE_YELLOW_GREEN,
+  TEST_MODE_GREEN_CYAN,
+  TEST_MODE_CYAN_BLUE,
+  TEST_MODE_BLUE_MAGENTA,
+  TEST_MODE_MAGENTA_RED,
+  TEST_MODE_RED_BLACK,
+
+  TEST_MODE_MAX
+};
 
 int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, const struct spi_leds_options options);
 
@@ -57,5 +71,12 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color);
 
 /* Send frames on SPI bus */
 int spi_leds_tx(struct spi_leds *spi_leds);
+
+/*
+ * Output animated test patterns.
+ *
+ * Blocks task until complete.
+ */
+int spi_leds_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode);
 
 #endif

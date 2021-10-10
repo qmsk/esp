@@ -34,6 +34,7 @@ struct spi_led_color {
 };
 
 enum spi_leds_test_mode {
+  TEST_MODE_BLACK,
   TEST_MODE_CHASE,
 
   TEST_MODE_BLACK_RED,

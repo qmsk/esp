@@ -69,6 +69,9 @@ int spi_leds_test_black_frame(struct spi_leds *spi_leds, unsigned frame)
 int spi_leds_test_frame(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, unsigned frame)
 {
   switch (mode) {
+    case TEST_MODE_BLACK:
+      return spi_leds_test_black_frame(spi_leds, frame);
+
     case TEST_MODE_CHASE:
       return spi_leds_test_chase_frame(spi_leds, frame, (struct spi_led_color){
         .r = 255,

@@ -17,9 +17,35 @@ int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queu
   LOG_INFO("port=%u address=%04x", artnet->output_count, address);
 
   artnet->output_ports[artnet->output_count] = (struct artnet_output){
-    .address  = address,
     .type     = ARTNET_PORT_TYPE_DMX,
+    .address  = address,
     .queue    = queue,
+  };
+  artnet->output_count++;
+
+  return 0;
+}
+
+int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task)
+{
+  if (artnet->output_count >= ARTNET_OUTPUTS) {
+    LOG_ERROR("too many outputs");
+    return -1;
+  }
+
+  if ((address & 0xFFF0) != artnet->options.address) {
+    LOG_ERROR("port index=%u address=%04x mismatch with artnet.universe=%04x", index, address, artnet->options.address);
+    return -1;
+  }
+
+  LOG_INFO("port=%u index=%u address=%04x", artnet->output_count, index, address);
+
+  artnet->output_ports[artnet->output_count] = (struct artnet_output){
+    .type     = ARTNET_PORT_TYPE_DMX,
+    .address  = address,
+    .index    = index,
+    .queue    = queue,
+    .task     = task,
   };
   artnet->output_count++;
 
@@ -57,6 +83,10 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
 
   if (!xQueueOverwrite(output->queue, dmx)) {
     LOG_WARN("address=%04x seq=%d xQueueOverwrite", output->address, seq);
+  }
+
+  if (output->task) {
+    xTaskNotify(output->task, (1 << output->index), eSetBits);
   }
 
   return 0;

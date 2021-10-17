@@ -3,6 +3,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <freertos/task.h>
 
 #define ARTNET_PORT 6454
 #define ARTNET_DMX_SIZE 512
@@ -46,17 +47,35 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options);
  */
  int artnet_update(struct artnet *artnet, struct artnet_options options);
 
-/** Patch output port.
+/** Patch single output port.
  *
- * artnet supports a maximum of 4 output ports with addresses in the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
+ * Only four output ports are supported.
+ * All output port addresses must use an output universe matching the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
  *
  * @param artnet
  * @param addr Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
- * @param output struct artnet_dmx queue of size 1, written from the artnet task
+ * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
  *
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue);
+
+/** Patch multiple output ports.
+ *
+ * Up to 16 total output ports are supported.
+ * All output port addresses must use an output universe matching the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
+ *
+ * With multiple outputs, a direct-to-task notification with a bit matching the output index will be sent for each queue write.
+ *
+ * @param artnet
+ * @param address Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
+ * @param index differentiate between multiple outputs for a task
+ * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
+ * @param task send direct-to-task notification for queue writes
+ *
+ * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
+ */
+int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task);
 
 /** Run artnet mainloop.
  *

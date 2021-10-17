@@ -1,12 +1,13 @@
 #pragma once
 
-#define ARTNET_OUTPUTS 4
+#define ARTNET_OUTPUTS 16
 
 #include <artnet.h>
 #include "protocol.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <freertos/task.h>
 #include <lwip/sockets.h>
 
 /* network.c */
@@ -25,10 +26,13 @@ int artnet_recv(int sock, struct artnet_sendrecv *recv);
 /* output.c */
 struct artnet_output {
   enum artnet_port_type type;
+
   uint16_t address;
+  uint8_t index;
   uint8_t seq;
 
   xQueueHandle queue;
+  xTaskHandle task;
 };
 
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);

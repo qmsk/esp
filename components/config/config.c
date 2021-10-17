@@ -53,6 +53,13 @@ int configtab_lookup(const struct configtab *tab, const char *name, const struct
       *tabp = tab;
       return 0;
     }
+
+    if (tab->alias && strcmp(tab->alias, name) == 0) {
+      LOG_WARN("using deprecated %s alias -> %s", name, tab->name);
+
+      *tabp = tab;
+      return 0;
+    }
   }
 
   return 1;

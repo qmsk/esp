@@ -33,6 +33,9 @@ struct configtab {
   const char *name;
   const char *description;
 
+  /* Migrate from old name */
+  const char *alias;
+
   bool readonly;
   bool secret;
 

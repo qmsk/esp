@@ -32,8 +32,11 @@ struct spi_leds_config {
   bool test_enabled;
 
   bool artnet_enabled;
-  uint16_t artnet_universe;
   int artnet_mode;
+  uint16_t artnet_universe_start;
+  uint16_t artnet_universe_count;
+  uint16_t artnet_universe_step;
+  uint16_t artnet_universe_size;
 };
 
 struct spi_leds_state {
@@ -43,10 +46,12 @@ struct spi_leds_state {
 
   struct spi_leds_artnet {
     enum spi_leds_artnet_mode mode;
+    unsigned universe_size;
     struct artnet_dmx *dmx;
 
+    unsigned universe_count;
     xTaskHandle task;
-    xQueueHandle queue;
+    xQueueHandle *queues;
   } artnet;
 };
 

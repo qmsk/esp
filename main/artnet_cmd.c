@@ -5,10 +5,15 @@
 #include <artnet_stats.h>
 #include <logging.h>
 
+#define ARTNET_OUTPUT_COUNT 16
+
 int artnet_cmd_info(int argc, char **argv, void *ctx)
 {
+  struct artnet_output_info artnet_output_infos[ARTNET_OUTPUT_COUNT];
   struct artnet_options options = artnet_get_options(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
+  size_t outputs_size = ARTNET_OUTPUT_COUNT;
+  int err;
 
   printf("Listen port=%u\n", options.port);
   printf("Address net=%u subnet=%u\n", artnet_address_net(options.address), artnet_address_subnet(options.address));
@@ -17,58 +22,73 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     options.mac_address[0], options.mac_address[1], options.mac_address[2], options.mac_address[3], options.mac_address[4], options.mac_address[5]
   );
   printf("Name short=%s long=%s\n", options.short_name, options.long_name);
-  printf("Output count=%u\n", output_count);
 
-  return 0;
-}
-
-#define ARTNET_OUTPUT_COUNT 16
-
-int artnet_cmd_outputs(int argc, char **argv, void *ctx)
-{
-  struct artnet_output_info artnet_output_infos[ARTNET_OUTPUT_COUNT];
-  size_t size = ARTNET_OUTPUT_COUNT;
-  int err;
-
-  if ((err = artnet_get_outputs(artnet, artnet_output_infos, &size))) {
+  if ((err = artnet_get_outputs(artnet, artnet_output_infos, &outputs_size))) {
     LOG_ERROR("artnet_get_outputs");
     return err;
   }
 
-  for (int i = 0; i < size && i < ARTNET_OUTPUT_COUNT; i++) {
+  printf("\n");
+  printf("Outputs: count=%u\n", output_count);
+
+  for (int i = 0; i < outputs_size && i < ARTNET_OUTPUT_COUNT; i++) {
     struct artnet_output_info *info = &artnet_output_infos[i];
-    struct artnet_output_stats stats = {};
 
-    if (artnet_get_output_stats(artnet, i, &stats)) {
-      LOG_WARN("artnet_get_output_stats index=%d", i);
-    }
-
-    printf("Output %2d: net=%3u subnet=%2u universe=%2u @ index=%3u: seq=%3u\n", i,
+    printf("\t%2d: net %3u subnet %2u universe %2u @ index %3u: seq %3u\n", i,
       artnet_address_net(info->address), artnet_address_subnet(info->address), artnet_address_universe(info->address),
       info->index,
       info->seq
     );
+  }
 
-    printf("\tRecv     : received %8u @ %6u.%03us\n",
-      stats.recv.count,
-      stats_counter_milliseconds_passed(&stats.recv) / 1000,
-      stats_counter_milliseconds_passed(&stats.recv) % 1000
-    );
-    printf("\tSeq      : skipped  %8u @ %6u.%03us\n",
-      stats.seq_skip.count,
-      stats_counter_milliseconds_passed(&stats.seq_skip) / 1000,
-      stats_counter_milliseconds_passed(&stats.seq_skip) % 1000
-    );
-    printf("\tSeq      : dropped  %8u @ %6u.%03us\n",
-      stats.seq_drop.count,
-      stats_counter_milliseconds_passed(&stats.seq_drop) / 1000,
-      stats_counter_milliseconds_passed(&stats.seq_drop) % 1000
-    );
-    printf("\tOverflow : dropped  %8u @ %6u.%03us\n",
-      stats.overflow_drop.count,
-      stats_counter_milliseconds_passed(&stats.overflow_drop) / 1000,
-      stats_counter_milliseconds_passed(&stats.overflow_drop) % 1000
-    );
+  return 0;
+}
+
+static void print_artnet_stats_counter(struct stats_counter counter, const char *title, const char *desc)
+{
+  printf("\t%20s : %10s %8u @ %6u.%03us\n", title, desc,
+    counter.count,
+    stats_counter_milliseconds_passed(&counter) / 1000,
+    stats_counter_milliseconds_passed(&counter) % 1000
+  );
+}
+
+int artnet_cmd_stats(int argc, char **argv, void *ctx)
+{
+  struct artnet_stats stats;
+  unsigned output_count = artnet_get_output_count(artnet);
+
+  // receiver stats
+  artnet_get_stats(artnet, &stats);
+
+  printf("Art-Net: \n");
+
+  print_artnet_stats_counter(stats.recv_poll,     "Poll",     "received");
+  print_artnet_stats_counter(stats.recv_dmx,      "DMX",      "received");
+  print_artnet_stats_counter(stats.dmx_discard,   "DMX",      "discarded");
+  print_artnet_stats_counter(stats.recv_unknown,  "Unknown",  "received");
+  print_artnet_stats_counter(stats.recv_error,    "Recv",     "errors");
+  print_artnet_stats_counter(stats.recv_invalid,  "Recv",     "invalid");
+  print_artnet_stats_counter(stats.errors,        "Errors",   "");
+
+  printf("\n");
+
+  // output stats
+  for (int i = 0; i < output_count; i++) {
+    struct artnet_output_stats output_stats = {};
+
+    if (artnet_get_output_stats(artnet, i, &output_stats)) {
+      LOG_WARN("artnet_get_output_stats index=%d", i);
+      continue;
+    }
+
+    printf("Output %d: \n", i);
+
+    print_artnet_stats_counter(output_stats.dmx_recv,         "DMX",    "received");
+    print_artnet_stats_counter(output_stats.seq_skip,         "Seq",    "skipped");
+    print_artnet_stats_counter(output_stats.seq_drop,         "Seq",    "dropped");
+    print_artnet_stats_counter(output_stats.queue_overwrite,  "Queue",  "overflowed");
+
     printf("\n");
   }
 
@@ -77,7 +97,7 @@ int artnet_cmd_outputs(int argc, char **argv, void *ctx)
 
 const struct cmd artnet_commands[] = {
   { "info",      artnet_cmd_info,     .usage = "",                      .describe = "Show configuration" },
-  { "outputs",   artnet_cmd_outputs,  .usage = "",                      .describe = "Show output configuration and status" },
+  { "stats",     artnet_cmd_stats,    .usage = "",                      .describe = "Show receiver and output stats" },
   { }
 };
 

@@ -41,11 +41,16 @@ uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 
 /**
+ * Return options used for artnet discovery.
+ */
+struct artnet_options artnet_get_options(struct artnet *artnet);
+
+/**
  * Update options for artnet discovery.
  *
  * NOTE: changing `port` will not work.
  */
- int artnet_update(struct artnet *artnet, struct artnet_options options);
+int artnet_set_options(struct artnet *artnet, struct artnet_options options);
 
 /** Patch single output port.
  *

@@ -48,7 +48,12 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options)
   return 0;
 }
 
-int artnet_update(struct artnet *artnet, struct artnet_options options)
+struct artnet_options artnet_get_options(struct artnet *artnet)
+{
+  return artnet->options;
+}
+
+int artnet_set_options(struct artnet *artnet, struct artnet_options options)
 {
   // XXX: locking for artnet_send_poll_reply()?
   artnet->options = options;

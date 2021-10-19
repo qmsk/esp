@@ -203,8 +203,8 @@ int update_artnet()
     return err;
   }
 
-  if ((err = artnet_update(artnet, options))) {
-    LOG_ERROR("artnet_update");
+  if ((err = artnet_set_options(artnet, options))) {
+    LOG_ERROR("artnet_set_options");
     return err;
   }
 

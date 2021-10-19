@@ -7,7 +7,10 @@ struct artnet_output_stats {
   /* Received ArtDMX packets */
   struct stats_counter recv;
 
-  /* Dropped ArtDMX packets due to seq mismatch */
+  /* Received ArtDMX packets with seq larger than expected */
+  struct stats_counter seq_skip;
+
+  /* Dropped ArtDMX packets with seq smaller than expected */
   struct stats_counter seq_drop;
 
   /* Output queue overflowed, previous packet dropped */

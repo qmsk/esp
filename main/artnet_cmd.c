@@ -43,20 +43,26 @@ int artnet_cmd_outputs(int argc, char **argv, void *ctx)
       LOG_WARN("artnet_get_output_stats index=%d", i);
     }
 
-    printf("Output %2d: net=%3u subnet=%2u universe=%2u (index=%3u)\n", i,
+    printf("Output %2d: net=%3u subnet=%2u universe=%2u @ index=%3u: seq=%3u\n", i,
       artnet_address_net(info->address), artnet_address_subnet(info->address), artnet_address_universe(info->address),
-      info->index
+      info->index,
+      info->seq
     );
+
     printf("\tRecv     : received %8u @ %6u.%03us\n",
       stats.recv.count,
       stats_counter_milliseconds_passed(&stats.recv) / 1000,
       stats_counter_milliseconds_passed(&stats.recv) % 1000
     );
-    printf("\tSeq      : dropped  %8u @ %6u.%03us\tlast %u\n",
+    printf("\tSeq      : skipped  %8u @ %6u.%03us\n",
+      stats.seq_skip.count,
+      stats_counter_milliseconds_passed(&stats.seq_skip) / 1000,
+      stats_counter_milliseconds_passed(&stats.seq_skip) % 1000
+    );
+    printf("\tSeq      : dropped  %8u @ %6u.%03us\n",
       stats.seq_drop.count,
       stats_counter_milliseconds_passed(&stats.seq_drop) / 1000,
-      stats_counter_milliseconds_passed(&stats.seq_drop) % 1000,
-      info->seq
+      stats_counter_milliseconds_passed(&stats.seq_drop) % 1000
     );
     printf("\tOverflow : dropped  %8u @ %6u.%03us\n",
       stats.overflow_drop.count,

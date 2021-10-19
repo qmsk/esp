@@ -9,6 +9,7 @@ static void add_artnet_output(struct artnet *artnet, struct artnet_output v)
   *output = v;
 
   stats_counter_init(&output->stats.recv);
+  stats_counter_init(&output->stats.seq_skip);
   stats_counter_init(&output->stats.seq_drop);
   stats_counter_init(&output->stats.overflow_drop);
 }
@@ -94,6 +95,7 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
   struct artnet_output *output = &artnet->output_ports[index];
 
   stats->recv = stats_counter_copy(&output->stats.recv);
+  stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
   stats->overflow_drop = stats_counter_copy(&output->stats.overflow_drop);
 
@@ -114,25 +116,35 @@ int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_ou
   return 1;
 }
 
+static inline uint8_t artnet_seq_next(uint8_t seq)
+{
+  return (seq == 255) ? 1 : seq + 1;
+}
+
 int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq)
 {
   stats_counter_increment(&output->stats.recv);
 
-  if (seq == 0) {
-    // reset
-    output->seq = 0;
+  if (seq == 0 || output->seq == 0) {
+    // init or reset
 
-  } else if (seq <= output->seq && output->seq - seq < 128) {
-    LOG_WARN("skip address=%04x seq=%d < %d", output->address, seq, output->seq);
+  } else if (seq == artnet_seq_next(output->seq)) {
+    // in-order
+
+  } else if (seq > output->seq || output->seq - seq >= 128) {
+    // skipped
+    stats_counter_increment(&output->stats.seq_skip);
+
+  } else {
+    LOG_WARN("drop address=%04x seq=%d < %d", output->address, seq, output->seq);
 
     stats_counter_increment(&output->stats.seq_drop);
 
     return 0;
-
-  } else {
-    // advance or wraparound
-    output->seq = seq;
   }
+
+  // advance
+  output->seq = seq;
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {

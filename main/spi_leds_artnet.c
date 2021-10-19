@@ -99,13 +99,14 @@ static void spi_leds_artnet_main(void *ctx)
 
   for (;;) {
     uint32_t notify_bits;
+    bool unsync = false;
 
-    if (!xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS, &notify_bits, portMAX_DELAY)) {
+    if (!xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_SYNC_BIT, &notify_bits, portMAX_DELAY)) {
       LOG_WARN("xQueueReceive");
       continue;
     }
 
-    LOG_DEBUG("notify=%04x", notify_bits);
+    LOG_DEBUG("notify index=%04x sync=%d", (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS), !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT));
 
     for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
       if (!(notify_bits & 1 << index)) {
@@ -118,11 +119,18 @@ static void spi_leds_artnet_main(void *ctx)
       }
 
       spi_leds_set_dmx(state->spi_leds, state->artnet.mode, state->artnet.dmx, state->artnet.universe_size, index);
+
+      if (!state->artnet.dmx->sync_mode) {
+        // at least one DMX update is in non-synchronous mode, so force update
+        unsync = true;
+      }
     }
 
-    if (update_spi_leds(state)) {
-      LOG_WARN("update_spi_leds");
-      continue;
+    if (unsync || (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT)) {
+      if (update_spi_leds(state)) {
+        LOG_WARN("update_spi_leds");
+        continue;
+      }
     }
   }
 }

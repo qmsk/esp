@@ -60,37 +60,37 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
 
   // per-bind fields
   for (unsigned index = 0; ; index++) {
-    unsigned port = 0;
+    unsigned num_ports = 0;
 
     memset(reply->port_types, 0, sizeof(reply->port_types));
     memset(reply->good_output, 0, sizeof(reply->good_output));
     memset(reply->sw_out, 0, sizeof(reply->sw_out));
 
     for (struct artnet_output *output = artnet->output_ports; output < artnet->output_ports + artnet->output_count; output++) {
-      if (output->index != index) {
+      if (output->options.index != index) {
         continue;
       }
 
-      if ((output->address & 0x7F00) != artnet->options.address) {
-        LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->address, artnet->options.address);
+      if ((output->options.address & 0x7F00) != artnet->options.address) {
+        LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
         continue;
       }
 
-      if (port >= 4) {
-        LOG_WARN("skip output addess=%04x as more than 4 outputs with index=%u", output->address, index);
+      if (output->options.port >= 4) {
+        LOG_WARN("skip output port=%d index=%u", output->options.port, output->options.index);
         continue;
       }
 
-      reply->port_types[port] = output->type | ARTNET_PORT_TYPE_OUTPUT;
-      reply->good_output[port] = ARTNET_OUTPUT_TRANSMITTING;
-      reply->sw_out[port] = (output->address & 0x000F);
-      port++;
+      reply->port_types[output->options.port] = output->type | ARTNET_PORT_TYPE_OUTPUT;
+      reply->good_output[output->options.port] = ARTNET_OUTPUT_TRANSMITTING;
+      reply->sw_out[output->options.port] = (output->options.address & 0x000F);
+      num_ports++;
     }
 
-    reply->num_ports = artnet_pack_u16hl(port);
+    reply->num_ports = artnet_pack_u16hl(num_ports);
     reply->bind_index = index + 1;
 
-    if (index > 0 && port == 0) {
+    if (index > 0 && num_ports == 0) {
       // no more ports
       break;
     }

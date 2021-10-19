@@ -33,14 +33,29 @@ struct artnet_dmx {
   uint8_t data[ARTNET_DMX_SIZE];
 };
 
-struct artnet_output_info {
-  /* ArtNet net/subnet/uni address */
-  uint16_t address;
+enum artnet_output_port {
+  ARTNET_OUTPUT_PORT_1,
+  ARTNET_OUTPUT_PORT_2,
+  ARTNET_OUTPUT_PORT_3,
+  ARTNET_OUTPUT_PORT_4,
+};
 
-  /* Output index from artnet_add_outputs(), also used for discovery bind index */
+struct artnet_output_options {
+  /* ArtNet physical output port 1-4 */
+  enum artnet_output_port port;
+
+  /* Output index, used for discovery bind index and task notification bits */
   uint8_t index;
 
-  /* Last received valid seq */
+  /* ArtNet net/subnet/uni address, must match artnet_options.address */
+  uint16_t address;
+
+  /* Task associated with output, will receive task notifications on updates */
+  xTaskHandle task;
+};
+
+struct artnet_output_state {
+  /* Last received ArtDmx seq */
   uint8_t seq;
 };
 
@@ -66,35 +81,22 @@ struct artnet_options artnet_get_options(struct artnet *artnet);
  */
 int artnet_set_options(struct artnet *artnet, struct artnet_options options);
 
-/** Patch single output port.
- *
- * Only four output ports are supported.
- * All output port addresses must use an output universe matching the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
- *
- * @param artnet
- * @param addr Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
- * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
- *
- * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
- */
-int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue);
-
 /** Patch multiple output ports.
  *
- * Up to 16 total output ports are supported.
+ * Up to 16 total output ports are supported, indexed across four physical ports.
  * All output port addresses must use an output universe matching the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
  *
  * With multiple outputs, a direct-to-task notification with a bit matching the output index will be sent for each queue write.
  *
  * @param artnet
- * @param address Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
+ * @param options Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
  * @param index differentiate between multiple outputs for a task. Also used as ArtPollReply bind index
  * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
  * @param task send direct-to-task notification for queue writes
  *
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
-int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task);
+int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue);
 
 /*
  * Return number of outputs.
@@ -105,12 +107,23 @@ unsigned artnet_get_output_count(struct artnet *artnet);
  * Return information about configured artnet outputs.
  *
  * @param artnet
- * @param outputs array of *size artnet_output_info structs
+ * @param outputs array of *size artnet_output_options structs
  * @param size input size of array; output number of outputs, may be larger than input
  *
  * Returns <0 on error, 0 on success.
  */
-int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs, size_t *size);
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *outputs, size_t *size);
+
+/**
+ * Return current state information for output.
+ *
+ * @param artnet
+ * @param index see artnet_get_output_count
+ * @param state returned
+ *
+ * @return <0 on error, 0 on success, >0 on invalid index.
+ */
+int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state);
 
 /** Run artnet mainloop.
  *

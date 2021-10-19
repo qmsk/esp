@@ -9,7 +9,7 @@
 
 int artnet_cmd_info(int argc, char **argv, void *ctx)
 {
-  struct artnet_output_info artnet_output_infos[ARTNET_OUTPUT_COUNT];
+  struct artnet_output_options artnet_output_options[ARTNET_OUTPUT_COUNT];
   struct artnet_options options = artnet_get_options(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
   size_t outputs_size = ARTNET_OUTPUT_COUNT;
@@ -23,7 +23,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   );
   printf("Name short=%s long=%s\n", options.short_name, options.long_name);
 
-  if ((err = artnet_get_outputs(artnet, artnet_output_infos, &outputs_size))) {
+  if ((err = artnet_get_outputs(artnet, artnet_output_options, &outputs_size))) {
     LOG_ERROR("artnet_get_outputs");
     return err;
   }
@@ -32,12 +32,19 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("Outputs: count=%u\n", output_count);
 
   for (int i = 0; i < outputs_size && i < ARTNET_OUTPUT_COUNT; i++) {
-    struct artnet_output_info *info = &artnet_output_infos[i];
+    struct artnet_output_options *options = &artnet_output_options[i];
+    struct artnet_output_state state;
 
-    printf("\t%2d: net %3u subnet %2u universe %2u @ index %3u: seq %3u\n", i,
-      artnet_address_net(info->address), artnet_address_subnet(info->address), artnet_address_universe(info->address),
-      info->index,
-      info->seq
+    if ((err = artnet_get_output_state(artnet, i, &state))) {
+      LOG_ERROR("artnet_get_output_state");
+      return err;
+    }
+
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16s[%3u]: seq %3u\n", i,
+      options->port, options->index,
+      artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
+      options->task ? pcTaskGetName(options->task) : "?", options->index,
+      state.seq
     );
   }
 

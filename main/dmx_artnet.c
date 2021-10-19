@@ -28,7 +28,7 @@ static void dmx_artnet_task(void *ctx)
   }
 }
 
-int dmx_artnet_init(struct dmx_artnet *dmx_artnet, uint16_t universe)
+int dmx_artnet_init(struct dmx_artnet *dmx_artnet, int index, uint16_t universe)
 {
   char task_name[configMAX_TASK_NAME_LEN];
 
@@ -46,7 +46,12 @@ int dmx_artnet_init(struct dmx_artnet *dmx_artnet, uint16_t universe)
     LOG_DEBUG("task=%p", dmx_artnet->task);
   }
 
-  if (add_artnet_output(universe, dmx_artnet->queue)) {
+  struct artnet_output_options options = {
+    .port = (enum artnet_output_port) (index), // use dmx%d index as output port number
+    .address = universe, // net/subnet set by add_artnet_output()
+  };
+
+  if (add_artnet_output(options, dmx_artnet->queue)) {
     LOG_ERROR("add_artnet_output");
     return -1;
   }
@@ -58,5 +63,5 @@ int init_dmx_artnet(struct dmx_state *state, int index, const struct dmx_config 
 {
   LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
 
-  return dmx_artnet_init(&state->artnet, config->artnet_universe);
+  return dmx_artnet_init(&state->artnet, index, config->artnet_universe);
 }

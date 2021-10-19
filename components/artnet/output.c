@@ -2,62 +2,36 @@
 
 #include <logging.h>
 
-static void add_artnet_output(struct artnet *artnet, struct artnet_output v)
+static void init_output_stats(struct artnet_output *output)
 {
-  struct artnet_output *output = &artnet->output_ports[artnet->output_count++];
-
-  *output = v;
-
   stats_counter_init(&output->stats.dmx_recv);
   stats_counter_init(&output->stats.seq_skip);
   stats_counter_init(&output->stats.seq_drop);
   stats_counter_init(&output->stats.queue_overwrite);
 }
 
-int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queue)
+int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue)
 {
   if (artnet->output_count >= ARTNET_OUTPUTS) {
     LOG_ERROR("too many outputs");
     return -1;
   }
 
-  if ((address & 0xFFF0) != artnet->options.address) {
-    LOG_ERROR("port address=%04x mismatch with artnet.universe=%04x", address, artnet->options.address);
+
+  if ((options.address & 0xFFF0) != artnet->options.address) {
+    LOG_ERROR("port=%u index=%u address=%04x mismatch with artnet.universe=%04x", options.port, options.index, options.address, artnet->options.address);
     return -1;
   }
 
-  LOG_INFO("port=%u address=%04x", artnet->output_count, address);
+  LOG_DEBUG("output=%d port=%d index=%u address=%04x", artnet->output_count, options.port, options.index, options.address);
 
-  add_artnet_output(artnet, (struct artnet_output){
-    .type     = ARTNET_PORT_TYPE_DMX,
-    .address  = address,
-    .queue    = queue,
-  });
+  struct artnet_output *output = &artnet->output_ports[artnet->output_count++];
 
-  return 0;
-}
+  output->type = ARTNET_PORT_TYPE_DMX;
+  output->options = options;
+  output->queue = queue;
 
-int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task)
-{
-  if (artnet->output_count >= ARTNET_OUTPUTS) {
-    LOG_ERROR("too many outputs");
-    return -1;
-  }
-
-  if ((address & 0xFFF0) != artnet->options.address) {
-    LOG_ERROR("port index=%u address=%04x mismatch with artnet.universe=%04x", index, address, artnet->options.address);
-    return -1;
-  }
-
-  LOG_INFO("port=%u index=%u address=%04x", artnet->output_count, index, address);
-
-  add_artnet_output(artnet, (struct artnet_output){
-    .type     = ARTNET_PORT_TYPE_DMX,
-    .address  = address,
-    .index    = index,
-    .queue    = queue,
-    .task     = task,
-  });
+  init_output_stats(output);
 
   return 0;
 }
@@ -67,21 +41,30 @@ unsigned artnet_get_output_count(struct artnet *artnet)
   return artnet->output_count;
 }
 
-int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs, size_t *size)
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *outputs, size_t *size)
 {
   // XXX: locking for concurrent artnet_add_output()?
 
   for (unsigned i = 0; i < artnet->output_count && i < *size; i++) {
     struct artnet_output *output = &artnet->output_ports[i];
 
-    outputs[i] = (struct artnet_output_info) {
-      .address = output->address,
-      .index   = output->index,
-      .seq     = output->seq,
-    };
+    outputs[i] = output->options;
   }
 
   *size = artnet->output_count;
+
+  return 0;
+}
+
+int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state)
+{
+  if (index >= artnet->output_count) {
+    return 1;
+  }
+
+  struct artnet_output *output = &artnet->output_ports[index];
+
+  *state = output->state;
 
   return 0;
 }
@@ -107,7 +90,7 @@ int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_ou
   for (unsigned port = 0; port < artnet->output_count; port++) {
     struct artnet_output *output = &artnet->output_ports[port];
 
-    if (output->address == address) {
+    if (output->options.address == address) {
       *outputp = output;
       return 0;
     }
@@ -125,18 +108,18 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
 {
   stats_counter_increment(&output->stats.dmx_recv);
 
-  if (seq == 0 || output->seq == 0) {
+  if (seq == 0 || output->state.seq == 0) {
     // init or reset
 
-  } else if (seq == artnet_seq_next(output->seq)) {
+  } else if (seq == artnet_seq_next(output->state.seq)) {
     // in-order
 
-  } else if (seq > output->seq || output->seq - seq >= 128) {
+  } else if (seq > output->state.seq || output->state.seq - seq >= 128) {
     // skipped
     stats_counter_increment(&output->stats.seq_skip);
 
   } else {
-    LOG_WARN("drop address=%04x seq=%d < %d", output->address, seq, output->seq);
+    LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, seq, output->state.seq);
 
     stats_counter_increment(&output->stats.seq_drop);
 
@@ -144,7 +127,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
   }
 
   // advance
-  output->seq = seq;
+  output->state.seq = seq;
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
@@ -153,8 +136,8 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
     xQueueOverwrite(output->queue, dmx);
   }
 
-  if (output->task) {
-    xTaskNotify(output->task, (1 << output->index), eSetBits);
+  if (output->options.task) {
+    xTaskNotify(output->options.task, (1 << output->options.index), eSetBits);
   }
 
   return 0;

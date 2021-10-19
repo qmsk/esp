@@ -170,11 +170,16 @@ int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const str
   }
 
   for (uint8_t i = 0; i < config->artnet_universe_count; i++) {
-    uint16_t universe = config->artnet_universe_start + i * config->artnet_universe_step;
+    struct artnet_output_options options = {
+      .port = (enum artnet_output_port) (index), // use spi-ledsX index as output port
+      .index = i,
+      .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
+      .task = state->artnet.task,
+    };
 
-    LOG_INFO("spi-leds%u: index=%u universe=%u", index, i, universe);
+    LOG_INFO("spi-leds%u: artnet output port=%d address=%04x index=%u", index, options.port, options.address, options.index);
 
-    if (add_artnet_outputs(universe, i, state->artnet.queues[i], state->artnet.task)) {
+    if (add_artnet_output(options, state->artnet.queues[i])) {
       LOG_ERROR("add_artnet_output");
       return -1;
     }

@@ -27,13 +27,10 @@ int artnet_recv(int sock, struct artnet_sendrecv *recv);
 /* output.c */
 struct artnet_output {
   enum artnet_port_type type;
-
-  uint16_t address;
-  uint8_t index;
-  uint8_t seq;
+  struct artnet_output_options options;
+  struct artnet_output_state state;
 
   xQueueHandle queue;
-  xTaskHandle task;
 
   struct artnet_output_stats stats;
 };

@@ -107,7 +107,7 @@ int init_artnet()
   return 0;
 }
 
-int add_artnet_output(uint16_t universe, xQueueHandle queue)
+int add_artnet_output(struct artnet_output_options options, xQueueHandle queue)
 {
   const struct artnet_config *config = &artnet_config;
 
@@ -116,23 +116,9 @@ int add_artnet_output(uint16_t universe, xQueueHandle queue)
     return -1;
   }
 
-  uint16_t address = artnet_address(config->net, config->subnet, universe);
+  options.address = artnet_address(config->net, config->subnet, options.address);
 
-  return artnet_add_output(artnet, address, queue);
-}
-
-int add_artnet_outputs(uint16_t universe, uint8_t index, xQueueHandle queue, xTaskHandle task)
-{
-  const struct artnet_config *config = &artnet_config;
-
-  if (!artnet) {
-    LOG_ERROR("artnet disabled");
-    return -1;
-  }
-
-  uint16_t address = artnet_address(config->net, config->subnet, universe);
-
-  return artnet_add_outputs(artnet, address, index, queue, task);
+  return artnet_add_output(artnet, options, queue);
 }
 
 // task

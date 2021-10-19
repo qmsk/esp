@@ -65,8 +65,8 @@ const struct config_enum spi_leds_rate_enum[] = {
 
 const struct config_enum spi_leds_gpio_mode_enum[] = {
   { "OFF",  SPI_LEDS_GPIO_OFF         },
-  { "HIGH", SPI_GPIO_CS_ACTIVE_HIGH   },
-  { "LOW",  SPI_GPIO_CS_ACTIVE_LOW    },
+  { "HIGH", GPIO_OUT_HIGH             },
+  { "LOW",  GPIO_OUT_LOW              },
   {}
 };
 

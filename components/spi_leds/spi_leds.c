@@ -148,7 +148,6 @@ int spi_leds_tx(struct spi_leds *spi_leds)
   struct spi_write_options options = {
     .mode   = spi_leds->options.mode_bits | spi_leds->spi_mode | SPI_MODE_SET,
     .clock  = spi_leds->options.clock,
-    .gpio   = spi_leds->options.gpio,
   };
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;
@@ -157,6 +156,10 @@ int spi_leds_tx(struct spi_leds *spi_leds)
   if ((err = spi_master_open(spi_leds->spi_master, options))) {
     LOG_ERROR("spi_master_open");
     return err;
+  }
+
+  if (spi_leds->options.gpio_out) {
+    gpio_out_set(spi_leds->options.gpio_out, spi_leds->options.gpio_out_pins);
   }
 
   while (len) {
@@ -171,9 +174,17 @@ int spi_leds_tx(struct spi_leds *spi_leds)
     len -= ret;
   }
 
-  ret = 0;
+  // wait for write TX to complete before clearing gpio to release bus
+  if ((ret = spi_master_flush(spi_leds->spi_master)) < 0) {
+    LOG_ERROR("spi_master_flush");
+    goto error;
+  }
 
 error:
+  if (spi_leds->options.gpio_out) {
+    gpio_out_clear(spi_leds->options.gpio_out);
+  }
+
   if ((err = spi_master_close(spi_leds->spi_master))) {
     LOG_ERROR("spi_master_close");
     return err;

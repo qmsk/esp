@@ -2,6 +2,7 @@
 #define __SPI_LEDS_H__
 
 #include <spi_master.h>
+#include <gpio_out.h>
 #include <stdint.h>
 
 struct spi_leds;
@@ -14,14 +15,15 @@ enum spi_leds_protocol {
 struct spi_leds_options {
   enum spi_leds_protocol protocol;
 
+  unsigned count;
+
   /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
   enum spi_mode mode_bits;
-
   enum spi_clock clock;
 
-  enum spi_gpio gpio;
-
-  unsigned count;
+  /* GPIO for output multiplexing */
+  struct gpio_out *gpio_out;
+  enum gpio_out_pins gpio_out_pins;
 };
 
 struct spi_led_color {

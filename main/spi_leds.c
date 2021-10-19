@@ -11,6 +11,7 @@
 #define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
 
 struct spi_master *spi_master;
+struct gpio_out spi_leds_gpio_out;
 struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
 static int init_spi_master()
@@ -34,16 +35,52 @@ static int init_spi_master()
       // match initial clock with output clock
       options.clock = config->spi_clock;
     }
-
-    if (config->gpio_mode != SPI_LEDS_GPIO_OFF && spi_gpio_from_pin(config->gpio_pin)) {
-      options.gpio |= spi_gpio_from_pin(config->gpio_pin) | (config->gpio_mode);
-    }
   }
 
-  LOG_INFO("mode=%02x clock=%u pins=%02x gpio=%04x", options.mode, options.clock, options.pins, options.gpio);
+  LOG_INFO("mode=%02x clock=%u pins=%02x", options.mode, options.clock, options.pins);
 
   if ((err = spi_master_new(&spi_master, options))) {
     LOG_ERROR("spi_master_new");
+    return err;
+  }
+
+  return 0;
+}
+
+static int init_gpio_out()
+{
+  enum gpio_out_pins gpio_out_pins = 0;
+  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
+  int err;
+
+  for (int i = 0; i < SPI_LEDS_COUNT; i++)
+  {
+    const struct spi_leds_config *config = &spi_leds_configs[i];
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    switch (config->gpio_mode) {
+      case SPI_LEDS_GPIO_OFF:
+        break;
+
+      case GPIO_OUT_HIGH:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        break;
+
+      case GPIO_OUT_LOW:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        break;
+    }
+  }
+
+  LOG_INFO("pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+
+  if ((err = gpio_out_init(&spi_leds_gpio_out, gpio_out_pins, gpio_out_level))) {
+    LOG_ERROR("gpio_out_init");
     return err;
   }
 
@@ -54,8 +91,11 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
 {
   struct spi_leds_options options = {
       .protocol   = config->protocol,
-      .clock      = config->spi_clock,
       .count      = config->count,
+
+      .clock      = config->spi_clock,
+
+      .gpio_out   = &spi_leds_gpio_out,
   };
   int err;
 
@@ -63,11 +103,11 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
     options.mode_bits |= (config->delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
   }
 
-  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && spi_gpio_from_pin(config->gpio_pin)) {
-    options.gpio = spi_gpio_from_pin(config->gpio_pin) | (config->gpio_mode);
+  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+    options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u mode_bits=%04x clock=%u gpio=%04x count=%u", index, options.protocol, options.mode_bits, options.clock, options.gpio, options.count);
+  LOG_INFO("spi-leds%d: protocol=%u mode_bits=%04x clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.mode_bits, options.clock, options.gpio_out_pins, options.count);
 
   if ((err = spi_leds_new(&state->spi_leds, spi_master, options))) {
     LOG_ERROR("spi-leds%d: spi_leds_new", index);
@@ -101,7 +141,12 @@ int init_spi_leds()
   }
 
   if ((err = init_spi_master(spi_leds_configs))) {
-    LOG_ERROR("config_spi_master");
+    LOG_ERROR("init_spi_master");
+    return err;
+  }
+
+  if ((err = init_gpio_out(spi_leds_configs))) {
+    LOG_ERROR("init_gpio_out");
     return err;
   }
 

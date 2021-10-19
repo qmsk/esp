@@ -24,7 +24,7 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
   },
   { CONFIG_TYPE_UINT16, "gpio_pin",
     .description = "GPIO pin to activate when transmitting on this output",
-    .uint16_type = { .value = &SPI_LEDS_CONFIG.gpio_pin, .max = SPI_GPIO_CS_MAX_PIN },
+    .uint16_type = { .value = &SPI_LEDS_CONFIG.gpio_pin, .max = GPIO_OUT_PIN_MAX },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",

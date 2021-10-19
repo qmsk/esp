@@ -5,7 +5,7 @@
 #include <logging.h>
 #include <spi_leds.h>
 
-#define SPI_LEDS_ARTNET_TASK_NAME "spi-leds-artnet"
+#define SPI_LEDS_ARTNET_TASK_NAME_FMT "spi-leds%d"
 #define SPI_LEDS_ARTNET_TASK_STACK 1024
 #define SPI_LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
@@ -129,6 +129,8 @@ static void spi_leds_artnet_main(void *ctx)
 
 int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const struct spi_leds_config *config)
 {
+  char task_name[configMAX_TASK_NAME_LEN];
+
   LOG_INFO("spi-leds%u: mode=%x universe start=%u count=%u step=%u size=%u", index,
     config->artnet_mode,
     config->artnet_universe_start,
@@ -157,7 +159,10 @@ int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const str
     }
   }
 
-  if (xTaskCreate(&spi_leds_artnet_main, SPI_LEDS_ARTNET_TASK_NAME, SPI_LEDS_ARTNET_TASK_STACK, state, SPI_LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
+  // task
+  snprintf(task_name, sizeof(task_name), SPI_LEDS_ARTNET_TASK_NAME_FMT, index);
+
+  if (xTaskCreate(&spi_leds_artnet_main, task_name, SPI_LEDS_ARTNET_TASK_STACK, state, SPI_LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {

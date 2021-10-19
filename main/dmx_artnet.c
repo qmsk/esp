@@ -4,7 +4,7 @@
 #include <artnet.h>
 #include <logging.h>
 
-#define DMX_ARTNET_TASK_NAME "dmx-artnet"
+#define DMX_ARTNET_TASK_NAME_FMT "dmx%d"
 #define DMX_ARTNET_TASK_STACK 1024
 #define DMX_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
@@ -30,12 +30,16 @@ static void dmx_artnet_task(void *ctx)
 
 int dmx_artnet_init(struct dmx_artnet *dmx_artnet, uint16_t universe)
 {
+  char task_name[configMAX_TASK_NAME_LEN];
+
   if (!(dmx_artnet->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");
     return -1;
   }
 
-  if (xTaskCreate(&dmx_artnet_task, DMX_ARTNET_TASK_NAME, DMX_ARTNET_TASK_STACK, dmx_artnet, DMX_ARTNET_TASK_PRIORITY, &dmx_artnet->task) <= 0) {
+  snprintf(task_name, sizeof(task_name), DMX_ARTNET_TASK_NAME_FMT, index);
+
+  if (xTaskCreate(&dmx_artnet_task, task_name, DMX_ARTNET_TASK_STACK, dmx_artnet, DMX_ARTNET_TASK_PRIORITY, &dmx_artnet->task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {
@@ -52,7 +56,7 @@ int dmx_artnet_init(struct dmx_artnet *dmx_artnet, uint16_t universe)
 
 int init_dmx_artnet(struct dmx_state *state, int index, const struct dmx_config *config)
 {
-  LOG_INFO("%d: artnet_universe=%u", index, config->artnet_universe);
+  LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
 
   return dmx_artnet_init(&state->artnet, config->artnet_universe);
 }

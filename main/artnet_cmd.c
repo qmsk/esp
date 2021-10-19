@@ -7,6 +7,7 @@
 int artnet_cmd_info(int argc, char **argv, void *ctx)
 {
   struct artnet_options options = artnet_get_options(artnet);
+  unsigned output_count = artnet_get_output_count(artnet);
 
   printf("Listen port=%u\n", options.port);
   printf("Address net=%u subnet=%u\n", artnet_address_net(options.address), artnet_address_subnet(options.address));
@@ -15,6 +16,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     options.mac_address[0], options.mac_address[1], options.mac_address[2], options.mac_address[3], options.mac_address[4], options.mac_address[5]
   );
   printf("Name short=%s long=%s\n", options.short_name, options.long_name);
+  printf("Output count=%u\n", output_count);
 
   return 0;
 }

@@ -97,6 +97,11 @@ int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue);
 int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task);
 
 /*
+ * Return number of outputs.
+ */
+unsigned artnet_get_output_count(struct artnet *artnet);
+
+/*
  * Return information about configured artnet outputs.
  *
  * @param artnet

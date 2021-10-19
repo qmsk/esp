@@ -1,5 +1,7 @@
 #include <artnet.h>
 #include "artnet.h"
+#include "artnet_config.h"
+#include "artnet_init.h"
 #include "system.h"
 
 #include <logging.h>
@@ -12,36 +14,13 @@
 
 #include <string.h>
 
+#define ARTNET_PRODUCT "https://github.com/SpComb/esp-projects"
+
 #define ARTNET_TASK_NAME "artnet"
 #define ARTNET_TASK_STACK 2048
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
-static const char artnet_product[] = "https://github.com/SpComb/esp-projects";
-
-struct artnet_config {
-  bool enabled;
-  uint16_t net, subnet;
-};
-
-struct artnet_config artnet_config = {
-
-};
 struct artnet *artnet;
-
-const struct configtab artnet_configtab[] = {
-  { CONFIG_TYPE_BOOL, "enabled",
-    .bool_type = { .value = &artnet_config.enabled },
-  },
-  { CONFIG_TYPE_UINT16, "net",
-    .description = "Set network address, 0-127.",
-    .uint16_type = { .value = &artnet_config.net, .max = ARTNET_NET_MAX },
-  },
-  { CONFIG_TYPE_UINT16, "subnet",
-    .description = "Set sub-net address, 0-16.",
-    .uint16_type = { .value = &artnet_config.subnet, .max = ARTNET_SUBNET_MAX },
-  },
-  {}
-};
 
 static int init_artnet_options(struct artnet_options *options, const struct artnet_config *config)
 {
@@ -81,7 +60,7 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
   options->mac_address[5] = mac[5];
 
   snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
-  snprintf(options->long_name, sizeof(options->long_name), "%s", artnet_product);
+  snprintf(options->long_name, sizeof(options->long_name), "%s", ARTNET_PRODUCT);
 
   LOG_INFO("port=%u address=%04x",
     options->port,

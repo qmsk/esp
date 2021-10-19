@@ -1,6 +1,6 @@
 #include "config.h"
 
-#include "artnet.h"
+#include "artnet_config.h"
 #include "atx_psu.h"
 #include "dmx_config.h"
 #include "http.h"

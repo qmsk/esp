@@ -1,4 +1,4 @@
-#include "artnet.h"
+#include "artnet_init.h"
 #include "atx_psu.h"
 #include "cli.h"
 #include "config.h"

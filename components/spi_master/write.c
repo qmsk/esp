@@ -37,9 +37,6 @@ int spi_master_open(struct spi_master *spi_master, struct spi_write_options opti
     goto error;
   }
 
-  // clear CS outputs
-  spi_master_gpio_clear(spi_master);
-
   // reconfigure
   if (options.mode && (options.mode & SPI_MODE_FLAGS) != spi_master->mode) {
     LOG_DEBUG("set mode=%02x", options.mode);
@@ -58,9 +55,6 @@ int spi_master_open(struct spi_master *spi_master, struct spi_write_options opti
       goto error;
     }
   }
-
-  // setup CS outputs
-  spi_master_gpio_set(spi_master, options.gpio);
 
   return 0;
 
@@ -103,24 +97,25 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
   return len;
 }
 
-int spi_master_close(struct spi_master *spi_master)
+int spi_master_flush(struct spi_master *spi_master)
 {
   int err;
 
   // wait
   if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
     LOG_ERROR("spi_master_interrupt_wait_trans");
-    goto error;
+    return err;
   }
 
-  // clear CS outputs
-  spi_master_gpio_clear(spi_master);
+  return 0;
+}
 
-error:
+int spi_master_close(struct spi_master *spi_master)
+{
   if (!xSemaphoreGive(spi_master->mutex)) {
     LOG_WARN("xSemaphoreGive");
-    err = 1;
+    return -1;
   }
 
-  return err;
+  return 0;
 }

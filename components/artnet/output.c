@@ -8,10 +8,10 @@ static void add_artnet_output(struct artnet *artnet, struct artnet_output v)
 
   *output = v;
 
-  stats_counter_init(&output->stats.recv);
+  stats_counter_init(&output->stats.dmx_recv);
   stats_counter_init(&output->stats.seq_skip);
   stats_counter_init(&output->stats.seq_drop);
-  stats_counter_init(&output->stats.overflow_drop);
+  stats_counter_init(&output->stats.queue_overwrite);
 }
 
 int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queue)
@@ -94,10 +94,10 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
 
   struct artnet_output *output = &artnet->output_ports[index];
 
-  stats->recv = stats_counter_copy(&output->stats.recv);
+  stats->dmx_recv = stats_counter_copy(&output->stats.dmx_recv);
   stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
-  stats->overflow_drop = stats_counter_copy(&output->stats.overflow_drop);
+  stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
 
   return 0;
 }
@@ -123,7 +123,7 @@ static inline uint8_t artnet_seq_next(uint8_t seq)
 
 int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq)
 {
-  stats_counter_increment(&output->stats.recv);
+  stats_counter_increment(&output->stats.dmx_recv);
 
   if (seq == 0 || output->seq == 0) {
     // init or reset
@@ -148,7 +148,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
-    stats_counter_increment(&output->stats.overflow_drop);
+    stats_counter_increment(&output->stats.queue_overwrite);
 
     xQueueOverwrite(output->queue, dmx);
   }

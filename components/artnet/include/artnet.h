@@ -37,6 +37,9 @@ struct artnet_dmx {
  * Pack artnet address from net + subnet + uni.
  */
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
+uint16_t artnet_address_net(uint16_t address);
+uint16_t artnet_address_subnet(uint16_t address);
+uint16_t artnet_address_uni(uint16_t address);
 
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 

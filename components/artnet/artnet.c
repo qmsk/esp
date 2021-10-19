@@ -8,6 +8,21 @@ uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
   return ((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0) | (uni & 0x000F);
 }
 
+uint16_t artnet_address_net(uint16_t address)
+{
+  return (address & 0x7F00) >> 8;
+}
+
+uint16_t artnet_address_subnet(uint16_t address)
+{
+  return (address & 0x00F0) >> 4;
+}
+
+uint16_t artnet_address_uni(uint16_t address)
+{
+  return (address & 0x000F);
+}
+
 int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;

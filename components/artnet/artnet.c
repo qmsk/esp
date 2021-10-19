@@ -18,7 +18,7 @@ uint16_t artnet_address_subnet(uint16_t address)
   return (address & 0x00F0) >> 4;
 }
 
-uint16_t artnet_address_uni(uint16_t address)
+uint16_t artnet_address_universe(uint16_t address)
 {
   return (address & 0x000F);
 }

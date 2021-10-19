@@ -123,6 +123,16 @@ int artnet_sendrecv_poll(struct artnet *artnet, struct artnet_sendrecv *sendrecv
   return artnet_send_poll_reply(artnet, sendrecv);
 }
 
+// node in synchronous DMX mode?
+static bool artnet_sync_state (struct artnet *artnet)
+{
+  if (artnet->sync_tick) {
+    return xTaskGetTickCount() - artnet->sync_tick < ARTNET_SYNC_TICKS;
+  } else {
+    return false;
+  }
+}
+
 int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 {
   struct artnet_packet_dmx *dmx = &recv->packet->dmx;
@@ -171,12 +181,29 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   }
 
   // copy
+  artnet->dmx.sync_mode = artnet_sync_state(artnet);
   artnet->dmx.seq = seq;
   artnet->dmx.len = len;
 
   memcpy(artnet->dmx.data, dmx->data, len);
 
   return artnet_output_dmx(output, &artnet->dmx);
+}
+
+int artnet_recv_sync(struct artnet *artnet, const struct artnet_sendrecv *sendrecv)
+{
+  struct artnet_packet_sync *sync = &sendrecv->packet->sync;
+
+  if (sendrecv->len < sizeof(sendrecv->packet->sync)) {
+    LOG_WARN("short packet");
+    return 1;
+  }
+
+  (void) sync;
+
+  artnet->sync_tick = xTaskGetTickCount();
+
+  return artnet_outputs_sync(artnet);
 }
 
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv)
@@ -197,6 +224,11 @@ int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv)
     stats_counter_increment(&artnet->stats.recv_dmx);
 
     return artnet_recv_dmx(artnet, sendrecv);
+
+  case ARTNET_OP_SYNC:
+    stats_counter_increment(&artnet->stats.recv_sync);
+
+    return artnet_recv_sync(artnet, sendrecv);
 
   default:
     LOG_WARN("unknown opcode: %04x", (unsigned) sendrecv->packet->header.opcode.lh);

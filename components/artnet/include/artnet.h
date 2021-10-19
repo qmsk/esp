@@ -12,6 +12,12 @@
 #define ARTNET_SUBNET_MAX 15
 #define ARTNET_UNIVERSE_MAX 15
 
+// up to 16 task notification bits
+#define ARTNET_OUTPUT_TASK_INDEX_BITS 0xffff
+
+// one bit for output sync
+#define ARTNET_OUTPUT_TASK_SYNC_BIT 0x10000
+
 struct artnet;
 
 struct artnet_options {
@@ -29,6 +35,9 @@ struct artnet_options {
 };
 
 struct artnet_dmx {
+  // flags
+  uint8_t sync_mode : 1; // receiver is in sync mode, wait for sync event before refreshing output
+
   // received sequence number
   uint8_t seq : 8;
 

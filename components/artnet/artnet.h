@@ -2,6 +2,9 @@
 
 #define ARTNET_OUTPUTS 16
 
+// 4s timeout for sync mode
+#define ARTNET_SYNC_TICKS (4000 / portTICK_PERIOD_MS)
+
 #include <artnet.h>
 #include <artnet_stats.h>
 #include "protocol.h"
@@ -37,6 +40,7 @@ struct artnet_output {
 
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);
 int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx);
+int artnet_outputs_sync(struct artnet *artnet);
 
 /* protocol.c */
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv);
@@ -51,6 +55,9 @@ struct artnet {
   int socket;
   union artnet_packet packet;
   struct artnet_dmx dmx;
+
+  // last sync received at
+  TickType_t sync_tick;
 
   struct artnet_stats stats;
 };

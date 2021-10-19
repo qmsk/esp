@@ -9,6 +9,7 @@ enum artnet_opcode {
   ARTNET_OP_POLL        = 0x2000,
   ARTNET_OP_POLL_REPLY  = 0x2100,
   ARTNET_OP_DMX         = 0x5000,
+  ARTNET_OP_SYNC        = 0x5200,
 };
 
 enum artnet_port_type {
@@ -105,6 +106,13 @@ struct __attribute__((packed)) artnet_packet_dmx {
   uint8_t data[];
 };
 
+struct __attribute__((packed)) artnet_packet_sync {
+  struct artnet_packet_header header;
+
+  uint8_t aux1;
+  uint8_t aux2;
+};
+
 #define ARTNET_PACKET_SIZE (sizeof(struct artnet_packet_dmx) + ARTNET_DMX_SIZE)
 
 union artnet_packet {
@@ -112,6 +120,7 @@ union artnet_packet {
   struct artnet_packet_poll poll;
   struct artnet_packet_poll_reply poll_reply;
   struct artnet_packet_dmx dmx;
+  struct artnet_packet_sync sync;
 
   // ensure space for dmx data
   uint8_t raw[ARTNET_PACKET_SIZE];

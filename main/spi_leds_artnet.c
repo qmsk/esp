@@ -100,7 +100,7 @@ static void spi_leds_artnet_main(void *ctx)
   for (;;) {
     uint32_t notify_bits;
 
-    if (!xTaskNotifyWait(0, 0xffff, &notify_bits, portMAX_DELAY)) {
+    if (!xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS, &notify_bits, portMAX_DELAY)) {
       LOG_WARN("xQueueReceive");
       continue;
     }

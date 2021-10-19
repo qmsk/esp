@@ -73,6 +73,7 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   print_artnet_stats_counter(stats.recv_poll,     "Poll",     "received");
   print_artnet_stats_counter(stats.recv_dmx,      "DMX",      "received");
   print_artnet_stats_counter(stats.dmx_discard,   "DMX",      "discarded");
+  print_artnet_stats_counter(stats.recv_sync,     "Sync",     "received");
   print_artnet_stats_counter(stats.recv_unknown,  "Unknown",  "received");
   print_artnet_stats_counter(stats.recv_error,    "Recv",     "errors");
   print_artnet_stats_counter(stats.recv_invalid,  "Recv",     "invalid");
@@ -91,7 +92,9 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Output %d: \n", i);
 
+    print_artnet_stats_counter(output_stats.sync_recv,        "Sync",   "received");
     print_artnet_stats_counter(output_stats.dmx_recv,         "DMX",    "received");
+    print_artnet_stats_counter(output_stats.dmx_sync,         "DMX",    "synced");
     print_artnet_stats_counter(output_stats.seq_skip,         "Seq",    "skipped");
     print_artnet_stats_counter(output_stats.seq_drop,         "Seq",    "dropped");
     print_artnet_stats_counter(output_stats.queue_overwrite,  "Queue",  "overflowed");

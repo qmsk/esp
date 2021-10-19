@@ -13,6 +13,9 @@ struct artnet_stats {
   /* Received ArtDmx packets */
   struct stats_counter recv_dmx;
 
+  /* Received ArtSync packets */
+  struct stats_counter recv_sync;
+
   /* Received ArtPoll packets */
   struct stats_counter recv_unknown;
 
@@ -28,8 +31,14 @@ struct artnet_stats {
 };
 
 struct artnet_output_stats {
+  /* Received ArtSync packets */
+  struct stats_counter sync_recv;
+
   /* Received ArtDMX packets */
   struct stats_counter dmx_recv;
+
+  /* Received ArtDMX packets in sync mode */
+  struct stats_counter dmx_sync;
 
   /* Received ArtDMX packets with seq larger than expected */
   struct stats_counter seq_skip;

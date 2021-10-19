@@ -4,7 +4,9 @@
 
 static void init_output_stats(struct artnet_output *output)
 {
+  stats_counter_init(&output->stats.sync_recv);
   stats_counter_init(&output->stats.dmx_recv);
+  stats_counter_init(&output->stats.dmx_sync);
   stats_counter_init(&output->stats.seq_skip);
   stats_counter_init(&output->stats.seq_drop);
   stats_counter_init(&output->stats.queue_overwrite);
@@ -77,7 +79,9 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
 
   struct artnet_output *output = &artnet->output_ports[index];
 
+  stats->sync_recv = stats_counter_copy(&output->stats.sync_recv);
   stats->dmx_recv = stats_counter_copy(&output->stats.dmx_recv);
+  stats->dmx_sync = stats_counter_copy(&output->stats.dmx_sync);
   stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
   stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
@@ -129,6 +133,10 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   // advance
   output->state.seq = dmx->seq;
 
+  if (dmx->sync_mode) {
+      stats_counter_increment(&output->stats.dmx_sync);
+  }
+
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
     stats_counter_increment(&output->stats.queue_overwrite);
@@ -137,7 +145,27 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   }
 
   if (output->options.task) {
-    xTaskNotify(output->options.task, (1 << output->options.index), eSetBits);
+    xTaskNotify(output->options.task, (1 << output->options.index) & ARTNET_OUTPUT_TASK_INDEX_BITS, eSetBits);
+  }
+
+  return 0;
+}
+
+void artnet_output_sync(struct artnet_output *output)
+{
+  stats_counter_increment(&output->stats.sync_recv);
+
+  if (output->options.task) {
+    xTaskNotify(output->options.task, ARTNET_OUTPUT_TASK_SYNC_BIT, eSetBits);
+  }
+}
+
+int artnet_outputs_sync(struct artnet *artnet)
+{
+  for (unsigned i = 0; i < artnet->output_count; i++) {
+    struct artnet_output *output = &artnet->output_ports[i];
+
+    artnet_output_sync(output);
   }
 
   return 0;

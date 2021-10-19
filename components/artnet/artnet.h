@@ -36,7 +36,7 @@ struct artnet_output {
 };
 
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq);
+int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx);
 
 /* protocol.c */
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv);
@@ -50,6 +50,7 @@ struct artnet {
 
   int socket;
   union artnet_packet packet;
+  struct artnet_dmx dmx;
 
   struct artnet_stats stats;
 };

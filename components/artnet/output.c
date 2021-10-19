@@ -104,22 +104,22 @@ static inline uint8_t artnet_seq_next(uint8_t seq)
   return (seq == 255) ? 1 : seq + 1;
 }
 
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq)
+int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 {
   stats_counter_increment(&output->stats.dmx_recv);
 
-  if (seq == 0 || output->state.seq == 0) {
+  if (dmx->seq == 0 || output->state.seq == 0) {
     // init or reset
 
-  } else if (seq == artnet_seq_next(output->state.seq)) {
+  } else if (dmx->seq == artnet_seq_next(output->state.seq)) {
     // in-order
 
-  } else if (seq > output->state.seq || output->state.seq - seq >= 128) {
+  } else if (dmx->seq > output->state.seq || output->state.seq - dmx->seq >= 128) {
     // skipped
     stats_counter_increment(&output->stats.seq_skip);
 
   } else {
-    LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, seq, output->state.seq);
+    LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, dmx->seq, output->state.seq);
 
     stats_counter_increment(&output->stats.seq_drop);
 
@@ -127,7 +127,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
   }
 
   // advance
-  output->state.seq = seq;
+  output->state.seq = dmx->seq;
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {

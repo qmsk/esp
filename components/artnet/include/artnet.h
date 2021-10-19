@@ -29,7 +29,13 @@ struct artnet_options {
 };
 
 struct artnet_dmx {
+  // received sequence number
+  uint8_t seq : 8;
+
+  // data length
   uint16_t len;
+
+  // data bytes
   uint8_t data[ARTNET_DMX_SIZE];
 };
 

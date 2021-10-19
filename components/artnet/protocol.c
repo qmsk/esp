@@ -125,21 +125,26 @@ int artnet_sendrecv_poll(struct artnet *artnet, struct artnet_sendrecv *sendrecv
 
 int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 {
-  struct artnet_packet_dmx_headers *dmx_headers = &recv->packet->dmx_headers;
+  struct artnet_packet_dmx *dmx = &recv->packet->dmx;
 
-  if (recv->len < sizeof(recv->packet->dmx_headers)) {
+  if (recv->len < sizeof(recv->packet->dmx)) {
     LOG_WARN("short packet header");
     return 1;
   }
 
   // headers
-  uint16_t addr = (dmx_headers->net << 8) | (dmx_headers->sub_uni);
-  uint8_t phy = dmx_headers->physical;
-  uint8_t seq = dmx_headers->sequence;
-  uint16_t dmx_len = artnet_unpack_u16hl(dmx_headers->length);
+  uint16_t addr = (dmx->net << 8) | (dmx->sub_uni);
+  uint8_t phy = dmx->physical;
+  uint8_t seq = dmx->sequence;
+  uint16_t len = artnet_unpack_u16hl(dmx->length);
 
-  if (recv->len < sizeof(*dmx_headers) + dmx_len) {
+  if (recv->len < sizeof(*dmx) + len) {
     LOG_WARN("short packet payload");
+    return 1;
+  }
+
+  if (len > ARTNET_DMX_SIZE) {
+    LOG_WARN("long data length");
     return 1;
   }
 
@@ -148,16 +153,11 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
     seq,
     phy,
     addr,
-    dmx_len
+    len
   );
 #else
   (void) phy;
 #endif
-
-  // payload
-  struct artnet_packet_dmx_payload *dmx_payload = &recv->packet->dmx_payload;
-
-  dmx_payload->dmx.len = dmx_len;
 
   // output
   struct artnet_output *output;
@@ -170,7 +170,13 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
     return 0;
   }
 
-  return artnet_output_dmx(output, &dmx_payload->dmx, seq);
+  // copy
+  artnet->dmx.seq = seq;
+  artnet->dmx.len = len;
+
+  memcpy(artnet->dmx.data, dmx->data, len);
+
+  return artnet_output_dmx(output, &artnet->dmx);
 }
 
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv)

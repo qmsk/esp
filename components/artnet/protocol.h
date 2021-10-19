@@ -92,7 +92,7 @@ struct __attribute__((packed)) artnet_packet_poll_reply {
   uint8_t filler[26];
 };
 
-struct __attribute__((packed)) artnet_packet_dmx_headers {
+struct __attribute__((packed)) artnet_packet_dmx {
   struct artnet_packet_header header;
 
   uint8_t sequence;
@@ -101,20 +101,18 @@ struct __attribute__((packed)) artnet_packet_dmx_headers {
   uint8_t net;
 
   artnet_u16hl length;
+
+  uint8_t data[];
 };
 
-struct __attribute__((packed)) artnet_packet_dmx_payload {
-  // align dmx.length with headers
-  uint8_t alignment[sizeof(struct artnet_packet_header) + 4];
-
-  // dmx.len overlaps with headers.length
-  struct artnet_dmx dmx;
-};
+#define ARTNET_PACKET_SIZE (sizeof(struct artnet_packet_dmx) + ARTNET_DMX_SIZE)
 
 union artnet_packet {
   struct artnet_packet_header header;
   struct artnet_packet_poll poll;
   struct artnet_packet_poll_reply poll_reply;
-  struct artnet_packet_dmx_headers dmx_headers;
-  struct artnet_packet_dmx_payload dmx_payload;
+  struct artnet_packet_dmx dmx;
+
+  // ensure space for dmx data
+  uint8_t raw[ARTNET_PACKET_SIZE];
 };

@@ -9,19 +9,19 @@ int artnet_header_parse(struct artnet_packet_header *header, size_t len)
 {
   if (len < sizeof(*header)) {
     LOG_WARN("short packet: len=%u", len);
-    return -1;
+    return 1;
   }
 
   if (memcmp(header->id, artnet_id, sizeof(artnet_id))) {
     LOG_WARN("invalid id");
-    return -1;
+    return 1;
   }
 
   uint16_t version = artnet_unpack_u16hl(header->version);
 
   if (version < ARTNET_VERSION) {
     LOG_WARN("invalid version: %u", version);
-    return -1;
+    return 1;
   }
 
   LOG_DEBUG("id=%.8s opcode=%04x version=%u",
@@ -110,7 +110,7 @@ int artnet_sendrecv_poll(struct artnet *artnet, struct artnet_sendrecv *sendrecv
 
   if (sendrecv->len < sizeof(sendrecv->packet->poll)) {
     LOG_WARN("short packet");
-    return -1;
+    return 1;
   }
 
 #ifdef DEBUG
@@ -129,7 +129,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
   if (recv->len < sizeof(recv->packet->dmx_headers)) {
     LOG_WARN("short packet header");
-    return -1;
+    return 1;
   }
 
   // headers
@@ -140,7 +140,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
   if (recv->len < sizeof(*dmx_headers) + dmx_len) {
     LOG_WARN("short packet payload");
-    return -1;
+    return 1;
   }
 
 #ifdef DEBUG
@@ -164,6 +164,9 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
   if (artnet_find_output(artnet, addr, &output)) {
     LOG_DEBUG("unknown output addr=%04x", addr);
+
+    stats_counter_increment(&artnet->stats.dmx_discard);
+
     return 0;
   }
 
@@ -172,19 +175,28 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv)
 {
-  if (artnet_header_parse(&sendrecv->packet->header, sendrecv->len)) {
-    return 0;
+  int err;
+
+  if ((err = artnet_header_parse(&sendrecv->packet->header, sendrecv->len))) {
+    return err;
   }
 
   switch (artnet_unpack_u16lh(sendrecv->packet->header.opcode)) {
   case ARTNET_OP_POLL:
+    stats_counter_increment(&artnet->stats.recv_poll);
+
     return artnet_sendrecv_poll(artnet, sendrecv);
 
   case ARTNET_OP_DMX:
+    stats_counter_increment(&artnet->stats.recv_dmx);
+
     return artnet_recv_dmx(artnet, sendrecv);
 
   default:
     LOG_WARN("unknown opcode: %04x", (unsigned) sendrecv->packet->header.opcode.lh);
+
+    stats_counter_increment(&artnet->stats.recv_unknown);
+
     return 0;
   }
 }

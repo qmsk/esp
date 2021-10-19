@@ -34,6 +34,14 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 
   artnet->options = options;
 
+  stats_counter_init(&artnet->stats.recv_error);
+  stats_counter_init(&artnet->stats.recv_poll);
+  stats_counter_init(&artnet->stats.recv_dmx);
+  stats_counter_init(&artnet->stats.recv_unknown);
+  stats_counter_init(&artnet->stats.recv_invalid);
+  stats_counter_init(&artnet->stats.errors);
+  stats_counter_init(&artnet->stats.dmx_discard);
+
   if ((err = artnet_listen(&artnet->socket, options.port))) {
     LOG_ERROR("artnet_listen port=%u", options.port);
     return err;
@@ -90,10 +98,27 @@ int artnet_main(struct artnet *artnet)
 
     if ((err = artnet_recv(artnet->socket, &sendrecv))) {
       LOG_WARN("artnet_recv");
-      return err;
-    } else if ((err = artnet_sendrecv(artnet, &sendrecv))) {
+      stats_counter_increment(&artnet->stats.recv_error);
+      continue;
+    } else if ((err = artnet_sendrecv(artnet, &sendrecv)) < 0) {
+      LOG_ERROR("artnet_sendrecv");
+      stats_counter_increment(&artnet->stats.errors);
+      continue;
+    } else if (err) {
       LOG_WARN("artnet_sendrecv");
+      stats_counter_increment(&artnet->stats.recv_invalid);
       continue;
     }
   }
+}
+
+void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)
+{
+  stats->recv_error = stats_counter_copy(&artnet->stats.recv_error);
+  stats->recv_poll = stats_counter_copy(&artnet->stats.recv_poll);
+  stats->recv_dmx = stats_counter_copy(&artnet->stats.recv_dmx);
+  stats->recv_unknown = stats_counter_copy(&artnet->stats.recv_unknown);
+  stats->recv_invalid = stats_counter_copy(&artnet->stats.recv_invalid);
+  stats->errors = stats_counter_copy(&artnet->stats.errors);
+  stats->dmx_discard = stats_counter_copy(&artnet->stats.dmx_discard);
 }

@@ -53,4 +53,6 @@ struct artnet {
 
   int socket;
   union artnet_packet packet;
+
+  struct artnet_stats stats;
 };

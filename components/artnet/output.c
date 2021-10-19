@@ -2,6 +2,17 @@
 
 #include <logging.h>
 
+static void add_artnet_output(struct artnet *artnet, struct artnet_output v)
+{
+  struct artnet_output *output = &artnet->output_ports[artnet->output_count++];
+
+  *output = v;
+
+  stats_counter_init(&output->stats.recv);
+  stats_counter_init(&output->stats.seq_drop);
+  stats_counter_init(&output->stats.overflow_drop);
+}
+
 int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queue)
 {
   if (artnet->output_count >= ARTNET_OUTPUTS) {
@@ -16,12 +27,11 @@ int artnet_add_output(struct artnet *artnet, uint16_t address, xQueueHandle queu
 
   LOG_INFO("port=%u address=%04x", artnet->output_count, address);
 
-  artnet->output_ports[artnet->output_count] = (struct artnet_output){
+  add_artnet_output(artnet, (struct artnet_output){
     .type     = ARTNET_PORT_TYPE_DMX,
     .address  = address,
     .queue    = queue,
-  };
-  artnet->output_count++;
+  });
 
   return 0;
 }
@@ -40,16 +50,20 @@ int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, x
 
   LOG_INFO("port=%u index=%u address=%04x", artnet->output_count, index, address);
 
-  artnet->output_ports[artnet->output_count] = (struct artnet_output){
+  add_artnet_output(artnet, (struct artnet_output){
     .type     = ARTNET_PORT_TYPE_DMX,
     .address  = address,
     .index    = index,
     .queue    = queue,
     .task     = task,
-  };
-  artnet->output_count++;
+  });
 
   return 0;
+}
+
+unsigned artnet_get_output_count(struct artnet *artnet)
+{
+  return artnet->output_count;
 }
 
 int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs, size_t *size)
@@ -71,6 +85,21 @@ int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs
   return 0;
 }
 
+int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_output_stats *stats)
+{
+  if (index >= artnet->output_count) {
+    return 1;
+  }
+
+  struct artnet_output *output = &artnet->output_ports[index];
+
+  stats->recv = stats_counter_copy(&output->stats.recv);
+  stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
+  stats->overflow_drop = stats_counter_copy(&output->stats.overflow_drop);
+
+  return 0;
+}
+
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp)
 {
   for (unsigned port = 0; port < artnet->output_count; port++) {
@@ -87,12 +116,17 @@ int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_ou
 
 int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint8_t seq)
 {
+  stats_counter_increment(&output->stats.recv);
+
   if (seq == 0) {
     // reset
     output->seq = 0;
 
   } else if (seq <= output->seq && output->seq - seq < 128) {
     LOG_WARN("skip address=%04x seq=%d < %d", output->address, seq, output->seq);
+
+    stats_counter_increment(&output->stats.seq_drop);
+
     return 0;
 
   } else {
@@ -100,8 +134,11 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx, uint
     output->seq = seq;
   }
 
-  if (!xQueueOverwrite(output->queue, dmx)) {
-    LOG_WARN("address=%04x seq=%d xQueueOverwrite", output->address, seq);
+  // attempt normal send first, before overwriting for overflow stats
+  if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
+    stats_counter_increment(&output->stats.overflow_drop);
+
+    xQueueOverwrite(output->queue, dmx);
   }
 
   if (output->task) {

@@ -3,6 +3,7 @@
 #define ARTNET_OUTPUTS 16
 
 #include <artnet.h>
+#include <artnet_stats.h>
 #include "protocol.h"
 
 #include <freertos/FreeRTOS.h>
@@ -33,6 +34,8 @@ struct artnet_output {
 
   xQueueHandle queue;
   xTaskHandle task;
+
+  struct artnet_output_stats stats;
 };
 
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);

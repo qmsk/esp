@@ -1,5 +1,6 @@
 #include "cli.h"
 
+#include "artnet_cmd.h"
 #include "spi_leds_cmd.h"
 #include "config.h"
 #include "dmx.h"
@@ -51,6 +52,9 @@ static const struct cmd commands[] = {
   },
   { "wifi", .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
+  },
+  { "artnet", .describe = "ArtNet receiver",
+      .subcommands = &artnet_cmdtab,
   },
   { "spi-leds", .describe = "SPI LEDs",
       .subcommands = &spi_leds_cmdtab,

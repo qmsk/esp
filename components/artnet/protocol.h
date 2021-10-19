@@ -85,7 +85,7 @@ struct __attribute__((packed)) artnet_packet_poll_reply {
   uint8_t spare2;
   uint8_t spare3;
   uint8_t style;
-  uint8_t mac[8];
+  uint8_t mac[6];
   uint32_t bind_ip;
   uint8_t bind_index;
   uint8_t status2;

@@ -33,6 +33,17 @@ struct artnet_dmx {
   uint8_t data[ARTNET_DMX_SIZE];
 };
 
+struct artnet_output_info {
+  /* ArtNet net/subnet/uni address */
+  uint16_t address;
+
+  /* Output index from artnet_add_outputs(), also used for discovery bind index */
+  uint8_t index;
+
+  /* Last received valid seq */
+  uint8_t seq;
+};
+
 /*
  * Pack artnet address from net + subnet + uni.
  */
@@ -77,13 +88,24 @@ int artnet_add_output(struct artnet *artnet, uint16_t addr, xQueueHandle queue);
  *
  * @param artnet
  * @param address Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
- * @param index differentiate between multiple outputs for a task
+ * @param index differentiate between multiple outputs for a task. Also used as ArtPollReply bind index
  * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
  * @param task send direct-to-task notification for queue writes
  *
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, xQueueHandle queue, xTaskHandle task);
+
+/*
+ * Return information about configured artnet outputs.
+ *
+ * @param artnet
+ * @param outputs array of *size artnet_output_info structs
+ * @param size input size of array; output number of outputs, may be larger than input
+ *
+ * Returns <0 on error, 0 on success.
+ */
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs, size_t *size);
 
 /** Run artnet mainloop.
  *

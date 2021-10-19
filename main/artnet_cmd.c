@@ -19,8 +19,36 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   return 0;
 }
 
+#define ARTNET_OUTPUT_COUNT 16
+
+int artnet_cmd_outputs(int argc, char **argv, void *ctx)
+{
+  struct artnet_output_info artnet_output_infos[ARTNET_OUTPUT_COUNT];
+  size_t size = ARTNET_OUTPUT_COUNT;
+  int err;
+
+  if ((err = artnet_get_outputs(artnet, artnet_output_infos, &size))) {
+    LOG_ERROR("artnet_get_outputs");
+    return err;
+  }
+
+  for (int i = 0; i < size && i < ARTNET_OUTPUT_COUNT; i++) {
+    struct artnet_output_info *info = &artnet_output_infos[i];
+
+    printf("Output %2d: net=%3u subnet=%2u universe=%2u (index=%3u)\n", i,
+      artnet_address_net(info->address), artnet_address_subnet(info->address), artnet_address_universe(info->address),
+      info->index
+    );
+    printf("\tSeq: %u\n", info->seq);
+    printf("\n");
+  }
+
+  return 0;
+}
+
 const struct cmd artnet_commands[] = {
-  { "info",   artnet_cmd_info,    .usage = "",                      .describe = "Show configuration" },
+  { "info",      artnet_cmd_info,     .usage = "",                      .describe = "Show configuration" },
+  { "outputs",   artnet_cmd_outputs,  .usage = "",                      .describe = "Show output configuration and status" },
   { }
 };
 

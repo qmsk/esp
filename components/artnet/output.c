@@ -52,6 +52,25 @@ int artnet_add_outputs(struct artnet *artnet, uint16_t address, uint8_t index, x
   return 0;
 }
 
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_info *outputs, size_t *size)
+{
+  // XXX: locking for concurrent artnet_add_output()?
+
+  for (unsigned i = 0; i < artnet->output_count && i < *size; i++) {
+    struct artnet_output *output = &artnet->output_ports[i];
+
+    outputs[i] = (struct artnet_output_info) {
+      .address = output->address,
+      .index   = output->index,
+      .seq     = output->seq,
+    };
+  }
+
+  *size = artnet->output_count;
+
+  return 0;
+}
+
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp)
 {
   for (unsigned port = 0; port < artnet->output_count; port++) {

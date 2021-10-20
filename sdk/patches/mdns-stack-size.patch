@@ -1,0 +1,19 @@
+commit ad17ec8d5d3224f2e984a646a8ac76877b0db933 (HEAD -> patches)
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Wed Oct 20 23:10:20 2021 +0300
+
+    mdns: shrink task stack to optimize memory usage
+
+diff --git a/components/mdns/private_include/mdns_private.h b/components/mdns/private_include/mdns_private.h
+index 396d7bdb..147c1622 100644
+--- a/components/mdns/private_include/mdns_private.h
++++ b/components/mdns/private_include/mdns_private.h
+@@ -59,7 +59,7 @@
+ #define MDNS_ANSWER_AAAA_SIZE       16
+
+ #define MDNS_SERVICE_PORT           5353                    // UDP port that the server runs on
+-#define MDNS_SERVICE_STACK_DEPTH    4096                    // Stack size for the service thread
++#define MDNS_SERVICE_STACK_DEPTH    2048                    // Stack size for the service thread
+ #define MDNS_PACKET_QUEUE_LEN       16                      // Maximum packets that can be queued for parsing
+ #define MDNS_ACTION_QUEUE_LEN       16                      // Maximum actions pending to the server
+ #define MDNS_TXT_MAX_LEN            1024                    // Maximum string length of text data in TXT record

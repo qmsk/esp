@@ -7,7 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define STATUS_LEDS_TASK_STACK 2048
+#define STATUS_LEDS_TASK_STACK 1024
 #define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static struct status_led *user_led;

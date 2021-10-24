@@ -3,38 +3,23 @@
 
 #include <logging.h>
 
-int http_listener_accept (struct http_listener *listener, struct http_connection **connectionp)
+int http_listener_accept (struct http_listener *listener, struct http_connection *connection)
 {
-    struct tcp_stream *tcp_stream;
-    int err;
+  int err;
 
-    if ((err = tcp_stream_new(&tcp_stream, listener->server->stream_size))) {
-      LOG_ERROR("tcp_stream_new");
-      return -1;
-    }
-
-    if ((err = tcp_server_accept(listener->tcp_server, tcp_stream, 0))) {
-        LOG_ERROR("tcp_server_accept");
-        goto error;
-    }
-
-    LOG_DEBUG("tcp_stream=%p", tcp_stream);
-
-    if ((err = http_connection_create(listener->server, tcp_stream, connectionp))) {
-        LOG_ERROR("http_server_connection");
-        goto error;
-    }
-
-    return 0;
-
-error:
-    tcp_stream_destroy(tcp_stream);
-
+  if ((err = tcp_server_accept(listener->tcp_server, connection->tcp_stream, 0))) {
+    LOG_ERROR("tcp_server_accept");
     return err;
+  }
+
+  return 0;
 }
 
 void http_listener_destroy (struct http_listener *listener)
 {
+  if (listener->tcp_server) {
     tcp_server_destroy(listener->tcp_server);
-    free(listener);
+  }
+
+  free(listener);
 }

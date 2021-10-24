@@ -29,7 +29,7 @@ int tcp_connect (int *sockp, const char *host, const char *port);
 int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog, int flags);
 
 /*
- * Accept a new incoming request, using a pre-created `tcp`.
+ * Accept a new incoming request, resetting a pre-created `tcp`.
  * *
  * TODO: Return >0 on temporary per-client errors?
  */

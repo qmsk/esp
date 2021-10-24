@@ -9,7 +9,7 @@ static const struct timeval server_read_timeout = { .tv_sec = 10 };
 /* Idle timeout used for client write buffering; reset on every write operation */
 static const struct timeval server_write_timeout = { .tv_sec = 10 };
 
-int http_connection_create (struct http_server *server, struct tcp_stream *tcp_stream, struct http_connection **connectionp)
+int http_connection_new (struct http_server *server, struct http_connection **connectionp)
 {
     struct http_connection *connection;
     int err = 0;
@@ -20,9 +20,13 @@ int http_connection_create (struct http_server *server, struct tcp_stream *tcp_s
     }
 
     connection->server = server;
-    connection->tcp_stream = tcp_stream;
 
-    if ((err = http_create(&connection->http, tcp_read_stream(tcp_stream), tcp_write_stream(tcp_stream)))) {
+    if ((err = tcp_stream_new(&connection->tcp_stream, server->stream_size))) {
+        LOG_ERROR("tcp_stream_new");
+        goto error;
+    }
+
+    if ((err = http_create(&connection->http, tcp_read_stream(connection->tcp_stream), tcp_write_stream(connection->tcp_stream)))) {
         LOG_ERROR("http_create");
         goto error;
     }
@@ -34,6 +38,9 @@ int http_connection_create (struct http_server *server, struct tcp_stream *tcp_s
 error:
     if (connection->http)
         http_destroy(connection->http);
+
+    if (connection->tcp_stream)
+        tcp_stream_destroy(connection->tcp_stream);
 
     free(connection);
 
@@ -74,13 +81,27 @@ int http_connection_serve (struct http_connection *connection, const struct http
     return err;
 }
 
+int http_connection_close (struct http_connection *connection)
+{
+  int err;
+
+  http_reset(connection->http);
+
+  if ((err = tcp_stream_close(connection->tcp_stream))) {
+    LOG_WARN("tcp_stream_close");
+    return err;
+  }
+
+  return 0;
+}
+
 void http_connection_destroy (struct http_connection *connection)
 {
   if (connection->http)
       http_destroy(connection->http);
 
-  // TODO: clean close vs reset?
-  tcp_stream_destroy(connection->tcp_stream);
+  if (connection->tcp_stream)
+    tcp_stream_destroy(connection->tcp_stream);
 
   free(connection);
 }

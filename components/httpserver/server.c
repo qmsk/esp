@@ -35,7 +35,7 @@ struct http_listener {
 
 struct http_connection {
     struct http_server *server;
-    struct tcp *tcp;
+    struct tcp_stream *tcp_stream;
     struct http *http;
 
     // per-request
@@ -138,7 +138,7 @@ response:
     return http_response_close(response) || http_request_closed(request);
 }
 
-static int http_connection_create (struct http_server *server, struct tcp *tcp, struct http_connection **connectionp)
+static int http_connection_create (struct http_server *server, struct tcp_stream *tcp_stream, struct http_connection **connectionp)
 {
     struct http_connection *connection;
     int err = 0;
@@ -149,9 +149,9 @@ static int http_connection_create (struct http_server *server, struct tcp *tcp, 
     }
 
     connection->server = server;
-    connection->tcp = tcp;
+    connection->tcp_stream = tcp_stream;
 
-    if ((err = http_create(&connection->http, tcp_read_stream(tcp), tcp_write_stream(tcp)))) {
+    if ((err = http_create(&connection->http, tcp_read_stream(tcp_stream), tcp_write_stream(tcp_stream)))) {
         LOG_ERROR("http_create");
         goto error;
     }
@@ -179,8 +179,8 @@ int http_connection_serve (struct http_connection *connection, const struct http
     LOG_DEBUG("connection=%p", connection);
 
     // set idle timeouts
-    tcp_read_timeout(connection->tcp, &server_read_timeout);
-    tcp_write_timeout(connection->tcp, &server_write_timeout);
+    tcp_stream_read_timeout(connection->tcp_stream, &server_read_timeout);
+    tcp_stream_write_timeout(connection->tcp_stream, &server_write_timeout);
 
     // reset request/response state...
     connection->request = (struct http_request) {
@@ -209,7 +209,7 @@ void http_connection_destroy (struct http_connection *connection)
       http_destroy(connection->http);
 
   // TODO: clean close vs reset?
-  tcp_destroy(connection->tcp);
+  tcp_stream_destroy(connection->tcp_stream);
 
   free(connection);
 }
@@ -248,17 +248,17 @@ error:
 
 int http_listener_accept (struct http_listener *listener, struct http_connection **connectionp)
 {
-    struct tcp *tcp;
+    struct tcp_stream *tcp_stream;
     int err;
 
-    if ((err = tcp_server_accept(listener->tcp_server, &tcp, listener->server->stream_size, 0))) {
+    if ((err = tcp_server_accept(listener->tcp_server, &tcp_stream, listener->server->stream_size, 0))) {
         LOG_ERROR("tcp_server_accept");
         return -1;
     }
 
-    LOG_DEBUG("tcp=%p", tcp);
+    LOG_DEBUG("tcp_stream=%p", tcp_stream);
 
-    if ((err = http_connection_create(listener->server, tcp, connectionp))) {
+    if ((err = http_connection_create(listener->server, tcp_stream, connectionp))) {
         LOG_ERROR("http_server_connection");
         goto error;
     }
@@ -266,7 +266,7 @@ int http_listener_accept (struct http_listener *listener, struct http_connection
     return 0;
 
 error:
-    tcp_destroy(tcp);
+    tcp_stream_destroy(tcp_stream);
 
     return err;
 }

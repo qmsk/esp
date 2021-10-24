@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <sys/socket.h>
 
-struct tcp;
+struct tcp_stream;
 struct tcp_server;
 
 enum {
@@ -33,7 +33,7 @@ int tcp_server (struct tcp_server **serverp, const char *host, const char *port,
  * *
  * TODO: Return >0 on temporary per-client errors?
  */
-int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size, int flags);
+int tcp_server_accept (struct tcp_server *server, struct tcp_stream **tcp_streamp, size_t stream_size, int flags);
 
 /*
  * Release all resources.
@@ -43,29 +43,30 @@ void tcp_server_destroy (struct tcp_server *server);
 /*
  * Connect to a server..
  */
-int tcp_client (struct tcp **tcpp, const char *host, const char *port, size_t stream_size);
+int tcp_client (struct tcp_stream **tcp_streamp, const char *host, const char *port, size_t stream_size);
 
 /*
- * TCP connection interface.
+ * TCP stream interface.
  */
-int tcp_sock (struct tcp *tcp);
-struct stream * tcp_read_stream (struct tcp *tcp);
-struct stream * tcp_write_stream (struct tcp *tcp);
+int tcp_stream_sock (struct tcp_stream *tcp_stream);
+
+struct stream * tcp_read_stream (struct tcp_stream *tcp_stream);
+struct stream * tcp_write_stream (struct tcp_stream *tcp_stream);
 
 /*
  * Set idle timeout for read operations.
  */
-void tcp_read_timeout (struct tcp *tcp, const struct timeval *timeout);
-void tcp_write_timeout (struct tcp *tcp, const struct timeval *timeout);
+void tcp_stream_read_timeout (struct tcp_stream *tcp_stream, const struct timeval *timeout);
+void tcp_stream_write_timeout (struct tcp_stream *tcp_stream, const struct timeval *timeout);
 
 /*
  * Close TCP socket.
  */
- int tcp_close (struct tcp *tcp);
+ int tcp_stream_close (struct tcp_stream *tcp_stream);
 
 /*
  * Close TCP socket, release stream buffers and resources.
  */
-void tcp_destroy (struct tcp *tcp);
+void tcp_stream_destroy (struct tcp_stream *tcp_stream);
 
 #endif

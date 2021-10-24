@@ -1,8 +1,8 @@
-#include "http/tcp.h"
+#include <http/tcp.h>
 #include "sock.h"
-#include "tcp_internal.h"
+#include "tcp_stream.h"
 
-#include "logging.h"
+#include <logging.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -89,7 +89,7 @@ int tcp_connect (int *sockp, const char *host, const char *port)
     return err;
 }
 
-int tcp_client (struct tcp **tcpp, const char *host, const char *port, size_t stream_size)
+int tcp_client (struct tcp_stream **tcp_streamp, const char *host, const char *port, size_t stream_size)
 {
     int sock;
     int err;
@@ -101,8 +101,8 @@ int tcp_client (struct tcp **tcpp, const char *host, const char *port, size_t st
 
     LOG_DEBUG("%d", sock);
 
-    if ((err = tcp_create(tcpp, sock, stream_size))) {
-      LOG_ERROR("tcp_create");
+    if ((err = tcp_stream_create(tcp_streamp, sock, stream_size))) {
+      LOG_ERROR("tcp_stream_create");
       close(sock);
       return err;
     }

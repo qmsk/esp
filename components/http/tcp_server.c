@@ -1,10 +1,9 @@
-#include "tcp_internal.h"
+#include <http/tcp.h>
+#include <http/stream.h>
+#include "tcp_stream.h"
 #include "sock.h"
 
-#include "http/tcp.h"
-#include "http/stream.h"
-
-#include "logging.h"
+#include <logging.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -125,7 +124,7 @@ error:
     return err;
 }
 
-int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stream_size, int flags)
+int tcp_server_accept (struct tcp_server *server, struct tcp_stream **tcp_streamp, size_t stream_size, int flags)
 {
     int err;
     int sock;
@@ -162,8 +161,8 @@ int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stre
       }
     }
 
-    if (tcp_create(tcpp, sock, stream_size)) {
-        LOG_ERROR("tcp_create");
+    if (tcp_stream_create(tcp_streamp, sock, stream_size)) {
+        LOG_ERROR("tcp_stream_create");
         close(sock);
         return -1;
     }

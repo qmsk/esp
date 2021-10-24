@@ -45,9 +45,28 @@ void tcp_server_destroy (struct tcp_server *server);
  */
 int tcp_client (struct tcp_stream **tcp_streamp, const char *host, const char *port, size_t stream_size);
 
-/*
- * TCP stream interface.
- */
+
+/** TCP stream interface. */
+
+ /*
+  * Initialize an empty TCP connection for use with `tcp_reset(...)`
+  */
+int tcp_stream_new (struct tcp_stream **tcp_streamp, size_t stream_size);
+
+ /*
+  * Initialize a new TCP connection for use with its read/write streams.
+  *
+  * Does not close sock on errors.
+  */
+int tcp_stream_create (struct tcp_stream **tcp_streamp, int sock, size_t stream_size);
+
+ /*
+  * Re-Initialize TCP connection for use with new socket.
+  *
+  * Also resets read/write streams.
+  */
+void tcp_stream_reset (struct tcp_stream *tcp_stream, int sock);
+
 int tcp_stream_sock (struct tcp_stream *tcp_stream);
 
 struct stream * tcp_read_stream (struct tcp_stream *tcp_stream);

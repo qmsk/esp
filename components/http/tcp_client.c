@@ -1,6 +1,5 @@
 #include <http/tcp.h>
 #include "sock.h"
-#include "tcp_stream.h"
 
 #include <logging.h>
 

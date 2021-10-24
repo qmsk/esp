@@ -46,6 +46,11 @@ struct stream {
 int stream_create (const struct stream_type *type, struct stream **streamp, size_t size, void *ctx);
 
 /*
+ * Reset stream to empty state.
+ */
+ void stream_reset (struct stream *stream);
+
+/*
  * Read up to *sizep bytes from stream into given buffer, updating *sizep to the number of read bytes.
  *
  * Returns any buffered data first, and then performs underlying IO.

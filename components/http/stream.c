@@ -88,6 +88,12 @@ error:
     return -1;
 }
 
+void stream_reset (struct stream *stream)
+{
+  stream->length = 0;
+  stream->offset = 0;
+}
+
 /*
  * Mark given readbuf bytes as valid.
  */

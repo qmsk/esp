@@ -123,7 +123,7 @@ error:
     return err;
 }
 
-int tcp_server_accept (struct tcp_server *server, struct tcp_stream **tcp_streamp, size_t stream_size, int flags)
+int tcp_server_accept (struct tcp_server *server, struct tcp_stream *tcp_stream, int flags)
 {
     int err;
     int sock;
@@ -155,18 +155,17 @@ int tcp_server_accept (struct tcp_server *server, struct tcp_stream **tcp_stream
 
       if ((err = sock_nonblocking(sock))) {
           LOG_ERROR("sock_nonblocking");
-          close(sock);
-          return -1;
+          goto error;
       }
     }
 
-    if (tcp_stream_create(tcp_streamp, sock, stream_size)) {
-        LOG_ERROR("tcp_stream_create");
-        close(sock);
-        return -1;
-    }
+    tcp_stream_reset(tcp_stream, sock);
 
     return 0;
+error:
+    close(sock);
+
+    return err;
 }
 
 void tcp_server_destroy (struct tcp_server *server)

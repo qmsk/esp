@@ -29,11 +29,11 @@ int tcp_connect (int *sockp, const char *host, const char *port);
 int tcp_server (struct tcp_server **serverp, const char *host, const char *port, int backlog, int flags);
 
 /*
- * Accept a new incoming request.
+ * Accept a new incoming request, using a pre-created `tcp`.
  * *
  * TODO: Return >0 on temporary per-client errors?
  */
-int tcp_server_accept (struct tcp_server *server, struct tcp_stream **tcp_streamp, size_t stream_size, int flags);
+int tcp_server_accept (struct tcp_server *server, struct tcp_stream *tcp_stream, int flags);
 
 /*
  * Release all resources.

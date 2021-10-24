@@ -1,11 +1,11 @@
-#include "httpserver/server.h"
+#include <httpserver/server.h>
+#include <http/http.h>
+#include <http/tcp.h>
+
 #include "request.h"
 #include "response.h"
 
-#include "http/http.h"
-#include "http/tcp.h"
-
-#include "logging.h"
+#include <logging.h>
 
 // string.h strdup
 #ifndef _XOPEN_SOURCE
@@ -251,9 +251,14 @@ int http_listener_accept (struct http_listener *listener, struct http_connection
     struct tcp_stream *tcp_stream;
     int err;
 
-    if ((err = tcp_server_accept(listener->tcp_server, &tcp_stream, listener->server->stream_size, 0))) {
+    if ((err = tcp_stream_new(&tcp_stream, listener->server->stream_size))) {
+      LOG_ERROR("tcp_stream_new");
+      return -1;
+    }
+
+    if ((err = tcp_server_accept(listener->tcp_server, tcp_stream, 0))) {
         LOG_ERROR("tcp_server_accept");
-        return -1;
+        goto error;
     }
 
     LOG_DEBUG("tcp_stream=%p", tcp_stream);

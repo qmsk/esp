@@ -17,6 +17,11 @@ struct http;
 int http_create (struct http **httpp, struct stream *read, struct stream *write);
 
 /*
+ * Reset connection state.
+ */
+ void http_reset (struct http *http);
+
+/*
  * Write data from memory, as part of the message body.
  *
  * XXX: ensure that the use of stream_write does not place limits on maximum length.

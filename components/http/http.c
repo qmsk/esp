@@ -35,6 +35,11 @@ error:
     return -1;
 }
 
+void http_reset (struct http *http)
+{
+  http->read_content_length = 0;
+  http->chunk_size = 0;
+}
 
 /* Writing */
 int http_write (struct http *http, const char *buf, size_t size)

@@ -92,13 +92,20 @@ int tcp_connect (int *sockp, const char *host, const char *port)
 int tcp_client (struct tcp **tcpp, const char *host, const char *port, size_t stream_size)
 {
     int sock;
+    int err;
 
     if (tcp_connect(&sock, host, port)) {
-        LOG_WARN("tcp_create: %s:%s", host, port);
+        LOG_WARN("tcp_connect: %s:%s", host, port);
         return -1;
     }
 
     LOG_DEBUG("%d", sock);
 
-    return tcp_create(tcpp, sock, stream_size);
+    if ((err = tcp_create(tcpp, sock, stream_size))) {
+      LOG_ERROR("tcp_create");
+      close(sock);
+      return err;
+    }
+
+    return 0;
 }

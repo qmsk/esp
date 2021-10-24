@@ -58,6 +58,14 @@ struct stream * tcp_write_stream (struct tcp *tcp);
 void tcp_read_timeout (struct tcp *tcp, const struct timeval *timeout);
 void tcp_write_timeout (struct tcp *tcp, const struct timeval *timeout);
 
+/*
+ * Close TCP socket.
+ */
+ int tcp_close (struct tcp *tcp);
+
+/*
+ * Close TCP socket, release stream buffers and resources.
+ */
 void tcp_destroy (struct tcp *tcp);
 
 #endif

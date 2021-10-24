@@ -164,6 +164,7 @@ int tcp_server_accept (struct tcp_server *server, struct tcp **tcpp, size_t stre
 
     if (tcp_create(tcpp, sock, stream_size)) {
         LOG_ERROR("tcp_create");
+        close(sock);
         return -1;
     }
 

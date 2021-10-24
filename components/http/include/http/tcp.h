@@ -80,6 +80,10 @@ void tcp_stream_write_timeout (struct tcp_stream *tcp_stream, const struct timev
 
 /*
  * Close TCP socket.
+ *
+ * The TCP stream will be prepared for reuse, even in error cases.
+ *
+ * Returns 0 on success, <0 on errors.
  */
  int tcp_stream_close (struct tcp_stream *tcp_stream);
 

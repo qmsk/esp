@@ -72,6 +72,10 @@ int http_connection_serve (struct http_connection *connection, const struct http
 
 /*
  * Close connection, but keep resources allocated for re-use.
+ *
+ * In case of errors, the response may not be delievered, but the connection will sitll be reset for re-use..
+ *
+ * Returns 0 on success, <0 on error.
  */
 int http_connection_close (struct http_connection *connection);
 

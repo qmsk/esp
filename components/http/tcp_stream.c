@@ -210,7 +210,8 @@ int tcp_stream_close (struct tcp_stream *tcp_stream)
   }
 
   if (close(tcp_stream->sock)) {
-    LOG_ERROR("close: %s", strerror(errno));
+    tcp_stream->sock = -1; // do not ever re-close!
+    LOG_WARN("close: %s", strerror(errno));
     return -1;
   }
 

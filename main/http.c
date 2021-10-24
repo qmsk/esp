@@ -13,10 +13,16 @@
 
 #include <string.h>
 
+// maximum number of connections for listen() queue, pending for accept()
 #define HTTP_LISTEN_BACKLOG 4
+
 #define HTTP_STREAM_SIZE 1024 // 1+1kB per connection
 
-#define HTTP_CONNECTION_QUEUE_SIZE 1
+// maximum number of supported HTTP connections at a time
+#define HTTP_CONNECTION_COUNT 2
+
+// number of accepted connections to queue up for serving
+#define HTTP_CONNECTION_QUEUE_SIZE 2
 #define HTTP_CONNECTION_QUEUE_TIMEOUT 1000 // 1s
 
 #define HTTP_LISTEN_TASK_STACK 1024
@@ -71,36 +77,47 @@ static struct http_main {
   struct http_router *router;
 
   xTaskHandle listen_task, server_task;
-  xQueueHandle connection_queue;
+  xQueueHandle accept_queue; // struct http_connection* for accept()
+  xQueueHandle serve_queue; // struct http_connection* for serve()
 } http;
 
-void http_listen_task(void *arg)
+void http_listen_main(void *arg)
 {
   struct http_listener *listener = arg;
   struct http_connection *connection;
   int err;
 
   for (;;) {
-    LOG_DEBUG("listener=%p accept", listener);
+    LOG_DEBUG("listener=%p wait connection", listener);
 
-    if ((err = http_listener_accept(listener, &connection))) {
+    if (!xQueueReceive(http.accept_queue, &connection, portMAX_DELAY)) {
+      LOG_ERROR("xQueueReceive");
+      break;
+    }
+
+    LOG_DEBUG("listener=%p accept connection=%p", listener, connection);
+
+    if ((err = http_listener_accept(listener, connection))) {
       LOG_WARN("http_listener_accept");
       continue;
     }
 
     LOG_DEBUG("listener=%p accepted connection=%p", listener, connection);
 
-    if ((err = xQueueSend(http.connection_queue, &connection, HTTP_CONNECTION_QUEUE_TIMEOUT / portTICK_RATE_MS)) == pdTRUE) {
-
+    if ((err = xQueueSend(http.serve_queue, &connection, HTTP_CONNECTION_QUEUE_TIMEOUT / portTICK_RATE_MS)) == pdTRUE) {
+      LOG_DEBUG("listener=%p queued connection=%p", listener, connection);
     } else if (err == errQUEUE_FULL) {
-      LOG_WARN("connection queue overflow, rejecting connection");
-      http_connection_destroy(connection);
+      LOG_WARN("serve queue overflow, rejecting connection");
+      http_connection_close(connection);
       continue;
     } else {
       LOG_ERROR("xQueueSend");
       break;
     }
   }
+
+  // abort, reject further connections
+  http_listener_destroy(listener);
 
   vTaskDelete(NULL);
 }
@@ -181,7 +198,7 @@ static int http_server_response_headers(struct http_response *response, void *ct
   return 0;
 }
 
-void http_server_task(void *arg)
+void http_server_main(void *arg)
 {
   struct http_router *router = arg;
   struct http_context ctx;
@@ -208,12 +225,14 @@ void http_server_task(void *arg)
   int err;
 
   for (;;) {
-    if (!xQueueReceive(http.connection_queue, &connection, portMAX_DELAY)) {
+    LOG_DEBUG("wait connection");
+
+    if (!xQueueReceive(http.serve_queue, &connection, portMAX_DELAY)) {
       LOG_ERROR("xQueueReceive");
       break;
     }
 
-    LOG_DEBUG("connection=%p serve router=%p", connection, router);
+    LOG_DEBUG("serve connection=%p using router=%p", connection, router);
 
     ctx = (struct http_context) {
       .config = &http_config,
@@ -224,17 +243,34 @@ void http_server_task(void *arg)
 
     if ((err = http_connection_serve(connection, &hooks, &http_router_handler, router)) < 0) {
       LOG_ERROR("http_connection_serve");
-      http_connection_destroy(connection);
-      continue;
     } else if (err > 0) {
-      LOG_DEBUG("closing HTTP connection");
-      http_connection_destroy(connection);
+      // HTTP connection-close
     } else {
       LOG_INFO("force-close HTTP connection");
+    }
+
+    LOG_DEBUG("close connection=%p", connection);
+
+    if ((err = http_connection_close(connection))) {
+      LOG_WARN("http_connection_close");
+    }
+
+    LOG_DEBUG("return connection=%p", connection);
+
+    if ((err = xQueueSend(http.accept_queue, &connection, 0)) == pdTRUE) {
+      LOG_DEBUG("returned connection=%p", connection);
+    } else if (err == errQUEUE_FULL) {
+      // should never happen, assuming pre-allocated connections
+      LOG_WARN("accept queue overflow");
       http_connection_destroy(connection);
+      continue;
+    } else {
+      LOG_ERROR("xQueueSend");
+      break;
     }
   }
 
+  // abort, futher connections will stall and timeout
   vTaskDelete(NULL);
 }
 
@@ -242,6 +278,16 @@ int setup_http(struct http_main *http, struct http_config *config)
 {
   char port[32];
   int err;
+
+  if ((err = http_server_create(&http->server, HTTP_LISTEN_BACKLOG, HTTP_STREAM_SIZE))) {
+    LOG_ERROR("http_server_create");
+    return err;
+  }
+
+  if ((err = http_router_create(&http->router))) {
+    LOG_ERROR("http_router_create");
+    return err;
+  }
 
   // router routes
   for (const struct http_route *route = http_routes; route->method || route->path || route->handler; route++) {
@@ -266,6 +312,56 @@ int setup_http(struct http_main *http, struct http_config *config)
     return err;
   }
 
+  // connection queues
+  if ((http->accept_queue = xQueueCreate(HTTP_CONNECTION_COUNT, sizeof(struct http_connection *))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  if ((http->serve_queue = xQueueCreate(HTTP_CONNECTION_QUEUE_SIZE, sizeof(struct http_connection *))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  // pre-allocate connections
+  for (int i = 0; i < HTTP_CONNECTION_COUNT; i++) {
+    struct http_connection *connection;
+
+    if ((err = http_connection_new(http->server, &connection))) {
+      LOG_ERROR("http_connection_new");
+      return err;
+    }
+
+    LOG_DEBUG("queue connection=%p", connection);
+
+    if ((err = xQueueSend(http->accept_queue, &connection, 0)) == pdTRUE) {
+
+    } else if (err == errQUEUE_FULL) {
+      // should never happen, assuming pre-allocated connections
+      LOG_WARN("accept queue overflow");
+      http_connection_destroy(connection);
+      continue;
+    } else {
+      LOG_ERROR("xQueueSend");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+int start_http(struct http_main *http)
+{
+  if (xTaskCreate(&http_listen_main, "http-listen", HTTP_LISTEN_TASK_STACK, http->listener, HTTP_LISTEN_TASK_PRIORITY, &http->listen_task) <= 0) {
+    LOG_ERROR("xTaskCreate http-listen");
+    return -1;
+  }
+
+  if (xTaskCreate(&http_server_main, "http-server", HTTP_SERVER_TASK_STACK, http->router, HTTP_SERVER_TASK_PRIORITY, &http->server_task) <= 0) {
+    LOG_ERROR("xTaskCreate http-server");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -278,16 +374,6 @@ int init_http()
     return 0;
   }
 
-  if ((err = http_server_create(&http.server, HTTP_LISTEN_BACKLOG, HTTP_STREAM_SIZE))) {
-    LOG_ERROR("http_server_create");
-    return err;
-  }
-
-  if ((err = http_router_create(&http.router))) {
-    LOG_ERROR("http_router_create");
-    return err;
-  }
-
   if ((err = setup_http(&http, &http_config))) {
     LOG_ERROR("setup_http");
     return err;
@@ -298,19 +384,9 @@ int init_http()
     return err;
   }
 
-  if ((http.connection_queue = xQueueCreate(HTTP_CONNECTION_QUEUE_SIZE, sizeof(struct http_connection *))) == NULL) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
-  }
-
-  if (xTaskCreate(&http_listen_task, "http-listen", HTTP_LISTEN_TASK_STACK, http.listener, HTTP_LISTEN_TASK_PRIORITY, &http.listen_task) <= 0) {
-    LOG_ERROR("xTaskCreate http-listen");
-    return -1;
-  }
-
-  if (xTaskCreate(&http_server_task, "http-server", HTTP_SERVER_TASK_STACK, http.router, HTTP_SERVER_TASK_PRIORITY, &http.server_task) <= 0) {
-    LOG_ERROR("xTaskCreate http-server");
-    return -1;
+  if ((err = start_http(&http))) {
+    LOG_ERROR("start_http");
+    return err;
   }
 
   return 0;

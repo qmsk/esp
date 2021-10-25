@@ -96,6 +96,7 @@ int dmx_cmd_out(int argc, char **argv, void *ctx)
 
   if (!(data = malloc(count))) {
     LOG_ERROR("malloc");
+    return -1;
   }
 
   for (int i = 0; i < count; i++) {

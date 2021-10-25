@@ -4,7 +4,6 @@
 
 struct dmx_output {
   struct uart1 *uart1;
-  struct uart1_options uart1_options;
 
   /* Optional */
   struct gpio_out *gpio_out;

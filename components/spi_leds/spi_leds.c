@@ -146,8 +146,8 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 int spi_leds_tx(struct spi_leds *spi_leds)
 {
   struct spi_write_options options = {
-    .mode   = spi_leds->options.mode_bits | spi_leds->spi_mode | SPI_MODE_SET,
-    .clock  = spi_leds->options.clock,
+    .mode   = spi_leds->options.spi_mode_bits | spi_leds->spi_mode | SPI_MODE_SET,
+    .clock  = spi_leds->options.spi_clock,
   };
   uint8_t *buf = spi_leds->packet.buf;
   unsigned len = spi_leds->packet_size;

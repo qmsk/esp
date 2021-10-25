@@ -93,21 +93,21 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
       .protocol   = config->protocol,
       .count      = config->count,
 
-      .clock      = config->spi_clock,
+      .spi_clock  = config->spi_clock,
 
       .gpio_out   = &spi_leds_gpio_out,
   };
   int err;
 
   if (config->delay) {
-    options.mode_bits |= (config->delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
+    options.spi_mode_bits |= (config->delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
   }
 
   if (config->gpio_mode != SPI_LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u mode_bits=%04x clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.mode_bits, options.clock, options.gpio_out_pins, options.count);
+  LOG_INFO("spi-leds%d: protocol=%u spi_mode_bits=%04x spi_clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.spi_mode_bits, options.spi_clock, options.gpio_out_pins, options.count);
 
   if ((err = spi_leds_new(&state->spi_leds, spi_master, options))) {
     LOG_ERROR("spi-leds%d: spi_leds_new", index);

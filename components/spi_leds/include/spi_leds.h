@@ -18,8 +18,8 @@ struct spi_leds_options {
   unsigned count;
 
   /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
-  enum spi_mode mode_bits;
-  enum spi_clock clock;
+  enum spi_mode spi_mode_bits;
+  enum spi_clock spi_clock;
 
   /* GPIO for output multiplexing */
   struct gpio_out *gpio_out;

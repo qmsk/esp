@@ -24,6 +24,7 @@ int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mo
   while (len) {
     if ((ret = spi_master_write(options->spi_master, ptr, len)) < 0) {
       LOG_ERROR("spi_master_write");
+      err = ret;
       goto error;
     }
 
@@ -34,7 +35,7 @@ int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mo
   }
 
   // wait for write TX to complete before clearing gpio to release bus
-  if ((ret = spi_master_flush(options->spi_master)) < 0) {
+  if ((err = spi_master_flush(options->spi_master)) < 0) {
     LOG_ERROR("spi_master_flush");
     goto error;
   }
@@ -49,5 +50,5 @@ error:
     return err;
   }
 
-  return ret;
+  return err;
 }

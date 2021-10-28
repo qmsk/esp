@@ -3,18 +3,30 @@
 
 #include <gpio_out.h>
 #include <spi_master.h>
+#include <uart1.h>
 
 #include <stdint.h>
 
 struct spi_leds;
 
 enum spi_leds_interface {
+  /*
+   * Supported protocols:
+   *  - SPI_LEDS_PROTOCOL_APA102
+   *  - SPI_LEDS_PROTOCOL_P9813
+   */
   SPI_LEDS_INTERFACE_SPI            = 1,
+
+  /* Supported protocols:
+   *  - SPI_LEDS_PROTOCOL_WS2812B
+   */
+  SPI_LEDS_INTERFACE_UART           = 2,
 };
 
 enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_APA102          = 1,
   SPI_LEDS_PROTOCOL_P9813           = 2,
+  SPI_LEDS_PROTOCOL_WS2812B         = 3,
 };
 
 struct spi_leds_options {
@@ -27,6 +39,9 @@ struct spi_leds_options {
   struct spi_master *spi_master;
   enum spi_mode spi_mode_bits; /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
   enum spi_clock spi_clock;
+
+  /** SPI_LEDS_INTERFACE_UART */
+  struct uart1 *uart1;
 
   /** GPIO for output multiplexing */
   struct gpio_out *gpio_out;

@@ -10,7 +10,14 @@
 #define SPI_LEDS_MODE 0 // varies by protocol
 #define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
 
-struct spi_master *spi_master;
+#define UART1_BAUD_RATE UART1_BAUD_250000
+#define UART1_DATA_BITS UART1_DATA_BITS_8
+#define UART1_PARITY_BITS UART1_PARTIY_DISABLE
+#define UART1_STOP_BITS UART1_STOP_BITS_1
+#define UART1_TX_BUFFER_SIZE 128
+
+struct uart1 *spi_leds_uart1;
+struct spi_master *spi_leds_spi_master;
 struct gpio_out spi_leds_gpio_out;
 struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
@@ -21,6 +28,7 @@ static int init_spi_master()
       .clock  = SPI_LEDS_CLOCK,
       .pins   = SPI_LEDS_PINS,
   };
+  bool enabled;
   int err;
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
@@ -31,16 +39,67 @@ static int init_spi_master()
       continue;
     }
 
+    switch (config->protocol) {
+      case SPI_LEDS_PROTOCOL_APA102:
+      case SPI_LEDS_PROTOCOL_P9813:
+        enabled = true;
+        break;
+    }
+
     if (config->spi_clock) {
       // match initial clock with output clock
       options.clock = config->spi_clock;
     }
   }
 
-  LOG_INFO("mode=%02x clock=%u pins=%02x", options.mode, options.clock, options.pins);
+  if (!enabled) {
+    return 0;
+  }
 
-  if ((err = spi_master_new(&spi_master, options))) {
+  LOG_INFO("enabled=%d mode=%02x clock=%u pins=%02x", enabled, options.mode, options.clock, options.pins);
+
+  if ((err = spi_master_new(&spi_leds_spi_master, options))) {
     LOG_ERROR("spi_master_new");
+    return err;
+  }
+
+  return 0;
+}
+
+static int init_uart1()
+{
+  struct uart1_options options = {
+      .clock_div    = UART1_BAUD_RATE,
+      .data_bits    = UART1_DATA_BITS,
+      .parity_bits  = UART1_PARITY_BITS,
+      .stop_bits    = UART1_STOP_BITS_1,
+  };
+  bool enabled;
+  int err;
+
+  for (int i = 0; i < SPI_LEDS_COUNT; i++)
+  {
+    const struct spi_leds_config *config = &spi_leds_configs[i];
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    switch (config->protocol) {
+      case SPI_LEDS_PROTOCOL_WS2812B:
+        enabled = true;
+        break;
+    }
+  }
+
+  if (!enabled) {
+    return 0;
+  }
+
+  LOG_INFO("enabled=%d", enabled);
+
+  if ((err = uart1_new(&spi_leds_uart1, options, UART1_TX_BUFFER_SIZE))) {
+    LOG_ERROR("uart1_new");
     return err;
   }
 
@@ -87,14 +146,14 @@ static int init_gpio_out()
   return 0;
 }
 
-static int init_spi_leds_state(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
+static int init_spi_leds_spi(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
       .interface  = SPI_LEDS_INTERFACE_SPI,
       .protocol   = config->protocol,
       .count      = config->count,
 
-      .spi_master = spi_master,
+      .spi_master = spi_leds_spi_master,
       .spi_clock  = config->spi_clock,
 
       .gpio_out   = &spi_leds_gpio_out,
@@ -110,6 +169,33 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
   }
 
   LOG_INFO("spi-leds%d: protocol=%u spi_mode_bits=%04x spi_clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.spi_mode_bits, options.spi_clock, options.gpio_out_pins, options.count);
+
+  if ((err = spi_leds_new(&state->spi_leds, &options))) {
+    LOG_ERROR("spi-leds%d: spi_leds_new", index);
+    return err;
+  }
+
+  return 0;
+}
+
+static int init_spi_leds_uart(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
+{
+  struct spi_leds_options options = {
+      .interface  = SPI_LEDS_INTERFACE_UART,
+      .protocol   = config->protocol,
+      .count      = config->count,
+
+      .uart1      = spi_leds_uart1,
+
+      .gpio_out   = &spi_leds_gpio_out,
+  };
+  int err;
+
+  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+    options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
+  }
+
+  LOG_INFO("spi-leds%d: protocol=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.gpio_out_pins, options.count);
 
   if ((err = spi_leds_new(&state->spi_leds, &options))) {
     LOG_ERROR("spi-leds%d: spi_leds_new", index);
@@ -147,6 +233,11 @@ int init_spi_leds()
     return err;
   }
 
+  if ((err = init_uart1(spi_leds_configs))) {
+    LOG_ERROR("init_uart1");
+    return err;
+  }
+
   if ((err = init_gpio_out(spi_leds_configs))) {
     LOG_ERROR("init_gpio_out");
     return err;
@@ -161,9 +252,24 @@ int init_spi_leds()
       continue;
     }
 
-    if ((err = init_spi_leds_state(state, i, config))) {
-      LOG_ERROR("spi-leds%d: config_spi_leds", i);
-      return err;
+    switch (config->protocol) {
+      case SPI_LEDS_PROTOCOL_APA102:
+      case SPI_LEDS_PROTOCOL_P9813:
+        if ((err = init_spi_leds_spi(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_spi_leds_spi", i);
+          return err;
+        }
+        break;
+
+      case SPI_LEDS_PROTOCOL_WS2812B:
+        if ((err = init_spi_leds_uart(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_spi_leds_uart", i);
+          return err;
+        }
+        break;
+
+      default:
+        LOG_ERROR("unsupported protocol=%#x", config->protocol);
     }
 
     if (config->test_enabled) {

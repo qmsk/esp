@@ -18,11 +18,13 @@
 
 struct uart1 *spi_leds_uart1;
 struct spi_master *spi_leds_spi_master;
-struct gpio_out spi_leds_gpio_out;
+struct gpio_out spi_leds_gpio_out_uart, spi_leds_gpio_out_spi;
 struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
 static int init_spi_master()
 {
+  enum gpio_out_pins gpio_out_pins = 0;
+  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
   struct spi_options options = {
       .mode   = SPI_LEDS_MODE,
       .clock  = SPI_LEDS_CLOCK,
@@ -39,16 +41,30 @@ static int init_spi_master()
       continue;
     }
 
-    switch (config->protocol) {
-      case SPI_LEDS_PROTOCOL_APA102:
-      case SPI_LEDS_PROTOCOL_P9813:
-        enabled = true;
-        break;
+    if (config->protocol == SPI_LEDS_PROTOCOL_APA102 || config->protocol == SPI_LEDS_PROTOCOL_P9813) {
+      enabled = true;
+    } else {
+      continue;
     }
 
     if (config->spi_clock) {
       // match initial clock with output clock
       options.clock = config->spi_clock;
+    }
+
+    switch (config->gpio_mode) {
+      case SPI_LEDS_GPIO_OFF:
+        break;
+
+      case GPIO_OUT_HIGH:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        break;
+
+      case GPIO_OUT_LOW:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        break;
     }
   }
 
@@ -57,9 +73,15 @@ static int init_spi_master()
   }
 
   LOG_INFO("enabled=%d mode=%02x clock=%u pins=%02x", enabled, options.mode, options.clock, options.pins);
+  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
 
   if ((err = spi_master_new(&spi_leds_spi_master, options))) {
     LOG_ERROR("spi_master_new");
+    return err;
+  }
+
+  if ((err = gpio_out_init(&spi_leds_gpio_out_spi, gpio_out_pins, gpio_out_level))) {
+    LOG_ERROR("gpio_out_init");
     return err;
   }
 
@@ -68,6 +90,8 @@ static int init_spi_master()
 
 static int init_uart1()
 {
+  enum gpio_out_pins gpio_out_pins = 0;
+  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
   struct uart1_options options = {
       .clock_div    = UART1_BAUD_RATE,
       .data_bits    = UART1_DATA_BITS,
@@ -85,38 +109,9 @@ static int init_uart1()
       continue;
     }
 
-    switch (config->protocol) {
-      case SPI_LEDS_PROTOCOL_WS2812B:
-        enabled = true;
-        break;
-    }
-  }
-
-  if (!enabled) {
-    return 0;
-  }
-
-  LOG_INFO("enabled=%d", enabled);
-
-  if ((err = uart1_new(&spi_leds_uart1, options, UART1_TX_BUFFER_SIZE))) {
-    LOG_ERROR("uart1_new");
-    return err;
-  }
-
-  return 0;
-}
-
-static int init_gpio_out()
-{
-  enum gpio_out_pins gpio_out_pins = 0;
-  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
-  int err;
-
-  for (int i = 0; i < SPI_LEDS_COUNT; i++)
-  {
-    const struct spi_leds_config *config = &spi_leds_configs[i];
-
-    if (!config->enabled) {
+    if (config->protocol == SPI_LEDS_PROTOCOL_WS2812B) {
+      enabled = true;
+    } else {
       continue;
     }
 
@@ -136,9 +131,19 @@ static int init_gpio_out()
     }
   }
 
-  LOG_INFO("pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+  if (!enabled) {
+    return 0;
+  }
 
-  if ((err = gpio_out_init(&spi_leds_gpio_out, gpio_out_pins, gpio_out_level))) {
+  LOG_INFO("enabled=%d", enabled);
+  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+
+  if ((err = uart1_new(&spi_leds_uart1, options, UART1_TX_BUFFER_SIZE))) {
+    LOG_ERROR("uart1_new");
+    return err;
+  }
+
+  if ((err = gpio_out_init(&spi_leds_gpio_out_uart, gpio_out_pins, gpio_out_level))) {
     LOG_ERROR("gpio_out_init");
     return err;
   }
@@ -156,7 +161,7 @@ static int init_spi_leds_spi(struct spi_leds_state *state, int index, const stru
       .spi_master = spi_leds_spi_master,
       .spi_clock  = config->spi_clock,
 
-      .gpio_out   = &spi_leds_gpio_out,
+      .gpio_out   = &spi_leds_gpio_out_spi,
   };
   int err;
 
@@ -187,7 +192,7 @@ static int init_spi_leds_uart(struct spi_leds_state *state, int index, const str
 
       .uart1      = spi_leds_uart1,
 
-      .gpio_out   = &spi_leds_gpio_out,
+      .gpio_out   = &spi_leds_gpio_out_uart,
   };
   int err;
 
@@ -235,11 +240,6 @@ int init_spi_leds()
 
   if ((err = init_uart1(spi_leds_configs))) {
     LOG_ERROR("init_uart1");
-    return err;
-  }
-
-  if ((err = init_gpio_out(spi_leds_configs))) {
-    LOG_ERROR("init_gpio_out");
     return err;
   }
 

@@ -21,7 +21,7 @@ struct spi_master *spi_leds_spi_master;
 struct gpio_out spi_leds_gpio_out_uart, spi_leds_gpio_out_spi;
 struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
-static int init_spi_master()
+static int init_spi_master(const struct spi_leds_config *configs)
 {
   enum gpio_out_pins gpio_out_pins = 0;
   enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
@@ -35,7 +35,7 @@ static int init_spi_master()
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
-    const struct spi_leds_config *config = &spi_leds_configs[i];
+    const struct spi_leds_config *config = &configs[i];
 
     if (!config->enabled) {
       continue;
@@ -88,7 +88,7 @@ static int init_spi_master()
   return 0;
 }
 
-static int init_uart1()
+static int init_uart1(const struct spi_leds_config *configs)
 {
   enum gpio_out_pins gpio_out_pins = 0;
   enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
@@ -103,7 +103,7 @@ static int init_uart1()
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
-    const struct spi_leds_config *config = &spi_leds_configs[i];
+    const struct spi_leds_config *config = &configs[i];
 
     if (!config->enabled) {
       continue;

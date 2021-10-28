@@ -90,9 +90,11 @@ static int init_gpio_out()
 static int init_spi_leds_state(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
+      .interface  = SPI_LEDS_INTERFACE_SPI,
       .protocol   = config->protocol,
       .count      = config->count,
 
+      .spi_master = spi_master,
       .spi_clock  = config->spi_clock,
 
       .gpio_out   = &spi_leds_gpio_out,
@@ -109,7 +111,7 @@ static int init_spi_leds_state(struct spi_leds_state *state, int index, const st
 
   LOG_INFO("spi-leds%d: protocol=%u spi_mode_bits=%04x spi_clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.spi_mode_bits, options.spi_clock, options.gpio_out_pins, options.count);
 
-  if ((err = spi_leds_new(&state->spi_leds, spi_master, options))) {
+  if ((err = spi_leds_new(&state->spi_leds, &options))) {
     LOG_ERROR("spi-leds%d: spi_leds_new", index);
     return err;
   }

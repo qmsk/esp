@@ -6,25 +6,21 @@
 
 #include <stdbool.h>
 
-union spi_leds_packet {
-  uint8_t *buf;
-  struct apa102_packet *apa102;
-  struct p9813_packet *p9813;
-};
 
 struct spi_leds {
   struct spi_leds_options options;
 
-  // spi
-  struct spi_master *spi_master;
+  // protocol state
+  union {
+    struct spi_leds_protocol_apa102 apa102;
+    struct spi_leds_protocol_p9813 p9813;
+  } state;
 
-  // protocol
-  enum spi_mode spi_mode;
-  union spi_leds_packet packet;
-  size_t packet_size;
-
-  // ifa false, all leds are inactive
+  // if false, all leds are inactive
   bool active;
 };
 
-int spi_leds_init(struct spi_leds *spi_leds, struct spi_master *spi_master, const struct spi_leds_options options);
+int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *options);
+
+/* spi.c */
+int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mode, void *buf, size_t size);

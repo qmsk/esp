@@ -1,11 +1,16 @@
 #ifndef __SPI_LEDS_H__
 #define __SPI_LEDS_H__
 
-#include <spi_master.h>
 #include <gpio_out.h>
+#include <spi_master.h>
+
 #include <stdint.h>
 
 struct spi_leds;
+
+enum spi_leds_interface {
+  SPI_LEDS_INTERFACE_SPI            = 1,
+};
 
 enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_APA102          = 1,
@@ -13,15 +18,17 @@ enum spi_leds_protocol {
 };
 
 struct spi_leds_options {
+  enum spi_leds_interface interface;
   enum spi_leds_protocol protocol;
 
   unsigned count;
 
-  /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
-  enum spi_mode spi_mode_bits;
+  /** SPI_LEDS_INTERFACE_SPI */
+  struct spi_master *spi_master;
+  enum spi_mode spi_mode_bits; /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
   enum spi_clock spi_clock;
 
-  /* GPIO for output multiplexing */
+  /** GPIO for output multiplexing */
   struct gpio_out *gpio_out;
   enum gpio_out_pins gpio_out_pins;
 };
@@ -51,7 +58,7 @@ enum spi_leds_test_mode {
   TEST_MODE_MAX
 };
 
-int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, const struct spi_leds_options options);
+int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options);
 
 /* Get LED count */
 unsigned spi_leds_count(struct spi_leds *spi_leds);
@@ -72,7 +79,7 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
  */
 int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color);
 
-/* Send frames on SPI bus */
+/* Send frames on output interface */
 int spi_leds_tx(struct spi_leds *spi_leds);
 
 /*

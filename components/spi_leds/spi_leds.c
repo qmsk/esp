@@ -14,30 +14,25 @@ static inline bool spi_led_color_active (struct spi_led_color color)
   return (color.r) || (color.g) || (color.b);
 }
 
-int spi_leds_init(struct spi_leds *spi_leds, struct spi_master *spi_master, const struct spi_leds_options options)
+int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *options)
 {
-  spi_leds->spi_master = spi_master;
-  spi_leds->options = options;
+  spi_leds->options = *options;
   spi_leds->active = 0;
 
-  switch(options.protocol) {
+  switch(options->protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      spi_leds->spi_mode = APA102_SPI_MODE;
-
-      return apa102_new_packet(&spi_leds->packet.apa102, &spi_leds->packet_size, options.count);
+      return spi_leds_init_apa102(&spi_leds->state.apa102, options);
 
     case SPI_LEDS_PROTOCOL_P9813:
-      spi_leds->spi_mode = P9813_SPI_MODE;
-
-      return p9813_new_packet(&spi_leds->packet.p9813, &spi_leds->packet_size, options.count);
+      return spi_leds_init_p9813(&spi_leds->state.p9813, options);
 
     default:
-      LOG_ERROR("unknown protocol=%#x", options.protocol);
+      LOG_ERROR("unknown protocol=%#x", options->protocol);
       return -1;
   }
 }
 
-int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, const struct spi_leds_options options)
+int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options)
 {
   struct spi_leds *spi_leds;
   int err;
@@ -47,7 +42,7 @@ int spi_leds_new(struct spi_leds **spi_ledsp, struct spi_master *spi_master, con
     return -1;
   }
 
-  if ((err = spi_leds_init(spi_leds, spi_master, options))) {
+  if ((err = spi_leds_init(spi_leds, options))) {
     LOG_ERROR("spi_leds_init");
     free(spi_leds);
     return -1;
@@ -70,11 +65,11 @@ unsigned spi_leds_active(struct spi_leds *spi_leds)
   if (spi_leds->active) {
     switch(spi_leds->options.protocol) {
       case SPI_LEDS_PROTOCOL_APA102:
-        active = apa102_count_active(spi_leds->packet.apa102, spi_leds->options.count);
+        active = apa102_count_active(&spi_leds->state.apa102, spi_leds->options.count);
         break;
 
       case SPI_LEDS_PROTOCOL_P9813:
-        active = p9813_count_active(spi_leds->packet.p9813, spi_leds->options.count);
+        active = p9813_count_active(&spi_leds->state.p9813, spi_leds->options.count);
         break;
 
       default:
@@ -105,11 +100,11 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
 
   switch(spi_leds->options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      apa102_set_frame(spi_leds->packet.apa102, index, color);
+      apa102_set_frame(&spi_leds->state.apa102, index, color);
       return 0;
 
     case SPI_LEDS_PROTOCOL_P9813:
-      p9813_set_frame(spi_leds->packet.p9813, index, color);
+      p9813_set_frame(&spi_leds->state.p9813, index, color);
       return 0;
 
     default:
@@ -130,11 +125,11 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 
   switch(spi_leds->options.protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      apa102_set_frames(spi_leds->packet.apa102, spi_leds->options.count, color);
+      apa102_set_frames(&spi_leds->state.apa102, spi_leds->options.count, color);
       return 0;
 
     case SPI_LEDS_PROTOCOL_P9813:
-      p9813_set_frames(spi_leds->packet.p9813, spi_leds->options.count, color);
+      p9813_set_frames(&spi_leds->state.p9813, spi_leds->options.count, color);
       return 0;
 
     default:
@@ -145,50 +140,17 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 
 int spi_leds_tx(struct spi_leds *spi_leds)
 {
-  struct spi_write_options options = {
-    .mode   = spi_leds->options.spi_mode_bits | spi_leds->spi_mode | SPI_MODE_SET,
-    .clock  = spi_leds->options.spi_clock,
-  };
-  uint8_t *buf = spi_leds->packet.buf;
-  unsigned len = spi_leds->packet_size;
-  int ret, err;
+  switch(spi_leds->options.protocol) {
+    case SPI_LEDS_PROTOCOL_APA102:
+      spi_leds_tx_apa102(&spi_leds->state.apa102, &spi_leds->options);
+      return 0;
 
-  if ((err = spi_master_open(spi_leds->spi_master, options))) {
-    LOG_ERROR("spi_master_open");
-    return err;
+    case SPI_LEDS_PROTOCOL_P9813:
+      spi_leds_tx_p9813(&spi_leds->state.p9813, &spi_leds->options);
+      return 0;
+
+    default:
+      LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
+      return -1;
   }
-
-  if (spi_leds->options.gpio_out) {
-    gpio_out_set(spi_leds->options.gpio_out, spi_leds->options.gpio_out_pins);
-  }
-
-  while (len) {
-    if ((ret = spi_master_write(spi_leds->spi_master, buf, len)) < 0) {
-      LOG_ERROR("spi_master_write");
-      goto error;
-    }
-
-    LOG_DEBUG("spi_leds=%p write %p @ %u -> %d", spi_leds, buf, len, ret);
-
-    buf += ret;
-    len -= ret;
-  }
-
-  // wait for write TX to complete before clearing gpio to release bus
-  if ((ret = spi_master_flush(spi_leds->spi_master)) < 0) {
-    LOG_ERROR("spi_master_flush");
-    goto error;
-  }
-
-error:
-  if (spi_leds->options.gpio_out) {
-    gpio_out_clear(spi_leds->options.gpio_out);
-  }
-
-  if ((err = spi_master_close(spi_leds->spi_master))) {
-    LOG_ERROR("spi_master_close");
-    return err;
-  }
-
-  return ret;
 }

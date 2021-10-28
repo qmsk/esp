@@ -1,15 +1,18 @@
 #include "apa102.h"
+#include "spi_leds.h"
 
 #include <logging.h>
 
 #include <stdlib.h>
+
+#define APA102_SPI_MODE (SPI_MODE_3)
 
 #define APA102_START_FRAME (struct apa102_frame){ 0x00, 0x00, 0x00, 0x00 }
 #define APA102_STOP_FRAME (struct apa102_frame){ 0x00, 0x00, 0x00, 0x00 }
 
 #define APA102_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
 
-int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsigned count)
+static int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsigned count)
 {
   unsigned stopframes = (1 + count / 32); // one bit per LED, in frames of 32 bits
   size_t size = (1 + count + stopframes) * sizeof(struct apa102_frame);
@@ -37,9 +40,26 @@ int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsigned co
   return 0;
 }
 
-void apa102_set_frame(struct apa102_packet *packet, unsigned index, struct spi_led_color color)
+int spi_leds_init_apa102(struct spi_leds_protocol_apa102 *protocol, const struct spi_leds_options *options)
 {
-  packet->frames[index] = (struct apa102_frame) {
+  return apa102_new_packet(&protocol->packet, &protocol->packet_size, options->count);
+}
+
+int spi_leds_tx_apa102(struct spi_leds_protocol_apa102 *protocol, const struct spi_leds_options *options)
+{
+  switch (options->interface) {
+    case SPI_LEDS_INTERFACE_SPI:
+      return spi_leds_tx_spi(options, APA102_SPI_MODE, protocol->packet, protocol->packet_size);
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", options->interface);
+      return 1;
+  }
+}
+
+void apa102_set_frame(struct spi_leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color)
+{
+  protocol->packet->frames[index] = (struct apa102_frame) {
     .global = APA102_GLOBAL_BYTE(color.parameters.brightness),
     .b = color.b,
     .g = color.g,
@@ -47,10 +67,10 @@ void apa102_set_frame(struct apa102_packet *packet, unsigned index, struct spi_l
   };
 }
 
-void apa102_set_frames(struct apa102_packet *packet, unsigned count, struct spi_led_color color)
+void apa102_set_frames(struct spi_leds_protocol_apa102 *protocol, unsigned count, struct spi_led_color color)
 {
   for (unsigned index = 0; index < count; index++) {
-    packet->frames[index] = (struct apa102_frame) {
+    protocol->packet->frames[index] = (struct apa102_frame) {
       .global = APA102_GLOBAL_BYTE(color.parameters.brightness),
       .b = color.b,
       .g = color.g,
@@ -64,12 +84,12 @@ static inline bool apa102_frame_active(const struct apa102_frame frame)
   return (frame.b || frame.g || frame.r) && frame.global > APA102_GLOBAL_BYTE(0);
 }
 
-unsigned apa102_count_active(struct apa102_packet *packet, unsigned count)
+unsigned apa102_count_active(struct spi_leds_protocol_apa102 *protocol, unsigned count)
 {
   unsigned active = 0;
 
   for (unsigned index = 0; index < count; index++) {
-    if (apa102_frame_active(packet->frames[index])) {
+    if (apa102_frame_active(protocol->packet->frames[index])) {
       active++;
     }
   }

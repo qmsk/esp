@@ -76,7 +76,7 @@ ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len);
 int uart1_flush(struct uart1 *uart1);
 
 /*
- * Send break once TX completes, and hold for >= break_us.
+ * Flush, send break and hold for >= break_us.
  * After break, hold mark for >= mark_us.
  *
  * Blocks until TX, break and mark are complete.
@@ -85,6 +85,15 @@ int uart1_flush(struct uart1 *uart1);
  * Return <0 on error.
  */
 int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us);
+
+/*
+ * Flush, and hold mark for >= break_us once TX is complete.
+ *
+ * Timing is approximate, not bit-exact.
+ *
+ * Return <0 on error.
+ */
+int uart1_mark(struct uart1 *uart1, unsigned mark_us);
 
 /*
  * Flush TX and release mutex on uart.

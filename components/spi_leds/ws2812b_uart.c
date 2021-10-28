@@ -33,6 +33,7 @@
  *  data     |       |       |   0   |       |       |   1   |       |       |   X   |       |
  * ----------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+
  */
+ #define WS2812B_RESET_US 80
 
  // using least-significant-bit first bit order
  #define WS2812B_LUT(x) (\
@@ -75,8 +76,6 @@ int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws281
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
 
-  LOG_INFO("count=%u", count);
-
   for (unsigned i = 0; i < count; i++) {
     uint32_t grb = pixels[i]._grb;
 
@@ -95,8 +94,8 @@ int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws281
     }
   }
 
-  if ((err = uart1_flush(options->uart1))) {
-    LOG_ERROR("uart1_flush");
+  if ((err = uart1_mark(options->uart1, WS2812B_RESET_US))) {
+    LOG_ERROR("uart1_mark");
     goto error;
   }
 

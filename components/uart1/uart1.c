@@ -163,11 +163,30 @@ int uart1_break(struct uart1 *uart1, unsigned break_us, unsigned mark_us)
   uart1_tx_break(uart1);
   if ((err = uart1_tx_flush(uart1))) {
     LOG_ERROR("uart1_tx_flush");
+    uart1_tx_mark(uart1);
     return err;
   }
   uart1_wait(break_us);
 
   uart1_tx_mark(uart1);
+  uart1_wait(mark_us);
+
+  LOG_DEBUG("done");
+
+  return 0;
+}
+
+int uart1_mark(struct uart1 *uart1, unsigned mark_us)
+{
+  int err;
+
+  LOG_DEBUG("mark_us=%u", mark_us);
+
+  if ((err = uart1_tx_flush(uart1))) {
+    LOG_ERROR("uart1_tx_flush");
+    return err;
+  }
+
   uart1_wait(mark_us);
 
   LOG_DEBUG("done");

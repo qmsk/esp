@@ -109,7 +109,7 @@ static int init_uart1(const struct spi_leds_config *configs)
       continue;
     }
 
-    if (config->protocol == SPI_LEDS_PROTOCOL_WS2812B) {
+    if (config->protocol == SPI_LEDS_PROTOCOL_WS2812B || config->protocol == SPI_LEDS_PROTOCOL_SK6812_GRBW) {
       enabled = true;
     } else {
       continue;
@@ -262,6 +262,7 @@ int init_spi_leds()
         break;
 
       case SPI_LEDS_PROTOCOL_WS2812B:
+      case SPI_LEDS_PROTOCOL_SK6812_GRBW:
         if ((err = init_spi_leds_uart(state, i, config))) {
           LOG_ERROR("spi-leds%d: init_spi_leds_uart", i);
           return err;

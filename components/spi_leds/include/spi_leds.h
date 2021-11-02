@@ -27,6 +27,7 @@ enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_APA102          = 1,
   SPI_LEDS_PROTOCOL_P9813           = 2,
   SPI_LEDS_PROTOCOL_WS2812B         = 3,
+  SPI_LEDS_PROTOCOL_SK6812_GRBW     = 4,
 };
 
 struct spi_leds_options {
@@ -54,6 +55,7 @@ struct spi_led_color {
   union {
     uint8_t parameter;
     uint8_t brightness; // optional, 0-255
+    uint8_t white; // 0-255
   };
 };
 

@@ -14,6 +14,7 @@ struct uart1;
 enum uart1_baud_rate {
   UART1_BAUD_250000   = UART_CLK_FREQ / 250000,
   UART1_BAUD_2500000  = UART_CLK_FREQ / 2500000,
+  UART1_BAUD_3333333  = UART_CLK_FREQ / 3333333,
 };
 
 enum uart1_data_bits {

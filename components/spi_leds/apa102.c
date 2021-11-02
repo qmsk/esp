@@ -60,7 +60,7 @@ int spi_leds_tx_apa102(struct spi_leds_protocol_apa102 *protocol, const struct s
 void apa102_set_frame(struct spi_leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color)
 {
   protocol->packet->frames[index] = (struct apa102_frame) {
-    .global = APA102_GLOBAL_BYTE(color.parameters.brightness),
+    .global = APA102_GLOBAL_BYTE(color.brightness),
     .b = color.b,
     .g = color.g,
     .r = color.r,
@@ -71,7 +71,7 @@ void apa102_set_frames(struct spi_leds_protocol_apa102 *protocol, unsigned count
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->packet->frames[index] = (struct apa102_frame) {
-      .global = APA102_GLOBAL_BYTE(color.parameters.brightness),
+      .global = APA102_GLOBAL_BYTE(color.brightness),
       .b = color.b,
       .g = color.g,
       .r = color.r,

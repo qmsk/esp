@@ -16,7 +16,7 @@ int spi_leds_test_chase_frame(struct spi_leds *spi_leds, unsigned frame, struct 
 {
   int err;
 
-  color.parameters.brightness = 255;
+  color.brightness = 255;
 
   // black
   if ((err = spi_leds_set_all(spi_leds, (struct spi_led_color){ }))) {
@@ -38,7 +38,7 @@ int spi_leds_test_color_frame(struct spi_leds *spi_leds, unsigned frame, struct 
 {
   int err;
 
-  color.parameters.brightness = 255;
+  color.brightness = 255;
 
   if ((err = spi_leds_set_all(spi_leds, color))) {
     return err;

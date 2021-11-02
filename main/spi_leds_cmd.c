@@ -45,7 +45,7 @@ int spi_leds_cmd_all(int argc, char **argv, void *ctx)
     .g = (rgb >>  8) & 0xFF,
     .b = (rgb >>  0) & 0xFF,
 
-    .parameters.brightness = a,
+    .brightness = a,
   };
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++) {
@@ -90,7 +90,7 @@ int spi_leds_cmd_set(int argc, char **argv, void *ctx)
     .g = (rgb >>  8) & 0xFF,
     .b = (rgb >>  0) & 0xFF,
 
-    .parameters.brightness = a,
+    .brightness = a,
   };
 
   if (output >= SPI_LEDS_COUNT) {

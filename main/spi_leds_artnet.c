@@ -23,9 +23,7 @@ static void spi_leds_set_dmx_rgb(struct spi_leds *spi_leds, struct artnet_dmx *a
       .g = artnet_dmx->data[i * 3 + 1],
       .b = artnet_dmx->data[i * 3 + 2],
 
-      .parameters = {
-        .brightness = 255,
-      }
+      .brightness = 255,
     });
   }
 }
@@ -44,9 +42,7 @@ static void spi_leds_set_dmx_bgr(struct spi_leds *spi_leds, struct artnet_dmx *a
       .g = artnet_dmx->data[i * 3 + 1],
       .r = artnet_dmx->data[i * 3 + 2],
 
-      .parameters = {
-        .brightness = 255,
-      }
+      .brightness = 255,
     });
   }
 }
@@ -65,9 +61,7 @@ static void spi_leds_set_dmx_grb(struct spi_leds *spi_leds, struct artnet_dmx *a
       .r = artnet_dmx->data[i * 3 + 1],
       .b = artnet_dmx->data[i * 3 + 2],
 
-      .parameters = {
-        .brightness = 255,
-      }
+      .brightness = 255,
     });
   }
 }

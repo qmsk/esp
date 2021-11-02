@@ -54,7 +54,7 @@ struct spi_led_color {
   union {
     uint8_t parameter;
     uint8_t brightness; // optional, 0-255
-  } parameters;
+  };
 };
 
 enum spi_leds_test_mode {

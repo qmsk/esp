@@ -7,7 +7,7 @@ union ws2812b_pixel {
     uint8_t b, r, g;
   };
 
-  // aligned with 0xXXBBRRGG on little-endian architectures
+  // aligned with 0xXXGGRRBB on little-endian architectures
   uint32_t _grb;
 };
 

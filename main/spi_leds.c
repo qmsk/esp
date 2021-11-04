@@ -271,6 +271,7 @@ int init_spi_leds()
 
       default:
         LOG_ERROR("unsupported protocol=%#x", config->protocol);
+        return -1;
     }
 
     if (config->test_enabled) {

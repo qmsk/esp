@@ -12,6 +12,9 @@ extern struct wifi_config {
   char ssid[32];
   char password[64];
   char hostname[32];
+  char ip[16];
+  char netmask[15];
+  char gw[15];
 } wifi_config;
 
 int init_wifi_events();

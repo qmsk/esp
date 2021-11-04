@@ -69,11 +69,63 @@ const struct configtab wifi_configtab[] = {
   { CONFIG_TYPE_STRING, "hostname",
     .string_type = { .value = wifi_config.hostname, .size = sizeof(wifi_config.hostname) },
   },
+  { CONFIG_TYPE_STRING, "ip",
+    .string_type = { .value = wifi_config.ip, .size = sizeof(wifi_config.ip) },
+  },
+  { CONFIG_TYPE_STRING, "netmask",
+    .string_type = { .value = wifi_config.netmask, .size = sizeof(wifi_config.netmask) },
+  },
+  { CONFIG_TYPE_STRING, "gw",
+    .string_type = { .value = wifi_config.gw, .size = sizeof(wifi_config.gw) },
+  },
   {}
 };
 
+/* before WiFi started */
+static int config_wifi_interface_pre(const struct wifi_config *config, wifi_interface_t wifi_if, tcpip_adapter_if_t tcpip_if)
+{
+  tcpip_adapter_ip_info_t ip_info;
+  esp_err_t err;
+
+  if (!config->ip[0]) {
+    LOG_INFO("Using default DHCP addressing");
+    return 0;
+  }
+
+  LOG_INFO("Using config ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
+
+  if (!ip4addr_aton(config->ip, &ip_info.ip)) {
+    LOG_ERROR("invalid ip=%s", config->ip);
+    return -1;
+  }
+  if (!ip4addr_aton(config->netmask, &ip_info.netmask)) {
+    LOG_ERROR("invalid netmask=%s", config->netmask);
+    return -1;
+  }
+  if (!ip4addr_aton(config->gw, &ip_info.gw)) {
+    LOG_ERROR("invalid gw=%s", config->gw);
+    return -1;
+  }
+
+  if (!(err = tcpip_adapter_dhcpc_stop(tcpip_if))) {
+
+  } else if (err == ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED) {
+    LOG_WARN("tcpip_adapter_dhcpc_stop: ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED");
+  } else {
+    LOG_ERROR("tcpip_adapter_dhcpc_stop: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = tcpip_adapter_set_ip_info(tcpip_if, &ip_info))) {
+    LOG_ERROR("tcpip_adapter_set_ip_info: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 /* Wifi must be started */
-static int config_wifi_interface(const struct wifi_config *config, wifi_interface_t wifi_if, tcpip_adapter_if_t tcpip_if)
+static int config_wifi_interface_post(const struct wifi_config *config, wifi_interface_t wifi_if, tcpip_adapter_if_t tcpip_if)
 {
   char hostname[TCPIP_HOSTNAME_MAX_SIZE];
   uint8_t mac[6];
@@ -129,6 +181,11 @@ static int config_wifi_sta(const struct wifi_config *config)
     sta_config.threshold.authmode = WIFI_AUTH_OPEN;
   }
 
+  if ((err = config_wifi_interface_pre(config, WIFI_IF_STA, TCPIP_ADAPTER_IF_STA))) {
+    LOG_ERROR("config_wifi_interface_pre");
+    return err;
+  }
+
   // ignore default AP mode/config
   if ((err = esp_wifi_set_mode(WIFI_MODE_STA))) {
     LOG_ERROR("esp_wifi_set_mode WIFI_MODE_STA: %s", esp_err_to_name(err));
@@ -140,8 +197,8 @@ static int config_wifi_sta(const struct wifi_config *config)
     return -1;
   }
 
-  if ((err = config_wifi_interface(config, WIFI_IF_STA, TCPIP_ADAPTER_IF_STA))) {
-    LOG_ERROR("config_wifi_interface");
+  if ((err = config_wifi_interface_post(config, WIFI_IF_STA, TCPIP_ADAPTER_IF_STA))) {
+    LOG_ERROR("config_wifi_interface_post");
     return err;
   }
 
@@ -179,13 +236,18 @@ static int config_wifi_ap(const struct wifi_config *config)
     ap_config.authmode = WIFI_AUTH_OPEN;
   }
 
+  if ((err = config_wifi_interface_pre(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
+    LOG_ERROR("config_wifi_interface_pre");
+    return err;
+  }
+
   if (wifi_listen(&ap_config)) {
     LOG_ERROR("wifi_listen");
     return -1;
   }
 
-  if ((err = config_wifi_interface(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
-    LOG_ERROR("config_wifi_interface");
+  if ((err = config_wifi_interface_post(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
+    LOG_ERROR("config_wifi_interface_post");
     return err;
   }
 

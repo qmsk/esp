@@ -9,6 +9,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol protocol)
+{
+  switch (protocol) {
+    case SPI_LEDS_PROTOCOL_APA102:
+    case SPI_LEDS_PROTOCOL_P9813:
+      return SPI_LEDS_INTERFACE_SPI;
+
+    case SPI_LEDS_PROTOCOL_WS2812B:
+    case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+      return SPI_LEDS_INTERFACE_UART;
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
 static inline bool spi_led_color_active (struct spi_led_color color)
 {
   return (color.r) || (color.g) || (color.b);

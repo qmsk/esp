@@ -41,11 +41,11 @@ static int init_spi_master(const struct spi_leds_config *configs)
       continue;
     }
 
-    if (config->protocol == SPI_LEDS_PROTOCOL_APA102 || config->protocol == SPI_LEDS_PROTOCOL_P9813) {
-      enabled = true;
-    } else {
+    if (spi_leds_interface_for_protocol(config->protocol) != SPI_LEDS_INTERFACE_SPI) {
       continue;
     }
+
+    enabled = true;
 
     if (config->spi_clock) {
       // match initial clock with output clock
@@ -109,11 +109,11 @@ static int init_uart1(const struct spi_leds_config *configs)
       continue;
     }
 
-    if (config->protocol == SPI_LEDS_PROTOCOL_WS2812B || config->protocol == SPI_LEDS_PROTOCOL_SK6812_GRBW) {
-      enabled = true;
-    } else {
+    if (spi_leds_interface_for_protocol(config->protocol) != SPI_LEDS_INTERFACE_UART) {
       continue;
     }
+
+    enabled = true;
 
     switch (config->gpio_mode) {
       case SPI_LEDS_GPIO_OFF:
@@ -247,22 +247,21 @@ int init_spi_leds()
   {
     struct spi_leds_state *state = &spi_leds_states[i];
     const struct spi_leds_config *config = &spi_leds_configs[i];
+    enum spi_leds_interface interface = spi_leds_interface_for_protocol(config->protocol);
 
     if (!config->enabled) {
       continue;
     }
 
-    switch (config->protocol) {
-      case SPI_LEDS_PROTOCOL_APA102:
-      case SPI_LEDS_PROTOCOL_P9813:
+    switch (interface) {
+      case SPI_LEDS_INTERFACE_SPI:
         if ((err = init_spi_leds_spi(state, i, config))) {
           LOG_ERROR("spi-leds%d: init_spi_leds_spi", i);
           return err;
         }
         break;
 
-      case SPI_LEDS_PROTOCOL_WS2812B:
-      case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+      case SPI_LEDS_INTERFACE_UART:
         if ((err = init_spi_leds_uart(state, i, config))) {
           LOG_ERROR("spi-leds%d: init_spi_leds_uart", i);
           return err;
@@ -270,7 +269,7 @@ int init_spi_leds()
         break;
 
       default:
-        LOG_ERROR("unsupported protocol=%#x", config->protocol);
+        LOG_ERROR("unsupported protocol=%#x interface=%#x", config->protocol, interface);
         return -1;
     }
 

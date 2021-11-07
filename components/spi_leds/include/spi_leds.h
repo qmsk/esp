@@ -30,6 +30,13 @@ enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_SK6812_GRBW     = 4,
 };
 
+/*
+ * Returns preferred interface for given protocol.
+ *
+ * ATM only one interface is supported by each of the protocols...
+ */
+enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol protocol);
+
 struct spi_leds_options {
   enum spi_leds_interface interface;
   enum spi_leds_protocol protocol;

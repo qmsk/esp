@@ -46,6 +46,7 @@ const struct config_enum spi_leds_protocol_enum[] = {
   { "P9813",        SPI_LEDS_PROTOCOL_P9813     },
   { "WS2812B",      SPI_LEDS_PROTOCOL_WS2812B   },
   { "SK6812_GRBW",  SPI_LEDS_PROTOCOL_SK6812_GRBW   },
+  { "WS2811",       SPI_LEDS_PROTOCOL_WS2811    },
   {}
 };
 

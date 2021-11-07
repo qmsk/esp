@@ -4,6 +4,7 @@
 #include "apa102.h"
 #include "p9813.h"
 #include "sk6812grbw.h"
+#include "ws2811.h"
 #include "ws2812b.h"
 
 #include <stdbool.h>
@@ -17,6 +18,7 @@ struct spi_leds {
     struct spi_leds_protocol_p9813 p9813;
     struct spi_leds_protocol_ws2812b ws2812b;
     struct spi_leds_protocol_sk6812grbw sk6812grbw;
+    struct spi_leds_protocol_ws2811 ws2811;
   } state;
 
   // if false, all leds are inactive

@@ -18,6 +18,7 @@ enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol p
 
     case SPI_LEDS_PROTOCOL_WS2812B:
     case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+    case SPI_LEDS_PROTOCOL_WS2811:
       return SPI_LEDS_INTERFACE_UART;
 
     default:
@@ -48,6 +49,9 @@ int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *opti
 
     case SPI_LEDS_PROTOCOL_SK6812_GRBW:
       return spi_leds_init_sk6812grbw(&spi_leds->state.sk6812grbw, options);
+
+    case SPI_LEDS_PROTOCOL_WS2811:
+      return spi_leds_init_ws2811(&spi_leds->state.ws2811, options);
 
     default:
       LOG_ERROR("unknown protocol=%#x", options->protocol);
@@ -103,6 +107,10 @@ unsigned spi_leds_active(struct spi_leds *spi_leds)
         active = sk6812grbw_count_active(&spi_leds->state.sk6812grbw, spi_leds->options.count);
         break;
 
+      case SPI_LEDS_PROTOCOL_WS2811:
+        active = ws2811_count_active(&spi_leds->state.ws2811, spi_leds->options.count);
+        break;
+
       default:
         LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
         abort();
@@ -146,6 +154,10 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
       sk6812grbw_set_frame(&spi_leds->state.sk6812grbw, index, color);
       return 0;
 
+    case SPI_LEDS_PROTOCOL_WS2811:
+      ws2811_set_frame(&spi_leds->state.ws2811, index, color);
+      return 0;
+
     default:
       LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
       return -1;
@@ -179,6 +191,10 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
       sk6812grbw_set_frames(&spi_leds->state.sk6812grbw, spi_leds->options.count, color);
       return 0;
 
+    case SPI_LEDS_PROTOCOL_WS2811:
+      ws2811_set_frames(&spi_leds->state.ws2811, spi_leds->options.count, color);
+      return 0;
+
     default:
       LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
       return -1;
@@ -202,6 +218,10 @@ int spi_leds_tx(struct spi_leds *spi_leds)
 
     case SPI_LEDS_PROTOCOL_SK6812_GRBW:
       spi_leds_tx_sk6812grbw(&spi_leds->state.sk6812grbw, &spi_leds->options);
+      return 0;
+
+    case SPI_LEDS_PROTOCOL_WS2811:
+      spi_leds_tx_ws2811(&spi_leds->state.ws2811, &spi_leds->options);
       return 0;
 
     default:

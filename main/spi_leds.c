@@ -14,7 +14,7 @@
 #define UART1_DATA_BITS UART1_DATA_BITS_8
 #define UART1_PARITY_BITS UART1_PARTIY_DISABLE
 #define UART1_STOP_BITS UART1_STOP_BITS_1
-#define UART1_TX_BUFFER_SIZE 128
+#define UART1_TX_BUFFER_SIZE 512
 
 struct uart1 *spi_leds_uart1;
 struct spi_master *spi_leds_spi_master;

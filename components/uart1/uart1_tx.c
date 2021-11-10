@@ -238,6 +238,9 @@ void uart1_tx_intr_handler(struct uart1 *uart, BaseType_t *task_woken)
       // FIFO is empty, notify task
       vTaskNotifyGiveFromISR(uart->txfifo_empty_notify_task, task_woken);
 
+      // only once
+      uart->txfifo_empty_notify_task = NULL;
+
       uart1_tx_intr_disable();
     }
   } else {

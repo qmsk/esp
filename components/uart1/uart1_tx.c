@@ -117,12 +117,31 @@ size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
 {
   size_t write;
 
+  taskENTER_CRITICAL();
+
+  // write as many bytes as possible, ensure tx buffer is not empty
+  write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
+
+  LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
+
+  // enable ISR to consume stream buffer
+  uart1_tx_intr_enable(UART1_TXBUF_SIZE);
+
+  taskEXIT_CRITICAL();
+
+  return write;
+}
+
+size_t uart1_tx_blocking(struct uart1 *uart, const uint8_t *buf, size_t len)
+{
+  size_t write;
+
+  // does not use a critical section, inter enable racing with stream send / ISR is harmless
   write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
 
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 
   // enable ISR to consume stream buffer
-  // does not use a critical section, inter enable racing with stream send / ISR is harmless
   uart1_tx_intr_enable(UART1_TXBUF_SIZE);
 
   return write;

@@ -39,16 +39,30 @@
 
  // uart uses least-significant-bit first bit order
  #define SK6812_LUT(x) (\
-     0b100110 \
-   | (((x >> 0) & 0x1) ? 0 : 0b010000) \
-   | (((x >> 1) & 0x1) ? 0 : 0b000001) \
+     0b0010011000100110 \
+   | (((x >> 0) & 0x1) ? 0 : 0b0001000000000000) \
+   | (((x >> 1) & 0x1) ? 0 : 0b0000000100000000) \
+   | (((x >> 2) & 0x1) ? 0 : 0b0000000000010000) \
+   | (((x >> 3) & 0x1) ? 0 : 0b0000000000000001) \
  )
 
-static const uint8_t sk6812_lut[] = {
-  [0b00] = SK6812_LUT(0b00),
-  [0b01] = SK6812_LUT(0b01),
-  [0b10] = SK6812_LUT(0b10),
-  [0b11] = SK6812_LUT(0b11),
+static const uint16_t sk6812_lut[] = {
+  [0b0000] = SK6812_LUT(0b0000),
+  [0b0001] = SK6812_LUT(0b0001),
+  [0b0010] = SK6812_LUT(0b0010),
+  [0b0011] = SK6812_LUT(0b0011),
+  [0b0100] = SK6812_LUT(0b0100),
+  [0b0101] = SK6812_LUT(0b0101),
+  [0b0110] = SK6812_LUT(0b0110),
+  [0b0111] = SK6812_LUT(0b0111),
+  [0b1000] = SK6812_LUT(0b1000),
+  [0b1001] = SK6812_LUT(0b1001),
+  [0b1010] = SK6812_LUT(0b1010),
+  [0b1011] = SK6812_LUT(0b1011),
+  [0b1100] = SK6812_LUT(0b1100),
+  [0b1101] = SK6812_LUT(0b1101),
+  [0b1110] = SK6812_LUT(0b1110),
+  [0b1111] = SK6812_LUT(0b1111),
 };
 
 static const struct uart1_options uart1_options = {
@@ -61,7 +75,7 @@ static const struct uart1_options uart1_options = {
 
 int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
 {
-  uint8_t buf[16];
+  uint16_t buf[8];
   int err;
 
   if ((err = uart1_open(options->uart1, uart1_options))) {
@@ -76,22 +90,14 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
   for (unsigned i = 0; i < count; i++) {
     uint32_t grbw = pixels[i].grbw;
 
-    buf[0]  = sk6812_lut[(grbw >> 30) & 0x3];
-    buf[1]  = sk6812_lut[(grbw >> 28) & 0x3];
-    buf[2]  = sk6812_lut[(grbw >> 26) & 0x3];
-    buf[3]  = sk6812_lut[(grbw >> 24) & 0x3];
-    buf[4]  = sk6812_lut[(grbw >> 22) & 0x3];
-    buf[5]  = sk6812_lut[(grbw >> 20) & 0x3];
-    buf[6]  = sk6812_lut[(grbw >> 18) & 0x3];
-    buf[7]  = sk6812_lut[(grbw >> 16) & 0x3];
-    buf[8]  = sk6812_lut[(grbw >> 14) & 0x3];
-    buf[9]  = sk6812_lut[(grbw >> 12) & 0x3];
-    buf[10] = sk6812_lut[(grbw >> 10) & 0x3];
-    buf[11] = sk6812_lut[(grbw >>  8) & 0x3];
-    buf[12] = sk6812_lut[(grbw >>  6) & 0x3];
-    buf[13] = sk6812_lut[(grbw >>  4) & 0x3];
-    buf[14] = sk6812_lut[(grbw >>  2) & 0x3];
-    buf[15] = sk6812_lut[(grbw >>  0) & 0x3];
+    buf[0]  = sk6812_lut[(grbw >> 28) & 0xf];
+    buf[1]  = sk6812_lut[(grbw >> 24) & 0xf];
+    buf[2]  = sk6812_lut[(grbw >> 20) & 0xf];
+    buf[3]  = sk6812_lut[(grbw >> 16) & 0xf];
+    buf[4]  = sk6812_lut[(grbw >> 12) & 0xf];
+    buf[5]  = sk6812_lut[(grbw >>  8) & 0xf];
+    buf[6]  = sk6812_lut[(grbw >>  4) & 0xf];
+    buf[7]  = sk6812_lut[(grbw >>  0) & 0xf];
 
     if ((err = uart1_write_all(options->uart1, buf, sizeof(buf)))) {
       LOG_ERROR("uart1_write_all");

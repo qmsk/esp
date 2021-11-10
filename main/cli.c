@@ -9,7 +9,6 @@
 #include "system.h"
 #include "vfs.h"
 #include "wifi_cmd.h"
-#include "ws2812b.h"
 
 #include <logging.h>
 #include <cli.h>
@@ -62,9 +61,6 @@ static const struct cmd commands[] = {
   },
   { "dmx", .describe = "DMX output",
       .subcommands = &dmx_cmdtab,
-  },
-  { "ws2812b", .describe = "WS2812B output",
-      .subcommands = &ws2812b_cmdtab,
   },
   { },
 };

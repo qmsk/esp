@@ -3,6 +3,11 @@
 
 #include <logging.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+#define WS2811_TX_TASK_PRIORITY 14
+
 /*
  * Using 8-bit TX-inverted UART at 4M baud (0.25us per bit) to generate a WS2811 signal,
  * at two bits per (8-bit) byte.
@@ -70,6 +75,7 @@ static const struct uart1_options uart1_options = {
 
 int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811_pixel *pixels, unsigned count)
 {
+  UBaseType_t task_priority = uxTaskPriorityGet(NULL);
   uint16_t buf[6];
   int err;
 
@@ -81,6 +87,9 @@ int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+
+  // temporarily raise task priority to ensure uart1 TX buffer does not starve
+  vTaskPrioritySet(NULL, WS2811_TX_TASK_PRIORITY);
 
   for (unsigned i = 0; i < count; i++) {
     uint32_t rgb = pixels[i]._rgb;
@@ -97,6 +106,9 @@ int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811
       goto error;
     }
   }
+
+  // restore previous task priority
+  vTaskPrioritySet(NULL, task_priority);
 
   if ((err = uart1_mark(options->uart1, WS2811_RESET_US))) {
     LOG_ERROR("uart1_mark");

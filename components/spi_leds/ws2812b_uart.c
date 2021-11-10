@@ -3,6 +3,11 @@
 
 #include <logging.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
+#define WS2812B_TX_TASK_PRIORITY 14
+
 /*
  * Using 7-bit TX-inverted UART at 2.5M baud (0.4us per bit) to generate a WS2812B signal,
  * at three bits per (7-bit) byte: http://mikrokontrolery.blogspot.com/2011/03/Diody-WS2812B-sterowanie-XMega-cz-2.html
@@ -123,6 +128,7 @@ static const struct uart1_options uart1_options = {
 
 int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count)
 {
+  UBaseType_t task_priority = uxTaskPriorityGet(NULL);
   uint16_t buf[4];
   int err;
 
@@ -134,6 +140,9 @@ int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws281
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+
+  // temporarily raise task priority to ensure uart1 TX buffer does not starve
+  vTaskPrioritySet(NULL, WS2812B_TX_TASK_PRIORITY);
 
   for (unsigned i = 0; i < count; i++) {
     uint32_t grb = pixels[i]._grb;
@@ -148,6 +157,9 @@ int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws281
       goto error;
     }
   }
+
+  // restore previous task priority
+  vTaskPrioritySet(NULL, task_priority);
 
   if ((err = uart1_mark(options->uart1, WS2812B_RESET_US))) {
     LOG_ERROR("uart1_mark");

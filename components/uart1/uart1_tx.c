@@ -123,6 +123,23 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
+size_t uart1_tx_buf(struct uart1 *uart, const uint8_t *buf, size_t len)
+{
+  size_t write;
+
+  // write as many bytes as possible, ensure tx buffer is not empty
+  write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
+
+  LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
+
+  if (write == 0) {
+    // TX buffer full, enable ISR
+    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
+  }
+
+  return write;
+}
+
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
 {
   size_t write;
@@ -152,6 +169,9 @@ int uart1_tx_flush(struct uart1 *uart)
   if (xStreamBufferIsEmpty(uart->tx_buffer)) {
     // enable TX interrupts with low empty threshold, to interrupt once TX queue is empty
     uart1_tx_intr_enable(1);
+  } else {
+    // enable ISR to consume stream buffer
+    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
   }
 
   taskEXIT_CRITICAL();

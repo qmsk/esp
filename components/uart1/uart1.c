@@ -137,7 +137,32 @@ ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len)
       buf += write;
       len -= write;
     }
+  }
+  return 0;
+}
 
+ssize_t uart1_write_buffered(struct uart1 *uart1, const void *buf, size_t len)
+{
+  size_t write;
+
+  while (len > 0) {
+    // fastpath via TX buffer, without interrupts
+    write = uart1_tx_buf(uart1, buf, len);
+
+    LOG_DEBUG("tx buf len=%u: write=%u", len, write);
+
+    buf += write;
+    len -= write;
+
+    if (len > 0) {
+      // blocking slowpath via buffer + ISR
+      write = uart1_tx_slow(uart1, buf, len);
+
+      LOG_DEBUG("tx slow len=%u: write=%u", len, write);
+
+      buf += write;
+      len -= write;
+    }
   }
 
   return 0;

@@ -65,12 +65,22 @@ int uart1_putc(struct uart1 *uart1, int ch);
  * Returns number of bytes written, or <0 on error.
  */
 ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len);
+
 /*
  * Write len bytes from buf. Blocks if TX buffer is full.
  *
  * Returns 0, or <0 on error.
  */
 ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len);
+
+/*
+ * Write len bytes from buf into the TX buffer.
+ *
+ * TX is only started once the TX buffer is full, or uart1_flush() is called.
+ *
+ * Returns 0, or <0 on error.
+ */
+ssize_t uart1_write_buffered(struct uart1 *uart1, const void *buf, size_t len);
 
 /*
  * Wait for TX buffer + FIFO to empty.

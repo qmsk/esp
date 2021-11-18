@@ -32,6 +32,8 @@ int spi_leds_init(struct spi_leds *spi_leds, const struct spi_leds_options *opti
 void spi_leds_set_format_rgb(struct spi_leds *spi_leds, uint8_t *data, size_t len, unsigned offset, unsigned count);
 void spi_leds_set_format_bgr(struct spi_leds *spi_leds, uint8_t *data, size_t len, unsigned offset, unsigned count);
 void spi_leds_set_format_grb(struct spi_leds *spi_leds, uint8_t *data, size_t len, unsigned offset, unsigned count);
+void spi_leds_set_format_rgba(struct spi_leds *spi_leds, uint8_t *data, size_t len, unsigned offset, unsigned count);
+void spi_leds_set_format_rgbw(struct spi_leds *spi_leds, uint8_t *data, size_t len, unsigned offset, unsigned count);
 
 /* spi.c */
 int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mode, void *buf, size_t size);

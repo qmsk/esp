@@ -74,9 +74,11 @@ const struct config_enum spi_leds_gpio_mode_enum[] = {
 };
 
 const struct config_enum spi_leds_artnet_mode_enum[] = {
-  { "RGB", SPI_LEDS_FORMAT_RGB  },
-  { "BGR", SPI_LEDS_FORMAT_BGR  },
-  { "GRB", SPI_LEDS_FORMAT_GRB  },
+  { "RGB",  SPI_LEDS_FORMAT_RGB  },
+  { "BGR",  SPI_LEDS_FORMAT_BGR  },
+  { "GRB",  SPI_LEDS_FORMAT_GRB  },
+  { "RGBA", SPI_LEDS_FORMAT_RGBA },
+  { "RGBW", SPI_LEDS_FORMAT_RGBW },
   {}
 };
 

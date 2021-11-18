@@ -272,6 +272,14 @@ int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, 
       spi_leds_set_format_grb(spi_leds, data, len, offset, count);
       return 0;
 
+    case SPI_LEDS_FORMAT_RGBA:
+      spi_leds_set_format_rgba(spi_leds, data, len, offset, count);
+      return 0;
+
+    case SPI_LEDS_FORMAT_RGBW:
+      spi_leds_set_format_rgbw(spi_leds, data, len, offset, count);
+      return 0;
+
     default:
       LOG_WARN("unknown format=%#x", format);
       return -1;

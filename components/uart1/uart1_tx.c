@@ -106,8 +106,9 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
     write = uart1_tx_raw(buf, len);
 
     LOG_ISR_DEBUG("raw len=%u: write=%u", len, write);
+  }
 
-  } else {
+  if (!write) {
     // write as many bytes as possible, ensure tx buffer is not empty
     write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
 

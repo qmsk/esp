@@ -94,7 +94,7 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
 {
   size_t write = 0;
 
-  // fastpath via FIFO queue
+  // fastpath via FIFO queue or TX buffer
   write = uart1_tx_fast(uart1, buf, len);
 
   LOG_DEBUG("tx fast len=%u: write=%u", len, write);
@@ -103,20 +103,10 @@ ssize_t uart1_write(struct uart1 *uart1, const void *buf, size_t len)
   len -= write;
 
   if (!write) {
-    // slowpath via buffer + ISR
+    // blocking slowpath via buffer + ISR
     write = uart1_tx_slow(uart1, buf, len);
 
     LOG_DEBUG("tx slow len=%u: write=%u", len, write);
-
-    buf += write;
-    len -= write;
-  }
-
-  if (!write) {
-    // slowpath via buffer + ISR
-    write = uart1_tx_blocking(uart1, buf, len);
-
-    LOG_DEBUG("tx blocking len=%u: write=%u", len, write);
 
     buf += write;
     len -= write;
@@ -130,7 +120,7 @@ ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len)
   size_t write;
 
   while (len > 0) {
-    // fastpath via FIFO queue
+    // fastpath via FIFO queue or TX buffer
     write = uart1_tx_fast(uart1, buf, len);
 
     LOG_DEBUG("tx fast len=%u: write=%u", len, write);
@@ -139,7 +129,7 @@ ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len)
     len -= write;
 
     if (len > 0) {
-      // slowpath via buffer + ISR
+      // blocking slowpath via buffer + ISR
       write = uart1_tx_slow(uart1, buf, len);
 
       LOG_DEBUG("tx slow len=%u: write=%u", len, write);
@@ -148,15 +138,6 @@ ssize_t uart1_write_all(struct uart1 *uart1, const void *buf, size_t len)
       len -= write;
     }
 
-    if (len > 0) {
-      // blocking slowpath via buffer + ISR
-      write = uart1_tx_blocking(uart1, buf, len);
-
-      LOG_DEBUG("tx blocking len=%u: write=%u", len, write);
-
-      buf += write;
-      len -= write;
-    }
   }
 
   return 0;

@@ -21,7 +21,6 @@ int uart1_tx_one(struct uart1 *uart, uint8_t byte);
 
 size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len);
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len);
-size_t uart1_tx_blocking(struct uart1 *uart, const uint8_t *buf, size_t len);
 
 int uart1_tx_flush(struct uart1 *uart);
 

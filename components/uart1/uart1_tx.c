@@ -92,8 +92,6 @@ static size_t uart1_tx_raw(const uint8_t *buf, size_t size)
     len++;
   }
 
-  LOG_ISR_DEBUG("size=%u: len=%u", size, len);
-
   return len;
 }
 
@@ -104,8 +102,19 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
   taskENTER_CRITICAL();
 
   if (xStreamBufferIsEmpty(uart->tx_buffer)) {
-    // fastpath
+    // fastpath via HW FIFO
     write = uart1_tx_raw(buf, len);
+
+    LOG_ISR_DEBUG("raw len=%u: write=%u", len, write);
+
+  } else {
+    // write as many bytes as possible, ensure tx buffer is not empty
+    write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
+
+    LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
+
+    // enable ISR to consume stream buffer
+    uart1_tx_intr_enable(UART1_TXBUF_SIZE);
   }
 
   taskEXIT_CRITICAL();
@@ -114,25 +123,6 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
 }
 
 size_t uart1_tx_slow(struct uart1 *uart, const uint8_t *buf, size_t len)
-{
-  size_t write;
-
-  taskENTER_CRITICAL();
-
-  // write as many bytes as possible, ensure tx buffer is not empty
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
-
-  LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
-
-  // enable ISR to consume stream buffer
-  uart1_tx_intr_enable(UART1_TXBUF_SIZE);
-
-  taskEXIT_CRITICAL();
-
-  return write;
-}
-
-size_t uart1_tx_blocking(struct uart1 *uart, const uint8_t *buf, size_t len)
 {
   size_t write;
 

@@ -99,8 +99,6 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
 {
   size_t write = 0;
 
-  taskENTER_CRITICAL();
-
   if (xStreamBufferIsEmpty(uart->tx_buffer)) {
     // fastpath via HW FIFO
     write = uart1_tx_raw(buf, len);
@@ -117,8 +115,6 @@ size_t uart1_tx_fast(struct uart1 *uart, const uint8_t *buf, size_t len)
     // enable ISR to consume stream buffer
     uart1_tx_intr_enable(UART1_TXBUF_SIZE);
   }
-
-  taskEXIT_CRITICAL();
 
   return write;
 }

@@ -31,12 +31,24 @@ enum spi_leds_protocol {
   SPI_LEDS_PROTOCOL_WS2811          = 5,
 };
 
+/* interpretation of spi_led_color.parameter by protocol */
+enum spi_leds_color_parameter {
+  SPI_LEDS_COLOR_NONE         = 0,
+  SPI_LEDS_COLOR_BRIGHTNESS,
+  SPI_LEDS_COLOR_WHITE,
+};
+
 /*
  * Returns preferred interface for given protocol.
  *
  * ATM only one interface is supported by each of the protocols...
  */
 enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol protocol);
+
+/*
+ * Returns spi_leds_color.parameter interpretation for protocol..
+ */
+enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol);
 
 struct spi_leds_options {
   enum spi_leds_interface interface;

@@ -16,7 +16,18 @@ int spi_leds_test_chase_frame(struct spi_leds *spi_leds, unsigned frame, struct 
 {
   int err;
 
-  color.brightness = 255;
+  switch (spi_leds_color_parameter_for_protocol(spi_leds->options.protocol)) {
+    case SPI_LEDS_COLOR_NONE:
+      break;
+
+    case SPI_LEDS_COLOR_BRIGHTNESS:
+      color.brightness = 255;
+      break;
+
+    case SPI_LEDS_COLOR_WHITE:
+      color.white = 0;
+      break;
+  }
 
   // black
   if ((err = spi_leds_set_all(spi_leds, (struct spi_led_color){ }))) {
@@ -38,7 +49,18 @@ int spi_leds_test_color_frame(struct spi_leds *spi_leds, unsigned frame, struct 
 {
   int err;
 
-  color.brightness = 255;
+  switch (spi_leds_color_parameter_for_protocol(spi_leds->options.protocol)) {
+    case SPI_LEDS_COLOR_NONE:
+      break;
+
+    case SPI_LEDS_COLOR_BRIGHTNESS:
+      color.brightness = 255;
+      break;
+
+    case SPI_LEDS_COLOR_WHITE:
+      color.white = 0;
+      break;
+  }
 
   if ((err = spi_leds_set_all(spi_leds, color))) {
     return err;

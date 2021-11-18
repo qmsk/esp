@@ -27,6 +27,30 @@ enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol p
   }
 }
 
+enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol)
+{
+  switch (protocol) {
+    case SPI_LEDS_PROTOCOL_APA102:
+      return SPI_LEDS_COLOR_BRIGHTNESS;
+
+    case SPI_LEDS_PROTOCOL_P9813:
+      return SPI_LEDS_COLOR_NONE;
+
+    case SPI_LEDS_PROTOCOL_WS2812B:
+      return SPI_LEDS_COLOR_NONE;
+
+    case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+      return SPI_LEDS_COLOR_WHITE;
+
+    case SPI_LEDS_PROTOCOL_WS2811:
+      return SPI_LEDS_COLOR_NONE;
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
 static inline bool spi_led_color_active (struct spi_led_color color)
 {
   return (color.r) || (color.g) || (color.b);

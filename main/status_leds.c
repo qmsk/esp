@@ -155,45 +155,70 @@ static void set_alert_led(enum status_led_mode mode)
   }
 }
 
-void status_leds_main(void *arg)
+static int flash_boot = 1, flash_held = 0;
+
+static void read_flash_led()
 {
-  int flash_boot = 1, flash_held = 0, flash_released = 0;
+  int ret;
+  int flash_released = 0;
+
+  if ((ret = status_led_read(flash_led)) < 0) {
+    LOG_WARN("status_led_read");
+  } else if (ret && flash_boot) {
+    // do not initiate config reset if held during boot, assume waking up after reset
+    LOG_WARN("FLASH held, but still disarmed after boot");
+  } else if (ret) {
+    LOG_INFO("FLASH held");
+    flash_held++;
+  } else if (flash_held > 0) {
+    LOG_INFO("FLASH released");
+    flash_released = flash_held;
+    flash_held = 0;
+  } else if (flash_boot) {
+    // reset boot state, accept press
+    LOG_INFO("FLASH armed");
+    flash_boot = 0;
+  }
+
+  // flash must be held for threshold samples to reset, and is cancled if released before that
+  if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
+    LOG_WARN("confirm reset");
+    user_state(USER_STATE_RESET);
+    user_reset();
+  } else if (flash_held == 1) {
+    // only set once, to keep flash pattern consistent
+    LOG_WARN("request reset");
+    override_user_led(STATUS_LED_FAST);
+  } else if (flash_released > 0) {
+    LOG_WARN("cancel reset");
+    revert_user_led();
+  }
+
+  flash_released = 0;
+}
+
+static int alert_held = 0;
+
+static void read_alert_led()
+{
   int ret;
 
+  if ((ret = status_led_read(alert_led)) < 0) {
+    LOG_WARN("status_led_read");
+  } else if (ret) {
+    LOG_INFO("ALERT held=%d", alert_held);
+    alert_held++;
+  } else if (alert_held > 0) {
+    LOG_INFO("ALERT released=%d", alert_held);
+    alert_held = 0;
+  }
+}
+
+void status_leds_main(void *arg)
+{
   for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_FLASH_READ_PERIOD / portTICK_RATE_MS)) {
-    if ((ret = status_led_read(flash_led)) < 0) {
-      LOG_WARN("status_led_read");
-    } else if (ret && flash_boot) {
-      // do not initiate config reset if held during boot, assume waking up after reset
-      LOG_WARN("FLASH held, but still disarmed after boot");
-    } else if (ret) {
-      LOG_INFO("FLASH held");
-      flash_held++;
-    } else if (flash_held > 0) {
-      LOG_INFO("FLASH released");
-      flash_released = flash_held;
-      flash_held = 0;
-    } else if (flash_boot) {
-      // reset boot state, accept press
-      LOG_INFO("FLASH armed");
-      flash_boot = 0;
-    }
-
-    // flash must be held for threshold samples to reset, and is cancled if released before that
-    if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
-      LOG_WARN("confirm reset");
-      user_state(USER_STATE_RESET);
-      user_reset();
-    } else if (flash_held == 1) {
-      // only set once, to keep flash pattern consistent
-      LOG_WARN("request reset");
-      override_user_led(STATUS_LED_FAST);
-    } else if (flash_released > 0) {
-      LOG_WARN("cancel reset");
-      revert_user_led();
-    }
-
-    flash_released = 0;
+    read_flash_led();
+    read_alert_led();
   }
 }
 
@@ -249,21 +274,6 @@ int init_status_leds()
   }
 
   return 0;
-}
-
-static void read_flash_led()
-{
-  int ret;
-
-  if (!flash_led) {
-    return;
-  } else if ((ret = status_led_read(flash_led)) < 0) {
-    LOG_WARN("status_led_mode");
-  } else if (ret) {
-    LOG_INFO("active");
-  } else {
-    LOG_INFO("inactive");
-  }
 }
 
 void status_leds_state(enum user_state state)

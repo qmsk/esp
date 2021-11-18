@@ -13,11 +13,7 @@
 #define SPI_LEDS_GPIO_OFF (-1)
 #define SPI_LEDS_CLOCK (SPI_CLOCK_1MHZ)
 
-enum spi_leds_artnet_mode {
-  SPI_LEDS_RGB,
-  SPI_LEDS_BGR,
-  SPI_LEDS_GRB,
-};
+#define SPI_LEDS_ARTNET_UNIVERSE_LEDS (512 / 3)
 
 struct spi_leds_config {
   bool enabled;
@@ -36,7 +32,7 @@ struct spi_leds_config {
   uint16_t artnet_universe_start;
   uint16_t artnet_universe_count;
   uint16_t artnet_universe_step;
-  uint16_t artnet_universe_size;
+  uint16_t artnet_universe_leds;
 };
 
 struct spi_leds_state {
@@ -45,8 +41,8 @@ struct spi_leds_state {
   unsigned active;
 
   struct spi_leds_artnet {
-    enum spi_leds_artnet_mode mode;
-    unsigned universe_size;
+    enum spi_leds_format led_format;
+    unsigned led_count;
     struct artnet_dmx *dmx;
 
     unsigned universe_count;

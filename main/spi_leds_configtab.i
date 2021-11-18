@@ -47,9 +47,9 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .description = "Output from multiple non-consecutive artnet universes, at artnet_universe_start + artnet_universe_step",
     .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_universe_step, .max = 4 },
   },
-  { CONFIG_TYPE_UINT16, "artnet_universe_size",
-    .description = "Output first size channels of each artnet universe.",
-    .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_universe_size, .max = ARTNET_DMX_SIZE },
+  { CONFIG_TYPE_UINT16, "artnet_universe_leds",
+    .description = "Limit number of LEDs per artnet universe.",
+    .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_universe_leds, .max = SPI_LEDS_ARTNET_UNIVERSE_LEDS },
   },
 
   { CONFIG_TYPE_BOOL, "test_enabled",

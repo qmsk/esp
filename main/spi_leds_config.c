@@ -7,37 +7,37 @@ struct spi_leds_config spi_leds_configs[SPI_LEDS_COUNT] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
     .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
-    .artnet_mode = SPI_LEDS_BGR,
+    .artnet_mode = SPI_LEDS_FORMAT_BGR,
     .artnet_universe_count  = 1,
     .artnet_universe_step   = 1,
-    .artnet_universe_size   = ARTNET_DMX_SIZE,
+    .artnet_universe_leds   = SPI_LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [1] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
     .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
-    .artnet_mode = SPI_LEDS_BGR,
+    .artnet_mode = SPI_LEDS_FORMAT_BGR,
     .artnet_universe_count  = 1,
     .artnet_universe_step   = 1,
-    .artnet_universe_size   = ARTNET_DMX_SIZE,
+    .artnet_universe_leds   = SPI_LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [2] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
     .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
-    .artnet_mode = SPI_LEDS_BGR,
+    .artnet_mode = SPI_LEDS_FORMAT_BGR,
     .artnet_universe_count  = 1,
     .artnet_universe_step   = 1,
-    .artnet_universe_size   = ARTNET_DMX_SIZE,
+    .artnet_universe_leds   = SPI_LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [3] = {
     .protocol    = SPI_LEDS_PROTOCOL_APA102,
     .spi_clock   = SPI_LEDS_CLOCK,
     .gpio_mode   = SPI_LEDS_GPIO_OFF,
-    .artnet_mode = SPI_LEDS_BGR,
+    .artnet_mode = SPI_LEDS_FORMAT_BGR,
     .artnet_universe_count  = 1,
     .artnet_universe_step   = 1,
-    .artnet_universe_size   = ARTNET_DMX_SIZE,
+    .artnet_universe_leds   = SPI_LEDS_ARTNET_UNIVERSE_LEDS,
   },
 };
 
@@ -74,9 +74,9 @@ const struct config_enum spi_leds_gpio_mode_enum[] = {
 };
 
 const struct config_enum spi_leds_artnet_mode_enum[] = {
-  { "RGB", SPI_LEDS_RGB  },
-  { "BGR", SPI_LEDS_BGR  },
-  { "GRB", SPI_LEDS_GRB  },
+  { "RGB", SPI_LEDS_FORMAT_RGB  },
+  { "BGR", SPI_LEDS_FORMAT_BGR  },
+  { "GRB", SPI_LEDS_FORMAT_GRB  },
   {}
 };
 

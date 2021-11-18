@@ -38,6 +38,12 @@ enum spi_leds_color_parameter {
   SPI_LEDS_COLOR_WHITE,
 };
 
+enum spi_leds_format {
+  SPI_LEDS_FORMAT_RGB,
+  SPI_LEDS_FORMAT_BGR,
+  SPI_LEDS_FORMAT_GRB,
+};
+
 /*
  * Returns preferred interface for given protocol.
  *
@@ -49,6 +55,8 @@ enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol p
  * Returns spi_leds_color.parameter interpretation for protocol..
  */
 enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol);
+
+uint8_t spi_leds_default_color_parameter_for_protocol(enum spi_leds_protocol protocol);
 
 struct spi_leds_options {
   enum spi_leds_interface interface;
@@ -115,6 +123,14 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
  * @param b, g, r 8-bit RGB value
  */
 int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color);
+
+/*
+ * Decode LED colors from binary data, using given format.
+ *
+ * @param global 5-bit global brightness 0-31
+ * @param b, g, r 8-bit RGB value
+ */
+int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, unsigned offset, unsigned count);
 
 /* Send frames on output interface */
 int spi_leds_tx(struct spi_leds *spi_leds);

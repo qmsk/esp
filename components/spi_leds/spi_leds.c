@@ -51,6 +51,30 @@ enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_led
   }
 }
 
+uint8_t spi_leds_default_color_parameter_for_protocol(enum spi_leds_protocol protocol)
+{
+  switch (protocol) {
+    case SPI_LEDS_PROTOCOL_APA102:
+      return 255;
+
+    case SPI_LEDS_PROTOCOL_P9813:
+      return 0;
+
+    case SPI_LEDS_PROTOCOL_WS2812B:
+      return 0;
+
+    case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+      return 0;
+
+    case SPI_LEDS_PROTOCOL_WS2811:
+      return 0;
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
 static inline bool spi_led_color_active (struct spi_led_color color)
 {
   return (color.r) || (color.g) || (color.b);
@@ -221,6 +245,35 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 
     default:
       LOG_ERROR("unknown protocol=%#x", spi_leds->options.protocol);
+      return -1;
+  }
+}
+
+int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, unsigned offset, unsigned count)
+{
+  if (offset > spi_leds->options.count) {
+    LOG_DEBUG("offset=%u is over options.count=%u", offset, spi_leds->options.count);
+    count = 0;
+  } else if (offset + count > spi_leds->options.count) {
+    LOG_DEBUG("offset=%u + count=%u is over options.count=%u", offset, count, spi_leds->options.count);
+    count = spi_leds->options.count - offset;
+  }
+
+  switch(format) {
+    case SPI_LEDS_FORMAT_RGB:
+      spi_leds_set_format_rgb(spi_leds, data, len, offset, count);
+      return 0;
+
+    case SPI_LEDS_FORMAT_BGR:
+      spi_leds_set_format_bgr(spi_leds, data, len, offset, count);
+      return 0;
+
+    case SPI_LEDS_FORMAT_GRB:
+      spi_leds_set_format_grb(spi_leds, data, len, offset, count);
+      return 0;
+
+    default:
+      LOG_WARN("unknown format=%#x", format);
       return -1;
   }
 }

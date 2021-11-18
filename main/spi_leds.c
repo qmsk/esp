@@ -30,7 +30,7 @@ static int init_spi_master(const struct spi_leds_config *configs)
       .clock  = SPI_LEDS_CLOCK,
       .pins   = SPI_LEDS_PINS,
   };
-  bool enabled;
+  bool enabled = 0;
   int err;
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
@@ -98,7 +98,7 @@ static int init_uart1(const struct spi_leds_config *configs)
       .parity_bits  = UART1_PARITY_BITS,
       .stop_bits    = UART1_STOP_BITS_1,
   };
-  bool enabled;
+  bool enabled = 0;
   int err;
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)

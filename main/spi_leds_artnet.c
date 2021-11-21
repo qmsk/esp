@@ -9,6 +9,33 @@
 #define SPI_LEDS_ARTNET_TASK_STACK 1024
 #define SPI_LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, struct artnet_dmx *dmx)
+{
+  // handle DMX address offset
+  uint8_t *data = state->artnet.dmx->data;
+  size_t len = state->artnet.dmx->len;
+
+  if (state->config->artnet_dmx_addr) {
+    unsigned addr = state->config->artnet_dmx_addr - 1;
+
+    if (addr > len) {
+      LOG_DEBUG("short universe len=%d for artnet_dmx_addr=(%d + 1)", len, addr);
+      return;
+    }
+
+    data += addr;
+    len -= addr;
+  }
+
+  // set LEDs from artnet data using configured byte format
+  struct spi_leds_format_params params = {
+    .count = state->config->artnet_universe_leds,
+    .offset = index * state->config->artnet_universe_leds,
+  };
+
+  spi_leds_set_format(state->spi_leds, state->config->artnet_mode, data, len, params);
+}
+
 static void spi_leds_artnet_main(void *ctx)
 {
   struct spi_leds_state *state = ctx;
@@ -34,13 +61,7 @@ static void spi_leds_artnet_main(void *ctx)
         continue;
       }
 
-      // set LEDs from artnet data using configured byte format
-      struct spi_leds_format_params params = {
-        .count = state->config->artnet_universe_leds,
-        .offset = index * state->config->artnet_universe_leds,
-      }
-
-      spi_leds_set_format(state->spi_leds, state->config->artnet_mode, state->artnet.dmx->data, state->artnet.dmx->len, params);
+      spi_leds_artnet_out(state, index, state->artnet.dmx);
 
       if (!state->artnet.dmx->sync_mode) {
         // at least one DMX update is in non-synchronous mode, so force update

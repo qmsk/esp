@@ -35,10 +35,12 @@ static void spi_leds_artnet_main(void *ctx)
       }
 
       // set LEDs from artnet data using configured byte format
-      unsigned leds_count = state->config->artnet_universe_leds;
-      unsigned leds_offset = index * leds_count;
+      struct spi_leds_format_params params = {
+        .count = state->config->artnet_universe_leds,
+        .offset = index * state->config->artnet_universe_leds,
+      }
 
-      spi_leds_set_format(state->spi_leds, state->config->artnet_mode, state->artnet.dmx->data, state->artnet.dmx->len, leds_offset, leds_count);
+      spi_leds_set_format(state->spi_leds, state->config->artnet_mode, state->artnet.dmx->data, state->artnet.dmx->len, params);
 
       if (!state->artnet.dmx->sync_mode) {
         // at least one DMX update is in non-synchronous mode, so force update

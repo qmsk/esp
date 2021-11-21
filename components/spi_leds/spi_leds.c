@@ -249,35 +249,35 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
   }
 }
 
-int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, unsigned offset, unsigned count)
+int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, struct spi_leds_format_params params)
 {
-  if (offset > spi_leds->options.count) {
-    LOG_DEBUG("offset=%u is over options.count=%u", offset, spi_leds->options.count);
-    count = 0;
-  } else if (offset + count > spi_leds->options.count) {
-    LOG_DEBUG("offset=%u + count=%u is over options.count=%u", offset, count, spi_leds->options.count);
-    count = spi_leds->options.count - offset;
+  if (params.offset > spi_leds->options.count) {
+    LOG_DEBUG("offset=%u is over options.count=%u", params.offset, spi_leds->options.count);
+    params.count = 0;
+  } else if (params.offset + params.count > spi_leds->options.count) {
+    LOG_DEBUG("offset=%u + count=%u is over options.count=%u", params.offset, params.count, spi_leds->options.count);
+    params.count = spi_leds->options.count - params.offset;
   }
 
   switch(format) {
     case SPI_LEDS_FORMAT_RGB:
-      spi_leds_set_format_rgb(spi_leds, data, len, offset, count);
+      spi_leds_set_format_rgb(spi_leds, data, len, params);
       return 0;
 
     case SPI_LEDS_FORMAT_BGR:
-      spi_leds_set_format_bgr(spi_leds, data, len, offset, count);
+      spi_leds_set_format_bgr(spi_leds, data, len, params);
       return 0;
 
     case SPI_LEDS_FORMAT_GRB:
-      spi_leds_set_format_grb(spi_leds, data, len, offset, count);
+      spi_leds_set_format_grb(spi_leds, data, len, params);
       return 0;
 
     case SPI_LEDS_FORMAT_RGBA:
-      spi_leds_set_format_rgba(spi_leds, data, len, offset, count);
+      spi_leds_set_format_rgba(spi_leds, data, len, params);
       return 0;
 
     case SPI_LEDS_FORMAT_RGBW:
-      spi_leds_set_format_rgbw(spi_leds, data, len, offset, count);
+      spi_leds_set_format_rgbw(spi_leds, data, len, params);
       return 0;
 
     default:

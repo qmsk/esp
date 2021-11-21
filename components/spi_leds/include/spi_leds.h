@@ -46,6 +46,14 @@ enum spi_leds_format {
   SPI_LEDS_FORMAT_RGBW,
 };
 
+struct spi_leds_format_params {
+  /* Limit number of LEDs set */
+  unsigned count;
+
+  /* Set LEDs starting at offset */
+  unsigned offset;
+};
+
 /*
  * Returns preferred interface for given protocol.
  *
@@ -132,7 +140,7 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color);
  * @param global 5-bit global brightness 0-31
  * @param b, g, r 8-bit RGB value
  */
-int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, unsigned offset, unsigned count);
+int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, struct spi_leds_format_params params);
 
 /* Send frames on output interface */
 int spi_leds_tx(struct spi_leds *spi_leds);

@@ -251,6 +251,14 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 
 int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, struct spi_leds_format_params params)
 {
+  if (params.count == 0) {
+    params.count = spi_leds->options.count;
+  }
+
+  if (params.segment == 0) {
+    params.segment = 1;
+  }
+
   if (params.offset > spi_leds->options.count) {
     LOG_DEBUG("offset=%u is over options.count=%u", params.offset, spi_leds->options.count);
     params.count = 0;

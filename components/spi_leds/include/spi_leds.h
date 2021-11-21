@@ -47,11 +47,14 @@ enum spi_leds_format {
 };
 
 struct spi_leds_format_params {
-  /* Limit number of LEDs set */
+  /* Limit number of LED (segments) to read */
   unsigned count;
 
   /* Set LEDs starting at offset */
   unsigned offset;
+
+  /* Set segments of multiple consecutive LEDs per channel */
+  unsigned segment;
 };
 
 /*

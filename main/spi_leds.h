@@ -34,6 +34,7 @@ struct spi_leds_config {
   uint16_t artnet_universe_step;
   uint16_t artnet_universe_leds;
   uint16_t artnet_dmx_addr;
+  uint16_t artnet_leds_segment;
 };
 
 struct spi_leds_state {

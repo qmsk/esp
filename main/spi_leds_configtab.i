@@ -55,6 +55,10 @@ const struct configtab SPI_LEDS_CONFIGTAB[] = {
     .description = "Start at DMX address within artnet universe. The first channel is adress 1",
     .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_dmx_addr, .max = 512 },
   },
+  { CONFIG_TYPE_UINT16, "artnet_leds_segment",
+    .description = "Group multiple consecutive LEDs into one segment.",
+    .uint16_type = { .value = &SPI_LEDS_CONFIG.artnet_leds_segment },
+  },
 
   { CONFIG_TYPE_BOOL, "test_enabled",
     .description = "Output test patterns at boot",

@@ -31,6 +31,7 @@ static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, st
   struct spi_leds_format_params params = {
     .count = state->config->artnet_universe_leds,
     .offset = index * state->config->artnet_universe_leds,
+    .segment = state->config->artnet_leds_segment,
   };
 
   spi_leds_set_format(state->spi_leds, state->config->artnet_mode, data, len, params);

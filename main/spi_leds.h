@@ -36,13 +36,13 @@ struct spi_leds_config {
 };
 
 struct spi_leds_state {
+  const struct spi_leds_config *config;
+
   struct spi_leds *spi_leds;
 
   unsigned active;
 
   struct spi_leds_artnet {
-    enum spi_leds_format led_format;
-    unsigned led_count;
     struct artnet_dmx *dmx;
 
     unsigned universe_count;

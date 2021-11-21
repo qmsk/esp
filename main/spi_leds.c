@@ -249,6 +249,8 @@ int init_spi_leds()
     const struct spi_leds_config *config = &spi_leds_configs[i];
     enum spi_leds_interface interface = spi_leds_interface_for_protocol(config->protocol);
 
+    state->config = config;
+
     if (!config->enabled) {
       continue;
     }

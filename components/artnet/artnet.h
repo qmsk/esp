@@ -39,7 +39,7 @@ struct artnet_output {
 };
 
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx);
+int artnet_outputs_dmx(struct artnet *artnet, uint16_t address, struct artnet_dmx *dmx);
 int artnet_outputs_sync(struct artnet *artnet);
 
 /* protocol.c */

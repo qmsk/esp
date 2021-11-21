@@ -169,17 +169,6 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
   (void) phy;
 #endif
 
-  // output
-  struct artnet_output *output;
-
-  if (artnet_find_output(artnet, addr, &output)) {
-    LOG_DEBUG("unknown output addr=%04x", addr);
-
-    stats_counter_increment(&artnet->stats.dmx_discard);
-
-    return 0;
-  }
-
   // copy
   artnet->dmx.sync_mode = artnet_sync_state(artnet);
   artnet->dmx.seq = seq;
@@ -187,7 +176,7 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 
   memcpy(artnet->dmx.data, dmx->data, len);
 
-  return artnet_output_dmx(output, &artnet->dmx);
+  return artnet_outputs_dmx(artnet, addr, &artnet->dmx);
 }
 
 int artnet_recv_sync(struct artnet *artnet, const struct artnet_sendrecv *sendrecv)

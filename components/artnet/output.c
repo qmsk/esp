@@ -108,7 +108,7 @@ static inline uint8_t artnet_seq_next(uint8_t seq)
   return (seq == 255) ? 1 : seq + 1;
 }
 
-int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
+void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 {
   stats_counter_increment(&output->stats.dmx_recv);
 
@@ -127,7 +127,7 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 
     stats_counter_increment(&output->stats.seq_drop);
 
-    return 0;
+    return;
   }
 
   // advance
@@ -146,6 +146,27 @@ int artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 
   if (output->options.task) {
     xTaskNotify(output->options.task, (1 << output->options.index) & ARTNET_OUTPUT_TASK_INDEX_BITS, eSetBits);
+  }
+}
+
+int artnet_outputs_dmx(struct artnet *artnet, uint16_t address, struct artnet_dmx *dmx)
+{
+  bool found = 0;
+
+  for (unsigned port = 0; port < artnet->output_count; port++) {
+    struct artnet_output *output = &artnet->output_ports[port];
+
+    if (output->options.address != address) {
+      continue;
+    }
+
+    found = 1;
+
+    artnet_output_dmx(output, dmx);
+  }
+
+  if (!found) {
+    stats_counter_increment(&artnet->stats.dmx_discard);
   }
 
   return 0;

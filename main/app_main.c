@@ -45,11 +45,13 @@ void app_main()
     abort();
   }
 
+#if CLI_ENABLED
   if (init_cli()) {
     LOG_ERROR("init_cli");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
+#endif
 
   // config stage, terminate on failure
   LOG_INFO("boot");

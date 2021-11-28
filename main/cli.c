@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 
+#if CLI_ENABLED
+
 // max line size
 #define CLI_BUF_SIZE 512
 #define CLI_MAX_ARGS 16
@@ -95,3 +97,5 @@ int init_cli()
 
   return 0;
 }
+
+#endif

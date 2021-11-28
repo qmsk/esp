@@ -57,7 +57,7 @@ static void spi_leds_artnet_main(void *ctx)
         continue;
       }
 
-      if (!xQueueReceive(state->artnet.queues[index], state->artnet.dmx, portMAX_DELAY)) {
+      if (!xQueueReceive(state->artnet.queues[index], state->artnet.dmx, 0)) {
         LOG_WARN("xQueueReceive");
         continue;
       }

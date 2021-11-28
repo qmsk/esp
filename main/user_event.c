@@ -102,5 +102,5 @@ void user_test()
 
 void user_test_cancel()
 {
-  // TODO:
+  cancel_artnet_test();
 }

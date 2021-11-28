@@ -220,9 +220,11 @@ static void read_alert_led()
     alert_held = 0;
   }
 
-  // flash must be held for threshold samples to reset, and is cancled if released before that
+  // alert must be held for threshold samples to trigger, and is held to keep the test going
   if (alert_held > STATUS_LEDS_ALERT_TEST_THRESHOLD) {
-    LOG_WARN("confirm test");
+    LOG_WARN("continue test");
+  } else if (alert_held == STATUS_LEDS_ALERT_TEST_THRESHOLD) {
+    LOG_WARN("start test");
     user_test();
   } else if (alert_held == 1) {
     LOG_WARN("request test");

@@ -184,3 +184,12 @@ void test_artnet()
     LOG_ERROR("artnet_test_outputs");
   }
 }
+
+void cancel_artnet_test()
+{
+  int err;
+
+  if ((err = artnet_sync_outputs(artnet))) {
+    LOG_ERROR("artnet_sync_outputs");
+  }
+}

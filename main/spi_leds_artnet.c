@@ -49,9 +49,18 @@ static void spi_leds_artnet_test_start(struct spi_leds_artnet_test *test)
   test->frame = 0;
 }
 
-static void spi_leds_artnet_test_stop(struct spi_leds_artnet_test *test)
+static void spi_leds_artnet_test_end(struct spi_leds_artnet_test *test)
 {
-  LOG_INFO("test stop");
+  LOG_INFO("test end");
+
+  test->mode = TEST_MODE_END;
+  test->frame_tick = 0;
+  test->frame = 0;
+}
+
+static void spi_leds_artnet_test_reset(struct spi_leds_artnet_test *test)
+{
+  LOG_INFO("test reset");
 
   test->mode = 0;
   test->frame_tick = 0;
@@ -80,8 +89,8 @@ static void spi_leds_artnet_test_frame(struct spi_leds_state *state, struct spi_
   }
 
   // end of test cycle?
-  if (test->mode >= TEST_MODE_MAX) {
-    spi_leds_artnet_test_stop(test);
+  if (test->mode > TEST_MODE_END) {
+    spi_leds_artnet_test_reset(test);
   }
 }
 
@@ -135,17 +144,20 @@ static void spi_leds_artnet_main(void *ctx)
     );
 
     // start/stop test mode
-    if (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) {
-      // have output data, reset test
-      spi_leds_artnet_test_stop(&test_state);
-    } else if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
+    if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
       sync = true;
-    } else if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
-      spi_leds_artnet_test_start(&test_state);
-      spi_leds_artnet_test_frame(state, &test_state);
 
-      test = true;
-    } else if (spi_leds_artnet_test_active(&test_state)) {
+    }
+    if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
+      spi_leds_artnet_test_start(&test_state);
+    }
+
+    if (spi_leds_artnet_test_active(&test_state)) {
+      if ((notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) || (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT)) {
+        // have output data, end test
+        spi_leds_artnet_test_end(&test_state);
+      }
+
       spi_leds_artnet_test_frame(state, &test_state);
 
       test = true;

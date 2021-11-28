@@ -28,3 +28,4 @@ int update_artnet();
  * Test artnet outputs
  */
 void test_artnet();
+void cancel_artnet_test();

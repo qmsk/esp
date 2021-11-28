@@ -175,3 +175,12 @@ int update_artnet()
 
   return 0;
 }
+
+void test_artnet()
+{
+  int err;
+
+  if ((err = artnet_test_outputs(artnet))) {
+    LOG_ERROR("artnet_test_outputs");
+  }
+}

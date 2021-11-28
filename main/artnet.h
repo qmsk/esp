@@ -23,3 +23,8 @@ int add_artnet_output(struct artnet_output_options options, xQueueHandle queue);
  * reconfigure artnet receiver
  */
 int update_artnet();
+
+/*
+ * Test artnet outputs
+ */
+void test_artnet();

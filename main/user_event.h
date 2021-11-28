@@ -39,3 +39,13 @@ void update_user_ipv4_address(ip4_addr_t ip_addr);
  * Hard config reset + system restart.
  */
 void user_reset();
+
+/*
+ * Enter test mode.
+ */
+void user_test();
+
+/*
+ * Cancel test mode.
+ */
+void user_test_cancel();

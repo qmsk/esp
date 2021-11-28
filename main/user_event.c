@@ -94,3 +94,13 @@ void user_reset()
   reset_config();
   system_restart();
 }
+
+void user_test()
+{
+  test_artnet();
+}
+
+void user_test_cancel()
+{
+  // TODO:
+}

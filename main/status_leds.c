@@ -16,9 +16,14 @@ static struct status_led *alert_led;
 
 static xTaskHandle status_leds_task;
 
-// read FLASH every 1s, reset if held for >5s
-#define STATUS_LEDS_FLASH_READ_PERIOD 1000
+// read FLASH every 1s
+#define STATUS_LEDS_READ_TICKS (1000 / portTICK_RATE_MS)
+
+// reset if held for >5s
 #define STATUS_LEDS_FLASH_RESET_THRESHOLD 5
+
+// test if held for >1s
+#define STATUS_LEDS_ALERT_TEST_THRESHOLD 1
 
 #define USER_LED
 #define USER_LED_GPIO      GPIO_NUM_16  // integrated LED on NodeMCU
@@ -202,6 +207,7 @@ static int alert_held = 0;
 static void read_alert_led()
 {
   int ret;
+  int alert_released = 0;
 
   if ((ret = status_led_read(alert_led)) < 0) {
     LOG_WARN("status_led_read");
@@ -210,13 +216,27 @@ static void read_alert_led()
     alert_held++;
   } else if (alert_held > 0) {
     LOG_INFO("ALERT released=%d", alert_held);
+    alert_released = alert_held;
     alert_held = 0;
+  }
+
+  // flash must be held for threshold samples to reset, and is cancled if released before that
+  if (alert_held > STATUS_LEDS_ALERT_TEST_THRESHOLD) {
+    LOG_WARN("confirm test");
+    user_test();
+  } else if (alert_held == 1) {
+    LOG_WARN("request test");
+    override_user_led(STATUS_LED_SLOW);
+  } else if (alert_released) {
+    LOG_WARN("cancel test");
+    revert_user_led();
+    user_test_cancel();
   }
 }
 
 void status_leds_main(void *arg)
 {
-  for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_FLASH_READ_PERIOD / portTICK_RATE_MS)) {
+  for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_READ_TICKS)) {
     read_flash_led();
     read_alert_led();
   }

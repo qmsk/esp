@@ -113,7 +113,7 @@ enum spi_leds_test_mode {
   TEST_MODE_MAGENTA_RED,
   TEST_MODE_RED_BLACK,
 
-  TEST_MODE_MAX
+  TEST_MODE_END
 };
 
 int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options);

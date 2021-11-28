@@ -147,6 +147,9 @@ int spi_leds_set_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, u
         .r = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
       });
 
+    case TEST_MODE_END:
+      return spi_leds_test_black_frame(spi_leds, frame);
+
     default:
       LOG_ERROR("unknown mode=%d", mode);
       return -1;

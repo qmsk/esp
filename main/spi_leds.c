@@ -343,7 +343,7 @@ int test_spi_leds(struct spi_leds_state *state)
 
   update_spi_leds_active();
 
-  for (enum spi_leds_test_mode mode = 0; mode < TEST_MODE_MAX; mode++) {
+  for (enum spi_leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
     user_activity(USER_ACTIVITY_SPI_LEDS);
 
     if ((err = spi_leds_test(state->spi_leds, mode))) {

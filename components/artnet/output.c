@@ -191,3 +191,21 @@ int artnet_outputs_sync(struct artnet *artnet)
 
   return 0;
 }
+
+void artnet_output_test(struct artnet_output *output)
+{
+  if (output->options.task) {
+    xTaskNotify(output->options.task, ARTNET_OUTPUT_TASK_TEST_BIT, eSetBits);
+  }
+}
+
+int artnet_test_outputs(struct artnet *artnet)
+{
+  for (unsigned i = 0; i < artnet->output_count; i++) {
+    struct artnet_output *output = &artnet->output_ports[i];
+
+    artnet_output_test(output);
+  }
+
+  return 0;
+}

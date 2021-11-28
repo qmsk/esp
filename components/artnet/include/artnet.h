@@ -12,11 +12,15 @@
 #define ARTNET_SUBNET_MAX 15
 #define ARTNET_UNIVERSE_MAX 15
 
-// up to 16 task notification bits
+// up to 16 task notification bits for indexed outputs
 #define ARTNET_OUTPUT_TASK_INDEX_BITS 0xffff
+#define ARTNET_OUTPUT_TASK_FLAG_BITS 0xffff0000
 
-// one bit for output sync
+// flag bit for output sync
 #define ARTNET_OUTPUT_TASK_SYNC_BIT 0x10000
+
+// flag bit for output test
+#define ARTNET_OUTPUT_TASK_TEST_BIT 0x20000
 
 struct artnet;
 
@@ -139,6 +143,14 @@ int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *outp
  * @return <0 on error, 0 on success, >0 on invalid index.
  */
 int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state);
+
+/**
+ * Set all artnet outputs into test mode. The outputs will return into normal operating mode as soon
+ * as they receive any real data.
+ *
+ * This only works for outputs with an associated (struct artnet_output_options *)->task.
+ */
+int artnet_test_outputs(struct artnet *artnet);
 
 /** Run artnet mainloop.
  *

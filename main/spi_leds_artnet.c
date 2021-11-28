@@ -9,6 +9,82 @@
 #define SPI_LEDS_ARTNET_TASK_STACK 1024
 #define SPI_LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+struct spi_leds_artnet_test {
+  enum spi_leds_test_mode mode;
+
+  TickType_t frame_tick;
+  unsigned frame;
+};
+
+static bool spi_leds_artnet_test_active(struct spi_leds_artnet_test *test)
+{
+  return !!test->frame_tick;
+}
+
+/* Return number of ticks to wait for next test frame, or portMAX_DELAY if not in test mode */
+static TickType_t spi_leds_artnet_wait_ticks(struct spi_leds_artnet_test *test)
+{
+  if (!test->frame_tick) {
+    // not in test mode
+    return portMAX_DELAY;
+  } else {
+    TickType_t tick = xTaskGetTickCount();
+
+    if (test->frame_tick > tick) {
+      // time next test frame
+      return test->frame_tick - tick;
+    } else {
+      // catchup
+      return 0;
+    }
+  }
+}
+
+static void spi_leds_artnet_test_start(struct spi_leds_artnet_test *test)
+{
+  LOG_INFO("test start");
+
+  test->mode = 0;
+  test->frame_tick = xTaskGetTickCount();
+  test->frame = 0;
+}
+
+static void spi_leds_artnet_test_stop(struct spi_leds_artnet_test *test)
+{
+  LOG_INFO("test stop");
+
+  test->mode = 0;
+  test->frame_tick = 0;
+  test->frame = 0;
+}
+
+static void spi_leds_artnet_test_frame(struct spi_leds_state *state, struct spi_leds_artnet_test *test)
+{
+  int frame_ticks;
+
+  if (test->frame == 0) {
+    LOG_INFO("test mode=%d", test->mode);
+  }
+
+  if ((frame_ticks = spi_leds_set_test(state->spi_leds, test->mode, test->frame)) < 0) {
+    LOG_ERROR("spi_leds_set_test");
+    test->mode = 0;
+    test->frame = 0;
+  } else if (frame_ticks == 0) {
+    test->mode++;
+    test->frame = 0;
+  } else {
+    // tick for next frame
+    test->frame++;
+    test->frame_tick += frame_ticks;
+  }
+
+  // end of test cycle?
+  if (test->mode >= TEST_MODE_MAX) {
+    spi_leds_artnet_test_stop(test);
+  }
+}
+
 static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, struct artnet_dmx *dmx)
 {
   // handle DMX address offset
@@ -40,18 +116,42 @@ static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, st
 static void spi_leds_artnet_main(void *ctx)
 {
   struct spi_leds_state *state = ctx;
+  struct spi_leds_artnet_test test_state = {};
 
   for (;;) {
     uint32_t notify_bits;
-    bool unsync = false;
+    bool unsync = false, sync = false, test = false;
+    TickType_t wait_ticks = spi_leds_artnet_wait_ticks(&test_state);
 
-    if (!xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_SYNC_BIT, &notify_bits, portMAX_DELAY)) {
-      LOG_WARN("xQueueReceive");
-      continue;
+    LOG_DEBUG("notify wait ticks=%d", wait_ticks);
+
+    // wait for output/sync, or next test frame
+    xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, wait_ticks);
+
+    LOG_DEBUG("notify index=%04x: sync=%d test=%d",
+      (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
+      !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT),
+      !!(notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT)
+    );
+
+    // start/stop test mode
+    if (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) {
+      // have output data, reset test
+      spi_leds_artnet_test_stop(&test_state);
+    } else if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
+      sync = true;
+    } else if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
+      spi_leds_artnet_test_start(&test_state);
+      spi_leds_artnet_test_frame(state, &test_state);
+
+      test = true;
+    } else if (spi_leds_artnet_test_active(&test_state)) {
+      spi_leds_artnet_test_frame(state, &test_state);
+
+      test = true;
     }
 
-    LOG_DEBUG("notify index=%04x sync=%d", (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS), !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT));
-
+    // set output from artnet universe
     for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
       if (!(notify_bits & 1 << index)) {
         continue;
@@ -70,7 +170,8 @@ static void spi_leds_artnet_main(void *ctx)
       }
     }
 
-    if (unsync || (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT)) {
+    // tx output if required
+    if (unsync || sync || test) {
       if (update_spi_leds(state)) {
         LOG_WARN("update_spi_leds");
         continue;

@@ -145,6 +145,13 @@ int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color);
  */
 int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, void *data, size_t len, struct spi_leds_format_params params);
 
+/*
+ * Set test pattern for mode/tick. Requires `spi_leds_tx()`.
+ *
+ * Returns number of ticks to hold this frame, 0 for last frame, <0 on error.
+ */
+int spi_leds_set_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, unsigned frame);
+
 /* Send frames on output interface */
 int spi_leds_tx(struct spi_leds *spi_leds);
 

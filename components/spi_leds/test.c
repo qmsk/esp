@@ -88,7 +88,7 @@ int spi_leds_test_black_frame(struct spi_leds *spi_leds, unsigned frame)
 /*
  * Return number of ticks for this frame, 0 for last frame, <0 on error.
  */
-int spi_leds_test_frame(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, unsigned frame)
+int spi_leds_set_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, unsigned frame)
 {
   switch (mode) {
     case TEST_MODE_BLACK:
@@ -161,8 +161,8 @@ int spi_leds_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode)
   LOG_INFO("mode=%d @ tick=%u", mode, tick);
 
   for (unsigned frame = 0; ; frame++) {
-    if ((ret = spi_leds_test_frame(spi_leds, mode, frame)) < 0) {
-      LOG_ERROR("spi_leds_test_frame(%d, %u)", mode, frame);
+    if ((ret = spi_leds_set_test(spi_leds, mode, frame)) < 0) {
+      LOG_ERROR("spi_leds_set_test(%d, %u)", mode, frame);
       return ret;
     }
 

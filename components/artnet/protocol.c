@@ -192,7 +192,7 @@ int artnet_recv_sync(struct artnet *artnet, const struct artnet_sendrecv *sendre
 
   artnet->sync_tick = xTaskGetTickCount();
 
-  return artnet_outputs_sync(artnet);
+  return artnet_sync_outputs(artnet);
 }
 
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv)

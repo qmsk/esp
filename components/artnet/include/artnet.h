@@ -152,6 +152,13 @@ int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_outp
  */
 int artnet_test_outputs(struct artnet *artnet);
 
+/**
+ * Sync all artnet outputs. This can be used to cacnel output test mode.
+ *
+ * This only works for outputs with an associated (struct artnet_output_options *)->task.
+ */
+int artnet_sync_outputs(struct artnet *artnet);
+
 /** Run artnet mainloop.
  *
  * Logs warnings for protocol errors.

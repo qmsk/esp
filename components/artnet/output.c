@@ -181,7 +181,7 @@ void artnet_output_sync(struct artnet_output *output)
   }
 }
 
-int artnet_outputs_sync(struct artnet *artnet)
+int artnet_sync_outputs(struct artnet *artnet)
 {
   for (unsigned i = 0; i < artnet->output_count; i++) {
     struct artnet_output *output = &artnet->output_ports[i];

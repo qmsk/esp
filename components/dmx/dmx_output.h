@@ -1,6 +1,6 @@
 #pragma once
 
-#include <dmx.h>
+#include <dmx_output.h>
 
 struct dmx_output {
   struct uart1 *uart1;

@@ -1,4 +1,4 @@
-#include <dmx.h>
+#include <dmx_output.h>
 #include "dmx.h"
 #include "user_event.h"
 

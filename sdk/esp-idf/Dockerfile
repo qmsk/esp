@@ -19,9 +19,17 @@ RUN \
 
 # SDK tools
 ARG ESP_IDF_TARGETS=esp32
-ENV IDF_TOOLS_PATH=/opt/esp-idf-tools
+ENV \
+  IDF_TOOLS_PATH=/opt/esp-idf-tools \
+  ESP_PYTHON=python3
 
-RUN /opt/esp-idf/install.sh ${ESP_IDF_TARGETS}
+# install.sh
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install-python-env
+
+# export.sh
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py export > /opt/esp-idf-envs.sh
+RUN . /opt/esp-idf-envs.sh && ${ESP_PYTHON} /opt/esp-idf/tools/check_python_dependencies.py
 
 ADD entrypoint.sh /opt/esp-idf-entrypoint.sh
 

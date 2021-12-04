@@ -1,5 +1,5 @@
 #!/bin/bash
 
-. "$IDF_PATH"/export.sh
+. /opt/esp-idf-envs.sh
 
 exec "$@"

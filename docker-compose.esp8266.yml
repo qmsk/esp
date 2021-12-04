@@ -1,29 +1,29 @@
 # USAGE:
 #
-#   docker-compose build sdk
-#   USER_ID=$UID docker-compose up build
-#   ESPPORT=/dev/ttyUSB? docker-compose up flash
-#   ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
-#   ESPPORT=/dev/ttyUSB? docker-compose up config-reset
+#   docker-compose -f docker-compose.esp8266.yml build sdk
+#   USER_ID=$UID docker-compose -f docker-compose.esp8266.yml up build
+#   ESPPORT=/dev/ttyUSB? docker-compose -f docker-compose.esp8266.yml up flash
+#   ESPPORT=/dev/ttyUSB? docker-compose -f docker-compose.esp8266.yml run --rm monitor
+#   ESPPORT=/dev/ttyUSB? docker-compose -f docker-compose.esp8266.yml up config-reset
 #
 # @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#environment-variables
 #
 #
-#   USER_ID=$UID docker-compose run --rm npm install
-#   USER_ID=$UID docker-compose run --rm npm run build
-#   USER_ID=$UID API_URL=http://172.29.16.47 docker-compose run --rm npm start
+#   USER_ID=$UID docker-compose -f docker-compose.esp8266.yml run --rm npm install
+#   USER_ID=$UID docker-compose -f docker-compose.esp8266.yml run --rm npm run build
+#   USER_ID=$UID API_URL=http://172.29.16.47 docker-compose -f docker-compose.esp8266.yml run --rm npm start
 
 version: '3.8'
 services:
   sdk:
-    image: qmsk/esp8266-sdk
+    image: qmsk/esp8266-rtos-sdk
     build:
-      context: sdk
+      context: sdk/esp8266-rtos-sdk
       args:
         ESP8266_RTOS_SDK_VERSION: v3.4
 
   build:
-    image: qmsk/esp8266-sdk
+    image: qmsk/esp8266-rtos-sdk
     volumes:
       - .:/build
     working_dir: /build
@@ -32,7 +32,7 @@ services:
     init: true
 
   flash:
-    image: qmsk/esp8266-sdk
+    image: qmsk/esp8266-rtos-sdk
     volumes:
       - .:/build
     working_dir: /build
@@ -45,7 +45,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   config-reset:
-    image: qmsk/esp8266-sdk
+    image: qmsk/esp8266-rtos-sdk
     volumes:
       - .:/build
     working_dir: /build
@@ -58,7 +58,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   monitor:
-    image: qmsk/esp8266-sdk
+    image: qmsk/esp8266-rtos-sdk
     volumes:
       - .:/build
     working_dir: /build
@@ -72,7 +72,7 @@ services:
       MONITORBAUD: "${MONITORBAUD:-115200}"
 
   npm:
-    image: qmsk/esp8266-web
+    image: qmsk/esp-web
     build:
       context: web
     volumes:

@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  sdk:
+    image: qmsk/esp-idf
+    build:
+      context: sdk/esp-idf
+      args:
+        ESP_IDF_VERSION: v4.3.1
+    command: idf.py --version

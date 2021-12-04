@@ -36,8 +36,10 @@ ADD entrypoint.sh /opt/esp-idf-entrypoint.sh
 ENTRYPOINT ["/opt/esp-idf-entrypoint.sh"]
 
 # build
-RUN adduser --system --group --home /build build
-RUN adduser build dialout # flashing
+ARG BUILD_UID
+ARG BUILD_GID
+
+RUN groupadd --gid $BUILD_GID build && useradd -d /build -g $BUILD_GID -G dialout -u $BUILD_UID build
 
 USER build
 WORKDIR /build

@@ -6,6 +6,8 @@ services:
       context: ../../sdk/esp-idf
       args:
         ESP_IDF_VERSION: v4.3.1
+        BUILD_UID: ${BUILD_UID}
+        BUILD_GID: ${BUILD_GID}
     command: idf.py --version
 
   build:
@@ -13,6 +15,29 @@ services:
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32
-    user: "${USER_ID:-1000}"
     command: idf.py build
     init: true
+
+  flash:
+    image: qmsk/esp-idf
+    volumes:
+      - ../..:/build
+    working_dir: /build/projects/esp32
+    command: idf.py flash
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      ESPPORT: "${ESPPORT}"
+
+  monitor:
+    image: qmsk/esp-idf
+    volumes:
+      - ../..:/build
+    working_dir: /build/projects/esp32
+    command: idf.py monitor
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      ESPPORT: "${ESPPORT}"

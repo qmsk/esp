@@ -83,14 +83,25 @@ static void dmx_input_process_cmd (struct dmx_input *in, enum dmx_cmd cmd)
 {
   LOG_DEBUG("cmd=%#04x", cmd);
 
-  in->state = DMX_INPUT_STATE_DATA;
   in->state_cmd = cmd;
-  in->state_index = 0;
+
+  switch(cmd) {
+    case DMX_CMD_DIMMER:
+      in->state = DMX_INPUT_STATE_DATA;
+      in->state_data_index = 0;
+
+      break;
+
+    default:
+      in->state = DMX_INPUT_STATE_NOOP;
+
+      break;
+  }
 }
 
 static void dmx_input_process_data (struct dmx_input *in, uint8_t data)
 {
-  unsigned index = in->state_index++;
+  unsigned index = in->state_data_index++;
 
   LOG_DEBUG("index=%u data=%#04x", index, data);
 
@@ -121,6 +132,10 @@ static void dmx_input_process (struct dmx_input *in, uint8_t *buf, size_t len)
 
       case DMX_INPUT_STATE_DATA:
         dmx_input_process_data(in, *ptr);
+        break;
+
+      case DMX_INPUT_STATE_NOOP:
+        /* ignore */
         break;
     }
   }

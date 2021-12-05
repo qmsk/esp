@@ -15,14 +15,33 @@
 #define UART0_RX_BUFFERING 64 // on ISR stack
 #define UART0_RX_TIMEOUT 1 // immediately
 
+/*
+ * Reset the RX fifo, discarding any data not yet copied into the RX FIFO.
+ */
+static inline void uart0_intr_rx_reset()
+{
+  uart0.conf0.rxfifo_rst = 1;
+  uart0.conf0.rxfifo_rst = 0;
+}
+
 static inline void uart0_intr_rx_disable()
 {
   uart0.int_ena.val &= ~(UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
 }
 
-static inline void uart0_intr_rx_clear()
+static inline void uart0_intr_rx_overflow_disable()
 {
-  uart0.int_clr.val |= (UART_RXFIFO_TOUT_INT_CLR | UART_RXFIFO_FULL_INT_CLR);
+  uart0.int_ena.val &= ~(UART_RXFIFO_OVF_INT_ENA);
+}
+
+static inline void uart0_intr_rx_error_disable()
+{
+  uart0.int_ena.val &= ~(UART_FRM_ERR_INT_ENA | UART_PARITY_ERR_INT_ENA);
+}
+
+static inline void uart0_intr_rx_break_disable()
+{
+  uart0.int_ena.val &= ~(UART_BRK_DET_INT_ENA);
 }
 
 /*
@@ -38,14 +57,85 @@ static void uart0_intr_rx_flush(struct uart0 *uart, BaseType_t *task_woken)
   }
 }
 
+static inline void uart0_intr_rx_overflow_clear()
+{
+  uart0.int_clr.val |= (UART_RXFIFO_OVF_INT_CLR);
+}
+
+static void uart0_intr_rx_overflow_handler(struct uart0 *uart, BaseType_t *task_woken)
+{
+  LOG_ISR_DEBUG("rx fifo overflow");
+
+  // reset RX fifo to clear interrupt
+  uart0_intr_rx_reset();
+
+  // mark for uart1_read() return
+  uart->rx_overflow = true;
+
+  uart0_intr_rx_flush(uart, task_woken);
+
+  uart0_intr_rx_overflow_clear();
+}
+
+static inline void uart0_intr_rx_error_clear()
+{
+  uart0.int_clr.val |= (UART_FRM_ERR_INT_CLR | UART_PARITY_ERR_INT_CLR);
+}
+
+static void uart0_intr_rx_error_handler(struct uart0 *uart, BaseType_t *task_woken)
+{
+  LOG_ISR_DEBUG("rx error");
+
+  // mark for uart1_read() return
+  uart->rx_error = true;
+
+  uart0_intr_rx_flush(uart, task_woken);
+
+  uart0_intr_rx_error_clear();
+}
+
+static inline void uart0_intr_rx_break_clear()
+{
+  uart0.int_clr.val |= (UART_BRK_DET_INT_CLR);
+}
+
+static void uart0_intr_rx_break_handler(struct uart0 *uart, BaseType_t *task_woken)
+{
+  LOG_ISR_DEBUG("rx break");
+
+  // reset RX fifo to avoid coalescing data across breaks
+  // BUG: ignore spurious 0-byte in RX FIFO
+  uart0_intr_rx_reset();
+
+  // mark for uart1_read() return
+  uart->rx_break = true;
+
+  uart0_intr_rx_flush(uart, task_woken);
+
+  uart0_intr_rx_break_clear();
+}
+
+static inline void uart0_intr_rx_clear()
+{
+  uart0.int_clr.val |= (UART_RXFIFO_TOUT_INT_CLR | UART_RXFIFO_FULL_INT_CLR);
+}
+
 static void uart0_intr_rx_handler(struct uart0 *uart, BaseType_t *task_woken)
 {
   uint8_t buf[UART0_RX_BUFFERING];
   size_t size = xStreamBufferSpacesAvailable(uart->rx_buffer);
   size_t len = uart0.status.rxfifo_cnt;
 
+  if (len == 0) {
+    LOG_ISR_DEBUG("rx fifo empty");
+
+    uart0_intr_rx_clear();
+
+    return;
+  }
+
   if (size == 0) {
-    LOG_ISR_DEBUG("rx buffer full")
+    LOG_ISR_DEBUG("rx buffer full");
 
     uart0_intr_rx_disable();
     uart0_intr_rx_clear();
@@ -62,7 +152,6 @@ static void uart0_intr_rx_handler(struct uart0 *uart, BaseType_t *task_woken)
   }
 
   LOG_ISR_DEBUG("rx len=%u size=%u", len, size);
-
 
   // copy from FIFO to buffer
   for (unsigned i = 0; i < len; i++) {
@@ -82,85 +171,12 @@ static void uart0_intr_rx_handler(struct uart0 *uart, BaseType_t *task_woken)
   uart0_intr_rx_clear();
 }
 
-static inline void uart0_intr_rx_overflow_disable()
-{
-  uart0.int_ena.val &= ~(UART_RXFIFO_OVF_INT_ENA);
-}
-
-static inline void uart0_intr_rx_overflow_clear()
-{
-  uart0.int_clr.val |= (UART_RXFIFO_OVF_INT_CLR);
-}
-
-static void uart0_intr_rx_overflow_handler(struct uart0 *uart, BaseType_t *task_woken)
-{
-  LOG_ISR_DEBUG("rx fifo overflow")
-
-  // reset RX fifo to clear interrupt
-  uart0.conf0.rxfifo_rst = 1;
-  uart0.conf0.rxfifo_rst = 0;
-
-  // mark for uart1_read() return
-  uart->rx_overflow = true;
-
-  uart0_intr_rx_flush(uart, task_woken);
-
-  uart0_intr_rx_overflow_clear();
-}
-
-static inline void uart0_intr_rx_error_disable()
-{
-  uart0.int_ena.val &= ~(UART_FRM_ERR_INT_ENA | UART_PARITY_ERR_INT_ENA);
-}
-
-static inline void uart0_intr_rx_error_clear()
-{
-  uart0.int_clr.val |= (UART_FRM_ERR_INT_CLR | UART_PARITY_ERR_INT_CLR);
-}
-
-static void uart0_intr_rx_error_handler(struct uart0 *uart, BaseType_t *task_woken)
-{
-  LOG_ISR_DEBUG("rx error")
-
-  // mark for uart1_read() return
-  uart->rx_error = true;
-
-  uart0_intr_rx_flush(uart, task_woken);
-
-  uart0_intr_rx_error_clear();
-}
-
-static inline void uart0_intr_rx_break_disable()
-{
-  uart0.int_ena.val &= ~(UART_BRK_DET_INT_ENA);
-}
-
-static inline void uart0_intr_rx_break_clear()
-{
-  uart0.int_clr.val |= (UART_BRK_DET_INT_CLR);
-}
-
-static void uart0_intr_rx_break_handler(struct uart0 *uart, BaseType_t *task_woken)
-{
-  LOG_ISR_DEBUG("rx break")
-
-  // mark for uart1_read() return
-  uart->rx_break = true;
-
-  uart0_intr_rx_flush(uart, task_woken);
-
-  uart0_intr_rx_break_clear();
-}
-
 void uart0_intr_handler(void *ctx)
 {
   struct uart0 *uart = ctx;
   uint32_t int_st = uart0.int_st.val;
   BaseType_t task_woken = pdFALSE;
 
-  if (int_st & (UART_RXFIFO_TOUT_INT_ST | UART_RXFIFO_FULL_INT_ST)) {
-    uart0_intr_rx_handler(uart, &task_woken);
-  }
   if (int_st & UART_RXFIFO_OVF_INT_ST) {
     uart0_intr_rx_overflow_handler(uart, &task_woken);
   }
@@ -169,6 +185,9 @@ void uart0_intr_handler(void *ctx)
   }
   if (int_st & UART_BRK_DET_INT_ST) {
     uart0_intr_rx_break_handler(uart, &task_woken);
+  }
+  if (int_st & (UART_RXFIFO_TOUT_INT_ST | UART_RXFIFO_FULL_INT_ST)) {
+    uart0_intr_rx_handler(uart, &task_woken);
   }
 
   if (task_woken == pdTRUE) {

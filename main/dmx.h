@@ -11,6 +11,10 @@
 #include <freertos/queue.h>
 
 /* dmx_config.c */
+struct dmx_input_config {
+  bool enabled;
+};
+
 struct dmx_output_config {
   bool enabled;
 
@@ -21,6 +25,7 @@ struct dmx_output_config {
   uint16_t artnet_universe;
 };
 
+extern struct dmx_input_config dmx_input_config;
 extern struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT];
 
 /* dmx.c */

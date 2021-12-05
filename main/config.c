@@ -86,6 +86,12 @@ const struct configmod config_modules[] = {
     ),
     .table = spi_leds_configtab3,
   },
+  { "dmx-input",
+    .description = (
+      "DMX input via UART0 alternate pins."
+    ),
+    .table = dmx_input_configtab,
+  },
   { "dmx-output0",
     .alias = "dmx0",
     .description = (

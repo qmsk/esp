@@ -4,6 +4,10 @@
 #include <artnet.h>
 #include <gpio_out.h>
 
+struct dmx_input_config dmx_input_config = {
+
+};
+
 struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {
   [0] = {
    .gpio_mode         = -1,
@@ -17,6 +21,13 @@ const struct config_enum dmx_gpio_mode_enum[] = {
  { "OFF",  -1              },
  { "HIGH", GPIO_OUT_HIGH   },
  { "LOW",  GPIO_OUT_LOW    },
+ {}
+};
+
+const struct configtab dmx_input_configtab[] = {
+ { CONFIG_TYPE_BOOL, "enabled",
+   .bool_type = { .value = &dmx_input_config.enabled },
+ },
  {}
 };
 

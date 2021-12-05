@@ -28,7 +28,16 @@ struct dmx_output_config {
 extern struct dmx_input_config dmx_input_config;
 extern struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT];
 
-/* dmx.c */
+/* dmx_input.c */
+struct dmx_input_state {
+  struct dmx_input *dmx_input;
+
+  xTaskHandle task;
+
+  struct artnet_dmx artnet_dmx;
+};
+
+/* dmx_output.c */
 struct dmx_output_state {
   struct dmx_output *dmx_output;
 
@@ -40,6 +49,7 @@ struct dmx_output_state {
   } artnet;
 };
 
+extern struct dmx_input_state *dmx_input_state;
 extern struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
 int output_dmx(struct dmx_output_state *state, void *data, size_t len);

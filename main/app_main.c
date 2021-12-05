@@ -95,8 +95,8 @@ void app_main()
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
-  if (init_dmx()) {
-    LOG_ERROR("init_dmx");
+  if (init_dmx_outputs()) {
+    LOG_ERROR("init_dmx_outputs");
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 

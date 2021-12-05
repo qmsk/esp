@@ -12,7 +12,7 @@
 
 struct uart1 *dmx_uart1;
 struct gpio_out dmx_gpio_out;
-struct dmx_state dmx_states[DMX_COUNT];
+struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
 static int dmx_init_uart1 ()
 {
@@ -33,14 +33,14 @@ static int dmx_init_uart1 ()
   return 0;
 }
 
-static int dmx_init_gpio(const struct dmx_config *configs)
+static int dmx_init_gpio(const struct dmx_output_config *configs)
 {
   int err;
   enum gpio_out_pins pins = 0;
   enum gpio_out_level level = 0;
 
-  for (int i = 0; i < DMX_COUNT; i++) {
-    const struct dmx_config *config = &configs[i];
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
+    const struct dmx_output_config *config = &configs[i];
 
     if (config->gpio_mode != -1) {
       level = config->gpio_mode; // XXX: correctly handle conflicting levels?
@@ -58,7 +58,7 @@ static int dmx_init_gpio(const struct dmx_config *configs)
   return 0;
 }
 
-static int dmx_init_output(struct dmx_state *state, int index, const struct dmx_config *config)
+static int dmx_init_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
   struct dmx_output_options options = {
     .gpio_out       = &dmx_gpio_out,
@@ -76,11 +76,11 @@ static int dmx_init_output(struct dmx_state *state, int index, const struct dmx_
   return 0;
 }
 
-static bool dmx_enabled()
+static bool dmx_outputs_enabled()
 {
-  for (int i = 0; i < DMX_COUNT; i++)
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
   {
-    const struct dmx_config *config = &dmx_configs[i];
+    const struct dmx_output_config *config = &dmx_output_configs[i];
 
     if (config->enabled) {
       return true;
@@ -90,11 +90,11 @@ static bool dmx_enabled()
   return false;
 }
 
-int init_dmx()
+int init_dmx_outputs()
 {
   int err;
 
-  if (!dmx_enabled()) {
+  if (!dmx_outputs_enabled()) {
     LOG_INFO("disabled");
     return 0;
   }
@@ -104,15 +104,15 @@ int init_dmx()
     return err;
   }
 
-  if ((err = dmx_init_gpio(dmx_configs))) {
+  if ((err = dmx_init_gpio(dmx_output_configs))) {
     LOG_ERROR("dmx_init_gpio");
     return err;
   }
 
-  for (int i = 0; i < DMX_COUNT; i++)
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
   {
-    const struct dmx_config *config = &dmx_configs[i];
-    struct dmx_state *state = &dmx_states[i];
+    const struct dmx_output_config *config = &dmx_output_configs[i];
+    struct dmx_output_state *state = &dmx_output_states[i];
 
     if (config->enabled) {
       if ((err = dmx_init_output(state, i, config))) {
@@ -122,8 +122,8 @@ int init_dmx()
     }
 
     if (config->enabled && config->artnet_enabled) {
-      if ((err = init_dmx_artnet(state, i, config))) {
-        LOG_ERROR("init_dmx_artnet");
+      if ((err = init_dmx_artnet_output(state, i, config))) {
+        LOG_ERROR("init_dmx_artnet_output");
         return err;
       }
     }
@@ -132,7 +132,7 @@ int init_dmx()
   return 0;
 }
 
-int output_dmx(struct dmx_state *state, void *data, size_t len)
+int output_dmx(struct dmx_output_state *state, void *data, size_t len)
 {
   int err;
 

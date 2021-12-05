@@ -21,9 +21,9 @@ int dmx_cmd_zero(int argc, char **argv, void *ctx)
     data[i] = 0;
   }
 
-  for (int i = 0; i < DMX_COUNT; i++)
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
   {
-    struct dmx_state *state = &dmx_states[i];
+    struct dmx_output_state *state = &dmx_output_states[i];
 
     if ((err = output_dmx(state, data, count))) {
       LOG_ERROR("output_dmx");
@@ -56,9 +56,9 @@ int dmx_cmd_all(int argc, char **argv, void *ctx)
     data[i] = value;
   }
 
-  for (int i = 0; i < DMX_COUNT; i++)
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
   {
-    struct dmx_state *state = &dmx_states[i];
+    struct dmx_output_state *state = &dmx_output_states[i];
 
     if ((err = output_dmx(state, data, count))) {
       LOG_ERROR("output_dmx");
@@ -82,12 +82,12 @@ int dmx_cmd_out(int argc, char **argv, void *ctx)
   if ((err = cmd_arg_int(argc, argv, 1, &output)))
     return err;
 
-  if (output >= DMX_COUNT) {
+  if (output >= DMX_OUTPUT_COUNT) {
     LOG_ERROR("output=%u does not exist", output);
     return CMD_ERR_ARGV;
   }
 
-  struct dmx_state *state = &dmx_states[output];
+  struct dmx_output_state *state = &dmx_output_states[output];
 
   if (!state->dmx_output) {
     LOG_WARN("output=%u is not enabled", output);
@@ -131,12 +131,12 @@ int dmx_cmd_count(int argc, char **argv, void *ctx)
   if ((err = cmd_arg_int(argc, argv, 2, &count)))
     return err;
 
-  if (output >= DMX_COUNT) {
+  if (output >= DMX_OUTPUT_COUNT) {
     LOG_ERROR("output=%u does not exist", output);
     return CMD_ERR_ARGV;
   }
 
-  struct dmx_state *state = &dmx_states[output];
+  struct dmx_output_state *state = &dmx_output_states[output];
 
   if (!state->dmx_output) {
     LOG_WARN("output=%u is not enabled", output);

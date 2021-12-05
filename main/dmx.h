@@ -11,7 +11,7 @@
 #include <freertos/queue.h>
 
 /* dmx_config.c */
-struct dmx_config {
+struct dmx_output_config {
   bool enabled;
 
   uint16_t gpio_pin;
@@ -21,26 +21,26 @@ struct dmx_config {
   uint16_t artnet_universe;
 };
 
-extern struct dmx_config dmx_configs[DMX_COUNT];
+extern struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT];
 
 /* dmx.c */
-struct dmx_state {
+struct dmx_output_state {
   struct dmx_output *dmx_output;
 
-  struct dmx_artnet {
+  struct dmx_artnet_output {
     xTaskHandle task;
     xQueueHandle queue;
 
-    struct artnet_dmx artnet_dmx;
+    struct artnet_dmx dmx;
   } artnet;
 };
 
-extern struct dmx_state dmx_states[DMX_COUNT];
+extern struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
-int output_dmx(struct dmx_state *state, void *data, size_t len);
+int output_dmx(struct dmx_output_state *state, void *data, size_t len);
 
 /* dmx_artnet.c */
-int init_dmx_artnet(struct dmx_state *state, int index, const struct dmx_config *config);
+int init_dmx_artnet_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config);
 
 /* dmx_cmd.c */
 extern const struct cmdtab dmx_cmdtab;

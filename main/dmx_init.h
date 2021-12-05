@@ -1,3 +1,3 @@
 #pragma once
 
-int init_dmx();
+int init_dmx_outputs();

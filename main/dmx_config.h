@@ -2,6 +2,6 @@
 
 #include <config.h>
 
-#define DMX_COUNT 2
+#define DMX_OUTPUT_COUNT 2
 
-extern const struct configtab dmx_configtab0[], dmx_configtab1[];
+extern const struct configtab dmx_output_configtab0[], dmx_output_configtab1[];

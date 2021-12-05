@@ -8,42 +8,31 @@
 #define DMX_ARTNET_TASK_STACK 1024
 #define DMX_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
-static int dmx_artnet_dmx(struct dmx_state *state, struct artnet_dmx *artnet_dmx)
+static int dmx_artnet_dmx(struct dmx_output_state *state, struct artnet_dmx *dmx)
 {
-  LOG_DEBUG("len=%u", artnet_dmx->len);
+  LOG_DEBUG("len=%u", dmx->len);
 
-  return output_dmx(state, artnet_dmx->data, artnet_dmx->len);
+  return output_dmx(state, dmx->data, dmx->len);
 }
 
-static void dmx_artnet_task(void *ctx)
+static void dmx_artnet_output_main(void *ctx)
 {
-  struct dmx_state *state = ctx;
+  struct dmx_output_state *state = ctx;
 
   for (;;) {
-    if (!xQueueReceive(state->artnet.queue, &state->artnet.artnet_dmx, portMAX_DELAY)) {
+    if (!xQueueReceive(state->artnet.queue, &state->artnet.dmx, portMAX_DELAY)) {
       LOG_WARN("xQueueReceive");
-    } else if (dmx_artnet_dmx(state, &state->artnet.artnet_dmx)) {
+    } else if (dmx_artnet_dmx(state, &state->artnet.dmx)) {
       LOG_WARN("dmx_artnet_dmx");
     }
   }
 }
 
-int dmx_artnet_init(struct dmx_artnet *dmx_artnet, int index, uint16_t universe)
+int dmx_artnet_output_init(struct dmx_artnet_output *output, int index, uint16_t universe)
 {
-  char task_name[configMAX_TASK_NAME_LEN];
-
-  if (!(dmx_artnet->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
+  if (!(output->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");
     return -1;
-  }
-
-  snprintf(task_name, sizeof(task_name), DMX_ARTNET_TASK_NAME_FMT, index);
-
-  if (xTaskCreate(&dmx_artnet_task, task_name, DMX_ARTNET_TASK_STACK, dmx_artnet, DMX_ARTNET_TASK_PRIORITY, &dmx_artnet->task) <= 0) {
-    LOG_ERROR("xTaskCreate");
-    return -1;
-  } else {
-    LOG_DEBUG("task=%p", dmx_artnet->task);
   }
 
   struct artnet_output_options options = {
@@ -51,7 +40,7 @@ int dmx_artnet_init(struct dmx_artnet *dmx_artnet, int index, uint16_t universe)
     .address = universe, // net/subnet set by add_artnet_output()
   };
 
-  if (add_artnet_output(options, dmx_artnet->queue)) {
+  if (add_artnet_output(options, output->queue)) {
     LOG_ERROR("add_artnet_output");
     return -1;
   }
@@ -59,9 +48,26 @@ int dmx_artnet_init(struct dmx_artnet *dmx_artnet, int index, uint16_t universe)
   return 0;
 }
 
-int init_dmx_artnet(struct dmx_state *state, int index, const struct dmx_config *config)
+int init_dmx_artnet_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
+  char task_name[configMAX_TASK_NAME_LEN];
+  int err;
+
   LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
 
-  return dmx_artnet_init(&state->artnet, index, config->artnet_universe);
+  if ((err = dmx_artnet_output_init(&state->artnet, index, config->artnet_universe))) {
+    LOG_ERROR("dmx_artnet_output_init");
+    return err;
+  }
+
+  snprintf(task_name, sizeof(task_name), DMX_ARTNET_TASK_NAME_FMT, index);
+
+  if (xTaskCreate(&dmx_artnet_output_main, task_name, DMX_ARTNET_TASK_STACK, state, DMX_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  } else {
+    LOG_DEBUG("task=%p", dmx_artnet->task);
+  }
+
+  return 0;
 }

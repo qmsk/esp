@@ -68,6 +68,7 @@ int dmx_input_open (struct dmx_input *in, struct uart0 *uart)
 
   in->uart = uart;
   in->state = DMX_INPUT_STATE_BREAK;
+  in->state_len = 0;
 
   return 0;
 }
@@ -84,6 +85,7 @@ static void dmx_input_process_cmd (struct dmx_input *in, enum dmx_cmd cmd)
   LOG_DEBUG("cmd=%#04x", cmd);
 
   in->state_cmd = cmd;
+  in->state_len = 0;
 
   switch(cmd) {
     case DMX_CMD_DIMMER:
@@ -115,6 +117,7 @@ static void dmx_input_process_data (struct dmx_input *in, uint8_t data)
 
   if (index < in->options.size) {
     in->options.data[index] = data;
+    in->state_len++;
   }
 }
 
@@ -144,11 +147,10 @@ static void dmx_input_process (struct dmx_input *in, uint8_t *buf, size_t len)
 int dmx_input_read (struct dmx_input *in)
 {
   uint8_t buf[64];
-  bool started = false;
-  int read = 0;
+  int read = -1;
 
-  // read until break
-  while (!started || read > 0) {
+  // read until data -> break
+  while (!in->state_len || read) {
     // XXX: sync to start of break, but how to determine end of packet?!
     if ((read = uart0_read(in->uart, buf, sizeof(buf))) < 0) {
       // lost sync
@@ -164,11 +166,7 @@ int dmx_input_read (struct dmx_input *in)
     } else {
       dmx_input_process(in, buf, read);
     }
-
-    if (in->state) {
-      started = true;
-    }
   }
 
-  return 0;
+  return in->state_len;
 }

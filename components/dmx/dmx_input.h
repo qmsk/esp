@@ -17,4 +17,6 @@ struct dmx_input {
   enum dmx_input_state state;
   enum dmx_cmd state_cmd;
   unsigned state_data_index;
+  size_t state_len;
+
 };

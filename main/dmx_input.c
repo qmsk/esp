@@ -23,7 +23,7 @@ struct dmx_input_state *dmx_input_state;
 static void dmx_input_main(void *ctx)
 {
   struct dmx_input_state *state = ctx;
-  int err;
+  int read, err;
 
   if ((err = dmx_input_open(state->dmx_input, dmx_uart0))) {
     LOG_ERROR("dmx_input_open");
@@ -31,16 +31,20 @@ static void dmx_input_main(void *ctx)
   }
 
   for (;;) {
-    if ((err = dmx_input_read(state->dmx_input))) {
+    if ((read = dmx_input_read(state->dmx_input)) < 0) {
       LOG_ERROR("dmx_input_read");
       continue;
+    } else {
+      LOG_DEBUG("dmx_input_read: len=%d", read);
+
+      state->artnet_dmx.len = read;
     }
+
+    user_activity(USER_ACTIVITY_DMX_INPUT);
 
     if (state->artnet_input) {
       artnet_input_dmx(state->artnet_input, &state->artnet_dmx);
     }
-
-    user_activity(USER_ACTIVITY_DMX_INPUT);
   }
 }
 

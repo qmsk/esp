@@ -19,8 +19,16 @@ struct dmx_input_options {
 
 int dmx_input_new (struct dmx_input **inp, struct dmx_input_options options);
 
+/*
+ * Open UART for RX, and update state to sync to next BREAK.
+ */
 int dmx_input_open (struct dmx_input *in, struct uart0 *uart);
 
+/*
+ * Read one DMX packet, processing up to options->size DMX channels into options->data, starting at DMX channel options->address.
+ *
+ * @return <0 on error, or number of DMX channels updated.
+ */
 int dmx_input_read (struct dmx_input *in);
 
 #endif

@@ -5,14 +5,18 @@
 #include <artnet_stats.h>
 #include <logging.h>
 
+#define ARTNET_INPUT_COUNT 4
 #define ARTNET_OUTPUT_COUNT 16
 
 int artnet_cmd_info(int argc, char **argv, void *ctx)
 {
+  struct artnet_input_options artnet_input_options[ARTNET_INPUT_COUNT];
   struct artnet_output_options artnet_output_options[ARTNET_OUTPUT_COUNT];
+
   struct artnet_options options = artnet_get_options(artnet);
+  unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
-  size_t outputs_size = ARTNET_OUTPUT_COUNT;
+  size_t inputs_size = ARTNET_INPUT_COUNT, outputs_size = ARTNET_OUTPUT_COUNT;
   int err;
 
   printf("Listen port=%u\n", options.port);
@@ -23,9 +27,26 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   );
   printf("Name short=%s long=%s\n", options.short_name, options.long_name);
 
+  if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
+    LOG_ERROR("artnet_get_inputs");
+    return err;
+  }
+
   if ((err = artnet_get_outputs(artnet, artnet_output_options, &outputs_size))) {
     LOG_ERROR("artnet_get_outputs");
     return err;
+  }
+
+  printf("\n");
+  printf("Inputs: count=%u\n", input_count);
+
+  for (int i = 0; i < inputs_size && i < ARTNET_INPUT_COUNT; i++) {
+    struct artnet_input_options *options = &artnet_input_options[i];
+
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u\n", i,
+      options->port, options->index,
+      artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address)
+    );
   }
 
   printf("\n");

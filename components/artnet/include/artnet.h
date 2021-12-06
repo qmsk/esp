@@ -148,9 +148,25 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
 int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue);
 
 /*
+ * Return number of inputs.
+ */
+unsigned artnet_get_input_count(struct artnet *artnet);
+
+/*
  * Return number of outputs.
  */
 unsigned artnet_get_output_count(struct artnet *artnet);
+
+/*
+ * Return information about configured artnet inputs.
+ *
+ * @param artnet
+ * @param inputs array of *size artnet_input_options structs
+ * @param size input size of array; output number of outputs, may be larger than input
+ *
+ * Returns <0 on error, 0 on success.
+ */
+int artnet_get_inputs(struct artnet *artnet, struct artnet_input_options *options, size_t *size);
 
 /*
  * Return information about configured artnet outputs.
@@ -161,7 +177,7 @@ unsigned artnet_get_output_count(struct artnet *artnet);
  *
  * Returns <0 on error, 0 on success.
  */
-int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *outputs, size_t *size);
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *options, size_t *size);
 
 /**
  * Return current state information for output.

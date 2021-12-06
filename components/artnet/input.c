@@ -81,3 +81,23 @@ int artnet_inputs_main(struct artnet *artnet)
     }
   }
 }
+
+unsigned artnet_get_input_count(struct artnet *artnet)
+{
+  return artnet->input_count;
+}
+
+int artnet_get_inputs(struct artnet *artnet, struct artnet_input_options *options, size_t *size)
+{
+  // XXX: locking for concurrent artnet_add_input()?
+
+  for (unsigned i = 0; i < artnet->input_count && i < *size; i++) {
+    struct artnet_input *input = &artnet->input_ports[i];
+
+    options[i] = input->options;
+  }
+
+  *size = artnet->input_count;
+
+  return 0;
+}

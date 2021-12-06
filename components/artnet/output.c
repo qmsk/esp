@@ -43,14 +43,14 @@ unsigned artnet_get_output_count(struct artnet *artnet)
   return artnet->output_count;
 }
 
-int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *outputs, size_t *size)
+int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *options, size_t *size)
 {
   // XXX: locking for concurrent artnet_add_output()?
 
   for (unsigned i = 0; i < artnet->output_count && i < *size; i++) {
     struct artnet_output *output = &artnet->output_ports[i];
 
-    outputs[i] = output->options;
+    options[i] = output->options;
   }
 
   *size = artnet->output_count;

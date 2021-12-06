@@ -179,6 +179,28 @@ int artnet_get_inputs(struct artnet *artnet, struct artnet_input_options *option
  */
 int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *options, size_t *size);
 
+/*
+ * Return information about configured artnet input.
+ *
+ * @param artnet
+ * @param index see artnet_get_input_count
+ * @param options returned
+ *
+ * Returns <0 on error, 0 on success, 1 if not configured.
+ */
+int artnet_get_input_options(struct artnet *artnet, int index, struct artnet_input_options *options);
+
+/*
+ * Return information about configured artnet output.
+ *
+ * @param artnet
+ * @param index see artnet_get_output_count
+ * @param options returned
+ *
+ * Returns <0 on error, 0 on success, 1 if not configured.
+ */
+int artnet_get_output_options(struct artnet *artnet, int index, struct artnet_output_options *options);
+
 /**
  * Return current state information for output.
  *

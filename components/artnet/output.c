@@ -58,6 +58,19 @@ int artnet_get_outputs(struct artnet *artnet, struct artnet_output_options *opti
   return 0;
 }
 
+int artnet_get_output_options(struct artnet *artnet, int index, struct artnet_output_options *options)
+{
+  if (index >= artnet->output_count) {
+    return 1;
+  }
+
+  struct artnet_output *output = &artnet->output_ports[index];
+
+  *options = output->options;
+
+  return 0;
+}
+
 int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state)
 {
   if (index >= artnet->output_count) {

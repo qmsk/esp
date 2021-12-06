@@ -112,6 +112,19 @@ int artnet_get_inputs(struct artnet *artnet, struct artnet_input_options *option
   return 0;
 }
 
+int artnet_get_input_options(struct artnet *artnet, int index, struct artnet_input_options *options)
+{
+  if (index >= artnet->input_count) {
+    return 1;
+  }
+
+  struct artnet_input *input = &artnet->input_ports[index];
+
+  *options = input->options;
+
+  return 0;
+}
+
 int artnet_get_input_stats(struct artnet *artnet, int index, struct artnet_input_stats *stats)
 {
   if (index >= artnet->input_count) {

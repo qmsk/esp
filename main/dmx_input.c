@@ -1,6 +1,8 @@
 #include <dmx_input.h>
 #include "dmx.h"
 
+#include "artnet.h"
+
 #include <logging.h>
 #include <uart0.h>
 #include <gpio_out.h>
@@ -33,7 +35,9 @@ static void dmx_input_main(void *ctx)
       continue;
     }
 
-    // TODO: artnet input?
+    if (state->artnet_input) {
+      artnet_input_dmx(state->artnet_input, &state->artnet_dmx);
+    }
   }
 }
 
@@ -45,11 +49,26 @@ int init_dmx_input_state(struct dmx_input_state *state, const struct dmx_input_c
 
     .frame_timeout = DMX_INPUT_FRAME_TIMEOUT,
   };
+  struct artnet_input_options artnet_options = {
+    .port         = ARTNET_PORT_1,
+    .index        = 0,
+
+    .address      = config->artnet_universe,
+  };
   int err;
 
   if ((err = dmx_input_new(&state->dmx_input, options))) {
     LOG_ERROR("dmx_input_new");
     return err;
+  }
+
+  if (config->artnet_enabled) {
+    LOG_INFO("add artnet input on port=%u", artnet_options.port);
+
+    if ((err = add_artnet_input(&state->artnet_input, artnet_options))) {
+      LOG_ERROR("add_artnet_input");
+      return err;
+    }
   }
 
   if (xTaskCreate(&dmx_input_main, "dmx-input", DMX_INPUT_TASK_STACK, state, DMX_INPUT_TASK_PRIORITY, &state->task) <= 0) {

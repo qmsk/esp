@@ -16,7 +16,10 @@
 
 #define ARTNET_PRODUCT "https://github.com/SpComb/esp-projects"
 
-#define ARTNET_TASK_NAME "artnet"
+#define ARTNET_INPUTS 4
+
+#define ARTNET_LISTEN_TASK_NAME "artnet-listen"
+#define ARTNET_INPUTS_TASK_NAME "artnet-inputs"
 #define ARTNET_TASK_STACK 2048
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
@@ -61,6 +64,10 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
 
   snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
   snprintf(options->long_name, sizeof(options->long_name), "%s", ARTNET_PRODUCT);
+
+  if (config->inputs_enabled) {
+    options->inputs = ARTNET_INPUTS;
+  }
 
   LOG_INFO("port=%u address=%04x",
     options->port,
@@ -107,6 +114,20 @@ int init_artnet()
   return 0;
 }
 
+int add_artnet_input(struct artnet_input **inputp, struct artnet_input_options options)
+{
+  const struct artnet_config *config = &artnet_config;
+
+  if (!artnet) {
+    LOG_ERROR("artnet disabled");
+    return -1;
+  }
+
+  options.address = artnet_address(config->net, config->subnet, options.address);
+
+  return artnet_add_input(artnet, inputp, options);
+}
+
 int add_artnet_output(struct artnet_output_options options, xQueueHandle queue)
 {
   const struct artnet_config *config = &artnet_config;
@@ -122,31 +143,51 @@ int add_artnet_output(struct artnet_output_options options, xQueueHandle queue)
 }
 
 // task
-xTaskHandle _artnet_task;
+xTaskHandle artnet_listen_task, artnet_inputs_task;
 
-static void artnet_task(void *ctx)
+static void artnet_main_listen(void *ctx)
 {
   struct artnet *artnet = ctx;
   int err;
 
-  if ((err = artnet_main(artnet))) {
-    LOG_ERROR("artnet_main");
+  if ((err = artnet_listen_main(artnet))) {
+    LOG_ERROR("artnet_listen_main");
+  }
+}
+
+static void artnet_main_inputs(void *ctx)
+{
+  struct artnet *artnet = ctx;
+  int err;
+
+  if ((err = artnet_inputs_main(artnet))) {
+    LOG_ERROR("artnet_inputs_main");
   }
 }
 
 int start_artnet()
 {
+  const struct artnet_config *config = &artnet_config;
   int err;
 
   if (!artnet) {
     return 0;
   }
 
-  if ((err = xTaskCreate(&artnet_task, ARTNET_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &_artnet_task)) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  if ((err = xTaskCreate(&artnet_main_listen, ARTNET_LISTEN_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet_listen_task)) <= 0) {
+    LOG_ERROR("xTaskCreate(artnet-listen)");
     return -1;
   } else {
-    LOG_DEBUG("artnet task=%p", _artnet_task);
+    LOG_DEBUG("artnet listen task=%p", artnet_listen_task);
+  }
+
+  if (config->inputs_enabled) {
+    if ((err = xTaskCreate(&artnet_main_inputs, ARTNET_INPUTS_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet_inputs_task)) <= 0) {
+      LOG_ERROR("xTaskCreate(artnet-inputs)");
+      return -1;
+    } else {
+      LOG_DEBUG("artnet inputs task=%p", artnet_inputs_task);
+    }
   }
 
   return 0;

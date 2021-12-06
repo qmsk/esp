@@ -13,6 +13,9 @@
 /* dmx_config.c */
 struct dmx_input_config {
   bool enabled;
+
+  bool artnet_enabled;
+  uint16_t artnet_universe;
 };
 
 struct dmx_output_config {
@@ -34,6 +37,7 @@ struct dmx_input_state {
 
   xTaskHandle task;
 
+  struct artnet_input *artnet_input;
   struct artnet_dmx artnet_dmx;
 };
 

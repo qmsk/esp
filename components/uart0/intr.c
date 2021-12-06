@@ -229,14 +229,14 @@ void uart0_intr_setup(struct uart0_options options)
 
   taskENTER_CRITICAL();
 
-  uart1.conf1.rxfifo_full_thrhd = options.rx_buffering;
+  uart0.conf1.rxfifo_full_thrhd = options.rx_buffering;
 
   if (options.rx_timeout > 0) {
-    uart1.conf1.rx_tout_thrhd = options.rx_timeout;
-    uart1.conf1.rx_tout_en = 1;
+    uart0.conf1.rx_tout_thrhd = options.rx_timeout;
+    uart0.conf1.rx_tout_en = 1;
   } else {
-    uart1.conf1.rx_tout_thrhd = 0;
-    uart1.conf1.rx_tout_en = 0;
+    uart0.conf1.rx_tout_thrhd = 0;
+    uart0.conf1.rx_tout_en = 0;
   }
 
   taskEXIT_CRITICAL();

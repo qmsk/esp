@@ -24,6 +24,11 @@ static inline void uart0_intr_rx_reset()
   uart0.conf0.rxfifo_rst = 0;
 }
 
+static inline void uart0_intr_rx_enable()
+{
+  uart0.int_ena.val |= (UART_RXFIFO_TOUT_INT_ENA | UART_BRK_DET_INT_ENA | UART_RXFIFO_OVF_INT_ENA | UART_FRM_ERR_INT_ENA | UART_PARITY_ERR_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
+}
+
 static inline void uart0_intr_rx_disable()
 {
   uart0.int_ena.val &= ~(UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
@@ -51,10 +56,8 @@ static void uart0_intr_rx_flush(struct uart0 *uart, BaseType_t *task_woken)
 {
   xStreamBufferSendCompletedFromISR(uart->rx_buffer, task_woken);
 
-  if (xStreamBufferBytesAvailable(uart->rx_buffer)) {
-    // allow rx_buffer to drain
-    uart0_intr_rx_disable();
-  }
+  // stop copying bytes from RX FIFO -> buffer, allow rx_buffer to drain
+  uart0_intr_rx_disable();
 }
 
 static inline void uart0_intr_rx_overflow_clear()
@@ -69,7 +72,7 @@ static void uart0_intr_rx_overflow_handler(struct uart0 *uart, BaseType_t *task_
   // reset RX fifo to clear interrupt
   uart0_intr_rx_reset();
 
-  // mark for uart1_read() return
+  // mark for uart0_read() return
   uart->rx_overflow = true;
 
   uart0_intr_rx_flush(uart, task_woken);
@@ -86,7 +89,7 @@ static void uart0_intr_rx_error_handler(struct uart0 *uart, BaseType_t *task_wok
 {
   LOG_ISR_DEBUG("rx error");
 
-  // mark for uart1_read() return
+  // mark for uart0_read() return
   uart->rx_error = true;
 
   uart0_intr_rx_flush(uart, task_woken);
@@ -103,11 +106,11 @@ static void uart0_intr_rx_break_handler(struct uart0 *uart, BaseType_t *task_wok
 {
   LOG_ISR_DEBUG("rx break");
 
-  // reset RX fifo to avoid coalescing data across breaks
-  // BUG: ignore spurious 0-byte in RX FIFO
+  // reset RX fifo to avoid coalescing RX buffer data across breaks
+  // BUG: workaround spurious 0-byte in RX FIFO?
   uart0_intr_rx_reset();
 
-  // mark for uart1_read() return
+  // mark for uart0_read() return
   uart->rx_break = true;
 
   uart0_intr_rx_flush(uart, task_woken);
@@ -137,6 +140,7 @@ static void uart0_intr_rx_handler(struct uart0 *uart, BaseType_t *task_woken)
   if (size == 0) {
     LOG_ISR_DEBUG("rx buffer full");
 
+    // wait until UART_RXFIFO_OVF_INT_ST to reset FIFO
     uart0_intr_rx_disable();
     uart0_intr_rx_clear();
 
@@ -238,6 +242,8 @@ void uart0_intr_setup(struct uart0_options options)
     uart0.conf1.rx_tout_thrhd = 0;
     uart0.conf1.rx_tout_en = 0;
   }
+
+  uart0_intr_rx_enable();
 
   taskEXIT_CRITICAL();
 }

@@ -24,94 +24,109 @@ int uart0_rx_init(struct uart0 *uart, size_t rx_buffer_size)
   return 0;
 }
 
-static void uart0_rx_intr_enable()
-{
-  uart0.int_ena.val |= (UART_RXFIFO_TOUT_INT_ENA | UART_BRK_DET_INT_ENA | UART_RXFIFO_OVF_INT_ENA | UART_FRM_ERR_INT_ST | UART_PARITY_ERR_INT_ST | UART_RXFIFO_FULL_INT_ENA);
-}
-
-static void uart0_rx_intr_disable()
-{
-  uart0.int_ena.val = 0;
-}
-
 void uart0_rx_setup(struct uart0 *uart)
 {
+  int reset;
+
   taskENTER_CRITICAL();
 
   uart0.conf0.rxfifo_rst = 1;
   uart0.conf0.rxfifo_rst = 0;
 
-  uart0_rx_intr_disable();
-
-  taskEXIT_CRITICAL();
-
-  if (!xStreamBufferReset(uart->rx_buffer)) {
-    LOG_WARN("xStreamBufferReset");
-  }
+  reset = xStreamBufferReset(uart->rx_buffer);
 
   uart->rx_overflow = false;
   uart->rx_break = false;
   uart->rx_error = false;
+
+  taskEXIT_CRITICAL();
+
+  if (!reset) {
+    LOG_WARN("xStreamBufferReset: failed, RX buffer busy");
+  }
 }
 
-int uart0_rx_errors(struct uart0 *uart, int *ret)
-{
-  if (uart->rx_overflow) {
-    LOG_WARN("RX overflow detected");
+enum uart0_rx_event {
+  UART0_RX_NONE = 0,
+  UART0_RX_DATA,
+  UART0_RX_OVERFLOW,
+  UART0_RX_ERROR,
+  UART0_RX_BREAK,
+};
 
+enum uart0_rx_event uart0_rx_event(struct uart0 *uart)
+{
+  enum uart0_rx_event event = 0;
+
+  taskENTER_CRITICAL();
+
+  if (!event && xStreamBufferBytesAvailable(uart->rx_buffer)) {
+    event = UART0_RX_DATA;
+  }
+
+  if (!event && uart->rx_overflow) {
     uart->rx_overflow = false;
 
-    *ret = -1;
-
-    return 1;
+    event = UART0_RX_OVERFLOW;
   }
 
-  if (uart->rx_error) {
-    LOG_WARN("RX error detected");
-
+  if (!event && uart->rx_error) {
     uart->rx_error = false;
 
-    *ret = -1;
-
-    return 1;
+    event = UART0_RX_ERROR;
   }
 
-  if (uart->rx_break) {
-    LOG_DEBUG("RX break detected");
-
+  if (!event && uart->rx_break) {
     uart->rx_break = false;
 
-    *ret = 0;
-
-    return 1;
+    event = UART0_RX_BREAK;
   }
 
-  return 0;
+  if (!event) {
+    // RX buffer emptied and flags cleared, resume copying from RX FIFO if disabled
+    uart0.int_ena.val |= (UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
+  }
+
+  taskEXIT_CRITICAL();
+
+  return event;
 }
 
 int uart0_rx_read(struct uart0 *uart, void *buf, size_t size)
 {
-  int ret;
+  int ret = 0;
 
-  // first consume any bytes immediately available to drain the buffer
-  if ((ret = xStreamBufferReceive(uart->rx_buffer, buf, size, 0)) > 0) {
-    return ret;
+  while (!ret) {
+    // report any error/special cases
+    switch (uart0_rx_event(uart)) {
+      case UART0_RX_DATA:
+        // RX buffer has data available
+        break;
+
+      case UART0_RX_OVERFLOW:
+        LOG_WARN("RX overflow detected");
+        return -1;
+
+      case UART0_RX_ERROR:
+        LOG_WARN("RX error detected");
+        return -1;
+
+      case UART0_RX_BREAK:
+        LOG_DEBUG("RX break detected");
+        return 0;
+
+      case UART0_RX_NONE:
+        // block on RX buffer
+        break;
+
+      default:
+        LOG_ERROR("unknown event");
+        return -1;
+    }
+
+    // block on ISR RX FIFO -> buffer copy
+    ret = xStreamBufferReceive(uart->rx_buffer, buf, size, portMAX_DELAY);
   }
-
-  // report error/special cases
-  if (uart0_rx_errors(uart, &ret)) {
-    return ret;
-  }
-
-  // read from fifo via interrupt
-  uart0_rx_intr_enable();
-
-  if ((ret = xStreamBufferReceive(uart->rx_buffer, buf, size, portMAX_DELAY)) > 0) {
-    return ret;
-  }
-
-  // report error/special cases
-  uart0_rx_errors(uart, &ret);
 
   return ret;
 }

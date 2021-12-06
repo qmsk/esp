@@ -2,6 +2,9 @@
 
 #define ARTNET_OUTPUTS 16
 
+#define ARTNET_INPUTS_MAX 16
+#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
+
 // 4s timeout for sync mode
 #define ARTNET_SYNC_TICKS (4000 / portTICK_PERIOD_MS)
 
@@ -27,6 +30,17 @@ int artnet_listen(int *sockp, uint16_t port);
 int artnet_send(int sock, const struct artnet_sendrecv *send);
 int artnet_recv(int sock, struct artnet_sendrecv *recv);
 
+/* input.c */
+struct artnet_input {
+  struct artnet *artnet;
+  unsigned index;
+
+  enum artnet_port_type type;
+  struct artnet_input_options options;
+
+  xQueueHandle queue;
+};
+
 /* output.c */
 struct artnet_output {
   enum artnet_port_type type;
@@ -49,12 +63,20 @@ int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv);
 struct artnet {
   struct artnet_options options;
 
+  struct artnet_input *input_ports;
+  unsigned input_count;
+
   struct artnet_output output_ports[ARTNET_OUTPUTS];
   unsigned output_count;
 
+  /* network */
   int socket;
   union artnet_packet packet;
   struct artnet_dmx dmx;
+
+  /* inputs */
+  xTaskHandle input_task;
+  struct artnet_dmx *input_dmx;
 
   // last sync received at
   TickType_t sync_tick;

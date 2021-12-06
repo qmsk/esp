@@ -131,7 +131,11 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   }
 
   // advance
-  output->state.seq = dmx->seq;
+  if (dmx->seq) {
+    output->state.seq = dmx->seq;
+  } else {
+    output->state.seq++;
+  }
 
   if (dmx->sync_mode) {
       stats_counter_increment(&output->stats.dmx_sync);

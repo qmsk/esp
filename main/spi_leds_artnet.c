@@ -165,7 +165,7 @@ static void spi_leds_artnet_main(void *ctx)
 
     // set output from artnet universe
     for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
-      if (!(notify_bits & 1 << index)) {
+      if (!(notify_bits & (1 << index))) {
         continue;
       }
 
@@ -234,7 +234,7 @@ int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const str
 
   for (uint8_t i = 0; i < config->artnet_universe_count; i++) {
     struct artnet_output_options options = {
-      .port = (enum artnet_output_port) (index), // use spi-ledsX index as output port
+      .port = (enum artnet_port) (index), // use spi-ledsX index as output port
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
       .task = state->artnet.task,

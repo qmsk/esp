@@ -36,7 +36,7 @@ int dmx_artnet_output_init(struct dmx_artnet_output *output, int index, uint16_t
   }
 
   struct artnet_output_options options = {
-    .port = (enum artnet_output_port) (index), // use dmx%d index as output port number
+    .port = (enum artnet_port) (index), // use dmx%d index as output port number
     .address = universe, // net/subnet set by add_artnet_output()
   };
 

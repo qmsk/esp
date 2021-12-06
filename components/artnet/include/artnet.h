@@ -23,6 +23,7 @@
 #define ARTNET_OUTPUT_TASK_TEST_BIT 0x20000
 
 struct artnet;
+struct artnet_input;
 
 struct artnet_options {
   // UDP used for listen()
@@ -36,6 +37,10 @@ struct artnet_options {
   uint8_t mac_address[6];
   char short_name[18]; // max 17 chars
   char long_name[64]; // max 63 chars
+
+  // number of input ports supported
+  // if >0, will also allocate working memory for artnet_inputs_main()
+  unsigned inputs;
 };
 
 struct artnet_dmx {
@@ -52,16 +57,27 @@ struct artnet_dmx {
   uint8_t data[ARTNET_DMX_SIZE];
 };
 
-enum artnet_output_port {
-  ARTNET_OUTPUT_PORT_1,
-  ARTNET_OUTPUT_PORT_2,
-  ARTNET_OUTPUT_PORT_3,
-  ARTNET_OUTPUT_PORT_4,
+enum artnet_port {
+  ARTNET_PORT_1,
+  ARTNET_PORT_2,
+  ARTNET_PORT_3,
+  ARTNET_PORT_4,
+};
+
+struct artnet_input_options {
+  /* ArtNet physical input port 1-4 */
+  enum artnet_port port;
+
+  /* Output index, used for discovery bind index and task notification bits */
+  uint8_t index;
+
+  /* ArtNet net/subnet/uni address, must match artnet_options.address */
+  uint16_t address;
 };
 
 struct artnet_output_options {
   /* ArtNet physical output port 1-4 */
-  enum artnet_output_port port;
+  enum artnet_port port;
 
   /* Output index, used for discovery bind index and task notification bits */
   uint8_t index;
@@ -99,6 +115,20 @@ struct artnet_options artnet_get_options(struct artnet *artnet);
  * NOTE: changing `port` will not work.
  */
 int artnet_set_options(struct artnet *artnet, struct artnet_options options);
+
+/** Patch input port.
+ *
+ * @param inputp returned `struct artnet_input *``
+ * @param options
+ *
+ * @return <0 on error, 0 otherwise
+ */
+int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options);
+
+/** Processs input DMX.
+ *
+ */
+void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
 
 /** Patch multiple output ports.
  *
@@ -159,12 +189,19 @@ int artnet_test_outputs(struct artnet *artnet);
  */
 int artnet_sync_outputs(struct artnet *artnet);
 
-/** Run artnet mainloop.
+/** Run artnet network listen mainloop.
  *
  * Logs warnings for protocol errors.
  *
  * Returns on network error.
  */
-int artnet_main(struct artnet *artnet);
+int artnet_listen_main(struct artnet *artnet);
+
+/** Run artnet input mainloop.
+ *
+ * Only necessary if any artnet inputs are patched.
+ */
+int artnet_inputs_main(struct artnet *artnet);
+
 
 #endif

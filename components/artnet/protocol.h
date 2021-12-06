@@ -19,6 +19,12 @@ enum artnet_port_type {
   ARTNET_PORT_TYPE_INPUT    = 1 << 6,
 };
 
+enum artnet_input_status {
+  ARTNET_INPUT_DATA_RECEIVED  = 1 << 7,
+  ARTNET_INPUT_DISABLED       = 1 << 3,
+  ARTNET_INPUT_ERRORS         = 1 << 2,
+};
+
 enum artnet_output_status {
   ARTNET_OUTPUT_TRANSMITTING = 1 << 7,
 };

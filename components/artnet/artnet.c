@@ -32,6 +32,11 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
     return -1;
   }
 
+  if (options.inputs > ARTNET_INPUTS_MAX) {
+    LOG_ERROR("inputs=%u exceeds max=%u", options.inputs, ARTNET_INPUTS_MAX);
+    return -1;
+  }
+
   artnet->options = options;
 
   stats_counter_init(&artnet->stats.recv_error);
@@ -46,6 +51,18 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
   if ((err = artnet_listen(&artnet->socket, options.port))) {
     LOG_ERROR("artnet_listen port=%u", options.port);
     return err;
+  }
+
+  if (options.inputs) {
+    if (!(artnet->input_ports = calloc(options.inputs, sizeof(*artnet->input_ports)))) {
+      LOG_ERROR("calloc(inputs)");
+      return -1;
+    }
+
+    if (!(artnet->input_dmx = calloc(1, sizeof(*artnet->input_dmx)))) {
+      LOG_ERROR("calloc(input_dmx)");
+      return -1;
+    }
   }
 
   return 0;
@@ -85,7 +102,7 @@ int artnet_set_options(struct artnet *artnet, struct artnet_options options)
   return 0;
 }
 
-int artnet_main(struct artnet *artnet)
+int artnet_listen_main(struct artnet *artnet)
 {
   int err;
 

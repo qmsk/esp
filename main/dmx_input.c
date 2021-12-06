@@ -2,6 +2,7 @@
 #include "dmx.h"
 
 #include "artnet.h"
+#include "user_event.h"
 
 #include <logging.h>
 #include <uart0.h>
@@ -38,6 +39,8 @@ static void dmx_input_main(void *ctx)
     if (state->artnet_input) {
       artnet_input_dmx(state->artnet_input, &state->artnet_dmx);
     }
+
+    user_activity(USER_ACTIVITY_DMX_INPUT);
   }
 }
 

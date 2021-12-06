@@ -2,6 +2,12 @@
 
 #include <logging.h>
 
+static void init_input_stats(struct artnet_input_stats *stats)
+{
+  stats_counter_init(&stats->dmx_recv);
+  stats_counter_init(&stats->queue_overwrite);
+}
+
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options)
 {
   unsigned index = artnet->input_count;
@@ -26,6 +32,8 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
   input->type = ARTNET_PORT_TYPE_DMX;
   input->options = options;
 
+  init_input_stats(&input->stats);
+
   if (!(input->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");
     return -1;
@@ -38,9 +46,11 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
 
 void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx)
 {
+  stats_counter_increment(&input->stats.dmx_recv);
+
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(input->queue, dmx, 0) == errQUEUE_FULL) {
-    // TODO: stats_counter_increment(&input->stats.queue_overwrite);
+    stats_counter_increment(&input->stats.queue_overwrite);
 
     xQueueOverwrite(input->queue, dmx);
   }
@@ -98,6 +108,20 @@ int artnet_get_inputs(struct artnet *artnet, struct artnet_input_options *option
   }
 
   *size = artnet->input_count;
+
+  return 0;
+}
+
+int artnet_get_input_stats(struct artnet *artnet, int index, struct artnet_input_stats *stats)
+{
+  if (index >= artnet->input_count) {
+    return 1;
+  }
+
+  struct artnet_input *input = &artnet->input_ports[index];
+
+  stats->dmx_recv = stats_counter_copy(&input->stats.dmx_recv);
+  stats->queue_overwrite = stats_counter_copy(&input->stats.queue_overwrite);
 
   return 0;
 }

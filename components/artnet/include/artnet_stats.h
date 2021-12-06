@@ -30,6 +30,14 @@ struct artnet_stats {
 
 };
 
+struct artnet_input_stats {
+  /* Received ArtDMX packets */
+  struct stats_counter dmx_recv;
+
+  /* Output queue overflowed, previous packet overwritten */
+  struct stats_counter queue_overwrite;
+};
+
 struct artnet_output_stats {
   /* Received ArtSync packets */
   struct stats_counter sync_recv;
@@ -54,6 +62,17 @@ struct artnet_output_stats {
  * Copy stats for artnet.
  */
  void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats);
+
+/*
+ * Copy stats for input.
+ *
+ * @param artnet
+ * @param index input index (see artnet_get_input_count)
+ * @param stats input stats (copied)
+ *
+ * @return <0 on error, 0 if ok, >0 if index invalid.
+ */
+int artnet_get_input_stats(struct artnet *artnet, int index, struct artnet_input_stats *stats);
 
 /*
  * Copy stats for output.

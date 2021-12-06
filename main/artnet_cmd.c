@@ -84,6 +84,7 @@ static void print_artnet_stats_counter(struct stats_counter counter, const char 
 int artnet_cmd_stats(int argc, char **argv, void *ctx)
 {
   struct artnet_stats stats;
+  unsigned input_count = artnet_get_output_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
 
   // receiver stats
@@ -101,6 +102,23 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   print_artnet_stats_counter(stats.errors,        "Errors",   "");
 
   printf("\n");
+
+  // input stats
+  for (int i = 0; i < input_count; i++) {
+    struct artnet_input_stats input_stats = {};
+
+    if (artnet_get_input_stats(artnet, i, &input_stats)) {
+      LOG_WARN("artnet_get_input_stats index=%d", i);
+      continue;
+    }
+
+    printf("Input %d: \n", i);
+
+    print_artnet_stats_counter(input_stats.dmx_recv,          "DMX",    "received");
+    print_artnet_stats_counter(input_stats.queue_overwrite,   "Queue",  "overflowed");
+
+    printf("\n");
+  }
 
   // output stats
   for (int i = 0; i < output_count; i++) {

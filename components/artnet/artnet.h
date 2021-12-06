@@ -39,6 +39,8 @@ struct artnet_input {
   struct artnet_input_options options;
 
   xQueueHandle queue;
+
+  struct artnet_input_stats stats;
 };
 
 /* output.c */

@@ -2,14 +2,14 @@
 
 #include <logging.h>
 
-static void init_output_stats(struct artnet_output *output)
+static void init_output_stats(struct artnet_output_stats *stats)
 {
-  stats_counter_init(&output->stats.sync_recv);
-  stats_counter_init(&output->stats.dmx_recv);
-  stats_counter_init(&output->stats.dmx_sync);
-  stats_counter_init(&output->stats.seq_skip);
-  stats_counter_init(&output->stats.seq_drop);
-  stats_counter_init(&output->stats.queue_overwrite);
+  stats_counter_init(&stats->sync_recv);
+  stats_counter_init(&stats->dmx_recv);
+  stats_counter_init(&stats->dmx_sync);
+  stats_counter_init(&stats->seq_skip);
+  stats_counter_init(&stats->seq_drop);
+  stats_counter_init(&stats->queue_overwrite);
 }
 
 int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue)
@@ -33,7 +33,7 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output_options option
   output->options = options;
   output->queue = queue;
 
-  init_output_stats(output);
+  init_output_stats(&output->stats);
 
   return 0;
 }

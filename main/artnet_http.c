@@ -49,23 +49,32 @@ static int write_json_response(struct http_response *response, int(*f)(struct js
   return 0;
 }
 
-static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options)
+static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options, const struct artnet_input_state *state)
 {
   return (
         JSON_WRITE_MEMBER_UINT(w, "port", options->port)
     ||  JSON_WRITE_MEMBER_UINT(w, "index", options->index)
     ||  JSON_WRITE_MEMBER_UINT(w, "net", artnet_address_net(options->address))
     ||  JSON_WRITE_MEMBER_UINT(w, "subnet", artnet_address_subnet(options->address))
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
+              JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
+          ||  JSON_WRITE_MEMBER_UINT(w, "len", state->len)
+        )
   );
 }
 
 static int artnet_api_write_inputs_array(struct json_writer *w)
 {
   struct artnet_input_options options;
+  struct artnet_input_state state;
   int err;
 
   for (int index = 0; !(err = artnet_get_input_options(artnet, index, &options)); index++) {
-    if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_input_object(w, &options)))) {
+    if ((err = artnet_get_input_state(artnet, index, &state))) {
+      LOG_WARN("artnet_get_input_state");
+    }
+
+    if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_input_object(w, &options, &state)))) {
       return err;
     }
   }

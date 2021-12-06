@@ -48,6 +48,9 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx)
 {
   stats_counter_increment(&input->stats.dmx_recv);
 
+  input->state.tick = xTaskGetTickCount();
+  input->state.len = dmx->len;
+
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(input->queue, dmx, 0) == errQUEUE_FULL) {
     stats_counter_increment(&input->stats.queue_overwrite);
@@ -121,6 +124,19 @@ int artnet_get_input_options(struct artnet *artnet, int index, struct artnet_inp
   struct artnet_input *input = &artnet->input_ports[index];
 
   *options = input->options;
+
+  return 0;
+}
+
+int artnet_get_input_state(struct artnet *artnet, int index, struct artnet_input_state *state)
+{
+  if (index >= artnet->input_count) {
+    return 1;
+  }
+
+  struct artnet_input *input = &artnet->input_ports[index];
+
+  *state = input->state;
 
   return 0;
 }

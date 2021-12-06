@@ -42,10 +42,17 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
 
   for (int i = 0; i < inputs_size && i < ARTNET_INPUT_COUNT; i++) {
     struct artnet_input_options *options = &artnet_input_options[i];
+    struct artnet_input_state state;
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u\n", i,
+    if ((err = artnet_get_input_state(artnet, i, &state))) {
+      LOG_ERROR("artnet_get_input_state");
+      continue;
+    }
+
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u: len %3u\n", i,
       options->port, options->index,
-      artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address)
+      artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
+      state.len
     );
   }
 
@@ -58,7 +65,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
 
     if ((err = artnet_get_output_state(artnet, i, &state))) {
       LOG_ERROR("artnet_get_output_state");
-      return err;
+      continue;
     }
 
     printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16s[%3u]: seq %3u\n", i,

@@ -37,6 +37,7 @@ struct artnet_input {
 
   enum artnet_port_type type;
   struct artnet_input_options options;
+  struct artnet_input_state state;
 
   xQueueHandle queue;
 

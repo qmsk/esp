@@ -89,6 +89,14 @@ struct artnet_output_options {
   xTaskHandle task;
 };
 
+struct artnet_input_state {
+  /* Last received DMX packet */
+  TickType_t tick;
+
+  /* Size of last DMX packet */
+  uint16_t len;
+};
+
 struct artnet_output_state {
   /* Last received ArtDmx seq */
   uint8_t seq;
@@ -126,6 +134,8 @@ int artnet_set_options(struct artnet *artnet, struct artnet_options options);
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options);
 
 /** Processs input DMX.
+ *
+ * dmx->len must be set correctly.
  *
  */
 void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
@@ -200,6 +210,17 @@ int artnet_get_input_options(struct artnet *artnet, int index, struct artnet_inp
  * Returns <0 on error, 0 on success, 1 if not configured.
  */
 int artnet_get_output_options(struct artnet *artnet, int index, struct artnet_output_options *options);
+
+/**
+ * Return current state information for output.
+ *
+ * @param artnet
+ * @param index see artnet_get_input_count
+ * @param state returned
+ *
+ * @return <0 on error, 0 on success, >0 on invalid index.
+ */
+int artnet_get_input_state(struct artnet *artnet, int index, struct artnet_input_state *state);
 
 /**
  * Return current state information for output.

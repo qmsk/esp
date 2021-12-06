@@ -72,6 +72,7 @@ static int artnet_api_write_inputs_array(struct json_writer *w)
   for (int index = 0; !(err = artnet_get_input_options(artnet, index, &options)); index++) {
     if ((err = artnet_get_input_state(artnet, index, &state))) {
       LOG_WARN("artnet_get_input_state");
+      memset(&state, 0, sizeof(state));
     }
 
     if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_input_object(w, &options, &state)))) {
@@ -110,6 +111,7 @@ static int artnet_api_write_outputs_array(struct json_writer *w)
   for (int index = 0; !(err = artnet_get_output_options(artnet, index, &options)); index++) {
     if ((err = artnet_get_output_state(artnet, index, &state))) {
       LOG_WARN("artnet_get_output_state");
+      memset(&state, 0, sizeof(state));
     }
 
     if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_output_object(w, &options, &state)))) {

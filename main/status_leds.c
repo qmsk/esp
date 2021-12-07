@@ -6,6 +6,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <sdkconfig.h>
 
 #define STATUS_LEDS_TASK_STACK 1024
 #define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
@@ -34,7 +35,11 @@ static xTaskHandle status_leds_task;
 #define FLASH_LED_INVERTED  true        // active-low with pull-up
 
 #define ALERT_LED
-#define ALERT_LED_GPIO      GPIO_NUM_15 // XXX: shared with spi_master CS
+#if CONFIG_ESP_UART0_SWAP_IO
+# define ALERT_LED_GPIO      GPIO_NUM_1
+#else
+# define ALERT_LED_GPIO      GPIO_NUM_15 // XXX: shared with spi_master CS and uart2 TX
+#endif
 #define ALERT_LED_INVERTED  false       // active-high with pull-down
 
 enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
@@ -240,7 +245,10 @@ void status_leds_main(void *arg)
 {
   for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_READ_TICKS)) {
     read_flash_led();
-    read_alert_led();
+
+    if (alert_led) {
+      read_alert_led();
+    }
   }
 }
 

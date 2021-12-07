@@ -15,6 +15,7 @@ static int uart1_init(struct uart1 *uart1, size_t tx_buffer_size)
 
   if (!(uart1->mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateMutex");
+    return -1;
   }
 
   if (!(uart1->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {

@@ -8,6 +8,7 @@ static int uart0_init(struct uart0 *uart0)
 {
   if (!(uart0->mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateMutex");
+    return -1;
   }
 
   return 0;

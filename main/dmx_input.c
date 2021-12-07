@@ -48,6 +48,19 @@ static void dmx_input_main(void *ctx)
   }
 }
 
+int init_dmx_uart0()
+{
+#if DMX_INPUT_UART0_ENABLED
+  if ((err = uart0_new(&dmx_uart0, DMX_RX_BUFFER_SIZE))) {
+    LOG_ERROR("uart0_new");
+    return err;
+  }
+#else
+  LOG_ERROR("uart0 is not configured for DMX input");
+  return -1;
+#endif
+}
+
 int init_dmx_input_state(struct dmx_input_state *state, const struct dmx_input_config *config)
 {
   struct dmx_input_options options = {
@@ -103,8 +116,8 @@ int init_dmx_input()
     return -1;
   }
 
-  if ((err = uart0_new(&dmx_uart0, DMX_RX_BUFFER_SIZE))) {
-    LOG_ERROR("uart0_new");
+  if ((err = init_dmx_uart0())) {
+    LOG_ERROR("init_dmx_uart0");
     return err;
   }
 

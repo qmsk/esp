@@ -10,6 +10,14 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 
+#include <sdkconfig.h>
+
+#if CONFIG_ESP_CONSOLE_UART_NUM == 0
+# define DMX_INPUT_UART0_ENABLED 0
+#else
+# define DMX_INPUT_UART0_ENABLED 1
+#endif
+
 /* dmx_config.c */
 struct dmx_input_config {
   bool enabled;

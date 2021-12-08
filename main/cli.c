@@ -10,6 +10,8 @@
 #include "vfs.h"
 #include "wifi_cmd.h"
 
+#include "i2s_test.h"
+
 #include <logging.h>
 #include <cli.h>
 #include <esp_log.h>
@@ -63,6 +65,9 @@ static const struct cmd commands[] = {
   },
   { "dmx", .describe = "DMX output",
       .subcommands = &dmx_cmdtab,
+  },
+  { "i2s-test", .describe = "I2S Test",
+      .subcommands = &i2s_test_cmdtab,
   },
   { },
 };

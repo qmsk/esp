@@ -39,8 +39,10 @@ int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size)
   *i2s_outp = i2s_out;
 
 error:
+  free(i2s_out->slc_eof_buf);
   free(i2s_out->slc_rx_buf);
   free(i2s_out->slc_rx_desc);
+  free(i2s_out->slc_eof_desc);
   free(i2s_out);
 
   return 0;

@@ -9,8 +9,13 @@ struct i2s_out {
   SemaphoreHandle_t mutex;
 
   /* slc */
-  uint8_t *slc_rx_buf;
+  uint8_t *slc_rx_buf, *slc_eof_buf;
   struct slc_desc *slc_rx_desc;
+  struct slc_desc *slc_eof_desc;
+
+  unsigned slc_rx_count;
+
+  // pointer to software-owned slc_rx_desc used for write()
   struct slc_desc *slc_write_desc;
 };
 

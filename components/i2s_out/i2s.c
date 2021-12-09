@@ -26,7 +26,7 @@ void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   I2S0.conf.msb_right = 1; // XXX: ???
   // XXX: tx_msb_shift?
   // XXX: rx_msb_shift?
-  I2S0.conf.bits_mod = 0; // XXX: ???
+  I2S0.conf.bits_mod = 0; // XXX: probably (sample bits - 16, 0-15)
   I2S0.conf.clkm_div_num = options.clock.clkm_div;
   I2S0.conf.bck_div_num = options.clock.bck_div;
 

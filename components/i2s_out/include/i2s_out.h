@@ -14,6 +14,9 @@ static const struct i2s_out_clock_options I2S_DMA_CLOCK_3M2 = { .clkm_div = 5, .
 
 struct i2s_out_options {
   struct i2s_out_clock_options clock;
+
+  /* When the I2S TX FIFO empties, the I2S output will loop the last output value. */
+  uint32_t eof_value;
 };
 
 int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size);

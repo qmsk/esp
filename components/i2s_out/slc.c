@@ -11,13 +11,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define ALIGN(size, type) ((size) + (((size) + (sizeof(type) - 1)) & (sizeof(type) - 1)))
+
+#define SLC_EOF_BUF_SIZE (SLC_DESC_SIZE_MIN)
+
+/* Allocate memory from appropriate heap region for DMA */
+static inline void *slc_malloc(size_t size)
+{
+  return heap_caps_malloc(size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+}
+
 /* Allocate memory from appropriate heap region for DMA */
 static inline void *slc_calloc(size_t count, size_t size)
 {
   return heap_caps_calloc(count, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 }
 
-void init_slc_desc(struct slc_desc *head, unsigned count, uint8_t *buf, size_t size)
+void init_slc_desc(struct slc_desc *head, unsigned count, uint8_t *buf, size_t size, struct slc_desc *next)
 {
   struct slc_desc **nextp = NULL;
 
@@ -28,43 +38,86 @@ void init_slc_desc(struct slc_desc *head, unsigned count, uint8_t *buf, size_t s
       *nextp = desc;
     }
 
-    desc->size = (size > (i + 1) * SLC_DESC_SIZE_MAX) ? SLC_DESC_SIZE_MAX : (size % SLC_DESC_SIZE_MAX);
+    desc->size = (size > SLC_DESC_SIZE_MAX) ? SLC_DESC_SIZE_MAX : size;
     desc->len = 0;
     desc->owner = 0;
-    desc->buf = buf ? &buf[i * SLC_DESC_SIZE_MAX] : NULL;
+    desc->buf = buf;
 
     LOG_DEBUG("i=%u desc=%p: size=%u buf=%p", i, desc, desc->size, desc->buf);
+
+    buf += desc->size;
+    size -= desc->size;
 
     nextp = &desc->next;
   }
 
   if (nextp) {
     // loop
-    *nextp = head;
+    *nextp = next;
+  }
+}
+
+void reinit_slc_desc(struct slc_desc *head, unsigned count, struct slc_desc *next)
+{
+  struct slc_desc **nextp = NULL;
+
+  for (unsigned i = 0; i < count; i++) {
+    struct slc_desc *desc = &head[i];
+
+    if (nextp) {
+      *nextp = desc;
+    }
+
+    desc->len = 0;
+    desc->owner = 0;
+
+    nextp = &desc->next;
+  }
+
+  if (nextp) {
+    // loop
+    *nextp = next;
   }
 }
 
 int i2s_out_slc_init(struct i2s_out *i2s_out, size_t size)
 {
-  unsigned buf_size = size / sizeof(uint32_t);
-  unsigned desc_count = size / SLC_DESC_SIZE_MAX;
+  size_t buf_size = 0;
+  unsigned desc_count = 0;
 
+  // 32-bit aligned
   if (size % sizeof(uint32_t)) {
-    buf_size += 1;
+    size += (size % sizeof(uint32_t));
   }
 
-  if (size % SLC_DESC_SIZE_MAX) {
-    desc_count += 1;
+  // calculate buffer size for DMA descriptors
+  for (desc_count = 0; buf_size < size; desc_count++) {
+    if (size > SLC_DESC_SIZE_MAX) {
+      buf_size += SLC_DESC_SIZE_MAX;
+    } else if (size < SLC_DESC_SIZE_MIN) {
+      buf_size += SLC_DESC_SIZE_MIN;
+    } else {
+      buf_size += size;
+    }
   }
 
-  LOG_DEBUG("size=%u -> buf_size=%u desc_count=%u", size, buf_size, desc_count);
+  // force 32-bit aligned
+  buf_size = ALIGN(buf_size, uint32_t);
+
+  LOG_DEBUG("size=%u -> desc_count=%u buf_size=%u", size, desc_count, buf_size);
 
   // allocate single word-aligned buffer
-  if (!(i2s_out->slc_rx_buf = slc_calloc(buf_size, sizeof(uint32_t)))) {
-    LOG_ERROR("slc_calloc(slc_rx_buf)");
+  if (!(i2s_out->slc_rx_buf = slc_malloc(buf_size))) {
+    LOG_ERROR("slc_malloc(slc_rx_buf)");
     return -1;
   } else {
     LOG_DEBUG("slc_rx_buf=%p", i2s_out->slc_rx_buf);
+  }
+  if (!(i2s_out->slc_eof_buf = slc_malloc(SLC_EOF_BUF_SIZE))) {
+    LOG_ERROR("slc_malloc(slc_eof_buf)");
+    return -1;
+  } else {
+    LOG_DEBUG("slc_eof_buf=%p", i2s_out->slc_eof_buf);
   }
 
   // allocate DMA descriptors
@@ -72,9 +125,16 @@ int i2s_out_slc_init(struct i2s_out *i2s_out, size_t size)
     LOG_ERROR("slc_calloc(slc_rx_desc)");
     return -1;
   }
+  if (!(i2s_out->slc_eof_desc = slc_calloc(1, sizeof(*i2s_out->slc_eof_desc)))) {
+    LOG_ERROR("slc_calloc(slc_eof_desc)");
+    return -1;
+  }
 
   // initialize linked list of DMA descriptors
-  init_slc_desc(i2s_out->slc_rx_desc, desc_count, i2s_out->slc_rx_buf, buf_size * sizeof(uint32_t));
+  init_slc_desc(i2s_out->slc_rx_desc, desc_count, i2s_out->slc_rx_buf, buf_size, i2s_out->slc_eof_desc);
+  init_slc_desc(i2s_out->slc_eof_desc, 1, i2s_out->slc_eof_buf, SLC_EOF_BUF_SIZE, i2s_out->slc_eof_desc);
+
+  i2s_out->slc_rx_count = desc_count;
 
   // setup isr
   slc_isr_mask();
@@ -99,6 +159,7 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
   if (SLC0.int_st.rx_eof) {
     LOG_ISR_DEBUG("rx_eof");
 
+    // NOTE: this is unlikely to stop DMA before this repeats at least once
     slc_stop(&SLC0);
   }
   if (SLC0.int_st.rx_dscr_err) {
@@ -111,6 +172,13 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
 void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   LOG_DEBUG("...");
+
+  // init EOF buffer
+  memcpy(i2s_out->slc_eof_desc->buf, &options.eof_value, sizeof(options.eof_value));
+  i2s_out->slc_eof_desc->len = sizeof(options.eof_value);
+
+  // init RX desc
+  reinit_slc_desc(i2s_out->slc_rx_desc, i2s_out->slc_rx_count, i2s_out->slc_eof_desc);
 
   taskENTER_CRITICAL();
 
@@ -129,16 +197,31 @@ void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   SLC0.rx_dscr_conf.rx_fill_en = 0;
 
   SLC0.rx_link.addr = (uint32_t) i2s_out->slc_rx_desc;
-  SLC0.tx_link.addr = 0;
 
   taskEXIT_CRITICAL();
 
-  // reset write pointer
+  // reset write desc
   i2s_out->slc_write_desc = i2s_out->slc_rx_desc;
-  i2s_out->slc_write_desc->len = 0;
-  i2s_out->slc_write_desc->owner = 0;
 
-  LOG_DEBUG("slc_write_desc=%p: owner=%u eof=%u len=%u size=%u", i2s_out->slc_write_desc, i2s_out->slc_write_desc->owner, i2s_out->slc_write_desc->eof, i2s_out->slc_write_desc->len, i2s_out->slc_write_desc->size);
+  LOG_DEBUG("slc_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
+    i2s_out->slc_write_desc,
+    i2s_out->slc_write_desc->owner,
+    i2s_out->slc_write_desc->eof,
+    i2s_out->slc_write_desc->len,
+    i2s_out->slc_write_desc->size,
+    i2s_out->slc_write_desc->buf,
+    i2s_out->slc_write_desc->next
+  );
+
+  LOG_DEBUG("slc_eof_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
+    i2s_out->slc_eof_desc,
+    i2s_out->slc_eof_desc->owner,
+    i2s_out->slc_eof_desc->eof,
+    i2s_out->slc_eof_desc->len,
+    i2s_out->slc_eof_desc->size,
+    i2s_out->slc_eof_desc->buf,
+    i2s_out->slc_eof_desc->next
+  );
 }
 
 int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size)
@@ -147,8 +230,8 @@ int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size)
 
   LOG_DEBUG("desc=%p (owner=%u eof=%u len=%u size=%u): size=%u", desc, desc->owner, desc->eof, desc->len, desc->size, size);
 
-  if (desc->owner || desc->len >= desc->size) {
-    // TODO: wait for DMA
+  if (desc->owner || desc->eof || desc->len >= desc->size) {
+    // XXX: TX buffers full, wait for DMA?
     return 0;
   }
 
@@ -177,15 +260,30 @@ int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size)
 
 void i2s_out_slc_start(struct i2s_out *i2s_out)
 {
-  i2s_out->slc_write_desc->eof = 1;
   i2s_out->slc_write_desc->owner = 1;
+  i2s_out->slc_write_desc->next = i2s_out->slc_eof_desc;
 
-  LOG_DEBUG("slc_write_desc=%p: eof=%d owner=%d len=%u size=%u",
+  i2s_out->slc_eof_desc->owner = 1;
+  i2s_out->slc_eof_desc->eof = 1;
+
+  LOG_DEBUG("slc_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
     i2s_out->slc_write_desc,
-    i2s_out->slc_write_desc->eof,
     i2s_out->slc_write_desc->owner,
+    i2s_out->slc_write_desc->eof,
     i2s_out->slc_write_desc->len,
-    i2s_out->slc_write_desc->size
+    i2s_out->slc_write_desc->size,
+    i2s_out->slc_write_desc->buf,
+    i2s_out->slc_write_desc->next
+  );
+
+  LOG_DEBUG("slc_eof_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
+    i2s_out->slc_eof_desc,
+    i2s_out->slc_eof_desc->owner,
+    i2s_out->slc_eof_desc->eof,
+    i2s_out->slc_eof_desc->len,
+    i2s_out->slc_eof_desc->size,
+    i2s_out->slc_eof_desc->buf,
+    i2s_out->slc_eof_desc->next
   );
 
   taskENTER_CRITICAL();

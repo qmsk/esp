@@ -2,6 +2,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <freertos/task.h>
 
 struct slc_desc;
 
@@ -17,6 +18,9 @@ struct i2s_out {
 
   // pointer to software-owned slc_rx_desc used for write()
   struct slc_desc *slc_write_desc;
+
+  // task waiting for EOF notify
+  xTaskHandle slc_flush_task;
 };
 
 /* slc.c */
@@ -24,6 +28,7 @@ int i2s_out_slc_init(struct i2s_out *i2s_out, size_t size);
 void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size);
 void i2s_out_slc_start(struct i2s_out *i2s_out);
+int i2s_out_slc_flush(struct i2s_out *i2s_out);
 
 /* i2s.c */
 void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options);

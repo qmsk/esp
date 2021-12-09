@@ -146,6 +146,7 @@ int i2s_out_slc_init(struct i2s_out *i2s_out, size_t size)
 void IRAM_ATTR i2s_out_slc_isr(void *arg)
 {
   struct i2s_out *i2s_out = arg;
+  BaseType_t task_woken = pdFALSE;
 
   if (SLC0.int_st.rx_start) {
     LOG_ISR_DEBUG("rx_start");
@@ -157,13 +158,31 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
     LOG_ISR_DEBUG("rx_done");
   }
   if (SLC0.int_st.rx_eof) {
-    LOG_ISR_DEBUG("rx_eof");
+    struct slc_desc *eof_desc = slc_rx_eof_desc(&SLC0);
+
+    LOG_ISR_DEBUG("rx_eof desc=%p", eof_desc);
 
     // NOTE: this is unlikely to stop DMA before this repeats at least once
     slc_stop(&SLC0);
+
+    // mark as done
+    eof_desc->owner = 0;
+
+    // notify flush() if waiting
+    if (i2s_out->slc_flush_task) {
+      LOG_ISR_DEBUG("rx_eof notify task=%p", i2s_out->slc_flush_task);
+
+      vTaskNotifyGiveFromISR(i2s_out->slc_flush_task, &task_woken);
+
+      i2s_out->slc_flush_task = NULL;
+    }
   }
   if (SLC0.int_st.rx_dscr_err) {
     LOG_ISR_DEBUG("rx_dscr_err");
+  }
+
+  if (task_woken == pdTRUE) {
+    portYIELD_FROM_ISR();
   }
 
   slc_intr_clear(&SLC0);
@@ -293,4 +312,35 @@ void i2s_out_slc_start(struct i2s_out *i2s_out)
   slc_isr_unmask();
 
   taskEXIT_CRITICAL();
+}
+
+int i2s_out_slc_flush(struct i2s_out *i2s_out)
+{
+  int wait = 0;
+
+  taskENTER_CRITICAL();
+
+  if (i2s_out->slc_eof_desc->owner) {
+    wait = 1;
+
+    i2s_out->slc_flush_task = xTaskGetCurrentTaskHandle();
+  }
+
+  taskEXIT_CRITICAL();
+
+  if (!wait) {
+    LOG_DEBUG("done eof");
+
+    return 0;
+  }
+
+  LOG_DEBUG("wait eof, task=%p", i2s_out->slc_flush_task);
+
+  // wait for tx to complete and break to start
+  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+    LOG_WARN("ulTaskNotifyTake: timeout");
+    return -1;
+  }
+
+  return 0;
 }

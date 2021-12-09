@@ -88,8 +88,8 @@ int i2s_out_close(struct i2s_out *i2s_out)
   i2s_out_slc_start(i2s_out);
   i2s_out_i2s_start(i2s_out);
 
-  // TODO: wait
-  ret = 0;
+  // wait for TX EOF
+  ret = i2s_out_slc_flush(i2s_out);
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");

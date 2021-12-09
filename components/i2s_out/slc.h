@@ -13,7 +13,8 @@ struct slc_desc {
   uint32_t _        : 5;  // unused
   uint32_t sub_sof  : 1;  // flag: 1 = sub-frame start
   uint32_t eof      : 1;  // flag: 1 = end of frame, triggers rx_eof interrupt
-  uint32_t owner    : 1;  // flag: 0 = software; 1 = hardware/DMA
+
+  volatile uint32_t owner    : 1;  // flag: 0 = software; 1 = hardware/DMA
 
   // word-aligned access data for I2S FIFO
   uint8_t *buf;
@@ -57,4 +58,9 @@ static inline void slc_intr_enable_rx(volatile slc_struct_t *slc)
 static inline void slc_intr_clear(volatile slc_struct_t *slc)
 {
   slc->int_clr.val = slc->int_st.val;
+}
+
+static inline struct slc_desc *slc_rx_eof_desc(volatile slc_struct_t *slc)
+{
+  return (struct slc_desc *) slc->rx_eof_des_addr;
 }

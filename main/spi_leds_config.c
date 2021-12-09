@@ -41,6 +41,13 @@ struct spi_leds_config spi_leds_configs[SPI_LEDS_COUNT] = {
   },
 };
 
+const struct config_enum spi_leds_interface_enum[] = {
+  { "DEFAULT",  0                         },
+  { "SPI",      SPI_LEDS_INTERFACE_SPI    },
+  { "UART",     SPI_LEDS_INTERFACE_UART   },
+  {}
+};
+
 const struct config_enum spi_leds_protocol_enum[] = {
   { "APA102",       SPI_LEDS_PROTOCOL_APA102    },
   { "P9813",        SPI_LEDS_PROTOCOL_P9813     },

@@ -18,6 +18,7 @@
 struct spi_leds_config {
   bool enabled;
 
+  int interface;
   int protocol;
   uint16_t count;
 

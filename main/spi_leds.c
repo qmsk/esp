@@ -36,12 +36,13 @@ static int init_spi_master(const struct spi_leds_config *configs)
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
     const struct spi_leds_config *config = &configs[i];
+    enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
 
     if (!config->enabled) {
       continue;
     }
 
-    if (spi_leds_interface_for_protocol(config->protocol) != SPI_LEDS_INTERFACE_SPI) {
+    if (interface != SPI_LEDS_INTERFACE_SPI) {
       continue;
     }
 
@@ -68,11 +69,12 @@ static int init_spi_master(const struct spi_leds_config *configs)
     }
   }
 
+  LOG_INFO("enabled=%d mode=%02x clock=%u pins=%02x", enabled, options.mode, options.clock, options.pins);
+
   if (!enabled) {
     return 0;
   }
 
-  LOG_INFO("enabled=%d mode=%02x clock=%u pins=%02x", enabled, options.mode, options.clock, options.pins);
   LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
 
   if ((err = spi_master_new(&spi_leds_spi_master, options))) {
@@ -104,12 +106,13 @@ static int init_uart1(const struct spi_leds_config *configs)
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
     const struct spi_leds_config *config = &configs[i];
+    enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
 
     if (!config->enabled) {
       continue;
     }
 
-    if (spi_leds_interface_for_protocol(config->protocol) != SPI_LEDS_INTERFACE_UART) {
+    if (interface != SPI_LEDS_INTERFACE_UART) {
       continue;
     }
 
@@ -131,11 +134,12 @@ static int init_uart1(const struct spi_leds_config *configs)
     }
   }
 
+  LOG_INFO("enabled=%d", enabled);
+
   if (!enabled) {
     return 0;
   }
 
-  LOG_INFO("enabled=%d", enabled);
   LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
 
   if ((err = uart1_new(&spi_leds_uart1, options, UART1_TX_BUFFER_SIZE))) {
@@ -247,7 +251,7 @@ int init_spi_leds()
   {
     struct spi_leds_state *state = &spi_leds_states[i];
     const struct spi_leds_config *config = &spi_leds_configs[i];
-    enum spi_leds_interface interface = spi_leds_interface_for_protocol(config->protocol);
+    enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
 
     state->config = config;
 

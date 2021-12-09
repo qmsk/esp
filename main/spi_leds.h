@@ -17,10 +17,12 @@
 
 struct spi_leds_config {
   bool enabled;
+
   int protocol;
-  int spi_clock;
-  uint16_t delay;
   uint16_t count;
+
+  int spi_clock;
+  uint16_t spi_delay;
 
   int gpio_mode;
   uint16_t gpio_pin;

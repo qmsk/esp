@@ -165,8 +165,8 @@ static int init_spi_leds_spi(struct spi_leds_state *state, int index, const stru
   };
   int err;
 
-  if (config->delay) {
-    options.spi_mode_bits |= (config->delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
+  if (config->spi_delay) {
+    options.spi_mode_bits |= (config->spi_delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
   }
 
   if (config->gpio_mode != SPI_LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {

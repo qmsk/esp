@@ -73,8 +73,59 @@ error:
   return err;
 }
 
+int i2s_test_cmd_count(int argc, char **argv, void *ctx)
+{
+  struct i2s_out_options options = {
+    .clock   = I2S_TEST_CLOCK,
+  };
+  unsigned count;
+  int err;
+
+  if ((err = cmd_arg_uint(argc, argv, 1, &count))) {
+    return err;
+  }
+
+  if (!i2s_out && (err = init_i2s_test())) {
+    LOG_ERROR("init_i2s_test");
+    return err;
+  }
+
+  LOG_INFO("i2s_out_open... clock={%u, %u}",
+    options.clock.clkm_div, options.clock.bck_div
+  );
+
+  if ((err = i2s_out_open(i2s_out, options))) {
+    LOG_ERROR("i2s_out_open");
+    return err;
+  }
+
+  for (uint32_t i = 0; i < count; i++) {
+    int write;
+
+    LOG_INFO("i2s_out_write... value=%#02x", i);
+
+    if ((write = i2s_out_write(i2s_out, &i, sizeof(i))) < 0) {
+      LOG_ERROR("i2s_out_write");
+      err = write;
+      goto error;
+    } else {
+      LOG_INFO("i2s_out_write: write=%d", write);
+    }
+  }
+
+error:
+  LOG_INFO("i2s_out_close...");
+
+  if ((err = i2s_out_close(i2s_out))) {
+    LOG_ERROR("i2s_out_close");
+  }
+
+  return err;
+}
+
 const struct cmd i2s_test_commands[] = {
   { "write",   i2s_test_cmd_write,  .usage = "UINT32",           .describe = "Write multiple 32-bit output values" },
+  { "count",   i2s_test_cmd_count,  .usage = "COUNT",            .describe = "Write incrementing 32-bit output values" },
   { }
 };
 

@@ -25,7 +25,7 @@ struct i2s_out {
 
 /* slc.c */
 int i2s_out_slc_init(struct i2s_out *i2s_out, size_t size);
-void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size);
 void i2s_out_slc_start(struct i2s_out *i2s_out);
 int i2s_out_slc_flush(struct i2s_out *i2s_out);

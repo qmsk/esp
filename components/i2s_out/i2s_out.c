@@ -59,7 +59,11 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options)
     return -1;
   }
 
-  i2s_out_slc_setup(i2s_out, options);
+  if ((err = i2s_out_slc_setup(i2s_out, options))) {
+    LOG_ERROR("i2s_out_slc_setup");
+    return -1;
+  }
+
   i2s_out_i2s_setup(i2s_out, options);
 
   return err;

@@ -17,6 +17,7 @@ struct i2s_out_options {
 
   /* When the I2S TX FIFO empties, the I2S output will loop the last output value. */
   uint32_t eof_value;
+  unsigned eof_count;
 };
 
 int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size);

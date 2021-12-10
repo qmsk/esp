@@ -57,6 +57,17 @@ void init_slc_desc(struct slc_desc *head, unsigned count, uint8_t *buf, size_t s
   }
 }
 
+void init_slc_eof_desc(struct slc_desc *eof_desc, uint32_t value, unsigned count)
+{
+  uint32_t *ptr = (uint32_t *) eof_desc->buf;
+
+  for (unsigned i = 0; i < count; i++) {
+    ptr[i] = value;
+  }
+
+  eof_desc->len = count * sizeof(value);
+}
+
 void reinit_slc_desc(struct slc_desc *head, unsigned count, struct slc_desc *next)
 {
   struct slc_desc **nextp = NULL;
@@ -188,13 +199,17 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
   slc_intr_clear(&SLC0);
 }
 
-void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   LOG_DEBUG("...");
 
+  if (options.eof_count * sizeof(options.eof_value) > SLC_EOF_BUF_SIZE) {
+    LOG_ERROR("eof_count=%u is too large for eof buf size=%u", options.eof_count, SLC_EOF_BUF_SIZE);
+    return -1;
+  }
+
   // init EOF buffer
-  memcpy(i2s_out->slc_eof_desc->buf, &options.eof_value, sizeof(options.eof_value));
-  i2s_out->slc_eof_desc->len = sizeof(options.eof_value);
+  init_slc_eof_desc(i2s_out->slc_eof_desc, options.eof_value, options.eof_count);
 
   // init RX desc
   reinit_slc_desc(i2s_out->slc_rx_desc, i2s_out->slc_rx_count, i2s_out->slc_eof_desc);
@@ -241,6 +256,8 @@ void i2s_out_slc_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     i2s_out->slc_eof_desc->buf,
     i2s_out->slc_eof_desc->next
   );
+
+  return 0;
 }
 
 int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size)

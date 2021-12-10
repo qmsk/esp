@@ -51,6 +51,18 @@ enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_led
   }
 }
 
+size_t spi_leds_i2s_buffer_for_protocol(enum spi_leds_protocol protocol, unsigned count)
+{
+  switch (protocol) {
+    case SPI_LEDS_PROTOCOL_WS2812B:
+      return WS2812B_I2S_SIZE * count;
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
 uint8_t spi_leds_default_color_parameter_for_protocol(enum spi_leds_protocol protocol)
 {
   switch (protocol) {

@@ -45,6 +45,7 @@ const struct config_enum spi_leds_interface_enum[] = {
   { "DEFAULT",  0                         },
   { "SPI",      SPI_LEDS_INTERFACE_SPI    },
   { "UART",     SPI_LEDS_INTERFACE_UART   },
+  { "I2S",      SPI_LEDS_INTERFACE_I2S    },
   {}
 };
 

@@ -18,7 +18,8 @@
 
 struct uart1 *spi_leds_uart1;
 struct spi_master *spi_leds_spi_master;
-struct gpio_out spi_leds_gpio_out_uart, spi_leds_gpio_out_spi;
+struct i2s_out *spi_leds_i2s_out;
+struct gpio_out spi_leds_gpio_out_uart, spi_leds_gpio_out_spi, spi_leds_gpio_out_i2s;
 struct spi_leds_state spi_leds_states[SPI_LEDS_COUNT];
 
 static int init_spi_master(const struct spi_leds_config *configs)
@@ -155,6 +156,75 @@ static int init_uart1(const struct spi_leds_config *configs)
   return 0;
 }
 
+static int init_i2s_out(const struct spi_leds_config *configs)
+{
+  enum gpio_out_pins gpio_out_pins = 0;
+  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
+  size_t max_i2s_buffer_size = 0;
+  bool enabled = 0;
+  int err;
+
+  for (int i = 0; i < SPI_LEDS_COUNT; i++)
+  {
+    const struct spi_leds_config *config = &configs[i];
+    enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
+
+    size_t i2s_buffer_size;
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    if (interface != SPI_LEDS_INTERFACE_I2S) {
+      continue;
+    }
+
+    enabled = true;
+
+    switch (config->gpio_mode) {
+      case SPI_LEDS_GPIO_OFF:
+        break;
+
+      case GPIO_OUT_HIGH:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        break;
+
+      case GPIO_OUT_LOW:
+        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
+        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        break;
+    }
+
+    // size TX buffer
+    i2s_buffer_size = spi_leds_i2s_buffer_for_protocol(config->protocol, config->count);
+
+    if (i2s_buffer_size > max_i2s_buffer_size) {
+      max_i2s_buffer_size = i2s_buffer_size;
+    }
+  }
+
+  LOG_INFO("enabled=%d", enabled);
+
+  if (!enabled) {
+    return 0;
+  }
+
+  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+
+  if ((err = i2s_out_new(&spi_leds_i2s_out, max_i2s_buffer_size))) {
+    LOG_ERROR("i2s_out_new");
+    return err;
+  }
+
+  if ((err = gpio_out_init(&spi_leds_gpio_out_i2s, gpio_out_pins, gpio_out_level))) {
+    LOG_ERROR("gpio_out_init");
+    return err;
+  }
+
+  return 0;
+}
+
 static int init_spi_leds_spi(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
 {
   struct spi_leds_options options = {
@@ -214,6 +284,33 @@ static int init_spi_leds_uart(struct spi_leds_state *state, int index, const str
   return 0;
 }
 
+static int init_spi_leds_i2s(struct spi_leds_state *state, int index, const struct spi_leds_config *config)
+{
+  struct spi_leds_options options = {
+      .interface  = SPI_LEDS_INTERFACE_I2S,
+      .protocol   = config->protocol,
+      .count      = config->count,
+
+      .i2s_out    = spi_leds_i2s_out,
+
+      .gpio_out   = &spi_leds_gpio_out_i2s,
+  };
+  int err;
+
+  if (config->gpio_mode != SPI_LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+    options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
+  }
+
+  LOG_INFO("spi-leds%d: protocol=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.gpio_out_pins, options.count);
+
+  if ((err = spi_leds_new(&state->spi_leds, &options))) {
+    LOG_ERROR("spi-leds%d: spi_leds_new", index);
+    return err;
+  }
+
+  return 0;
+}
+
 static bool spi_leds_enabled()
 {
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
@@ -247,6 +344,11 @@ int init_spi_leds()
     return err;
   }
 
+  if ((err = init_i2s_out(spi_leds_configs))) {
+    LOG_ERROR("init_i2s_out");
+    return err;
+  }
+
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
     struct spi_leds_state *state = &spi_leds_states[i];
@@ -270,6 +372,13 @@ int init_spi_leds()
       case SPI_LEDS_INTERFACE_UART:
         if ((err = init_spi_leds_uart(state, i, config))) {
           LOG_ERROR("spi-leds%d: init_spi_leds_uart", i);
+          return err;
+        }
+        break;
+
+      case SPI_LEDS_INTERFACE_I2S:
+        if ((err = init_spi_leds_i2s(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_spi_leds_i2s", i);
           return err;
         }
         break;

@@ -2,6 +2,7 @@
 #define __SPI_LEDS_H__
 
 #include <gpio_out.h>
+#include <i2s_out.h>
 #include <spi_master.h>
 #include <uart1.h>
 
@@ -19,8 +20,15 @@ enum spi_leds_interface {
 
   /* Supported protocols:
    *  - SPI_LEDS_PROTOCOL_WS2812B
+   *  - SPI_LEDS_PROTOCOL_SK6812_GRBW
+   *  - SPI_LEDS_PROTOCOL_WS2811
    */
   SPI_LEDS_INTERFACE_UART           = 2,
+
+  /* Supported protocols:
+   *  - SPI_LEDS_PROTOCOL_WS2812B
+   */
+  SPI_LEDS_INTERFACE_I2S           = 3,
 };
 
 enum spi_leds_protocol {
@@ -65,6 +73,13 @@ struct spi_leds_format_params {
 enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol protocol);
 
 /*
+ * Returns total TX buffer sized required for protocol and count LEDs.
+ *
+ * @return 0 if not supported for protocol
+ */
+size_t spi_leds_i2s_buffer_for_protocol(enum spi_leds_protocol protocol, unsigned count);
+
+/*
  * Returns spi_leds_color.parameter interpretation for protocol..
  */
 enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol);
@@ -84,6 +99,9 @@ struct spi_leds_options {
 
   /** SPI_LEDS_INTERFACE_UART */
   struct uart1 *uart1;
+
+  /** SPI_LEDS_INTERFACE_I2S */
+  struct i2s_out *i2s_out;
 
   /** GPIO for output multiplexing */
   struct gpio_out *gpio_out;

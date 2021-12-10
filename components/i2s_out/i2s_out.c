@@ -83,6 +83,36 @@ int i2s_out_write(struct i2s_out *i2s_out, void *data, size_t len)
   return ret;
 }
 
+int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
+{
+  int ret = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  while (len) {
+    if ((ret = i2s_out_slc_write(i2s_out, data, len)) < 0) {
+      LOG_ERROR("i2s_out_slc_write");
+      break;
+    } else if (!ret) {
+      LOG_WARN("i2s_out_slc_write: short write");
+      ret = -1;
+      break;
+    } else {
+      len -= ret;
+      ret = 0;
+    }
+  }
+
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_ERROR("xSemaphoreGiveRecursive");
+  }
+
+  return ret;
+}
+
 int i2s_out_close(struct i2s_out *i2s_out)
 {
   int ret;

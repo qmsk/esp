@@ -2,6 +2,9 @@
 
 #include <spi_leds.h>
 
+// 24 bits per pixel, 2 bits per I2S byte
+#define WS2811_I2S_SIZE (3 * 4)
+
 union ws2811_pixel {
   struct {
     uint8_t b, g, r;
@@ -26,3 +29,6 @@ unsigned ws2811_count_active(struct spi_leds_protocol_ws2811 *protocol, unsigned
 
 /* ws2811_uart.c */
 int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811_pixel *pixels, unsigned count);
+
+/* ws2811_i2s.c */
+int spi_leds_tx_i2s_ws2811(const struct spi_leds_options *options, union ws2811_pixel *pixels, unsigned count);

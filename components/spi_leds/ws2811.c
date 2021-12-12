@@ -21,6 +21,9 @@ int spi_leds_tx_ws2811(struct spi_leds_protocol_ws2811 *protocol, const struct s
     case SPI_LEDS_INTERFACE_UART:
       return spi_leds_tx_uart_ws2811(options, protocol->pixels, options->count);
 
+    case SPI_LEDS_INTERFACE_I2S:
+      return spi_leds_tx_i2s_ws2811(options, protocol->pixels, options->count);
+
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
       return 1;

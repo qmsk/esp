@@ -29,4 +29,6 @@ unsigned ws2812b_count_active(struct spi_leds_protocol_ws2812b *protocol, unsign
 
 /* ws2812b_uart.c */
 int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count);
+
+/* ws2812b_i2s.c */
 int spi_leds_tx_i2s_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count);

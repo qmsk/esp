@@ -5,6 +5,11 @@
 
 #define WS2812B_RESET_US 80
 
+/*
+ * Use 1.25us WS2812B bits divided into four periods in 1000/1110 form for 0/1 bits.
+ *
+ * https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf
+ */
  #define WS2812B_LUT(x) (\
      (((x >> 0) & 0x1) ? 0b0000000000001110 : 0b0000000000001000) \
    | (((x >> 1) & 0x1) ? 0b0000000011100000 : 0b0000000010000000) \
@@ -32,12 +37,15 @@ static const uint16_t ws2812b_lut[] = {
 };
 
 static const struct i2s_out_options i2s_out_options = {
-  // 1.25us per WS2812B bit => 10us per byte
+  // 3.2MHz bit clock => 0.3125us per I2S bit
+  // four I2S bits per 1.25us WS2812B bit
+  // two WS2812B bits per I2S byte
   .clock        = I2S_DMA_CLOCK_3M2,
 
-  // hold low for 2 x 40us
+  // four bytes per I2S sample, 10us per 32-bit I2S sample
+  // hold low for 8 x 10us
   .eof_value    = 0x00000000,
-  .eof_count    = 2,
+  .eof_count    = 8,
 };
 
 int spi_leds_tx_i2s_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count)

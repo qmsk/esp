@@ -2,13 +2,54 @@
 #include "i2s.h"
 
 #include <logging.h>
-
-#include <esp8266/pin_mux_register.h>
+#include <spi_intr.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define I2S I2S0
+static void IRAM_ATTR i2s_isr(void *arg)
+{
+  struct i2s_out *i2s_out = arg;
+  BaseType_t task_woken = 0;
+
+  LOG_ISR_DEBUG("int_st=%08x", I2S0.int_st.val);
+
+  if (I2S0.int_st.tx_put_data) {
+    I2S0.int_ena.tx_put_data = 0;
+  }
+
+  if (I2S0.int_st.tx_wfull) {
+    I2S0.int_ena.tx_wfull = 0;
+  }
+
+  if (I2S0.int_st.tx_rempty) {
+    if (i2s_out->i2s_flush_task) {
+      // wakeup task in i2s_out_i2s_flush();
+      vTaskNotifyGiveFromISR(i2s_out->i2s_flush_task, &task_woken);
+
+      i2s_out->i2s_flush_task = NULL;
+    }
+
+    // interrupt will fire until disabled
+    I2S0.int_ena.tx_rempty = 0;
+  }
+
+  i2s_intr_clear(&I2S0);
+
+  if (task_woken) {
+    portYIELD_FROM_ISR();
+  }
+}
+
+int i2s_out_i2s_init(struct i2s_out *i2s_out)
+{
+  i2s_intr_disable(&I2S0);
+
+  spi_intr_init();
+  spi_intr_install(SPI_INTR_I2S, i2s_isr, i2s_out);
+
+  return 0;
+}
 
 void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
@@ -52,4 +93,28 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   i2s_start_tx(&I2S0);
 
   taskEXIT_CRITICAL();
+}
+
+int i2s_out_i2s_flush(struct i2s_out *i2s_out)
+{
+  LOG_DEBUG("set i2s_flush_task=%p", xTaskGetCurrentTaskHandle());
+
+  taskENTER_CRITICAL();
+
+  i2s_out->i2s_flush_task = xTaskGetCurrentTaskHandle();
+
+  i2s_intr_clear(&I2S0);
+  i2s_intr_enable_tx(&I2S0);
+
+  taskEXIT_CRITICAL();
+
+  LOG_DEBUG("wait i2s_flush_task=%p", i2s_out->i2s_flush_task);
+
+  // wait for tx to complete and break to start
+  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+    LOG_WARN("ulTaskNotifyTake: timeout");
+    return -1;
+  }
+
+  return 0;
 }

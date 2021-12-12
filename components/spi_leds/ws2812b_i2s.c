@@ -70,6 +70,11 @@ int spi_leds_tx_i2s_ws2812b(const struct spi_leds_options *options, union ws2812
     }
   }
 
+  if ((err = i2s_out_flush(options->i2s_out))) {
+    LOG_ERROR("i2s_out_flush");
+    return err;
+  }
+
 error:
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);

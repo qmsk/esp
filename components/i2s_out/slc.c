@@ -294,6 +294,21 @@ int i2s_out_slc_write(struct i2s_out *i2s_out, void *buf, size_t size)
   return size;
 }
 
+int i2s_out_slc_ready(struct i2s_out *i2s_out)
+{
+  if (i2s_out->slc_write_desc->owner) {
+    // start() already haṕpened
+    return 0;
+  }
+
+  if (i2s_out->slc_write_desc != i2s_out->slc_rx_desc || i2s_out->slc_write_desc->len > 0) {
+    // write() happened
+    return 1;
+  }
+
+  return 0;
+}
+
 void i2s_out_slc_start(struct i2s_out *i2s_out)
 {
   i2s_out->slc_write_desc->owner = 1;

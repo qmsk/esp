@@ -31,6 +31,11 @@ int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size)
     goto error;
   }
 
+  if ((err = i2s_out_i2s_init(i2s_out))) {
+    LOG_ERROR("i2s_out_i2s_init");
+    goto error;
+  }
+
   if ((err = i2s_out_slc_init(i2s_out, buffer_size))) {
     LOG_ERROR("i2s_out_slc_init");
     goto error;
@@ -117,19 +122,47 @@ int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
   return ret;
 }
 
+int i2s_out_flush(struct i2s_out *i2s_out)
+{
+  int err = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (i2s_out_slc_ready(i2s_out)) {
+    i2s_out_slc_start(i2s_out);
+    i2s_out_i2s_start(i2s_out);
+  }
+
+  // wait for TX DMA EOF
+  if ((err = i2s_out_slc_flush(i2s_out))) {
+    LOG_ERROR("i2s_out_slc_flush");
+    goto error;
+  }
+
+  // wait for I2S TX done
+  if ((err = i2s_out_i2s_flush(i2s_out))) {
+    LOG_ERROR("i2s_out_i2s_flush");
+    goto error;
+  }
+
+error:
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+  return err;
+}
+
 int i2s_out_close(struct i2s_out *i2s_out)
 {
-  int ret;
-
-  i2s_out_slc_start(i2s_out);
-  i2s_out_i2s_start(i2s_out);
-
-  // wait for TX EOF
-  ret = i2s_out_slc_flush(i2s_out);
+  int err = i2s_out_flush(i2s_out);
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");
   }
 
-  return ret;
+  return err;
 }

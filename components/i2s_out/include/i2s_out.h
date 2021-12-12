@@ -27,4 +27,6 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
 int i2s_out_write(struct i2s_out *i2s_out, void *data, size_t len);
 int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len);
 
+int i2s_out_flush(struct i2s_out *i2s_out);
+
 int i2s_out_close(struct i2s_out *i2s_out);

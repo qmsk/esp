@@ -135,7 +135,7 @@ static int init_uart1(const struct spi_leds_config *configs)
     }
   }
 
-  LOG_INFO("enabled=%d", enabled);
+  LOG_INFO("enabled=%d tx_buffer_size=%u", enabled, UART1_TX_BUFFER_SIZE);
 
   if (!enabled) {
     return 0;
@@ -204,7 +204,7 @@ static int init_i2s_out(const struct spi_leds_config *configs)
     }
   }
 
-  LOG_INFO("enabled=%d", enabled);
+  LOG_INFO("enabled=%d buffer_size=%u", enabled, max_i2s_buffer_size);
 
   if (!enabled) {
     return 0;

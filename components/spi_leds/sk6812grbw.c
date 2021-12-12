@@ -21,6 +21,9 @@ int spi_leds_tx_sk6812grbw(struct spi_leds_protocol_sk6812grbw *protocol, const 
     case SPI_LEDS_INTERFACE_UART:
       return spi_leds_tx_uart_sk6812grbw(options, protocol->pixels, options->count);
 
+    case SPI_LEDS_INTERFACE_I2S:
+      return spi_leds_tx_i2s_sk6812grbw(options, protocol->pixels, options->count);
+
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
       return 1;

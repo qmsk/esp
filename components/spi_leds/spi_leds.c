@@ -60,6 +60,9 @@ size_t spi_leds_i2s_buffer_for_protocol(enum spi_leds_protocol protocol, unsigne
     case SPI_LEDS_PROTOCOL_WS2811:
       return WS2811_I2S_SIZE * count;
 
+    case SPI_LEDS_PROTOCOL_SK6812_GRBW:
+      return SK6812_GRBW_I2S_SIZE * count;
+
     default:
       // unknown
       return 0;

@@ -2,6 +2,9 @@
 
 #include <spi_leds.h>
 
+// 32 bits per pixel, 2 bits per I2S byte
+#define SK6812_GRBW_I2S_SIZE (4 * 4)
+
 union sk6812grbw_pixel {
   struct {
     uint8_t w, b, r, g;
@@ -25,3 +28,6 @@ unsigned sk6812grbw_count_active(struct spi_leds_protocol_sk6812grbw *protocol, 
 
 /* sk6812grbw_uart.c */
 int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);
+
+/* sk6812grbw_i2s.c */
+int spi_leds_tx_i2s_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);

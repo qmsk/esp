@@ -28,6 +28,7 @@ enum spi_leds_interface {
   /* Supported protocols:
    *  - SPI_LEDS_PROTOCOL_WS2812B
    *  - SPI_LEDS_PROTOCOL_WS2811
+   *  - SPI_LEDS_PROTOCOL_SK6812_GRBW
    */
   SPI_LEDS_INTERFACE_I2S           = 3,
 };

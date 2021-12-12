@@ -194,6 +194,7 @@ int status_led_init_gpio(struct status_led *led, const struct status_led_options
   gpio_config_t config = {
       .pin_bit_mask = (1 << options.gpio),
       .mode         = GPIO_MODE_OUTPUT,
+      .pull_up_en   = options.inverted ? 1 : 0,
   };
   esp_err_t err;
 

@@ -106,8 +106,8 @@ int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
       LOG_ERROR("i2s_out_slc_write");
       break;
     } else if (!ret) {
-      LOG_WARN("i2s_out_slc_write: short write");
-      ret = -1;
+      LOG_WARN("i2s_out_slc_write: TX buffer full");
+      ret = 1;
       break;
     } else {
       len -= ret;

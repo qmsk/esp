@@ -50,11 +50,15 @@ static void dmx_input_main(void *ctx)
 
 int init_dmx_uart0()
 {
+  int err;
+
 #if DMX_INPUT_UART0_ENABLED
   if ((err = uart0_new(&dmx_uart0, DMX_RX_BUFFER_SIZE))) {
     LOG_ERROR("uart0_new");
     return err;
   }
+
+  return 0;
 #else
   LOG_ERROR("uart0 is not configured for DMX input");
   return -1;

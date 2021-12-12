@@ -275,6 +275,12 @@ Writes bypass the TX queue and interrupt handler if there is room in the hardwar
 
 Supports RS232/458 breaks as required for e.g. DMX resets, outputting break/mark for a specified duration.
 
+## `i2s_out`
+
+DMA based I2S output for generating arbitrary (32-bit aligned) bit streams, using interrupts to wait for TX to complete.
+
+Designed for generating WS2812B data signals.
+
 ## `logging`
 
 Provide `DEBUG` / `INFO` / `WARN` / `ERROR` logging with function context.
@@ -303,16 +309,30 @@ Config read/write from stdio FILE can be used with SPIFFS, CLI and HTTP handlers
 
 Simple GPIO LED blinking.
 
+## `dmx`
+
+DMX input/output support.
+
+Uses UART0 alternate RTS/CTS output pins for DMX input.
+
+Uses UART1 for DMX output.
+
 ## `spi_leds`
 
-Control SPI-compatible RGB LEDs, with protocol support for:
+Control RGB LEDs using SPI/UART/I2S output interfaces, with protocol support for:
 
-* APA102/SK9822
-* P9813
+* APA102/SK9822 (SPI)
+* P9813 (SPI)
+* WS2812B / WS2811 (UART, I2S)
+* SK6812 (UART)
+
+Supports optional GPIO output for multiplexing a single SPI/UART/I2S output interface between multiple `spi_leds` outputs.
 
 ## `artnet`
 
 Art-NET UDP receiver with support for polling/discovery and multiple DMX outputs with sequence numbering support.
+
+Supports local DMX input.
 
 ## `json`
 
@@ -375,19 +395,27 @@ Art-NET UDP receiver.
 
 Supports up to four Art-NET outputs on the [Art-Net Sub-Net](https://art-net.org.uk/how-it-works/universe-addressing/) matching the higher bits of the configured `universe`. With e.g. `universe = 0`, artnet outputs can use universes 0-15. To use an artnet output universe 16, the `[artnet] universe` must be configured to `16`, and then output universes 16-31 can be used.
 
-### `dmx`
+### `dmx-input`
+
+Art-NET DMX input via UART2 RX (using UART0 alternate RTS/CTS pins).
+
+The FLASH LED will blink on DMX updates.
+
+Can be used to control local Art-NET outputs using a configured Art-NET universe.
+
+### `dmx-output`
 
 Art-NET DMX output via UART1 TX.
 
-Supports up to two multiplex outputs using active-high/low GPIOs.
+Supports up to two multiplexed outputs using active-high/low GPIOs.
 
-The FLASH LED will flash on DMX updates.
+The FLASH LED will blink on DMX updates.
 
-### `spi_leds`
+### `spi-leds`
 
-Art-NET DMX controller for SPI-compatible RGB LEDs.
+Art-NET DMX controller for RGB LEDs.
 
-Supports up to four multiplex outouts using active-high/low GPIOs.
+Supports up to four multiplexed outouts using active-high/low GPIOs.
 
 The FLASH LED will flash on SPI-LEDs updates.
 

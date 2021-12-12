@@ -324,7 +324,7 @@ Control RGB LEDs using SPI/UART/I2S output interfaces, with protocol support for
 * APA102/SK9822 (SPI)
 * P9813 (SPI)
 * WS2812B / WS2811 (UART, I2S)
-* SK6812 (UART)
+* SK6812-GRBW (UART, I2S)
 
 Supports optional GPIO output for multiplexing a single SPI/UART/I2S output interface between multiple `spi_leds` outputs.
 

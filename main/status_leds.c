@@ -27,20 +27,21 @@ static xTaskHandle status_leds_task;
 #define STATUS_LEDS_ALERT_TEST_THRESHOLD 1
 
 #define USER_LED
-#define USER_LED_GPIO      GPIO_NUM_16  // integrated LED on NodeMCU
-#define USER_LED_INVERTED  true         // active-low will pull-up
+#define USER_LED_GPIO      GPIO_NUM_16  // RTC GPIO with integrated LED from +3V3 on NodeMCU
+#define USER_LED_INVERTED  true         // active-low with external pull-up and LED from +3V3 on NodeMCU
 
 #define FLASH_LED
-#define FLASH_LED_GPIO      GPIO_NUM_0  // integrated button on NodeMCU
-#define FLASH_LED_INVERTED  true        // active-low with pull-up
+#define FLASH_LED_GPIO      GPIO_NUM_0  // GPIO0 is a strapping pin for FLASH/UART boot mode (high/low)
+#define FLASH_LED_INVERTED  true        // active-low with internal weak-pull-up, external pull-up and integrated button to GND on NodeMCU
 
 #define ALERT_LED
 #if CONFIG_ESP_UART0_SWAP_IO
-# define ALERT_LED_GPIO      GPIO_NUM_1
+# define ALERT_LED_GPIO      GPIO_NUM_1 // U0TXD/GPIO1 is a strapping pin for chip_test_mode (active-low)
+# define ALERT_LED_INVERTED  true       // active-low with internal/external weak-pull-up
 #else
 # define ALERT_LED_GPIO      GPIO_NUM_15 // XXX: shared with spi_master CS and uart2 TX
+# define ALERT_LED_INVERTED  false       // active-high with external pull-down on NodeMCU
 #endif
-#define ALERT_LED_INVERTED  false       // active-high with pull-down
 
 enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
   [USER_STATE_BOOT]             = STATUS_LED_OFF,

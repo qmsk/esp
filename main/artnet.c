@@ -221,6 +221,10 @@ void test_artnet()
 {
   int err;
 
+  if (!artnet) {
+    return;
+  }
+
   if ((err = artnet_test_outputs(artnet))) {
     LOG_ERROR("artnet_test_outputs");
   }

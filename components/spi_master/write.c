@@ -23,6 +23,26 @@ static inline void spi_master_start(struct spi_master *spi_master)
   SPI_DEV.cmd.usr = 1;
 }
 
+static int spi_master_wait_trans_done(struct spi_master *spi_master, TickType_t block_time)
+{
+  int err;
+
+  while (SPI_DEV.cmd.usr) {
+    LOG_DEBUG("spi_master=%p: busy", spi_master);
+
+    if ((err = spi_master_intr_wait_trans_done(spi_master, block_time))) {
+      LOG_ERROR("spi_master_intr_wait_trans_done");
+      return err;
+    }
+
+    // loop again
+  }
+
+  LOG_DEBUG("spi_master=%p: idle", spi_master);
+
+  return 0;
+}
+
 int spi_master_open(struct spi_master *spi_master, struct spi_write_options options)
 {
   int err;
@@ -32,8 +52,8 @@ int spi_master_open(struct spi_master *spi_master, struct spi_write_options opti
     return -1;
   }
 
-  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
-    LOG_ERROR("spi_master_interrupt_wait_trans");
+  if ((err = spi_master_wait_trans_done(spi_master, portMAX_DELAY))) {
+    LOG_ERROR("spi_master_wait_trans_done");
     goto error;
   }
 
@@ -77,8 +97,8 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
   }
 
   // wait
-  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
-    LOG_ERROR("spi_master_interrupt_wait_trans");
+  if ((err = spi_master_wait_trans_done(spi_master, portMAX_DELAY))) {
+    LOG_ERROR("spi_master_wait_trans_done");
     return err;
   }
 
@@ -99,15 +119,7 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 
 int spi_master_flush(struct spi_master *spi_master)
 {
-  int err;
-
-  // wait
-  if ((err = spi_master_interrupt_wait_trans(spi_master, portMAX_DELAY))) {
-    LOG_ERROR("spi_master_interrupt_wait_trans");
-    return err;
-  }
-
-  return 0;
+  return spi_master_wait_trans_done(spi_master, portMAX_DELAY);
 }
 
 int spi_master_close(struct spi_master *spi_master)

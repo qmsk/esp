@@ -123,6 +123,11 @@ int spi_master_init(struct spi_master *spi_master, const struct spi_options opti
     LOG_ERROR("xSemaphoreCreateMutex");
   }
 
+  if (!(spi_master->trans_done = xSemaphoreCreateBinary())) {
+    LOG_ERROR("xSemaphoreCreateBinary");
+    return -1;
+  }
+
   if ((err = spi_master_mode(spi_master, options.mode))) {
     LOG_ERROR("spi_master_mode");
     return err;

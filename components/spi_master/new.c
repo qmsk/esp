@@ -19,8 +19,8 @@ int spi_master_new(struct spi_master **spi_masterp, const struct spi_options opt
     goto error;
   }
 
-  if ((err = spi_master_interrupt_init(spi_master))) {
-    LOG_ERROR("spi_master_interrupt_init");
+  if ((err = spi_master_intr_init(spi_master))) {
+    LOG_ERROR("spi_master_intr_init");
     goto error;
   }
 

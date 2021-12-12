@@ -40,7 +40,7 @@ void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_fifo_dma_enable(&I2S0);
 
   // configure data out pin
-  PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_I2SO_DATA);
+  IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_I2SO_DATA);
 
   taskEXIT_CRITICAL();
 }

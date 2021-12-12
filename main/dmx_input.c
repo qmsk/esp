@@ -50,9 +50,9 @@ static void dmx_input_main(void *ctx)
 
 int init_dmx_uart0()
 {
+#if DMX_INPUT_UART0_ENABLED
   int err;
 
-#if DMX_INPUT_UART0_ENABLED
   if ((err = uart0_new(&dmx_uart0, DMX_RX_BUFFER_SIZE))) {
     LOG_ERROR("uart0_new");
     return err;

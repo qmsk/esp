@@ -27,16 +27,15 @@ void app_main()
   // system-level boot stage, abort on failures
   LOG_INFO("boot");
 
-  // XXX: driver/uart will set U0TXD pin mux to U0TXD despite using bootloader CONFIG_ESP_UART0_SWAP_IO,
-  //      which breaks status_leds GPIO1. Initialize this first.
-  if (init_uart()) {
-    LOG_ERROR("uart_init");
+  if (init_status_leds()) {
+    LOG_ERROR("init_status_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
-  if (init_status_leds()) {
-    LOG_ERROR("init_status_leds");
+  // XXX: driver/uart will set U0TXD pin mux to U0TXD if using bootloader CONFIG_ESP_UART0_SWAP_IO
+  if (init_uart()) {
+    LOG_ERROR("uart_init");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

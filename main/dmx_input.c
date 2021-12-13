@@ -13,7 +13,7 @@ struct uart *dmx_uart;
 struct dmx_input_state *dmx_input_state;
 
 // fit one complete DMX frame into the uart0 RX buffer
-# define DMX_INPUT_UART UART_0
+# define DMX_INPUT_UART UART_0_SWAP
 #define DMX_INPUT_UART_RX_BUFFER_SIZE (512 + 1)
 #define DMX_INPUT_UART_TX_BUFFER_SIZE 0
 

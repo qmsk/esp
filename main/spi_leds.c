@@ -10,13 +10,11 @@
 #define SPI_LEDS_MODE 0 // varies by protocol
 #define SPI_LEDS_PINS (SPI_PINS_CLK | SPI_PINS_MOSI)
 
-#define UART1_BAUD_RATE UART1_BAUD_250000
-#define UART1_DATA_BITS UART1_DATA_BITS_8
-#define UART1_PARITY_BITS UART1_PARTIY_DISABLE
-#define UART1_STOP_BITS UART1_STOP_BITS_1
-#define UART1_TX_BUFFER_SIZE 512
+#define SPI_LEDS_UART UART_1
+#define SPI_LEDS_UART_RX_BUFFER_SIZE 0
+#define SPI_LEDS_UART_TX_BUFFER_SIZE 512
 
-struct uart1 *spi_leds_uart1;
+struct uart *spi_leds_uart;
 struct spi_master *spi_leds_spi_master;
 struct i2s_out *spi_leds_i2s_out;
 struct gpio_out spi_leds_gpio_out_uart, spi_leds_gpio_out_spi, spi_leds_gpio_out_i2s;
@@ -91,16 +89,10 @@ static int init_spi_master(const struct spi_leds_config *configs)
   return 0;
 }
 
-static int init_uart1(const struct spi_leds_config *configs)
+static int init_uart(const struct spi_leds_config *configs)
 {
   enum gpio_out_pins gpio_out_pins = 0;
   enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
-  struct uart1_options options = {
-      .clock_div    = UART1_BAUD_RATE,
-      .data_bits    = UART1_DATA_BITS,
-      .parity_bits  = UART1_PARITY_BITS,
-      .stop_bits    = UART1_STOP_BITS_1,
-  };
   bool enabled = 0;
   int err;
 
@@ -135,7 +127,7 @@ static int init_uart1(const struct spi_leds_config *configs)
     }
   }
 
-  LOG_INFO("enabled=%d tx_buffer_size=%u", enabled, UART1_TX_BUFFER_SIZE);
+  LOG_INFO("enabled=%d uart=%d tx_buffer_size=%u", enabled, SPI_LEDS_UART, SPI_LEDS_UART_TX_BUFFER_SIZE);
 
   if (!enabled) {
     return 0;
@@ -143,8 +135,8 @@ static int init_uart1(const struct spi_leds_config *configs)
 
   LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
 
-  if ((err = uart1_new(&spi_leds_uart1, options, UART1_TX_BUFFER_SIZE))) {
-    LOG_ERROR("uart1_new");
+  if ((err = uart_new(&spi_leds_uart, SPI_LEDS_UART, SPI_LEDS_UART_RX_BUFFER_SIZE, SPI_LEDS_UART_TX_BUFFER_SIZE))) {
+    LOG_ERROR("uart_new");
     return err;
   }
 
@@ -264,7 +256,7 @@ static int init_spi_leds_uart(struct spi_leds_state *state, int index, const str
       .protocol   = config->protocol,
       .count      = config->count,
 
-      .uart1      = spi_leds_uart1,
+      .uart       = spi_leds_uart,
 
       .gpio_out   = &spi_leds_gpio_out_uart,
   };
@@ -339,8 +331,8 @@ int init_spi_leds()
     return err;
   }
 
-  if ((err = init_uart1(spi_leds_configs))) {
-    LOG_ERROR("init_uart1");
+  if ((err = init_uart(spi_leds_configs))) {
+    LOG_ERROR("init_uart");
     return err;
   }
 

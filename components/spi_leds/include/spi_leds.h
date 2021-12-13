@@ -4,7 +4,7 @@
 #include <gpio_out.h>
 #include <i2s_out.h>
 #include <spi_master.h>
-#include <uart1.h>
+#include <uart.h>
 
 #include <stdint.h>
 
@@ -100,7 +100,7 @@ struct spi_leds_options {
   enum spi_clock spi_clock;
 
   /** SPI_LEDS_INTERFACE_UART */
-  struct uart1 *uart1;
+  struct uart *uart;
 
   /** SPI_LEDS_INTERFACE_I2S */
   struct i2s_out *i2s_out;

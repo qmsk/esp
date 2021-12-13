@@ -5,28 +5,23 @@
 #include <artnet.h>
 
 #include <logging.h>
-#include <uart1.h>
+#include <uart.h>
 
 // fit one complete DMX frame into the uart1 TX buffer
-#define DMX_TX_BUFFER_SIZE (512 + 1)
+#define DMX_UART UART_1
+#define DMX_UART_RX_BUFFER_SIZE 0
+#define DMX_UART_TX_BUFFER_SIZE (512 + 1)
 
-struct uart1 *dmx_uart1;
+struct uart *dmx_uart;
 struct gpio_out dmx_gpio_out;
 struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
-static int dmx_init_uart1 ()
+static int dmx_init_uart()
 {
-  // these do not really matter, they get overriden for each DMX output
-  struct uart1_options uart1_options = {
-    .clock_div   = UART1_BAUD_250000,
-    .data_bits   = UART1_DATA_BITS_8,
-    .parity_bits = UART1_PARTIY_DISABLE,
-    .stop_bits   = UART1_STOP_BITS_2,
-  };
   int err;
 
-  if ((err = uart1_new(&dmx_uart1, uart1_options, DMX_TX_BUFFER_SIZE))) {
-    LOG_ERROR("uart1_new");
+  if ((err = uart_new(&dmx_uart, DMX_UART, DMX_UART_RX_BUFFER_SIZE, DMX_UART_TX_BUFFER_SIZE))) {
+    LOG_ERROR("uart_new");
     return err;
   }
 
@@ -61,6 +56,8 @@ static int dmx_init_gpio(const struct dmx_output_config *configs)
 static int dmx_init_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
   struct dmx_output_options options = {
+    .uart           = dmx_uart,
+
     .gpio_out       = &dmx_gpio_out,
     .gpio_out_pins  = gpio_out_pin(config->gpio_pin),
   };
@@ -68,7 +65,7 @@ static int dmx_init_output(struct dmx_output_state *state, int index, const stru
 
   LOG_INFO("%d: gpio_out_pins=%04x", index, options.gpio_out_pins);
 
-  if ((err = dmx_output_new(&state->dmx_output, dmx_uart1, options))) {
+  if ((err = dmx_output_new(&state->dmx_output, options))) {
     LOG_ERROR("dmx_output_new");
     return err;
   }
@@ -99,8 +96,8 @@ int init_dmx_outputs()
     return 0;
   }
 
-  if ((err = dmx_init_uart1())) {
-    LOG_ERROR("dmx_init_uart1");
+  if ((err = dmx_init_uart())) {
+    LOG_ERROR("dmx_init_uart");
     return err;
   }
 

@@ -5,15 +5,17 @@
 #include "user_event.h"
 
 #include <logging.h>
-#include <uart0.h>
+#include <uart.h>
 #include <gpio_out.h>
 
 struct gpio_out dmx_input_gpio_debug;
-struct uart0 *dmx_uart0;
+struct uart *dmx_uart;
 struct dmx_input_state *dmx_input_state;
 
-// fit one complete DMX frame into the uart1 RX buffer
-#define DMX_RX_BUFFER_SIZE (512 + 1)
+// fit one complete DMX frame into the uart0 RX buffer
+# define DMX_INPUT_UART UART_0
+#define DMX_INPUT_UART_RX_BUFFER_SIZE (512 + 1)
+#define DMX_INPUT_UART_TX_BUFFER_SIZE 0
 
 #define DMX_INPUT_FRAME_TIMEOUT 20
 
@@ -25,7 +27,7 @@ static void dmx_input_main(void *ctx)
   struct dmx_input_state *state = ctx;
   int read, err;
 
-  if ((err = dmx_input_open(state->dmx_input, dmx_uart0))) {
+  if ((err = dmx_input_open(state->dmx_input, dmx_uart))) {
     LOG_ERROR("dmx_input_open");
     return; // XXX: alert
   }
@@ -48,19 +50,19 @@ static void dmx_input_main(void *ctx)
   }
 }
 
-int init_dmx_uart0()
+int init_dmx_uart()
 {
-#if DMX_INPUT_UART0_ENABLED
+#if DMX_INPUT_UART_ENABLED
   int err;
 
-  if ((err = uart0_new(&dmx_uart0, DMX_RX_BUFFER_SIZE))) {
-    LOG_ERROR("uart0_new");
+  if ((err = uart_new(&dmx_uart, DMX_INPUT_UART, DMX_INPUT_UART_RX_BUFFER_SIZE, DMX_INPUT_UART_TX_BUFFER_SIZE))) {
+    LOG_ERROR("uart_new");
     return err;
   }
 
   return 0;
 #else
-  LOG_ERROR("uart0 is not configured for DMX input");
+  LOG_ERROR("uart is not configured for DMX input");
   return -1;
 #endif
 }
@@ -120,8 +122,8 @@ int init_dmx_input()
     return -1;
   }
 
-  if ((err = init_dmx_uart0())) {
-    LOG_ERROR("init_dmx_uart0");
+  if ((err = init_dmx_uart())) {
+    LOG_ERROR("init_dmx_uart");
     return err;
   }
 

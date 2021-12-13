@@ -12,11 +12,10 @@ enum dmx_input_state {
 struct dmx_input {
   struct dmx_input_options options;
 
-  struct uart0 *uart;
+  struct uart *uart;
 
   enum dmx_input_state state;
   enum dmx_cmd state_cmd;
   unsigned state_data_index;
   size_t state_len;
-
 };

@@ -70,12 +70,13 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-static const struct uart1_options uart1_options = {
-  .clock_div    = UART1_BAUD_3333333,
-  .data_bits    = UART1_DATA_BITS_6,
-  .parity_bits  = UART1_PARTIY_DISABLE,
-  .stop_bits    = UART1_STOP_BITS_1,
-  .inverted     = true,
+static const struct uart_options uart_options = {
+  .clock_div    = UART_BAUD_3333333,
+  .data_bits    = UART_DATA_BITS_6,
+  .parity_bits  = UART_PARTIY_DISABLE,
+  .stop_bits    = UART_STOP_BITS_1,
+
+  .tx_inverted  = true,
 };
 
 int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
@@ -84,8 +85,8 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
   uint16_t buf[8];
   int err;
 
-  if ((err = uart1_open(options->uart1, uart1_options))) {
-    LOG_ERROR("uart1_open");
+  if ((err = uart_open(options->uart, uart_options))) {
+    LOG_ERROR("uart_open");
     return err;
   }
 
@@ -93,7 +94,7 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
 
-  // temporarily raise task priority to ensure uart1 TX buffer does not starve
+  // temporarily raise task priority to ensure uart TX buffer does not starve
   vTaskPrioritySet(NULL, SK6812_TX_TASK_PRIORITY);
 
   for (unsigned i = 0; i < count; i++) {
@@ -108,8 +109,8 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
     buf[6]  = sk6812_lut[(grbw >>  4) & 0xf];
     buf[7]  = sk6812_lut[(grbw >>  0) & 0xf];
 
-    if ((err = uart1_write_all(options->uart1, buf, sizeof(buf)))) {
-      LOG_ERROR("uart1_write_all");
+    if ((err = uart_write_all(options->uart, buf, sizeof(buf)))) {
+      LOG_ERROR("uart_write_all");
       goto error;
     }
   }
@@ -117,8 +118,8 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
   // restore previous task priority
   vTaskPrioritySet(NULL, task_priority);
 
-  if ((err = uart1_mark(options->uart1, SK6812_RESET_US))) {
-    LOG_ERROR("uart1_mark");
+  if ((err = uart_mark(options->uart, SK6812_RESET_US))) {
+    LOG_ERROR("uart_mark");
     goto error;
   }
 
@@ -127,8 +128,8 @@ error:
     gpio_out_clear(options->gpio_out);
   }
 
-  if ((err = uart1_close(options->uart1))) {
-    LOG_ERROR("uart1_close");
+  if ((err = uart_close(options->uart))) {
+    LOG_ERROR("uart_close");
     return err;
   }
 

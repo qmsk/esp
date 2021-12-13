@@ -5,10 +5,14 @@
 
 #include <stdlib.h>
 
-#define DMX_CHANNEL_COUNT 512
-
 int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 {
+  LOG_DEBUG("data=%p size=%u, frame_timeout=%u",
+    options.data,
+    options.size,
+    options.frame_timeout
+  );
+
   in->options = options;
 
   return 0;
@@ -18,12 +22,6 @@ int dmx_input_new (struct dmx_input **inp, struct dmx_input_options options)
 {
   struct dmx_input *in;
   int err;
-
-  LOG_DEBUG("options data=%p size=%u, frame_timeout=%u",
-    options.data,
-    options.size,
-    options.frame_timeout
-  );
 
   if (!(in = calloc(1, sizeof(*in)))) {
     LOG_ERROR("calloc");
@@ -45,24 +43,22 @@ error:
   return err;
 }
 
-int dmx_input_open (struct dmx_input *in, struct uart0 *uart)
+int dmx_input_open (struct dmx_input *in, struct uart *uart)
 {
-  struct uart0_options dmx_uart_options = {
-    .clock_div   = UART0_BAUD_250000,
-    .data_bits   = UART0_DATA_BITS_8,
-    .parity_bits = UART0_PARTIY_DISABLE,
-    .stop_bits   = UART0_STOP_BITS_2,
+  struct uart_options dmx_uart_options = {
+    .clock_div   = UART_BAUD_250000,
+    .data_bits   = UART_DATA_BITS_8,
+    .parity_bits = UART_PARTIY_DISABLE,
+    .stop_bits   = UART_STOP_BITS_2,
 
     .rx_timeout = in->options.frame_timeout,
-
-    .swap       = true, // use alternate RX/TX pins
   };
   int err;
 
-  LOG_DEBUG("dmx_input=%p uart0=%p", in, uart);
+  LOG_DEBUG("dmx_input=%p uart=%p", in, uart);
 
-  if ((err = uart0_open(uart, dmx_uart_options))) {
-    LOG_ERROR("uart0_open");
+  if ((err = uart_open(uart, dmx_uart_options))) {
+    LOG_ERROR("uart_open");
     return err;
   }
 
@@ -152,11 +148,11 @@ int dmx_input_read (struct dmx_input *in)
   // read until data -> break
   while (!in->state_len || read) {
     // XXX: sync to start of break, but how to determine end of packet?!
-    if ((read = uart0_read(in->uart, buf, sizeof(buf))) < 0) {
+    if ((read = uart_read(in->uart, buf, sizeof(buf))) < 0) {
       // lost sync
       in->state = DMX_INPUT_STATE_BREAK;
 
-      LOG_ERROR("uart0_read");
+      LOG_ERROR("uart_read");
       return read;
     }
 

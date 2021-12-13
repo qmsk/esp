@@ -13,9 +13,9 @@
 #include <sdkconfig.h>
 
 #if CONFIG_ESP_CONSOLE_UART_NUM == 0
-# define DMX_INPUT_UART0_ENABLED 0
+# define DMX_INPUT_UART_ENABLED 0
 #else
-# define DMX_INPUT_UART0_ENABLED 1
+# define DMX_INPUT_UART_ENABLED 1
 #endif
 
 /* dmx_config.c */

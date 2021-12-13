@@ -116,15 +116,18 @@ int uart_read(struct uart *uart, void *buf, size_t size)
 
       case UART_RX_OVERFLOW:
         LOG_WARN("RX overflow detected");
-        return -1;
+        ret = -1;
+        goto ret;
 
       case UART_RX_ERROR:
         LOG_WARN("RX error detected");
-        return -1;
+        ret = -1;
+        goto ret;
 
       case UART_RX_BREAK:
         LOG_DEBUG("RX break detected");
-        return 0;
+        ret = 0;
+        goto ret;
 
       case UART_RX_NONE:
         // block on RX buffer
@@ -132,12 +135,14 @@ int uart_read(struct uart *uart, void *buf, size_t size)
 
       default:
         LOG_ERROR("unknown event");
-        return -1;
+        ret = -1;
+        goto ret;
     }
 
     ret = uart_rx_read(uart, buf, size);
   }
 
+ret:
   xSemaphoreGiveRecursive(uart->mutex);
 
   return ret;

@@ -31,13 +31,17 @@ ENV IDF_PATH=/opt/ESP8266_RTOS_SDK
 
 # custom patches
 COPY patches/ /tmp/patches
-RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < $patch || exit 1; done
+RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < "$patch" || exit 1; done
 
 RUN \
   python -m pip install -r $IDF_PATH/requirements.txt
 
 RUN \
   make -C $IDF_PATH/tools/kconfig
+
+# late patches
+COPY dev-patches/ /tmp/dev-patches
+RUN for patch in /tmp/dev-patches/*.patch; do if [ -e "$patch" ]; then patch -d $IDF_PATH -p1 < "$patch" || exit 1; fi; done
 
 # build
 RUN adduser --system --group --home /build build

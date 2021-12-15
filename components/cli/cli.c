@@ -2,9 +2,11 @@
 #include <cli.h>
 #include <logging.h>
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 static void cli_print_ctx(const struct cmdctx *ctx)
@@ -120,6 +122,12 @@ static int cli_read(struct cli *cli)
     }
   }
 
+  if (ferror(stdin)) {
+    LOG_ERROR("stdin: %s", strerror(errno));
+    return -1;
+  }
+
+  // EOF
   LOG_WARN("EOF");
   return 1;
 }
@@ -138,7 +146,7 @@ static int cli_eval(struct cli *cli)
   return err;
 }
 
-void cli_main(struct cli *cli)
+int cli_main(struct cli *cli)
 {
   int err;
 
@@ -146,8 +154,10 @@ void cli_main(struct cli *cli)
 
   for (;;) {
     // read lines of input, ignore errors
-    if ((err = cli_read(cli))) {
-      LOG_WARN("cli_read");
+    if ((err = cli_read(cli)) < 0) {
+      LOG_ERROR("cli_read");
+      return err;
+    } else if (err) {
       continue;
     }
 
@@ -162,8 +172,6 @@ int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, siz
 {
   struct cli *cli;
   int err = 0;
-
-  LOG_INFO("cli buf_size=%u", buf_size);
 
   if (!(cli = calloc(1, sizeof(*cli)))) {
     LOG_ERROR("calloc");

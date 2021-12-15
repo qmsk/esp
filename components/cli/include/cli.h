@@ -14,8 +14,10 @@ int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, siz
 
 /*
  * Run the CLI read-eval loop.
+ *
+ * Returns <0 on .
  */
-void cli_main(struct cli *cli);
+int cli_main(struct cli *cli);
 
 /*
  * Print help output.

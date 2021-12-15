@@ -75,10 +75,14 @@ static const struct cmd commands[] = {
 void cli_task(void *arg)
 {
   struct cli *cli = arg;
+  int err;
 
-  for (;;) {
-    cli_main(cli);
+  if ((err = cli_main(cli))) {
+    LOG_ERROR("cli_main");
   }
+
+  // stop
+  vTaskDelete(NULL);
 }
 
 int init_cli()
@@ -88,6 +92,8 @@ int init_cli()
 
   // line-buffered output
   setvbuf(stdout, NULL, _IOLBF, 0);
+
+  LOG_INFO("buf_size=%u max_args=%u", CLI_BUF_SIZE, CLI_MAX_ARGS);
 
   // interactive CLI on stdin/stdout
   if (cli_init(&cli, commands, CLI_BUF_SIZE, CLI_MAX_ARGS)) {

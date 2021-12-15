@@ -71,6 +71,11 @@ struct uart;
 int uart_new(struct uart **uartp, enum uart_port port, size_t rx_buffer_size, size_t tx_buffer_size);
 
 /**
+ * Setup UART interrupts, flush TX, and setup UART port.
+ */
+int uart_setup(struct uart *uart, struct uart_options options);
+
+/**
  * Acquire mutex on uart, flush to ensure idle, and setup uart peripheral.
  */
 int uart_open(struct uart *uart, struct uart_options options);

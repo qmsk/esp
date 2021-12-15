@@ -11,19 +11,20 @@
 struct uart {
   enum uart_port port;
   uart_dev_t *dev;
-  SemaphoreHandle_t mutex;
 
   /* RX */
+  SemaphoreHandle_t rx_mutex;
   StreamBufferHandle_t rx_buffer;
   bool rx_overflow, rx_break, rx_error;
 
   /* TX */
+  SemaphoreHandle_t tx_mutex;
   StreamBufferHandle_t tx_buffer;
   TaskHandle_t txfifo_empty_notify_task;
 };
 
-/* setup.c */
-void uart_setup(struct uart *uart, struct uart_options options);
+/* dev.c */
+void uart_dev_setup(struct uart *uart, struct uart_options options);
 
 /* rx.c */
 enum uart_rx_event {
@@ -41,6 +42,7 @@ int uart_rx_read(struct uart *uart, void *buf, size_t size);
 
 /* tx.c */
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);
+void uart_tx_reset(struct uart *uart, struct uart_options options);
 
 int uart_tx_one(struct uart *uart, uint8_t byte);
 
@@ -54,4 +56,4 @@ void uart_tx_break(struct uart *uart);
 void uart_tx_mark(struct uart *uart);
 
 /* intr.c */
-int uart_intr_init(struct uart *uart);
+int uart_intr_setup(struct uart *uart);

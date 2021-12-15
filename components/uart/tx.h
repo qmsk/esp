@@ -9,6 +9,16 @@
 #define UART_TXFIFO_SIZE 128
 #define UART_TXBUF_SIZE 64 // on ISR stack
 
+
+/*
+ * Reset the TX fifo, discarding any data not yet copied into the RX FIFO.
+ */
+static inline void uart_tx_fifo_reset(uart_dev_t *dev)
+{
+  dev->conf0.txfifo_rst = 1;
+  dev->conf0.txfifo_rst = 0;
+}
+
 static inline void uart_tx_intr_enable(uart_dev_t *dev, uint32_t empty_threshold)
 {
   dev->conf1.txfifo_empty_thrhd = empty_threshold;

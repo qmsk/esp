@@ -14,7 +14,7 @@
 
 #define UART0_SWAP_BIT 0x4
 
-void uart_setup(struct uart *uart, struct uart_options options)
+void uart_dev_setup(struct uart *uart, struct uart_options options)
 {
   LOG_DEBUG("port=%x: clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffering=%u) inverted(rx=%d, tx=%d)",
     uart->port,

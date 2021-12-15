@@ -59,7 +59,7 @@ void uart_rx_setup(struct uart *uart, struct uart_options options)
   taskEXIT_CRITICAL();
 
   if (!reset) {
-    LOG_WARN("xStreamBufferReset: failed, RX buffer busy");
+    LOG_WARN("xStreamBufferReset: RX buffer busy");
   }
 }
 

@@ -202,7 +202,7 @@ void IRAM_ATTR uart_intr_handler(void *ctx)
   }
 }
 
-int uart_intr_init(struct uart *uart)
+int uart_intr_setup(struct uart *uart)
 {
   uart_port_t uart_port;
   esp_err_t err;

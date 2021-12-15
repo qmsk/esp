@@ -1,0 +1,128 @@
+commit 47e7a69de7e2a58a78e0aea1b7a7391fec7d695c
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Thu Dec 16 00:16:46 2021 +0200
+
+    newlib: stdio vfs support
+
+diff --git a/components/newlib/Kconfig b/components/newlib/Kconfig
+index f58214f9..b2376f70 100644
+--- a/components/newlib/Kconfig
++++ b/components/newlib/Kconfig
+@@ -1,4 +1,9 @@
+ menu "Newlib"
++    config NEWLIB_VFS_STDIO
++      bool "Use stdio VFS support"
++      default n
++      help
++        Use custom 'stdio' component for newlib stdio -> ESP VFS
+ 
+     choice NEWLIB_STDOUT_LINE_ENDING
+         prompt "Line ending for UART output"
+diff --git a/components/newlib/src/reent_init.c b/components/newlib/src/reent_init.c
+index 5ccaf9e4..7fa88c72 100644
+--- a/components/newlib/src/reent_init.c
++++ b/components/newlib/src/reent_init.c
+@@ -17,13 +17,24 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <sys/reent.h>
++#include <unistd.h>
++
++#include <sdkconfig.h>
++
++#if CONFIG_NEWLIB_VFS_STDIO
++#include <esp_log.h>
++#include <esp_err.h>
++
++#include <stdio_vfs.h>
++#else
+ #include "esp_attr.h"
+ #include "esp_vfs_dev.h"
+ 
+ #define _STR(_s)    #_s
+ #define STR(_s)     _STR(_s)
++#endif
+ 
+-static struct _reent impure_data;
++static char *initial_env[] = { NULL };
+ 
+ /* This function is not part on newlib API, it is defined in libc/stdio/local.h
+  * There is no nice way to get __cleanup member populated while avoiding __sinit,
+@@ -52,6 +63,14 @@ void esp_reent_init(struct _reent* r)
+     r->__sglue._iobs = NULL;
+ }
+ 
++#if CONFIG_NEWLIB_VFS_STDIO
++
++static struct _reent impure_data = _REENT_INIT (impure_data);
++
++#else
++
++static struct _reent impure_data;
++
+ /* only declared in private stdio header file, local.h */
+ extern void __sfp_lock_acquire(void);
+ extern void __sfp_lock_release(void);
+@@ -113,16 +132,36 @@ void esp_reent_cleanup(void)
+     r->_asctime_buf = NULL;
+ }
+ 
++#endif
++
+ /*
+  * @brief Initialize newlib's platform object data
+  */
+ int esp_newlib_init(void)
+ {
+-    const char *default_uart_dev = "/dev/uart/" STR(CONFIG_CONSOLE_UART_NUM);
+-
++    // initialize global state
++    environ = initial_env;
+     _global_impure_ptr = &impure_data;
+-    esp_reent_init(_global_impure_ptr);
+ 
++#if CONFIG_NEWLIB_VFS_STDIO
++    esp_err_t err;
++
++    ESP_EARLY_LOGI(__func__, "environ=%p _global_impure_ptr=%p", environ, _global_impure_ptr);
++
++    // register VFS 0/1/2 FDs
++    if ((err = stdio_vfs_register())) {
++      ESP_EARLY_LOGE(__func__, "stdio_vfs_register: %s", esp_err_to_name(err));
++      return -1;
++    }
++
++    // use standard newlib __sinit() with stdin/out/err and 0/1/2 FDs
++    __sinit(_global_impure_ptr);
++
++    return 0;
++#else
++    const char *default_uart_dev = "/dev/uart/" STR(CONFIG_ESP_CONSOLE_UART_NUM);
++
++    esp_reent_init(_global_impure_ptr);
+     esp_vfs_dev_uart_register();
+ 
+     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+@@ -137,14 +176,8 @@ int esp_newlib_init(void)
+     if (!_GLOBAL_REENT->_stdin)
+         goto err_in;
+ 
+-    environ = malloc(sizeof(char*));
+-    if (!environ)
+-        goto err_env;
+-    environ[0] = NULL;
+-
+     return 0;
+ 
+-err_env:
+     fclose(_GLOBAL_REENT->_stdin);
+ err_in:
+     fclose(_GLOBAL_REENT->_stderr);
+@@ -152,6 +185,7 @@ err_fail:
+     fclose(_GLOBAL_REENT->_stdout);
+ err:
+     return -1;
++#endif
+ }
+ 
+ struct _reent* __getreent()

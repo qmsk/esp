@@ -1,0 +1,21 @@
+commit 05ea67782d67c24c594937dcd1dee4f2ac9e786b
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Thu Dec 16 00:29:16 2021 +0200
+
+    bootloader_support: fix ESP8266_MODIFY_UART_BAUDRATE for CONFIG_ESP_CONSOLE_UART_NONE case
+
+diff --git a/components/bootloader_support/src/bootloader_init.c b/components/bootloader_support/src/bootloader_init.c
+index fda2a49f..a7edf005 100644
+--- a/components/bootloader_support/src/bootloader_init.c
++++ b/components/bootloader_support/src/bootloader_init.c
+@@ -568,6 +568,10 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
+ #  endif
+ #endif
+ 
++#ifndef CONFIG_CONSOLE_UART_BAUDRATE
++#  define ESP8266_MODIFY_UART_BAUDRATE 0
++#endif
++
+ #ifndef ESP8266_MODIFY_UART_BAUDRATE
+ #  define ESP8266_MODIFY_UART_BAUDRATE 1
+ #endif

@@ -1,0 +1,17 @@
+commit 5146390d0919a98a11c6e21f1d39f7760c80254a
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Thu Dec 16 00:19:09 2021 +0200
+
+    newlib: fix __errno for mixed __errno_r() and errno usage
+
+diff --git a/components/newlib/src/syscall.c b/components/newlib/src/syscall.c
+index 09f4c6d3..84b29eca 100644
+--- a/components/newlib/src/syscall.c
++++ b/components/newlib/src/syscall.c
+@@ -88,5 +88,5 @@ int _getpid_r(struct _reent *r)
+ 
+ int *__errno(void)
+ {
+-    return (int *)pvTaskGetThreadLocalStorageBufferPointer(NULL, ERRNO_TLS_INDEX);
++    return &_REENT->_errno;
+ }

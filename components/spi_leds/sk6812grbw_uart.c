@@ -73,7 +73,7 @@ static const uint16_t sk6812_lut[] = {
 static const struct uart_options uart_options = {
   .clock_div    = UART_BAUD_3333333,
   .data_bits    = UART_DATA_BITS_6,
-  .parity_bits  = UART_PARTIY_DISABLE,
+  .parity_bits  = UART_PARITY_DISABLE,
   .stop_bits    = UART_STOP_BITS_1,
 
   .tx_inverted  = true,

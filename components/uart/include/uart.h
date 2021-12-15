@@ -34,9 +34,9 @@ enum uart_data_bits {
 };
 
 enum uart_parity_bits {
-  UART_PARTIY_DISABLE = 0x0,
-  UART_PARTIY_EVEN    = 0x2,
-  UART_PARTIY_ODD     = 0x3,
+  UART_PARITY_DISABLE = 0x0,
+  UART_PARITY_EVEN    = 0x2,
+  UART_PARITY_ODD     = 0x3,
 };
 
 enum uart_stop_bits {

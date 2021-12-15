@@ -68,7 +68,7 @@ static const uint16_t ws2811_lut[] = {
 static const struct uart_options uart_options = {
   .clock_div    = UART_BAUD_4000000,
   .data_bits    = UART_DATA_BITS_8,
-  .parity_bits  = UART_PARTIY_DISABLE,
+  .parity_bits  = UART_PARITY_DISABLE,
   .stop_bits    = UART_STOP_BITS_1,
 
   .tx_inverted  = true,

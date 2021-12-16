@@ -5,14 +5,14 @@
 
 #include <stdlib.h>
 
-static uart_dev_t *uart_dev[UART_MAX] = {
+static uart_dev_t *uart_dev[UART_PORT_MAX] = {
   [UART_0]  = &uart0,
   [UART_1]  = &uart1,
 };
 
 static int uart_init(struct uart *uart, enum uart_port port)
 {
-  if ((port & UART_PORT_MASK) >= UART_MAX) {
+  if ((port & UART_PORT_MASK) >= UART_PORT_MAX) {
     LOG_ERROR("invalid port=%x", port);
     return -1;
   }
@@ -87,10 +87,7 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto tx_error;
   }
 
-  if ((err = uart_intr_setup(uart))) {
-    LOG_ERROR("uart_tx_flush");
-    goto error;
-  }
+  uart_intr_setup(uart);
 
   if ((err = uart_tx_flush(uart))) {
     LOG_ERROR("uart_tx_flush");
@@ -124,10 +121,7 @@ int uart_open(struct uart *uart, struct uart_options options)
     goto tx_error;
   }
 
-  if ((err = uart_intr_setup(uart))) {
-    LOG_ERROR("uart_tx_flush");
-    goto error;
-  }
+  uart_intr_setup(uart);
 
   // wait TX idle
   if ((err = uart_tx_flush(uart))) {

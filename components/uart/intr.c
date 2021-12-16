@@ -5,20 +5,10 @@
 
 #include <logging.h>
 
-#include <esp_err.h>
 #include <esp8266/uart_struct.h>
 #include <esp8266/uart_register.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-
-// XXX: use SDK uart driver ISR for uart0/1 muxing
-typedef enum {
-    UART_NUM_0 = 0x0,
-    UART_NUM_1 = 0x1,
-    UART_NUM_MAX,
-} uart_port_t;
-
-extern esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void *), void *arg);
 
 /*
  * Flush the RX buffer, i.e. stop consuming the RX FIFO and allow the RX buffer to drain.
@@ -202,35 +192,15 @@ void IRAM_ATTR uart_intr_handler(void *ctx)
   }
 }
 
-int uart_intr_setup(struct uart *uart)
+void uart_intr_setup(struct uart *uart)
 {
-  uart_port_t uart_port;
-  esp_err_t err;
-
-  switch(uart->port & UART_PORT_MASK) {
-    case UART_0:
-      uart_port = UART_NUM_0;
-      break;
-
-    case UART_1:
-      uart_port = UART_NUM_1;
-      break;
-
-    default:
-      LOG_ERROR("Invalid uart port=%d", (uart->port & UART_PORT_MASK));
-      return -1;
-  }
-
   taskENTER_CRITICAL();
 
   uart_intr_disable(uart->dev);
   uart_intr_clear(uart->dev);
 
+  uart_isr_init();
+  uart_isr_setup(uart->port, uart_intr_handler, uart);
+
   taskEXIT_CRITICAL();
-
-  if ((err = uart_isr_register(uart_port, uart_intr_handler, uart))) {
-    LOG_ERROR("uart_isr_register: %s", esp_err_to_name(err));
-  }
-
-  return 0;
 }

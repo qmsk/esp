@@ -10,7 +10,7 @@ enum uart_port {
   UART_1,     // GPIO2 TX
 
   // number of physical UART ports
-  UART_MAX,
+  UART_PORT_MAX,
 
   UART_PORT_MASK  = 0x0ff,
   UART_SWAP_BIT   = 0x100,

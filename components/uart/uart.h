@@ -56,4 +56,10 @@ void uart_tx_break(struct uart *uart);
 void uart_tx_mark(struct uart *uart);
 
 /* intr.c */
-int uart_intr_setup(struct uart *uart);
+void uart_intr_setup(struct uart *uart);
+
+/* isr.c */
+typedef void (* uart_intr_func_t)(void *arg);
+
+void uart_isr_init();
+void uart_isr_setup(enum uart_port port, uart_intr_func_t func, void *arg);

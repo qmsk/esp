@@ -24,18 +24,17 @@ void app_main()
   // heap usage is likely to be lowest at app_main() start
   system_update_maximum_free_heap_size();
 
-  // system-level boot stage, abort on failures
-  LOG_INFO("boot");
+  // system-level init stage, abort on failures
+  LOG_INFO("init");
 
-  if (init_status_leds()) {
-    LOG_ERROR("init_status_leds");
-    user_alert(USER_ALERT_ERROR_BOOT);
+  if (init_uart()) {
+    LOG_ERROR("init_uart");
+    user_alert(USER_ALERT_ERROR_BOOT); // TODO: early gpio alert output before init_status_leds()?
     abort();
   }
 
-  // XXX: driver/uart will set U0TXD pin mux to U0TXD if using bootloader CONFIG_ESP_UART0_SWAP_IO
-  if (init_uart()) {
-    LOG_ERROR("uart_init");
+  if (init_status_leds()) {
+    LOG_ERROR("init_status_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
@@ -55,15 +54,18 @@ void app_main()
 #endif
 
   // config stage, terminate on failure
-  LOG_INFO("boot");
+  LOG_INFO("config");
 
   if ((err = init_config()) < 0) {
     LOG_ERROR("init_config");
-    user_alert(USER_ALERT_ERROR_SETUP);
+    user_alert(USER_ALERT_ERROR_BOOT);
   } else if (err > 0) {
     LOG_WARN("init_config: not configured");
     user_alert(USER_ALERT_ERROR_CONFIG);
   }
+
+  // setup stage, continue on failure
+  LOG_INFO("setup");
 
   // setup stage, continue on failure
   if (init_atx_psu()) {
@@ -106,7 +108,7 @@ void app_main()
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
-  LOG_INFO("complete");
+  LOG_INFO("start");
 
   if (start_artnet()) {
     LOG_ERROR("start_artnet");

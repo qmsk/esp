@@ -1,5 +1,6 @@
 #include <stdio_vfs.h>
 #include "ets.h"
+#include "uart.h"
 
 #include <esp_err.h>
 #include <esp_vfs.h>
@@ -15,7 +16,28 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
     switch(fd) {
       case STDOUT_FILENO:
       case STDERR_FILENO:
-        return ets_write(data, size);
+        if (vfs_uart) {
+          return uart_write(vfs_uart, data, size);
+        } else {
+          return ets_write(data, size);
+        }
+
+      default:
+        errno = EBADF;
+        return -1;
+    }
+}
+
+ssize_t stdio_vfs_read(int fd, void *data, size_t size)
+{
+    switch(fd) {
+      case STDIN_FILENO:
+        if (vfs_uart) {
+          return uart_read(vfs_uart, data, size);
+        } else {
+          errno = ENODEV;
+          return -1;
+        }
 
       default:
         errno = EBADF;
@@ -27,6 +49,7 @@ static const esp_vfs_t stdio_vfs = {
   .flags    = ESP_VFS_FLAG_DEFAULT,
 
   .write    = &stdio_vfs_write,
+  .read     = &stdio_vfs_read,
 };
 
 esp_err_t stdio_vfs_register()

@@ -69,7 +69,7 @@ services:
       - "${ESPPORT}"
     environment:
       ESPPORT: "${ESPPORT}"
-      MONITORBAUD: 74880
+      MONITORBAUD: "${MONITORBAUD:-115200}"
 
   npm:
     image: qmsk/esp8266-web

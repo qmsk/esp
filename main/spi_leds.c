@@ -1,6 +1,7 @@
 #include "spi_leds.h"
-#include "user_event.h"
 #include "atx_psu.h"
+#include "user_event.h"
+#include "pin_mutex.h"
 
 #include <spi_master.h>
 #include <spi_leds.h>
@@ -283,7 +284,8 @@ static int init_spi_leds_i2s(struct spi_leds_state *state, int index, const stru
       .protocol   = config->protocol,
       .count      = config->count,
 
-      .i2s_out    = spi_leds_i2s_out,
+      .i2s_out        = spi_leds_i2s_out,
+      .i2s_pin_mutex  = pin_mutex[PIN_MUTEX_U0RXD], // shared between UART0_RXD and I2SO_DATA
 
       .gpio_out   = &spi_leds_gpio_out_i2s,
   };

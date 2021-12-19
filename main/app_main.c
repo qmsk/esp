@@ -6,6 +6,7 @@
 #include "http.h"
 #include "log.h"
 #include "mdns.h"
+#include "pin_mutex.h"
 #include "spi_leds_init.h"
 #include "status_leds.h"
 #include "system.h"
@@ -32,6 +33,12 @@ void app_main()
 
   // system-level init stage, abort on failures
   LOG_INFO("init");
+
+  if (init_pin_mutex()) {
+    LOG_ERROR("init_pin_mutex");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
 
   if (init_status_leds()) {
     LOG_ERROR("init_status_leds");

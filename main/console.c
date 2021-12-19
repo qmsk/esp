@@ -1,4 +1,5 @@
 #include "console.h"
+#include "pin_mutex.h"
 
 #include "artnet_cmd.h"
 #include "spi_leds_cmd.h"
@@ -33,6 +34,7 @@
 #define CLI_TASK_STACK 2048 // bytes
 #define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+#define UART_PORT UART_0
 #define UART_RX_BUFFER_SIZE 256
 #define UART_TX_BUFFER_SIZE 1024
 
@@ -105,7 +107,7 @@ static const struct cmd cli_commands[] = {
 
 int init_console_uart(const struct console_config *config)
 {
-  enum uart_port port = CONFIG_ESP_CONSOLE_UART_NUM;
+  enum uart_port port = UART_PORT;
   int err;
 
   LOG_INFO("port=%d", port);
@@ -201,6 +203,8 @@ int start_console_uart(const struct console_config *config)
     .data_bits    = UART_DATA_BITS_8,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
+
+    .pin_mutex    = pin_mutex[PIN_MUTEX_U0RXD],
   };
   int err;
 

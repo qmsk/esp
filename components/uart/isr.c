@@ -60,3 +60,8 @@ void uart_isr_setup(enum uart_port port, uart_intr_func_t func, void *arg)
 {
   uart_intr_handler[port & UART_PORT_MASK] = (struct uart_intr_handler) { func, arg };
 }
+
+void uart_isr_teardown(enum uart_port port)
+{
+  uart_intr_handler[port & UART_PORT_MASK] = (struct uart_intr_handler) { NULL, NULL };
+}

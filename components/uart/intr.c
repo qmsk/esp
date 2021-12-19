@@ -204,3 +204,15 @@ void uart_intr_setup(struct uart *uart)
 
   taskEXIT_CRITICAL();
 }
+
+void uart_intr_teardown(struct uart *uart)
+{
+  taskENTER_CRITICAL();
+
+  uart_intr_disable(uart->dev);
+  uart_intr_clear(uart->dev);
+
+  uart_isr_teardown(uart->port);
+
+  taskEXIT_CRITICAL();
+}

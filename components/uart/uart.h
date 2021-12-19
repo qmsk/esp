@@ -26,7 +26,9 @@ struct uart {
 };
 
 /* dev.c */
-void uart_dev_setup(struct uart *uart, struct uart_options options);
+int uart_dev_init(struct uart *uart);
+int uart_dev_setup(struct uart *uart, struct uart_options options);
+void uart_dev_teardown(struct uart *uart);
 
 /* rx.c */
 enum uart_rx_event {
@@ -59,9 +61,11 @@ void uart_tx_mark(struct uart *uart);
 
 /* intr.c */
 void uart_intr_setup(struct uart *uart);
+void uart_intr_teardown(struct uart *uart);
 
 /* isr.c */
 typedef void (* uart_intr_func_t)(void *arg);
 
 void uart_isr_init();
 void uart_isr_setup(enum uart_port port, uart_intr_func_t func, void *arg);
+void uart_isr_teardown(enum uart_port port);

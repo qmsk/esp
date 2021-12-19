@@ -74,17 +74,19 @@ struct uart;
 /**
  * Allocate memory for UART driver.
  *
- * Does not touch the UART peripheral.
+ * Does not touch the UART device.
  */
 int uart_new(struct uart **uartp, enum uart_port port, size_t rx_buffer_size, size_t tx_buffer_size);
 
 /**
- * Setup UART interrupts, flush TX, and setup UART port.
+ * Setup UART interrupts, flush TX, setup UART device, reset RX.
  */
 int uart_setup(struct uart *uart, struct uart_options options);
 
 /**
- * Acquire mutex on uart, flush to ensure idle, and setup uart peripheral.
+ * Setup, but keep rx/tx lock acquired for calling task.
+ *
+ * Use uart_close() to release.
  */
 int uart_open(struct uart *uart, struct uart_options options);
 
@@ -158,6 +160,11 @@ int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us);
 int uart_mark(struct uart *uart, unsigned mark_us);
 
 /**
- * Flush TX/RX and release mutex on uart.
+ * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.
  */
 int uart_close(struct uart *uart);
+
+/*
+ * Stop UART interrupts and disassocate from UART device.
+ */
+int uart_teardown(struct uart *uart);

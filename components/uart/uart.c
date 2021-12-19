@@ -5,26 +5,8 @@
 
 #include <stdlib.h>
 
-static uart_dev_t *uart_dev[UART_PORT_MAX] = {
-  [UART_0]  = &uart0,
-  [UART_1]  = &uart1,
-};
-
 static int uart_init(struct uart *uart, enum uart_port port)
 {
-  if ((port & UART_PORT_MASK) >= UART_PORT_MAX) {
-    LOG_ERROR("invalid port=%x", port);
-    return -1;
-  }
-
-  if (!uart_dev[port & UART_PORT_MASK]) {
-    LOG_ERROR("invalid uart_dev[%d]", (port & UART_PORT_MASK));
-    return -1;
-  }
-
-  uart->port = port;
-  uart->dev = uart_dev[port & UART_PORT_MASK];
-
   if (!(uart->rx_mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateMutex");
     return -1;
@@ -33,6 +15,8 @@ static int uart_init(struct uart *uart, enum uart_port port)
     LOG_ERROR("xSemaphoreCreateMutex");
     return -1;
   }
+
+  uart->port = port;
 
   return 0;
 }
@@ -74,16 +58,46 @@ error:
 
 int uart_setup(struct uart *uart, struct uart_options options)
 {
-  int err;
+  int err = -1;
 
-  if ((err = uart_open(uart, options))) {
-    return err;
+  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    goto rx_error;
+  }
+  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    goto tx_error;
   }
 
+  if ((err = uart_dev_init(uart))) {
+    LOG_ERROR("uart_dev_init");
+    goto error;
+  }
+
+  uart_intr_setup(uart);
+
+  // wait TX idle
+  if ((err = uart_tx_flush(uart))) {
+    LOG_ERROR("uart_tx_flush");
+    goto error;
+  }
+
+  if ((err = uart_dev_setup(uart, options))) {
+    LOG_ERROR("uart_dev_setup");
+    goto error;
+  }
+
+  uart_rx_setup(uart, options);
+
+  uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
+
+error:
   xSemaphoreGiveRecursive(uart->tx_mutex);
+tx_error:
   xSemaphoreGiveRecursive(uart->rx_mutex);
 
-  return 0;
+rx_error:
+  return err;
 }
 
 int uart_open(struct uart *uart, struct uart_options options)
@@ -101,19 +115,12 @@ int uart_open(struct uart *uart, struct uart_options options)
     goto tx_error;
   }
 
-  uart_intr_setup(uart);
-
-  // wait TX idle
-  if ((err = uart_tx_flush(uart))) {
-    LOG_ERROR("uart_tx_flush");
+  if ((err = uart_setup(uart, options))) {
+    LOG_ERROR("uart_setup");
     goto error;
   }
 
-  uart_dev_setup(uart, options);
-  uart_rx_setup(uart, options);
-
-  uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
-
+  // keep locked
   return 0;
 
 error:
@@ -141,14 +148,61 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout)
   return ret;
 }
 
+static int uart_acquire_rx(struct uart *uart)
+{
+  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!uart->dev) {
+    LOG_ERROR("dev not setup");
+    goto error;
+  }
+
+  return 0;
+
+error:
+  xSemaphoreGiveRecursive(uart->rx_mutex);
+
+  return -1;
+}
+static int uart_acquire_tx(struct uart *uart)
+{
+  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!uart->dev) {
+    LOG_ERROR("dev not setup");
+    goto error;
+  }
+
+  return 0;
+
+error:
+  xSemaphoreGiveRecursive(uart->tx_mutex);
+
+  return -1;
+}
+
+static void uart_release_rx(struct uart *uart)
+{
+  xSemaphoreGiveRecursive(uart->rx_mutex);
+}
+static void uart_release_tx(struct uart *uart)
+{
+  xSemaphoreGiveRecursive(uart->tx_mutex);
+}
+
 int uart_read(struct uart *uart, void *buf, size_t size)
 {
   int ret = 0;
   bool read = false;
 
-  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
+  if ((ret = uart_acquire_rx(uart))) {
+    return ret;
   }
 
   while (!ret) {
@@ -193,7 +247,7 @@ int uart_read(struct uart *uart, void *buf, size_t size)
   }
 
 ret:
-  xSemaphoreGiveRecursive(uart->rx_mutex);
+  uart_release_rx(uart);
 
   return ret;
 }
@@ -202,9 +256,8 @@ int uart_putc(struct uart *uart, int ch)
 {
   int ret;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((ret = uart_acquire_tx(uart))) {
+    return ret;
   }
 
   LOG_DEBUG("ch=%#02x", ch);
@@ -216,7 +269,7 @@ int uart_putc(struct uart *uart, int ch)
   }
 
 error:
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return ret;
 }
@@ -224,10 +277,10 @@ error:
 ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
 {
   size_t write = 0;
+  int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   // fastpath via FIFO queue or TX buffer
@@ -248,7 +301,7 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
     len -= write;
   }
 
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return write;
 }
@@ -256,10 +309,10 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
 ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len)
 {
   size_t write;
+  int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   while (len > 0) {
@@ -282,7 +335,7 @@ ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len)
     }
   }
 
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return 0;
 }
@@ -290,10 +343,10 @@ ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len)
 ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len)
 {
   size_t write;
+  int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   while (len > 0) {
@@ -316,7 +369,7 @@ ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len)
     }
   }
 
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return 0;
 }
@@ -325,14 +378,13 @@ int uart_flush_write(struct uart *uart)
 {
   int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   err = uart_tx_flush(uart);
 
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return err;
 }
@@ -353,9 +405,8 @@ int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us)
 {
   int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   LOG_DEBUG("break_us=%u mark_us=%u", break_us, mark_us);
@@ -374,7 +425,7 @@ int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us)
   LOG_DEBUG("done");
 
 error:
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+uart_release_tx(uart);
 
   return err;
 }
@@ -383,9 +434,8 @@ int uart_mark(struct uart *uart, unsigned mark_us)
 {
   int err;
 
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive: busy");
-    return -1;
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
   }
 
   LOG_DEBUG("mark_us=%u", mark_us);
@@ -400,7 +450,7 @@ int uart_mark(struct uart *uart, unsigned mark_us)
   LOG_DEBUG("done");
 
 error:
-  xSemaphoreGiveRecursive(uart->tx_mutex);
+  uart_release_tx(uart);
 
   return err;
 }
@@ -409,20 +459,56 @@ int uart_close(struct uart *uart)
 {
   int err;
 
+  if ((err = uart_acquire_tx(uart))) {
+    return err;
+  }
+
   if ((err = uart_tx_flush(uart))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
 
 error:
+  uart_release_tx(uart);
+
   if (!xSemaphoreGiveRecursive(uart->tx_mutex)) {
     LOG_ERROR("xSemaphoreGiveRecursive");
-    return -1;
   }
   if (!xSemaphoreGiveRecursive(uart->rx_mutex)) {
     LOG_ERROR("xSemaphoreGiveRecursive");
-    return -1;
   }
 
-  return 0;
+  return err;
+}
+
+int uart_teardown(struct uart *uart)
+{
+  int err = -1;
+
+  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    goto rx_error;
+  }
+  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    goto tx_error;
+  }
+
+  if (!uart->dev) {
+    LOG_ERROR("dev not setup");
+    goto error;
+  }
+
+  err = 0;
+
+  uart_intr_teardown(uart);
+  uart_dev_teardown(uart);
+
+error:
+  xSemaphoreGiveRecursive(uart->tx_mutex);
+tx_error:
+  xSemaphoreGiveRecursive(uart->rx_mutex);
+
+rx_error:
+  return err;
 }

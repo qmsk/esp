@@ -12,8 +12,32 @@
 
 #define UART0_SWAP_BIT 0x4
 
-void uart_dev_setup(struct uart *uart, struct uart_options options)
+static uart_dev_t *uart_dev[UART_PORT_MAX] = {
+  [UART_0]  = &uart0,
+  [UART_1]  = &uart1,
+};
+
+int uart_dev_init(struct uart *uart)
 {
+  if ((uart->port & UART_PORT_MASK) >= UART_PORT_MAX) {
+    LOG_ERROR("invalid port=%x", uart->port);
+    return -1;
+  }
+
+  if (!uart_dev[uart->port & UART_PORT_MASK]) {
+    LOG_ERROR("invalid uart_dev[%d]", (uart->port & UART_PORT_MASK));
+    return -1;
+  }
+
+  uart->dev = uart_dev[uart->port & UART_PORT_MASK];
+
+  return 0;
+}
+
+int uart_dev_setup(struct uart *uart, struct uart_options options)
+{
+  int err = 0;
+
   LOG_DEBUG("port=%x: clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffering=%u) inverted(rx=%d, tx=%d)",
     uart->port,
     options.clock_div,
@@ -67,8 +91,17 @@ void uart_dev_setup(struct uart *uart, struct uart_options options)
       break;
 
     default:
-      LOG_ERROR("invalid port=%x", uart->port);
+      err = -1;
+
+      break;
   }
 
   taskEXIT_CRITICAL();
+
+  return err;
+}
+
+void uart_dev_teardown(struct uart *uart)
+{
+  uart->dev = NULL;
 }

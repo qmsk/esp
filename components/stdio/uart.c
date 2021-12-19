@@ -3,9 +3,12 @@
 
 struct uart *stdio_uart;
 
-int stdio_attach_uart(struct uart *uart)
+void stdio_attach_uart(struct uart *uart)
 {
   stdio_uart = uart;
+}
 
-  return 0;
+void stdio_detach_uart()
+{
+  stdio_uart = NULL;
 }

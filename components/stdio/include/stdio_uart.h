@@ -5,4 +5,9 @@
 /**
  * Use UART driver for stdio read/write.
  */
-int stdio_attach_uart(struct uart *uart);
+void stdio_attach_uart(struct uart *uart);
+
+/**
+ * Stop using UART driver.
+ */
+void stdio_detach_uart();

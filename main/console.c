@@ -167,6 +167,17 @@ int init_console()
   return 0;
 }
 
+void stop_console_uart()
+{
+  LOG_INFO("closing console, use short CONFIG button press to re-start");
+
+  stdio_detach_uart();
+
+  if (uart_teardown(console_uart)) {
+    LOG_ERROR("uart_teardown");
+  }
+}
+
 void console_cli_main(void *arg)
 {
   struct cli *cli = arg;
@@ -177,6 +188,8 @@ void console_cli_main(void *arg)
   }
 
   // stop
+  stop_console_uart();
+
   console_cli_task = NULL;
   vTaskDelete(NULL);
 }
@@ -203,10 +216,7 @@ int start_console_uart(const struct console_config *config)
     return err;
   }
 
-  if ((err = stdio_attach_uart(console_uart))) {
-    LOG_ERROR("stdio_attach_uart");
-    return err;
-  }
+  stdio_attach_uart(console_uart);
 
   return 0;
 }

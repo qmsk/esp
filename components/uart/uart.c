@@ -76,34 +76,14 @@ int uart_setup(struct uart *uart, struct uart_options options)
 {
   int err;
 
-  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    err = -1;
-    goto rx_error;
-  }
-  if (!xSemaphoreTakeRecursive(uart->tx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    err = -1;
-    goto tx_error;
+  if ((err = uart_open(uart, options))) {
+    return err;
   }
 
-  uart_intr_setup(uart);
-
-  if ((err = uart_tx_flush(uart))) {
-    LOG_ERROR("uart_tx_flush");
-    goto error;
-  }
-
-  uart_dev_setup(uart, options);
-  uart_rx_setup(uart, options);
-
-error:
   xSemaphoreGiveRecursive(uart->tx_mutex);
-tx_error:
   xSemaphoreGiveRecursive(uart->rx_mutex);
 
-rx_error:
-  return err;
+  return 0;
 }
 
 int uart_open(struct uart *uart, struct uart_options options)
@@ -132,6 +112,8 @@ int uart_open(struct uart *uart, struct uart_options options)
   uart_dev_setup(uart, options);
   uart_rx_setup(uart, options);
 
+  uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
+
   return 0;
 
 error:
@@ -143,9 +125,26 @@ rx_error:
   return err;
 }
 
+int uart_set_read_timeout(struct uart *uart, TickType_t timeout)
+{
+  int ret = 0;
+
+  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  uart->read_timeout = timeout;
+
+  xSemaphoreGiveRecursive(uart->rx_mutex);
+
+  return ret;
+}
+
 int uart_read(struct uart *uart, void *buf, size_t size)
 {
   int ret = 0;
+  bool read = false;
 
   if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
@@ -155,6 +154,15 @@ int uart_read(struct uart *uart, void *buf, size_t size)
   while (!ret) {
     // report any error/special cases
     switch (uart_rx_event(uart)) {
+      case UART_RX_NONE:
+        if (read) {
+          // timeout
+          goto ret;
+        } else {
+          // block on RX buffer
+          break;
+        }
+
       case UART_RX_DATA:
         // RX buffer has data available
         break;
@@ -174,17 +182,14 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         ret = 0;
         goto ret;
 
-      case UART_RX_NONE:
-        // block on RX buffer
-        break;
-
       default:
         LOG_ERROR("unknown event");
         ret = -1;
         goto ret;
     }
 
-    ret = uart_rx_read(uart, buf, size);
+    ret = uart_rx_read(uart, buf, size, uart->read_timeout);
+    read = true;
   }
 
 ret:

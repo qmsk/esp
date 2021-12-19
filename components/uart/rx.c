@@ -101,8 +101,8 @@ enum uart_rx_event uart_rx_event(struct uart *uart)
   return event;
 }
 
-int uart_rx_read(struct uart *uart, void *buf, size_t size)
+int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout)
 {
   // block on ISR RX FIFO -> buffer copy
-  return xStreamBufferReceive(uart->rx_buffer, buf, size, portMAX_DELAY);
+  return xStreamBufferReceive(uart->rx_buffer, buf, size, timeout);
 }

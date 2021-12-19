@@ -17,6 +17,8 @@ struct uart {
   StreamBufferHandle_t rx_buffer;
   bool rx_overflow, rx_break, rx_error;
 
+  TickType_t read_timeout;
+
   /* TX */
   SemaphoreHandle_t tx_mutex;
   StreamBufferHandle_t tx_buffer;
@@ -38,7 +40,7 @@ enum uart_rx_event {
 int uart_rx_init(struct uart *uart, size_t rx_buffer_size);
 void uart_rx_setup(struct uart *uart, struct uart_options options);
 enum uart_rx_event uart_rx_event(struct uart *uart);
-int uart_rx_read(struct uart *uart, void *buf, size_t size);
+int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout);
 
 /* tx.c */
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <esp8266/eagle_soc.h>
+#include <freertos/FreeRTOS.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <esp8266/eagle_soc.h>
 
 enum uart_port {
   UART_0,     // GPIO1 TX, GPIO3 RX
@@ -57,8 +59,14 @@ struct uart_options {
   // flush RX buffers after buffering frames (start/data/stop bits) available
   uint32_t rx_buffering : 7;
 
-  bool rx_inverted;
-  bool tx_inverted;
+  // invert RX signals
+  uint32_t rx_inverted : 1;
+
+  // invert TX signals
+  uint32_t tx_inverted : 1;
+
+  // optional read() timeout, 0 -> portMAX_DELAY
+  TickType_t read_timeout;
 };
 
 struct uart;
@@ -81,9 +89,16 @@ int uart_setup(struct uart *uart, struct uart_options options);
 int uart_open(struct uart *uart, struct uart_options options);
 
 /**
+ * Set timeout for read().
+ *
+ * @param timeout or portMAX_DELAY to disable
+ */
+int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
+
+/**
  * Read data from UART, copying up to size bytes into buf.
  *
- * @return <0 on error, 0 on break, otherwise number of bytes copied into buf.
+ * @return <0 on error, 0 on timeout or break, otherwise number of bytes copied into buf.
  */
 int uart_read(struct uart *uart, void *buf, size_t size);
 

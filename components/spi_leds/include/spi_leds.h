@@ -6,6 +6,9 @@
 #include <spi_master.h>
 #include <uart.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include <stdint.h>
 
 struct spi_leds;
@@ -101,9 +104,11 @@ struct spi_leds_options {
 
   /** SPI_LEDS_INTERFACE_UART */
   struct uart *uart;
+  SemaphoreHandle_t uart_pin_mutex;
 
   /** SPI_LEDS_INTERFACE_I2S */
   struct i2s_out *i2s_out;
+  SemaphoreHandle_t i2s_pin_mutex;
 
   /** GPIO for output multiplexing */
   struct gpio_out *gpio_out;

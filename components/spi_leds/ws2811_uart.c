@@ -65,17 +65,18 @@ static const uint16_t ws2811_lut[] = {
   [0b1111] = WS2811_LUT(0b1111),
 };
 
-static const struct uart_options uart_options = {
-  .clock_div    = UART_BAUD_4000000,
-  .data_bits    = UART_DATA_BITS_8,
-  .parity_bits  = UART_PARITY_DISABLE,
-  .stop_bits    = UART_STOP_BITS_1,
-
-  .tx_inverted  = true,
-};
-
 int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811_pixel *pixels, unsigned count)
 {
+  struct uart_options uart_options = {
+    .clock_div    = UART_BAUD_4000000,
+    .data_bits    = UART_DATA_BITS_8,
+    .parity_bits  = UART_PARITY_DISABLE,
+    .stop_bits    = UART_STOP_BITS_1,
+
+    .tx_inverted  = true,
+
+    .pin_mutex    = options->uart_pin_mutex,
+  };
   UBaseType_t task_priority = uxTaskPriorityGet(NULL);
   uint16_t buf[6];
   int err;

@@ -36,20 +36,22 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-static const struct i2s_out_options i2s_out_options = {
-  // 3.2MHz bit clock => 0.3125us per I2S bit
-  // four I2S bits per 1.25us SK6812 bit
-  // two SK6812 bits per I2S byte
-  .clock        = I2S_DMA_CLOCK_3M2,
-
-  // four bytes per I2S sample, 10us per 32-bit I2S sample
-  // hold low for 8 x 10us
-  .eof_value    = 0x00000000,
-  .eof_count    = 8,
-};
-
 int spi_leds_tx_i2s_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
 {
+  struct i2s_out_options i2s_out_options = {
+    // 3.2MHz bit clock => 0.3125us per I2S bit
+    // four I2S bits per 1.25us SK6812 bit
+    // two SK6812 bits per I2S byte
+    .clock        = I2S_DMA_CLOCK_3M2,
+
+    // four bytes per I2S sample, 10us per 32-bit I2S sample
+    // hold low for 8 x 10us
+    .eof_value    = 0x00000000,
+    .eof_count    = 8,
+
+    // shared IO pins
+    .pin_mutex    = options->i2s_pin_mutex,
+  };
   uint16_t buf[8];
   int err;
 

@@ -45,11 +45,31 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
     }
 }
 
+int stdio_vfs_fsync(int fd)
+{
+  switch(fd) {
+    case STDOUT_FILENO:
+    case STDERR_FILENO:
+      if (vfs_uart) {
+        return uart_flush_write(vfs_uart);
+      } else {
+        errno = ENODEV;
+        return -1;
+      }
+
+    default:
+      errno = EBADF;
+      return -1;
+  }
+
+}
+
 static const esp_vfs_t stdio_vfs = {
   .flags    = ESP_VFS_FLAG_DEFAULT,
 
   .write    = &stdio_vfs_write,
   .read     = &stdio_vfs_read,
+  .fsync    = &stdio_vfs_fsync,
 };
 
 esp_err_t stdio_vfs_register()

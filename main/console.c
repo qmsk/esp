@@ -261,3 +261,8 @@ int start_console()
 
   return 0;
 }
+
+bool is_console_running()
+{
+  return console_cli_task != NULL;
+}

@@ -1,5 +1,6 @@
 #include "spi_leds.h"
 #include "atx_psu.h"
+#include "console.h"
 #include "user_event.h"
 #include "pin_mutex.h"
 
@@ -350,6 +351,7 @@ int init_spi_leds()
     enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
 
     state->config = config;
+    state->interface = interface;
 
     if (!config->enabled) {
       continue;
@@ -400,9 +402,13 @@ int init_spi_leds()
   return 0;
 }
 
-static void update_spi_leds_active()
+static void update_spi_leds_active(struct spi_leds_state *state)
 {
   bool active = false;
+
+  state->active = spi_leds_active(state->spi_leds);
+
+  LOG_DEBUG("active=%u", state->active);
 
   for (int i = 0; i < SPI_LEDS_COUNT; i++)
   {
@@ -421,15 +427,31 @@ static void update_spi_leds_active()
   }
 }
 
+int check_spi_leds_interface(struct spi_leds_state *state)
+{
+  switch (state->interface) {
+    case SPI_LEDS_INTERFACE_I2S:
+      if (is_console_running()) {
+        LOG_WARN("I2S out busy, console running on UART0");
+        return 1;
+      }
+      return 0;
+
+    default:
+      return 0;
+  }
+}
+
 int update_spi_leds(struct spi_leds_state *state)
 {
   int err;
 
-  state->active = spi_leds_active(state->spi_leds);
+  update_spi_leds_active(state);
 
-  LOG_DEBUG("active=%u", state->active);
+  if ((err = check_spi_leds_interface(state))) {
+    return err;
+  }
 
-  update_spi_leds_active();
   user_activity(USER_ACTIVITY_SPI_LEDS);
 
   if ((err = spi_leds_tx(state->spi_leds))) {
@@ -444,11 +466,11 @@ int test_spi_leds(struct spi_leds_state *state)
 {
   int err;
 
-  state->active = true;
+  update_spi_leds_active(state);
 
-  LOG_DEBUG("active=%u", state->active);
-
-  update_spi_leds_active();
+  if ((err = check_spi_leds_interface(state))) {
+    return err;
+  }
 
   for (enum spi_leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
     user_activity(USER_ACTIVITY_SPI_LEDS);

@@ -3,6 +3,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 struct i2s_out;
 
 struct i2s_out_clock_options {
@@ -20,6 +23,9 @@ struct i2s_out_options {
 
   // The EOF value can be repeated to implement a reset frame
   unsigned eof_count;
+
+  // Acquire mutex before setting pin funcs
+  SemaphoreHandle_t pin_mutex;
 };
 
 /**

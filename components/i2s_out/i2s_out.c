@@ -66,10 +66,20 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   if ((err = i2s_out_slc_setup(i2s_out, options))) {
     LOG_ERROR("i2s_out_slc_setup");
-    return -1;
+    goto error;
   }
 
   i2s_out_i2s_setup(i2s_out, options);
+
+  if ((err = i2s_out_pin_setup(i2s_out, options))) {
+    LOG_ERROR("i2s_out_pin_setup");
+    goto error;
+  }
+
+  return 0;
+
+error:
+  xSemaphoreGiveRecursive(i2s_out->mutex);
 
   return err;
 }
@@ -159,6 +169,8 @@ error:
 int i2s_out_close(struct i2s_out *i2s_out)
 {
   int err = i2s_out_flush(i2s_out);
+
+  i2s_out_pin_teardown(i2s_out);
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");

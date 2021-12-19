@@ -3,13 +3,6 @@
 #include <esp8266/i2s_struct.h>
 #include <esp8266/i2s_register.h>
 
-#include <esp8266/eagle_soc.h>
-#include <esp8266/pin_mux_register.h>
-
-// glitchless version of PIN_FUNC_SELECT(), does not reset pin func to default if already set
-#define IDEMPOTENT_PIN_FUNC_SELECT(PIN_NAME, FUNC) \
-  SET_PERI_REG_BITS(PIN_NAME, PERIPHS_IO_MUX_FUNC, ((FUNC & 0x4) << 2) | (FUNC & 0x3), PERIPHS_IO_MUX_FUNC_S)
-
 #define I2S_INT_CLR_BITS (I2S_I2S_TX_REMPTY_INT_CLR | I2S_I2S_TX_WFULL_INT_CLR | I2S_I2S_RX_REMPTY_INT_CLR | I2S_I2S_RX_WFULL_INT_CLR | I2S_I2S_PUT_DATA_INT_CLR | I2S_I2S_TAKE_DATA_INT_CLR)
 
 enum i2s_tx_fifo_mode {

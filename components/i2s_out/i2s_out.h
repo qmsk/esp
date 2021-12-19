@@ -7,6 +7,7 @@
 struct slc_desc;
 
 struct i2s_out {
+  SemaphoreHandle_t pin_mutex;
   SemaphoreHandle_t mutex;
 
   /* i2s */
@@ -40,3 +41,7 @@ int i2s_out_i2s_init(struct i2s_out *i2s_out);
 void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 void i2s_out_i2s_start(struct i2s_out *i2s_out);
 int i2s_out_i2s_flush(struct i2s_out *i2s_out);
+
+/* pin.c */
+int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+void i2s_out_pin_teardown(struct i2s_out *i2s_out);

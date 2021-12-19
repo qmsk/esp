@@ -2,6 +2,7 @@
 
 #include <esp8266/eagle_soc.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -67,6 +68,9 @@ struct uart_options {
 
   // optional read() timeout, 0 -> portMAX_DELAY
   TickType_t read_timeout;
+
+  // Acquire mutex before setting pin funcs
+  SemaphoreHandle_t pin_mutex;
 };
 
 struct uart;
@@ -161,6 +165,8 @@ int uart_mark(struct uart *uart, unsigned mark_us);
 
 /**
  * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.
+ *
+ * WARNING: This does not release any pin_mutex acquired by `uart_open()`  -> `uart_setup()`! Use `uart_teardown()`!
  */
 int uart_close(struct uart *uart);
 

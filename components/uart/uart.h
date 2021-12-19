@@ -11,6 +11,7 @@
 struct uart {
   enum uart_port port;
   uart_dev_t *dev;
+  SemaphoreHandle_t pin_mutex;
 
   /* RX */
   SemaphoreHandle_t rx_mutex;

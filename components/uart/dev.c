@@ -48,6 +48,15 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
     options.rx_inverted,  options.tx_inverted
   );
 
+  if (options.pin_mutex) {
+    if (!xSemaphoreTake(options.pin_mutex, portMAX_DELAY)) {
+      LOG_ERROR("xSemaphoreTake");
+      return -1;
+    } else {
+      uart->pin_mutex = options.pin_mutex;
+    }
+  }
+
   taskENTER_CRITICAL();
 
   uart->dev->clk_div.div_int = options.clock_div;
@@ -104,4 +113,10 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
 void uart_dev_teardown(struct uart *uart)
 {
   uart->dev = NULL;
+
+  if (uart->pin_mutex) {
+    xSemaphoreGive(uart->pin_mutex);
+
+    uart->pin_mutex = NULL;
+  }
 }

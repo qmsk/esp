@@ -6,6 +6,7 @@
 struct cli {
   char *buf;
   size_t size;
+  TickType_t timeout;
 
   struct cmdtab cmdtab;
   struct cmd_eval *cmd_eval;

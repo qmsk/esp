@@ -1,13 +1,16 @@
 #include "cli.h"
 #include <cli.h>
+#include <stdio_fcntl.h>
 #include <logging.h>
 
+#include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <unistd.h>
 
 static void cli_print_ctx(const struct cmdctx *ctx)
 {
@@ -76,6 +79,17 @@ static int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const cha
   return 0;
 }
 
+static int cli_getc(struct cli *cli, bool first)
+{
+  int timeout = first ? cli->timeout : 0;
+
+  if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, timeout) < 0) {
+    LOG_WARN("fcntl stdin: %s", strerror(errno));
+  }
+
+  return fgetc(stdin);
+}
+
 // process one line of input
 static int cli_read(struct cli *cli)
 {
@@ -84,7 +98,7 @@ static int cli_read(struct cli *cli)
 
   printf("> ");
 
-  while ((c = fgetc(stdin)) != EOF) {
+  while ((c = cli_getc(cli, (ptr == cli->buf))) != EOF) {
     #ifdef DEBUG
       if (isprint(c)) {
         LOG_DEBUG("%c", c);
@@ -129,7 +143,7 @@ static int cli_read(struct cli *cli)
 
   // EOF
   LOG_WARN("EOF");
-  return 1;
+  return -1;
 }
 
 static int cli_eval(struct cli *cli)
@@ -168,7 +182,7 @@ int cli_main(struct cli *cli)
   }
 }
 
-int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, size_t max_args)
+int cli_init(struct cli **clip, const struct cmd *commands, struct cli_options options)
 {
   struct cli *cli;
   int err = 0;
@@ -178,17 +192,18 @@ int cli_init(struct cli **clip, const struct cmd *commands, size_t buf_size, siz
     return -1;
   }
 
-  if (!(cli->buf = malloc(buf_size))) {
+  if (!(cli->buf = malloc(options.buf_size))) {
     LOG_ERROR("malloc buf");
     goto error;
   }
 
-  if ((err = cmd_eval_new(&cli->cmd_eval, max_args))) {
+  if ((err = cmd_eval_new(&cli->cmd_eval, options.max_args))) {
     LOG_ERROR("cmd_eval_new");
     goto error;
   }
 
-  cli->size = buf_size;
+  cli->size = options.buf_size;
+  cli->timeout = options.timeout;
   cli->cmdtab = (struct cmdtab) {
     .commands      = commands,
     .error_handler = cli_cmd_error,
@@ -206,6 +221,11 @@ error:
   free(cli);
 
   return err;
+}
+
+void cli_set_timeout(struct cli *cli, TickType_t timeout)
+{
+  cli->timeout = timeout;
 }
 
 int cmd_help(struct cli *cli)

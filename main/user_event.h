@@ -50,3 +50,8 @@ void user_test();
  * Cancel test mode.
  */
 void user_test_cancel();
+
+/*
+ * Enter config mode.
+ */
+void user_config();

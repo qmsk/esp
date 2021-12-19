@@ -193,13 +193,14 @@ static void read_flash_led()
 
   // flash must be held for threshold samples to reset, and is cancled if released before that
   if (flash_held > STATUS_LEDS_FLASH_RESET_THRESHOLD) {
-    LOG_WARN("confirm reset");
+    LOG_WARN("request reset");
     user_state(USER_STATE_RESET);
     user_reset();
   } else if (flash_held == 1) {
-    // only set once, to keep flash pattern consistent
-    LOG_WARN("request reset");
+    // trigger once at start of flash sequence
+    LOG_WARN("request config");
     override_user_led(STATUS_LED_FAST);
+    user_config();
   } else if (flash_released > 0) {
     LOG_WARN("cancel reset");
     revert_user_led();

@@ -2,6 +2,7 @@
 
 #include "artnet.h"
 #include "config.h"
+#include "console.h"
 #include "status_leds.h"
 #include "system.h"
 
@@ -107,4 +108,9 @@ void user_test()
 void user_test_cancel()
 {
   cancel_artnet_test();
+}
+
+void user_config()
+{
+  start_console();
 }

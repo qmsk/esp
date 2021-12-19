@@ -28,3 +28,7 @@ size_t stdio_log_write(struct stdio_log *log, const void *data, size_t len);
  * Return number of bytes copied.
  */
 size_t stdio_log_read(struct stdio_log *log, void *data, size_t len);
+
+off_t stdio_log_seek_set(struct stdio_log *log, off_t offset);
+off_t stdio_log_seek_cur(struct stdio_log *log, off_t offset);
+off_t stdio_log_seek_end(struct stdio_log *log, off_t offset);

@@ -40,7 +40,7 @@ int init_log()
   return 0;
 }
 
-int log_tail_cmd(int argc, char **argv, void *ctx)
+static int read_log()
 {
   char buf[STDIO_LINE_SIZE];
 
@@ -56,8 +56,35 @@ int log_tail_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int log_show_cmd(int argc, char **argv, void *ctx)
+{
+  if (fseek(stderr, 0, SEEK_SET)) {
+    LOG_ERROR("fseek stderr: %s", strerror(errno));
+    return -1;
+  }
+
+  return read_log();
+}
+
+int log_tail_cmd(int argc, char **argv, void *ctx)
+{
+  return read_log();
+}
+
+int log_clear_cmd(int argc, char **argv, void *ctx)
+{
+  if (fseek(stderr, 0, SEEK_END)) {
+    LOG_ERROR("fseek stderr: %s", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
 const struct cmd log_commands[] = {
-  { "tail",     log_tail_cmd,    .usage = "", .describe = "Show last log lines"  },
+  { "show",     log_show_cmd,    .usage = "", .describe = "Show buffered log lines"  },
+  { "tail",     log_tail_cmd,    .usage = "", .describe = "Show new log lines" },
+  { "clear",    log_clear_cmd,   .usage = "", .describe = "Clear new log lines" },
   {}
 };
 

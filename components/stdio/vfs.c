@@ -43,6 +43,52 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
     }
 }
 
+off_t stdio_vfs_lseek_log(struct stdio_log *log, off_t size, int mode)
+{
+  off_t ret;
+
+  switch(mode) {
+    case SEEK_SET:
+      if ((ret = stdio_log_seek_set(log, size)) < 0) {
+        errno = EIO;
+      }
+      return ret;
+
+    case SEEK_CUR:
+      if ((ret = stdio_log_seek_cur(log, size)) < 0) {
+        errno = EIO;
+      }
+      return ret;
+
+    case SEEK_END:
+      if ((ret = stdio_log_seek_end(log, size)) < 0) {
+        errno = EIO;
+      }
+      return ret;
+
+    default:
+      errno = EINVAL;
+      return -1;
+  }
+}
+
+off_t stdio_vfs_lseek(int fd, off_t size, int mode)
+{
+  switch(fd) {
+    case STDERR_FILENO:
+      if (stderr_log) {
+        return stdio_vfs_lseek_log(stderr_log, size, mode);
+      } else {
+        errno = ENODEV;
+        return -1;
+      }
+
+    default:
+      errno = EBADF;
+      return -1;
+  }
+}
+
 ssize_t stdio_vfs_read(int fd, void *data, size_t size)
 {
     switch(fd) {
@@ -91,6 +137,7 @@ static const esp_vfs_t stdio_vfs = {
   .flags    = ESP_VFS_FLAG_DEFAULT,
 
   .write    = &stdio_vfs_write,
+  .lseek    = &stdio_vfs_lseek,
   .read     = &stdio_vfs_read,
   .fsync    = &stdio_vfs_fsync,
 };

@@ -158,3 +158,88 @@ size_t stdio_log_read(struct stdio_log *log, void *data, size_t len)
 
   return len;
 }
+
+static void stdio_log_read_head(struct stdio_log *log)
+{
+  if (log->write_count > 0) {
+    log->read = log->write;
+    log->read_count = log->write_count - 1;
+  } else {
+    log->read = log->buf;
+    log->read_count = 0;
+  }
+}
+
+static void stdio_log_read_tail(struct stdio_log *log)
+{
+  log->read = log->write;
+  log->read_count = log->write_count;
+}
+
+static off_t stdio_log_read_offset(struct stdio_log *log)
+{
+  return (log->read_count * log->size) + (log->read - log->buf);
+}
+
+off_t stdio_log_seek_set(struct stdio_log *log, off_t offset)
+{
+  off_t ret;
+
+  if (offset) {
+    // XXX: offset is not implemented
+    return -1;
+  }
+
+  if (!xSemaphoreTakeRecursive(log->mutex, portMAX_DELAY)) {
+    return 0;
+  }
+  stdio_log_read_head(log);
+
+  ret = stdio_log_read_offset(log);
+
+  xSemaphoreGiveRecursive(log->mutex);
+
+  return ret;
+}
+
+off_t stdio_log_seek_cur(struct stdio_log *log, off_t offset)
+{
+  off_t ret;
+
+  if (offset) {
+    // XXX: offset is not implemented
+    return -1;
+  }
+
+  if (!xSemaphoreTakeRecursive(log->mutex, portMAX_DELAY)) {
+    return 0;
+  }
+
+  ret = stdio_log_read_offset(log);
+
+  xSemaphoreGiveRecursive(log->mutex);
+
+  return ret;
+}
+
+off_t stdio_log_seek_end(struct stdio_log *log, off_t offset)
+{
+  off_t ret;
+
+  if (offset) {
+    // XXX: offset is not implemented
+    return -1;
+  }
+
+  if (!xSemaphoreTakeRecursive(log->mutex, portMAX_DELAY)) {
+    return 0;
+  }
+
+  stdio_log_read_tail(log);
+
+  ret = stdio_log_read_offset(log);
+
+  xSemaphoreGiveRecursive(log->mutex);
+
+  return ret;
+}

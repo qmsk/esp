@@ -2,4 +2,4 @@
 
 #include <uart.h>
 
-extern struct uart *vfs_uart;
+extern struct uart *stdio_uart;

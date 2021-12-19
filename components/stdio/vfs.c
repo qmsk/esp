@@ -1,5 +1,6 @@
 #include <stdio_vfs.h>
 #include "ets.h"
+#include "log.h"
 #include "uart.h"
 
 #include <esp_err.h>
@@ -15,12 +16,26 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
 {
     switch(fd) {
       case STDOUT_FILENO:
-      case STDERR_FILENO:
-        if (vfs_uart) {
-          return uart_write(vfs_uart, data, size);
+        if (stdio_uart) {
+          return uart_write(stdio_uart, data, size);
         } else {
-          return ets_write(data, size);
+          ets_write(data, size);
+          return size;
         }
+
+      case STDERR_FILENO:
+        if (stderr_log) {
+          size = stdio_log_write(stderr_log, data, size);
+        }
+
+        if (!stdio_uart) {
+          ets_write(data, size);
+        } else if (uart_write_all(stdio_uart, data, size)) {
+          errno = EIO;
+          return -1;
+        }
+
+        return size;
 
       default:
         errno = EBADF;
@@ -32,8 +47,16 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
 {
     switch(fd) {
       case STDIN_FILENO:
-        if (vfs_uart) {
-          return uart_read(vfs_uart, data, size);
+        if (stdio_uart) {
+          return uart_read(stdio_uart, data, size);
+        } else {
+          errno = ENODEV;
+          return -1;
+        }
+
+      case STDERR_FILENO:
+        if (stderr_log) {
+          return stdio_log_read(stderr_log, data, size);
         } else {
           errno = ENODEV;
           return -1;
@@ -50,8 +73,8 @@ int stdio_vfs_fsync(int fd)
   switch(fd) {
     case STDOUT_FILENO:
     case STDERR_FILENO:
-      if (vfs_uart) {
-        return uart_flush_write(vfs_uart);
+      if (stdio_uart) {
+        return uart_flush_write(stdio_uart);
       } else {
         errno = ENODEV;
         return -1;

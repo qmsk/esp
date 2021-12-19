@@ -6,7 +6,6 @@
 #include "http.h"
 #include "log.h"
 #include "mdns.h"
-#include "uart.h"
 #include "spi_leds_init.h"
 #include "status_leds.h"
 #include "system.h"
@@ -33,12 +32,6 @@ void app_main()
 
   // system-level init stage, abort on failures
   LOG_INFO("init");
-
-  if (init_uart()) {
-    LOG_ERROR("init_uart");
-    user_alert(USER_ALERT_ERROR_BOOT); // TODO: early gpio alert output before init_status_leds()?
-    abort();
-  }
 
   if (init_status_leds()) {
     LOG_ERROR("init_status_leds");
@@ -67,6 +60,12 @@ void app_main()
   } else if (err > 0) {
     LOG_WARN("init_config: not configured");
     user_alert(USER_ALERT_ERROR_CONFIG);
+  }
+
+  if (start_console()) {
+    LOG_ERROR("start_console");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
   }
 
   // setup stage, continue on failure

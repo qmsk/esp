@@ -2,6 +2,7 @@
 
 #include "artnet_config.h"
 #include "atx_psu.h"
+#include "console.h"
 #include "dmx_config.h"
 #include "http.h"
 #include "spi_leds_config.h"
@@ -17,6 +18,12 @@
 #define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
+  { "console",
+    .description = (
+      "UART Console."
+    ),
+    .table = console_configtab,
+  },
   { "atx_psu",
     .description = (
       "Control ATX-PSU based on spi-leds output."

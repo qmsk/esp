@@ -1,4 +1,4 @@
-commit 47e7a69de7e2a58a78e0aea1b7a7391fec7d695c
+commit f591d028ff0b7abf5481a144767f9314b4629bf3
 Author: Tero Marttila <terom@fixme.fi>
 Date:   Thu Dec 16 00:16:46 2021 +0200
 
@@ -19,7 +19,7 @@ index f58214f9..b2376f70 100644
      choice NEWLIB_STDOUT_LINE_ENDING
          prompt "Line ending for UART output"
 diff --git a/components/newlib/src/reent_init.c b/components/newlib/src/reent_init.c
-index 5ccaf9e4..7fa88c72 100644
+index 5ccaf9e4..6bebbdc5 100644
 --- a/components/newlib/src/reent_init.c
 +++ b/components/newlib/src/reent_init.c
 @@ -17,13 +17,24 @@
@@ -84,7 +84,7 @@ index 5ccaf9e4..7fa88c72 100644
 +#if CONFIG_NEWLIB_VFS_STDIO
 +    esp_err_t err;
 +
-+    ESP_EARLY_LOGI(__func__, "environ=%p _global_impure_ptr=%p", environ, _global_impure_ptr);
++    ESP_EARLY_LOGD(__func__, "environ=%p _global_impure_ptr=%p", environ, _global_impure_ptr);
 +
 +    // register VFS 0/1/2 FDs
 +    if ((err = stdio_vfs_register())) {

@@ -17,9 +17,10 @@ enum uart_port {
 
   UART_PORT_MASK  = 0x0ff,
   UART_SWAP_BIT   = 0x100,
+  UART_TXDBK_BIT  = 0x200,
 
-  UART_0_SWAP     = UART_0 | UART_SWAP_BIT, // GPIO15 TX, GPIO13 RX
-  // TODO: UART_0 with GPIO1+GPIO2 TX?
+  UART_0_SWAP     = UART_0 | UART_SWAP_BIT,   // GPIO15 TX, GPIO13 RX
+  UART_0_TXDBK    = UART_0 | UART_TXDBK_BIT,  // GPIO1+GPIO2 TX, GPIO3 RX
 };
 
 enum uart_baud_rate {

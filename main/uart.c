@@ -6,11 +6,6 @@
 
 #include <sdkconfig.h>
 
-static int putchar_stderr(int c)
-{
-  return fputc(c, stderr);
-}
-
 #if CONFIG_NEWLIB_VFS_STDIO
 // use custom uart + vfs driver
 #include <stdio_uart.h>
@@ -103,11 +98,7 @@ int init_uart()
   esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
   esp_vfs_dev_uart_set_rx_line_endings(UART_RX_LINE_ENDINGS_MODE);
   esp_vfs_dev_uart_set_tx_line_endings(UART_TX_LINE_ENDINGS_MODE);
-#endif
-
-  // unbuffered logging via stderr
-  setvbuf(stderr, NULL, _IONBF, 0);
-  esp_log_set_putchar(putchar_stderr);
 
   return 0;
+#endif
 }

@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dmx_init.h"
 #include "http.h"
+#include "log.h"
 #include "mdns.h"
 #include "uart.h"
 #include "spi_leds_init.h"
@@ -23,6 +24,12 @@ void app_main()
 
   // heap usage is likely to be lowest at app_main() start
   system_update_maximum_free_heap_size();
+
+  if (init_log()) {
+    LOG_ERROR("init_log");
+    user_alert(USER_ALERT_ERROR_BOOT); // TODO: early gpio alert output before init_status_leds()?
+    abort();
+  }
 
   // system-level init stage, abort on failures
   LOG_INFO("init");

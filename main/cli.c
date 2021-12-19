@@ -4,6 +4,7 @@
 #include "spi_leds_cmd.h"
 #include "config.h"
 #include "dmx.h"
+#include "log.h"
 #include "spiffs.h"
 #include "status_leds.h"
 #include "system.h"
@@ -39,6 +40,9 @@ static int help_cmd(int argc, char **arv, void *ctx)
 
 static const struct cmd commands[] = {
   { "help",   help_cmd,   .describe = "Show commands" },
+  { "log", .describe = "Logging",
+      .subcommands = &log_cmdtab,
+  },
   { "system", .describe = "System",
       .subcommands = &system_cmdtab,
   },

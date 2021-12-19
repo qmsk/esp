@@ -3,11 +3,17 @@
 
 #include "esp_log.h"
 
+/* Bypass stdio */
+#define LOG_BOOT_INFO(...)  do { esp_early_log_write(ESP_LOG_INFO, __func__, __VA_ARGS__); } while(0)
+#define LOG_BOOT_ERROR(...)  do { esp_early_log_write(ESP_LOG_ERROR, __func__, __VA_ARGS__); } while(0)
+
 #ifdef DEBUG
   #define LOG_DEBUG(...)  do { esp_log_write(ESP_LOG_DEBUG, __func__, __VA_ARGS__); } while(0)
+  #define LOG_BOOT_DEBUG(...)  do { esp_early_log_write(ESP_LOG_DEBUG, __func__, __VA_ARGS__); } while(0)
   #define LOG_ISR_DEBUG(...)  do { esp_early_log_write(ESP_LOG_DEBUG, __func__, __VA_ARGS__); } while(0)
 #else
   #define LOG_DEBUG(...)
+  #define LOG_BOOT_DEBUG(...)
   #define LOG_ISR_DEBUG(...)
 #endif
 

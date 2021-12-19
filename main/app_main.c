@@ -1,7 +1,7 @@
 #include "artnet_init.h"
 #include "atx_psu.h"
-#include "cli.h"
 #include "config.h"
+#include "console.h"
 #include "dmx_init.h"
 #include "http.h"
 #include "log.h"
@@ -52,13 +52,11 @@ void app_main()
     abort();
   }
 
-#if CLI_ENABLED
-  if (init_cli()) {
-    LOG_ERROR("init_cli");
+  if (init_console()) {
+    LOG_ERROR("init_console");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
-#endif
 
   // config stage, terminate on failure
   LOG_INFO("config");

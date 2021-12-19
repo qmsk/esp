@@ -1,4 +1,4 @@
-#include "cli.h"
+#include "console.h"
 
 #include "artnet_cmd.h"
 #include "spi_leds_cmd.h"
@@ -21,8 +21,6 @@
 #include <freertos/queue.h>
 
 #include <stdio.h>
-
-#if CLI_ENABLED
 
 // max line size
 #define CLI_BUF_SIZE 512
@@ -89,7 +87,7 @@ void cli_task(void *arg)
   vTaskDelete(NULL);
 }
 
-int init_cli()
+int init_console()
 {
   // unbuffered input
   setvbuf(stdin, NULL, _IONBF, 0);
@@ -112,5 +110,3 @@ int init_cli()
 
   return 0;
 }
-
-#endif

@@ -106,7 +106,7 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len);
  *
  * Returns 0, or <0 on error.
  */
-ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len);
+int uart_write_all(struct uart *uart, const void *buf, size_t len);
 
 /**
  * Write len bytes from buf into the TX buffer.

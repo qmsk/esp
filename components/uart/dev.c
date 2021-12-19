@@ -1,13 +1,11 @@
 #include <uart.h>
 #include "uart.h"
+#include "dev.h"
 
 #include <logging.h>
 
 #include <esp8266/uart_struct.h>
 #include <esp8266/uart_register.h>
-#include <esp8266/pin_mux_register.h>
-#include <esp8266/eagle_soc.h>
-#include <esp8266/rom_functions.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -43,10 +41,10 @@ void uart_dev_setup(struct uart *uart, struct uart_options options)
       CLEAR_PERI_REG_MASK(UART_SWAP_REG, UART0_SWAP_BIT);
 
       // GPIO1 UART0 RX
-      PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD);
 
       // GPIO3 UART0 RX
-      PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD);
 
       break;
 
@@ -55,16 +53,16 @@ void uart_dev_setup(struct uart *uart, struct uart_options options)
       SET_PERI_REG_MASK(UART_SWAP_REG, UART0_SWAP_BIT);
 
       // GPIO13 UART0 CTS -> RX
-      PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_UART0_CTS);
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_UART0_CTS);
 
       // GPIO15 UART0 RTS -> TX
-      PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_UART0_RTS);
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_UART0_RTS);
 
       break;
 
     case UART_1:
       // GPIO2 UART1 TX
-      PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_UART1_TXD_BK);
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_UART1_TXD_BK);
 
       break;
 

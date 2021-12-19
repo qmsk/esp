@@ -1,4 +1,5 @@
 #include <stdio_vfs.h>
+#include <stdio_fcntl.h>
 #include "ets.h"
 #include "log.h"
 #include "uart.h"
@@ -114,6 +115,40 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
     }
 }
 
+int stdio_vfs_fcntl_uart(struct uart *uart, int cmd, int arg)
+{
+  switch(cmd) {
+    case F_SET_READ_TIMEOUT:
+      if (uart_set_read_timeout(uart, arg ? arg : portMAX_DELAY)) {
+        errno = EIO;
+        return -1;
+      }
+
+      return 0;
+
+    default:
+      errno = EINVAL;
+      return -1;
+  }
+}
+
+int stdio_vfs_fcntl(int fd, int cmd, int arg)
+{
+  switch(fd) {
+    case STDIN_FILENO:
+      if (stdio_uart) {
+        return stdio_vfs_fcntl_uart(stdio_uart, cmd, arg);
+      } else {
+        errno = ENODEV;
+        return -1;
+      }
+
+    default:
+      errno = EBADF;
+      return -1;
+  }
+}
+
 int stdio_vfs_fsync(int fd)
 {
   switch(fd) {
@@ -130,7 +165,6 @@ int stdio_vfs_fsync(int fd)
       errno = EBADF;
       return -1;
   }
-
 }
 
 static const esp_vfs_t stdio_vfs = {
@@ -139,6 +173,7 @@ static const esp_vfs_t stdio_vfs = {
   .write    = &stdio_vfs_write,
   .lseek    = &stdio_vfs_lseek,
   .read     = &stdio_vfs_read,
+  .fcntl    = &stdio_vfs_fcntl,
   .fsync    = &stdio_vfs_fsync,
 };
 

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "http_routes.h"
+#include "http_handlers.h"
 
 #include <logging.h>
 #include <json.h>
@@ -236,18 +237,18 @@ static int config_api_write_config_modules(struct json_writer *w, const struct c
   return err;
 }
 
-static int config_api_write_config(struct json_writer *w, const struct config *config)
+static int config_api_write_config(struct json_writer *w, void *ctx)
 {
+  const struct config *config = ctx;
+
   return JSON_WRITE_OBJECT(w,
-    JSON_WRITE_MEMBER_STRING(w, "filename", config->filename) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "modules", config_api_write_config_modules(w, config))
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "modules", config_api_write_config_modules(w, config))
   );
 }
 
 int config_api_get(struct http_request *request, struct http_response *response, void *ctx)
 {
-  struct json_writer json_writer;
-  FILE *file;
   int err;
 
   if ((err = http_request_headers(request, NULL))) {
@@ -255,34 +256,9 @@ int config_api_get(struct http_request *request, struct http_response *response,
     return err;
   }
 
-  if ((err = http_response_start(response, HTTP_OK, NULL))) {
-    LOG_WARN("http_response_start");
+  if ((err = write_http_response_json(response, config_api_write_config, &config))) {
+    LOG_WARN("write_http_response_json -> config_api_write_config");
     return err;
-  }
-
-  if ((err = http_response_header(response, "Content-Type", "application/json"))) {
-    LOG_WARN("http_response_header");
-    return err;
-  }
-
-  if ((err = http_response_open(response, &file))) {
-    LOG_WARN("http_response_open");
-    return err;
-  }
-
-  if (json_writer_init(&json_writer, file)) {
-    LOG_ERROR("json_writer_init");
-    return -1;
-  }
-
-  if ((err = config_api_write_config(&json_writer, &config))) {
-    LOG_WARN("config_get_api_write");
-    return -1;
-  }
-
-  if (fclose(file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
   }
 
   return 0;

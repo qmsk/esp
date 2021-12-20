@@ -1,53 +1,12 @@
 #include "artnet.h"
 #include "http_routes.h"
+#include "http_handlers.h"
 
 #include <artnet.h>
 #include <artnet_stats.h>
 
 #include <logging.h>
 #include <json.h>
-
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-
-static int write_json_response(struct http_response *response, int(*f)(struct json_writer *w))
-{
-  struct json_writer json_writer;
-  FILE *file;
-  int err;
-
-  if ((err = http_response_start(response, HTTP_OK, NULL))) {
-    LOG_WARN("http_response_start");
-    return err;
-  }
-
-  if ((err = http_response_header(response, "Content-Type", "application/json"))) {
-    LOG_WARN("http_response_header");
-    return err;
-  }
-
-  if ((err = http_response_open(response, &file))) {
-    LOG_WARN("http_response_open");
-    return err;
-  }
-
-  if (json_writer_init(&json_writer, file)) {
-    LOG_ERROR("json_writer_init");
-    return -1;
-  }
-
-  if ((err = f(&json_writer))) {
-    return -1;
-  }
-
-  if (fclose(file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
 
 static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options, const struct artnet_input_state *state)
 {
@@ -72,7 +31,7 @@ static int artnet_api_write_inputs_array(struct json_writer *w)
   for (int index = 0; !(err = artnet_get_input_options(artnet, index, &options)); index++) {
     if ((err = artnet_get_input_state(artnet, index, &state))) {
       LOG_WARN("artnet_get_input_state");
-      memset(&state, 0, sizeof(state));
+      state = (struct artnet_input_state) {};
     }
 
     if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_input_object(w, &options, &state)))) {
@@ -111,7 +70,7 @@ static int artnet_api_write_outputs_array(struct json_writer *w)
   for (int index = 0; !(err = artnet_get_output_options(artnet, index, &options)); index++) {
     if ((err = artnet_get_output_state(artnet, index, &state))) {
       LOG_WARN("artnet_get_output_state");
-      memset(&state, 0, sizeof(state));
+      state = (struct artnet_output_state) {};
     }
 
     if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_output_object(w, &options, &state)))) {
@@ -126,8 +85,9 @@ static int artnet_api_write_outputs_array(struct json_writer *w)
   return 0;
 }
 
-static int artnet_api_write(struct json_writer *w)
+static int artnet_api_write(struct json_writer *w, void *ctx)
 {
+  struct artnet *artnet = ctx;
   struct artnet_options options = artnet_get_options(artnet);
 
   return JSON_WRITE_OBJECT(w,
@@ -166,8 +126,8 @@ int artnet_api_handler(struct http_request *request, struct http_response *respo
     return err;
   }
 
-  if ((err = write_json_response(response, artnet_api_write))) {
-    LOG_WARN("write_json_response -> artnet_api_write");
+  if ((err = write_http_response_json(response, artnet_api_write, artnet))) {
+    LOG_WARN("write_http_response_json -> artnet_api_write");
     return err;
   }
 

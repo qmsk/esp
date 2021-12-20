@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "http_routes.h"
+#include "http_handlers.h"
 
 #include <logging.h>
 #include <json.h>
@@ -17,44 +18,6 @@
   json_write_raw((w), "\"%02x:%02x:%02x:%02x:%02x:%02x\"", \
     v[0], v[1], v[2], v[3], v[4], v[5] \
   ))
-
-static int write_json_response(struct http_response *response, int(*f)(struct json_writer *w))
-{
-  struct json_writer json_writer;
-  FILE *file;
-  int err;
-
-  if ((err = http_response_start(response, HTTP_OK, NULL))) {
-    LOG_WARN("http_response_start");
-    return err;
-  }
-
-  if ((err = http_response_header(response, "Content-Type", "application/json"))) {
-    LOG_WARN("http_response_header");
-    return err;
-  }
-
-  if ((err = http_response_open(response, &file))) {
-    LOG_WARN("http_response_open");
-    return err;
-  }
-
-  if (json_writer_init(&json_writer, file)) {
-    LOG_ERROR("json_writer_init");
-    return -1;
-  }
-
-  if ((err = f(&json_writer))) {
-    return -1;
-  }
-
-  if (fclose(file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
-  }
-
-  return 0;
-}
 
 static int wifi_api_write_sta_ap(struct json_writer *w, const wifi_ap_record_t *ap)
 {
@@ -186,7 +149,7 @@ static int wifi_api_write_ap_object(struct json_writer *w)
   );
 }
 
-static int wifi_api_write(struct json_writer *w)
+static int wifi_api_write(struct json_writer *w, void *ctx)
 {
   wifi_mode_t mode;
   esp_err_t err;
@@ -210,7 +173,7 @@ int write_wifi_scan_ap(wifi_ap_record_t *ap, void *ctx)
   return JSON_WRITE_OBJECT(w, wifi_api_write_sta_ap(w, ap));
 }
 
-static int wifi_api_scan_write(struct json_writer *w)
+static int wifi_api_scan_write(struct json_writer *w, void *ctx)
 {
   wifi_scan_config_t scan_config = {};
   int err;
@@ -242,8 +205,8 @@ int wifi_api_handler(struct http_request *request, struct http_response *respons
     return err;
   }
 
-  if ((err = write_json_response(response, wifi_api_write))) {
-    LOG_WARN("write_json_response -> wifi_api_write");
+  if ((err = write_http_response_json(response, wifi_api_write, NULL))) {
+    LOG_WARN("write_http_response_json -> wifi_api_write");
     return err;
   }
 
@@ -259,8 +222,8 @@ int wifi_api_scan_handler(struct http_request *request, struct http_response *re
     return err;
   }
 
-  if ((err = write_json_response(response, wifi_api_scan_write))) {
-    LOG_WARN("write_json_response -> wifi_api_write");
+  if ((err = write_http_response_json(response, wifi_api_scan_write, NULL))) {
+    LOG_WARN("write_http_response_json -> wifi_api_write");
     return err;
   }
 

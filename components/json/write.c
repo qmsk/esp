@@ -232,7 +232,11 @@ int json_write_raw(struct json_writer *w, const char *fmt, ...)
 
 int json_write_string(struct json_writer *w, const char *value)
 {
-  return json_writeq(w, JSON_STRING, value);
+  if (value) {
+    return json_writeq(w, JSON_STRING, value);
+  } else {
+    return json_writef(w, JSON_NULL, "null");
+  }
 }
 
 int json_write_int(struct json_writer *w, int value)

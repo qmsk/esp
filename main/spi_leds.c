@@ -351,7 +351,6 @@ int init_spi_leds()
     enum spi_leds_interface interface = config->interface ? config->interface : spi_leds_interface_for_protocol(config->protocol);
 
     state->config = config;
-    state->interface = interface;
 
     if (!config->enabled) {
       continue;
@@ -429,7 +428,7 @@ static void update_spi_leds_active(struct spi_leds_state *state)
 
 int check_spi_leds_interface(struct spi_leds_state *state)
 {
-  switch (state->interface) {
+  switch (spi_leds_interface(state->spi_leds)) {
     case SPI_LEDS_INTERFACE_I2S:
       if (is_console_running()) {
         LOG_WARN("I2S out busy, console running on UART0");

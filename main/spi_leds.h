@@ -43,7 +43,6 @@ struct spi_leds_config {
 struct spi_leds_state {
   const struct spi_leds_config *config;
 
-  enum spi_leds_interface interface;
   struct spi_leds *spi_leds;
 
   unsigned active;

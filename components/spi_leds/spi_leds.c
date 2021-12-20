@@ -146,6 +146,21 @@ int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *opt
   return 0;
 }
 
+const struct spi_leds_options *spi_leds_options(struct spi_leds *spi_leds)
+{
+  return &spi_leds->options;
+}
+
+enum spi_leds_protocol spi_leds_protocol(struct spi_leds *spi_leds)
+{
+  return spi_leds->options.protocol;
+}
+
+enum spi_leds_interface spi_leds_interface(struct spi_leds *spi_leds)
+{
+  return spi_leds->options.interface;
+}
+
 unsigned spi_leds_count(struct spi_leds *spi_leds)
 {
   return spi_leds->options.count;

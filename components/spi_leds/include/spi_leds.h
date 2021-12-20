@@ -143,7 +143,13 @@ enum spi_leds_test_mode {
 
 int spi_leds_new(struct spi_leds **spi_ledsp, const struct spi_leds_options *options);
 
-/* Get LED count */
+/* Get options */
+const struct spi_leds_options *spi_leds_options(struct spi_leds *spi_leds);
+
+enum spi_leds_protocol spi_leds_protocol(struct spi_leds *spi_leds);
+
+enum spi_leds_interface spi_leds_interface(struct spi_leds *spi_leds);
+
 unsigned spi_leds_count(struct spi_leds *spi_leds);
 
 /* Get active LED count */

@@ -166,7 +166,7 @@ int cli_main(struct cli *cli)
 
   LOG_DEBUG("cli=%p", cli);
 
-  for (;;) {
+  for (cli->run = true; cli->run; ) {
     // read lines of input, ignore errors
     if ((err = cli_read(cli)) < 0) {
       LOG_ERROR("cli_read");
@@ -180,6 +180,8 @@ int cli_main(struct cli *cli)
       continue;
     }
   }
+
+  return 0;
 }
 
 int cli_init(struct cli **clip, const struct cmd *commands, struct cli_options options)
@@ -228,7 +230,18 @@ void cli_set_timeout(struct cli *cli, TickType_t timeout)
   cli->timeout = timeout;
 }
 
-int cmd_help(struct cli *cli)
+int cli_help(struct cli *cli)
 {
   return cli_print_help(&cli->cmdtab, NULL);
+}
+
+int cli_exit(struct cli *cli)
+{
+  if (!cli->run) {
+    return 1;
+  }
+
+  cli->run = false;
+
+  return 0;
 }

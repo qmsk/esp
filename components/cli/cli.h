@@ -10,4 +10,7 @@ struct cli {
 
   struct cmdtab cmdtab;
   struct cmd_eval *cmd_eval;
+
+  // false once cli_exit() called
+  bool run;
 };

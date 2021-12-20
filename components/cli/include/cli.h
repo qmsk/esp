@@ -39,6 +39,13 @@ int cli_main(struct cli *cli);
 /*
  * Print help output.
  */
-int cmd_help(struct cli *cli);
+int cli_help(struct cli *cli);
+
+/*
+ * Terminate `cli_main()` loop.
+ *
+ * @return 0 if stopped, >0 if not running
+ */
+int cli_exit(struct cli *cli);
 
 #endif

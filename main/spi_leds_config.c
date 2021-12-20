@@ -90,6 +90,21 @@ const struct config_enum spi_leds_artnet_mode_enum[] = {
   {}
 };
 
+const struct config_enum spi_leds_test_mode_enum[] = {
+  { "BLACK",          TEST_MODE_BLACK         },
+  { "CHASE",          TEST_MODE_CHASE         },
+  { "BLACK_RED",      TEST_MODE_BLACK_RED     },
+  { "RED_YELLOW",     TEST_MODE_RED_YELLOW    },
+  { "YELLOW_GREEN",   TEST_MODE_YELLOW_GREEN  },
+  { "GREEN_CYAN",     TEST_MODE_GREEN_CYAN    },
+  { "CYAN_BLUE",      TEST_MODE_CYAN_BLUE     },
+  { "BLUE_MAGENTA",   TEST_MODE_BLUE_MAGENTA  },
+  { "MAGENTA_RED",    TEST_MODE_MAGENTA_RED   },
+  { "RED_BLACK",      TEST_MODE_RED_BLACK     },
+  { "END",            TEST_MODE_END           },
+  {}
+};
+
 #define SPI_LEDS_CONFIGTAB spi_leds_configtab0
 #define SPI_LEDS_CONFIG spi_leds_configs[0]
 #include "spi_leds_configtab.i"

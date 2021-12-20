@@ -5,6 +5,8 @@
 #include <logging.h>
 #include <json.h>
 
+#include <string.h>
+
 static int spi_leds_api_write_object_enabled(struct json_writer *w, int index, struct spi_leds_state *state)
 {
   const struct spi_leds_options *options = spi_leds_options(state->spi_leds);
@@ -49,7 +51,7 @@ static int spi_leds_api_write(struct json_writer *w, void *ctx)
   return JSON_WRITE_ARRAY(w, spi_leds_api_write_array(w));
 }
 
-int spi_leds_api_handler(struct http_request *request, struct http_response *response, void *ctx)
+int spi_leds_api_get(struct http_request *request, struct http_response *response, void *ctx)
 {
   int err;
 
@@ -64,4 +66,101 @@ int spi_leds_api_handler(struct http_request *request, struct http_response *res
   }
 
   return 0;
+}
+
+struct spi_leds_api_test_params {
+  int index;
+  enum spi_leds_test_mode mode;
+};
+
+int spi_leds_api_test_params_set(struct spi_leds_api_test_params *params, const char *key, const char *value)
+{
+  if (strcmp(key, "index") == 0) {
+    if (sscanf(value, "%d", &params->index) <= 0) {
+      return HTTP_UNPROCESSABLE_ENTITY;
+    }
+  } else if (strcmp(key, "mode") == 0) {
+    int mode;
+
+    if ((mode = config_enum_to_value(spi_leds_test_mode_enum, value)) < 0) {
+      return HTTP_UNPROCESSABLE_ENTITY;
+    } else {
+      params->mode = mode;
+    }
+  } else {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  return 0;
+}
+
+/* POST /api/config application/x-www-form-urlencoded */
+int spi_leds_api_test_form(struct http_request *request, struct spi_leds_api_test_params *params)
+{
+  char *key, *value;
+  int err;
+
+  while (!(err = http_request_form(request, &key, &value))) {
+    if ((err = spi_leds_api_test_params_set(params, key, value))) {
+      LOG_WARN("spi_leds_api_test_params_set: %s=%s", key, value);
+      return err;
+    }
+  }
+
+  if (err < 0) {
+    LOG_ERROR("http_request_form");
+    return err;
+  }
+
+  return 0;
+}
+
+int spi_leds_api_test_post(struct http_request *request, struct http_response *response, void *ctx)
+{
+  const struct http_request_headers *headers;
+  struct spi_leds_api_test_params params = {
+    .mode = TEST_MODE_CHASE,
+  };
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  switch (headers->content_type) {
+    case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
+      if ((err = spi_leds_api_test_form(request, &params))) {
+        LOG_WARN("spi_leds_api_test_form");
+        return err;
+      }
+
+      break;
+
+    default:
+      LOG_WARN("Unknown Content-Type");
+
+      return HTTP_UNSUPPORTED_MEDIA_TYPE;
+  }
+
+  // decode
+  struct spi_leds_state *state;
+
+  if (params.index < 0 || params.index >= SPI_LEDS_COUNT) {
+    LOG_WARN("invalid index=%d", params.index);
+    return HTTP_UNPROCESSABLE_ENTITY;
+  } else {
+    state = &spi_leds_states[params.index];
+  }
+
+  // XXX: may block for some time
+  if ((err = test_spi_leds(state, params.mode)) < 0) {
+    LOG_ERROR("test_spi_leds");
+    return HTTP_INTERNAL_SERVER_ERROR;
+  } else if (err) {
+    LOG_WARN("test_spi_leds");
+    return HTTP_CONFLICT;
+  }
+
+  return HTTP_NO_CONTENT;
 }

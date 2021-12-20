@@ -14,3 +14,4 @@ extern const struct config_enum spi_leds_protocol_enum[];
 extern const struct config_enum spi_leds_rate_enum[];
 extern const struct config_enum spi_leds_gpio_mode_enum[];
 extern const struct config_enum spi_leds_artnet_mode_enum[];
+extern const struct config_enum spi_leds_test_mode_enum[];

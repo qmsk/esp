@@ -186,11 +186,4 @@ int spi_leds_set_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, u
 /* Send frames on output interface */
 int spi_leds_tx(struct spi_leds *spi_leds);
 
-/*
- * Output animated test patterns.
- *
- * Blocks task until complete.
- */
-int spi_leds_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode);
-
 #endif

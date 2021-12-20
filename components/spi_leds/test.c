@@ -155,31 +155,3 @@ int spi_leds_set_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode, u
       return -1;
   }
 }
-
-int spi_leds_test(struct spi_leds *spi_leds, enum spi_leds_test_mode mode)
-{
-  TickType_t tick = xTaskGetTickCount();
-  int ret, err;
-
-  LOG_INFO("mode=%d @ tick=%u", mode, tick);
-
-  for (unsigned frame = 0; ; frame++) {
-    if ((ret = spi_leds_set_test(spi_leds, mode, frame)) < 0) {
-      LOG_ERROR("spi_leds_set_test(%d, %u)", mode, frame);
-      return ret;
-    }
-
-    if ((err = spi_leds_tx(spi_leds))) {
-      LOG_ERROR("spi_leds_tx");
-      return err;
-    }
-
-    if (ret == 0) {
-      break;
-    }
-
-    vTaskDelayUntil(&tick, ret);
-  }
-
-  return 0;
-}

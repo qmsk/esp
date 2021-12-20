@@ -166,9 +166,11 @@ int spi_leds_cmd_test(int argc, char **argv, void *ctx)
     return 0;
   }
 
-  if ((err = test_spi_leds(state))) {
-    LOG_ERROR("test_spi_leds");
-    return err;
+  for (enum spi_leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
+    if ((err = test_spi_leds(state, mode))) {
+      LOG_ERROR("test_spi_leds");
+      return err;
+    }
   }
 
   return 0;

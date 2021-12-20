@@ -384,9 +384,11 @@ int init_spi_leds()
     }
 
     if (config->test_enabled) {
-      if ((err = test_spi_leds(state))) {
-        LOG_ERROR("spi-leds%d: test_spi_leds", i);
-        return err;
+      for (enum spi_leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
+        if ((err = test_spi_leds(state, mode))) {
+          LOG_ERROR("spi-leds%d: test_spi_leds", i);
+          return err;
+        }
       }
     }
 
@@ -461,7 +463,7 @@ int update_spi_leds(struct spi_leds_state *state)
   return 0;
 }
 
-int test_spi_leds(struct spi_leds_state *state)
+int test_spi_leds(struct spi_leds_state *state, enum spi_leds_test_mode mode)
 {
   int err;
 
@@ -471,12 +473,29 @@ int test_spi_leds(struct spi_leds_state *state)
     return err;
   }
 
-  for (enum spi_leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
-    user_activity(USER_ACTIVITY_SPI_LEDS);
+  LOG_INFO("mode=%d", mode);
 
-    if ((err = spi_leds_test(state->spi_leds, mode))) {
-      LOG_ERROR("spi_leds_test");
+  user_activity(USER_ACTIVITY_SPI_LEDS);
+
+  // animate
+  TickType_t tick = xTaskGetTickCount();
+  int ticks;
+
+  for (unsigned frame = 0; ; frame++) {
+    if ((ticks = spi_leds_set_test(state->spi_leds, mode, frame)) < 0) {
+      LOG_ERROR("spi_leds_set_test(%d, %u)", mode, frame);
+      return ticks;
+    }
+
+    if ((err = spi_leds_tx(state->spi_leds))) {
+      LOG_ERROR("spi_leds_tx");
       return err;
+    }
+
+    if (ticks) {
+      vTaskDelayUntil(&tick, ticks);
+    } else {
+      break;
     }
   }
 

@@ -19,14 +19,14 @@ static int spi_leds_api_write_object_enabled(struct json_writer *w, int index, s
   );
 }
 
-static int spi_leds_api_write_object(struct json_writer *w, int index, struct spi_leds_state *state)
+static int spi_leds_api_write_object(struct json_writer *w, int id, struct spi_leds_state *state)
 {
   bool enabled = state->config->enabled && state->spi_leds;
 
   return (
-        JSON_WRITE_MEMBER_UINT(w, "index", index)
+        JSON_WRITE_MEMBER_UINT(w, "id", id)
     ||  JSON_WRITE_MEMBER_BOOL(w, "enabled", enabled)
-    ||  (enabled ? spi_leds_api_write_object_enabled(w, index, state) : 0)
+    ||  (enabled ? spi_leds_api_write_object_enabled(w, id, state) : 0)
   );
 }
 
@@ -105,15 +105,16 @@ int spi_leds_api_test_get(struct http_request *request, struct http_response *re
   return 0;
 }
 
+/* POST /api/leds/test */
 struct spi_leds_api_test_params {
-  int index;
+  int id;
   enum spi_leds_test_mode mode;
 };
 
 int spi_leds_api_test_params_set(struct spi_leds_api_test_params *params, const char *key, const char *value)
 {
-  if (strcmp(key, "index") == 0) {
-    if (sscanf(value, "%d", &params->index) <= 0) {
+  if (strcmp(key, "id") == 0) {
+    if (sscanf(value, "%d", &params->id) <= 0) {
       return HTTP_UNPROCESSABLE_ENTITY;
     }
   } else if (strcmp(key, "mode") == 0) {
@@ -132,14 +133,14 @@ int spi_leds_api_test_params_set(struct spi_leds_api_test_params *params, const 
 }
 
 /* POST /api/config application/x-www-form-urlencoded */
-int spi_leds_api_test_form(struct http_request *request, struct spi_leds_api_test_params *params)
+int spi_leds_api_test_read_form_params(struct http_request *request, struct spi_leds_api_test_params *params)
 {
   char *key, *value;
   int err;
 
   while (!(err = http_request_form(request, &key, &value))) {
     if ((err = spi_leds_api_test_params_set(params, key, value))) {
-      LOG_WARN("spi_leds_api_test_params_set: %s=%s", key, value);
+      LOG_WARN("spi_leds_api_test_params_set: %s=%s", key, value ? value : "");
       return err;
     }
   }
@@ -167,8 +168,8 @@ int spi_leds_api_test_post(struct http_request *request, struct http_response *r
 
   switch (headers->content_type) {
     case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
-      if ((err = spi_leds_api_test_form(request, &params))) {
-        LOG_WARN("spi_leds_api_test_form");
+      if ((err = spi_leds_api_test_read_form_params(request, &params))) {
+        LOG_WARN("spi_leds_api_test_read_form_params");
         return err;
       }
 
@@ -183,11 +184,11 @@ int spi_leds_api_test_post(struct http_request *request, struct http_response *r
   // decode
   struct spi_leds_state *state;
 
-  if (params.index < 0 || params.index >= SPI_LEDS_COUNT) {
-    LOG_WARN("invalid index=%d", params.index);
+  if (params.id < 0 || params.id >= SPI_LEDS_COUNT) {
+    LOG_WARN("invalid id=%d", params.id);
     return HTTP_UNPROCESSABLE_ENTITY;
   } else {
-    state = &spi_leds_states[params.index];
+    state = &spi_leds_states[params.id];
   }
 
   // XXX: may block for some time

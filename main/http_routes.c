@@ -17,5 +17,7 @@ const struct http_route http_routes[] = {
   { "POST", "api/wifi/scan",      wifi_api_scan_handler,      NULL },
 
   { "GET",  "api/artnet",         artnet_api_handler,         NULL },
+
+  { "GET",  "api/leds",           spi_leds_api_handler,       NULL },
   {}
 };

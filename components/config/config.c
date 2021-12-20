@@ -38,6 +38,17 @@ const char *config_enum_to_string(const struct config_enum *e, int value)
   return NULL;
 }
 
+int config_enum_to_value(const struct config_enum *e, const char *name)
+{
+  for (; e->name; e++) {
+    if (strcmp(e->name, name) == 0) {
+      return e->value;
+    }
+  }
+
+  return -1;
+}
+
 int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp)
 {
   for (; mod->name; mod++) {

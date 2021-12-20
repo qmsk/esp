@@ -460,3 +460,32 @@ Refresh the running tasks info.
 ### `POST /api/system/restart`
 
 Restart the system.
+
+### `GET /api/leds`
+
+Return LED config/state.
+
+### `POST /api/leds`
+
+Accepts `application/x-www-form-urlencoded` form parameters using the following syntax:
+* `id=%d` (0-3)
+* `all`
+* `index=%u`
+* `rgb=%x` (`RRGGBB`)
+* `dimmer=%u` (0-255)
+* `white=%u` (0-255)
+
+The `index` auto-increments for each `rgb` command if set.
+
+The `white` and `dimmer` parameters depend on the LED protocol, and modify the following `rgb` command(s).
+
+### `GET /api/leds/test`
+
+Returns `[{"mode": ...}]` parameters usable for `POST`.
+
+### `POST /api/leds/test`
+
+Accepts `application/x-www-form-urlencoded` form parameters using the following syntax:
+
+* `id=%d` (0-3)
+* `mode=%s` (see `GET /api/leds/test`)

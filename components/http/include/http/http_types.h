@@ -16,6 +16,7 @@ enum http_status {
     HTTP_FORBIDDEN                = 403,
     HTTP_NOT_FOUND                = 404,
     HTTP_METHOD_NOT_ALLOWED       = 405,
+    HTTP_CONFLICT                 = 409,
     HTTP_LENGTH_REQUIRED          = 411,
     HTTP_REQUEST_ENTITY_TOO_LARGE = 413,
     HTTP_REQUEST_URI_TOO_LONG     = 414,

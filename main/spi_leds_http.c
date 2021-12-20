@@ -68,6 +68,43 @@ int spi_leds_api_get(struct http_request *request, struct http_response *respons
   return 0;
 }
 
+static int spi_leds_api_write_test_array(struct json_writer *w)
+{
+  int err;
+
+  for (const struct config_enum *e = spi_leds_test_mode_enum; e->name; e++) {
+    if ((err = JSON_WRITE_OBJECT(w,
+      JSON_WRITE_MEMBER_STRING(w, "mode", e->name)
+    ))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+static int spi_leds_api_write_test(struct json_writer *w, void *ctx)
+{
+  return JSON_WRITE_ARRAY(w, spi_leds_api_write_test_array(w));
+}
+
+int spi_leds_api_test_get(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = write_http_response_json(response, spi_leds_api_write_test, NULL))) {
+    LOG_WARN("write_http_response_json -> spi_leds_api_write_test");
+    return err;
+  }
+
+  return 0;
+}
+
 struct spi_leds_api_test_params {
   int index;
   enum spi_leds_test_mode mode;

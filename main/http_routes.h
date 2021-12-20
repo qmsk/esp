@@ -30,4 +30,5 @@ int artnet_api_handler(struct http_request *request, struct http_response *respo
 
 /* spi_leds_http.c */
 int spi_leds_api_get(struct http_request *request, struct http_response *response, void *ctx);
+int spi_leds_api_test_get(struct http_request *request, struct http_response *response, void *ctx);
 int spi_leds_api_test_post(struct http_request *request, struct http_response *response, void *ctx);

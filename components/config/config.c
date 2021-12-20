@@ -27,6 +27,17 @@ int config_enum_find_by_value(const struct config_enum *e, int value, const stru
   return 1;
 }
 
+const char *config_enum_to_string(const struct config_enum *e, int value)
+{
+  for (; e->name; e++) {
+    if (e->value == value) {
+      return e->name;
+    }
+  }
+
+  return NULL;
+}
+
 int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp)
 {
   for (; mod->name; mod++) {

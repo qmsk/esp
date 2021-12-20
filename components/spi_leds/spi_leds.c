@@ -31,7 +31,7 @@ enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_led
 {
   switch (protocol) {
     case SPI_LEDS_PROTOCOL_APA102:
-      return SPI_LEDS_COLOR_BRIGHTNESS;
+      return SPI_LEDS_COLOR_DIMMER;
 
     case SPI_LEDS_PROTOCOL_P9813:
       return SPI_LEDS_COLOR_NONE;

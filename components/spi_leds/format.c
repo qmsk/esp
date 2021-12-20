@@ -62,6 +62,7 @@ void spi_leds_set_format_grb(struct spi_leds *spi_leds, uint8_t *data, size_t le
 void spi_leds_set_format_rgba(struct spi_leds *spi_leds, uint8_t *data, size_t len, struct spi_leds_format_params params)
 {
   enum spi_leds_color_parameter parameter = spi_leds_color_parameter_for_protocol(spi_leds->options.protocol);
+  uint8_t parameter_default = spi_leds_default_color_parameter_for_protocol(spi_leds->options.protocol);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -72,7 +73,7 @@ void spi_leds_set_format_rgba(struct spi_leds *spi_leds, uint8_t *data, size_t l
         .g = data[i * 4 + 1],
         .b = data[i * 4 + 2],
 
-        .brightness = (parameter == SPI_LEDS_COLOR_BRIGHTNESS) ? data[i * 4 + 3] : 255,
+        .dimmer = (parameter == SPI_LEDS_COLOR_DIMMER) ? data[i * 4 + 3] : parameter_default,
       });
     }
   }
@@ -81,6 +82,7 @@ void spi_leds_set_format_rgba(struct spi_leds *spi_leds, uint8_t *data, size_t l
 void spi_leds_set_format_rgbw(struct spi_leds *spi_leds, uint8_t *data, size_t len, struct spi_leds_format_params params)
 {
   enum spi_leds_color_parameter parameter = spi_leds_color_parameter_for_protocol(spi_leds->options.protocol);
+  uint8_t parameter_default = spi_leds_default_color_parameter_for_protocol(spi_leds->options.protocol);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -91,7 +93,7 @@ void spi_leds_set_format_rgbw(struct spi_leds *spi_leds, uint8_t *data, size_t l
         .g = data[i * 4 + 1],
         .b = data[i * 4 + 2],
 
-        .white = (parameter == SPI_LEDS_COLOR_WHITE) ? data[i * 4 + 3] : 255,
+        .white = (parameter == SPI_LEDS_COLOR_WHITE) ? data[i * 4 + 3] : parameter_default,
       });
     }
   }

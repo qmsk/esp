@@ -20,8 +20,8 @@ int spi_leds_test_chase_frame(struct spi_leds *spi_leds, unsigned frame, struct 
     case SPI_LEDS_COLOR_NONE:
       break;
 
-    case SPI_LEDS_COLOR_BRIGHTNESS:
-      color.brightness = 255;
+    case SPI_LEDS_COLOR_DIMMER:
+      color.dimmer = 255;
       break;
 
     case SPI_LEDS_COLOR_WHITE:
@@ -53,8 +53,8 @@ int spi_leds_test_color_frame(struct spi_leds *spi_leds, unsigned frame, struct 
     case SPI_LEDS_COLOR_NONE:
       break;
 
-    case SPI_LEDS_COLOR_BRIGHTNESS:
-      color.brightness = 255;
+    case SPI_LEDS_COLOR_DIMMER:
+      color.dimmer = 255;
       break;
 
     case SPI_LEDS_COLOR_WHITE:

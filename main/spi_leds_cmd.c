@@ -60,8 +60,8 @@ int spi_leds_cmd_all(int argc, char **argv, void *ctx)
       case SPI_LEDS_COLOR_NONE:
         break;
 
-      case SPI_LEDS_COLOR_BRIGHTNESS:
-        spi_led_color.brightness = a;
+      case SPI_LEDS_COLOR_DIMMER:
+        spi_led_color.dimmer = a;
         break;
 
       case SPI_LEDS_COLOR_WHITE:
@@ -123,8 +123,8 @@ int spi_leds_cmd_set(int argc, char **argv, void *ctx)
     case SPI_LEDS_COLOR_NONE:
       break;
 
-    case SPI_LEDS_COLOR_BRIGHTNESS:
-      spi_led_color.brightness = a;
+    case SPI_LEDS_COLOR_DIMMER:
+      spi_led_color.dimmer = a;
       break;
 
     case SPI_LEDS_COLOR_WHITE:

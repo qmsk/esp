@@ -47,7 +47,7 @@ enum spi_leds_protocol {
 /* interpretation of spi_led_color.parameter by protocol */
 enum spi_leds_color_parameter {
   SPI_LEDS_COLOR_NONE         = 0,
-  SPI_LEDS_COLOR_BRIGHTNESS,
+  SPI_LEDS_COLOR_DIMMER,
   SPI_LEDS_COLOR_WHITE,
 };
 
@@ -84,13 +84,6 @@ enum spi_leds_interface spi_leds_interface_for_protocol(enum spi_leds_protocol p
  */
 size_t spi_leds_i2s_buffer_for_protocol(enum spi_leds_protocol protocol, unsigned count);
 
-/*
- * Returns spi_leds_color.parameter interpretation for protocol..
- */
-enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol);
-
-uint8_t spi_leds_default_color_parameter_for_protocol(enum spi_leds_protocol protocol);
-
 struct spi_leds_options {
   enum spi_leds_interface interface;
   enum spi_leds_protocol protocol;
@@ -115,12 +108,22 @@ struct spi_leds_options {
   enum gpio_out_pins gpio_out_pins;
 };
 
+/*
+ * Returns spi_leds_color.parameter interpretation for protocol.
+ */
+enum spi_leds_color_parameter spi_leds_color_parameter_for_protocol(enum spi_leds_protocol protocol);
+
+/*
+ * Returns default spi_leds_color.parameter to use for protocol.
+ */
+uint8_t spi_leds_default_color_parameter_for_protocol(enum spi_leds_protocol protocol);
+
 struct spi_led_color {
   uint8_t r, g, b;
 
   union {
     uint8_t parameter;
-    uint8_t brightness; // optional, 0-255
+    uint8_t dimmer; // 0-255
     uint8_t white; // 0-255
   };
 };

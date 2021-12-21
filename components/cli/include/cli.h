@@ -15,7 +15,7 @@ struct cli_options {
   // maximum number of CLI arguments per command
   size_t max_args;
 
-  // read timeout for first character on each line, EOF on timeout
+  // timeout for [ENTER] character to open console, EOF on timeout
   TickType_t timeout;
 };
 
@@ -25,14 +25,14 @@ struct cli_options {
 int cli_init(struct cli **clip, const struct cmd *commands, struct cli_options options);
 
 /*
- * Change the read timeout.
+ * Change the open timeout.
  */
 void cli_set_timeout(struct cli *cli, TickType_t timeout);
 
 /*
- * Run the CLI read-eval loop.
+ * Open the console, and run the CLI read-eval loop.
  *
- * Returns <0 on EOF, timeout, or other IO errors.
+ * Returns <0 on IO errors, 0 on exit, 1 on timeout.
  */
 int cli_main(struct cli *cli);
 

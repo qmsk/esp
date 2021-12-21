@@ -56,7 +56,7 @@ const struct configtab console_configtab[] = {
     .bool_type = { .value = &console_config.enabled },
   },
   { CONFIG_TYPE_UINT16, "timeout",
-    .description = "Disable UART console after timeout seconds of idle",
+    .description = "Wait [ms] timeout to open UART console",
     .uint16_type = { .value = &console_config.timeout },
   },
   {}
@@ -192,8 +192,12 @@ void console_cli_main(void *arg)
   struct cli *cli = arg;
   int err;
 
-  if ((err = cli_main(cli))) {
+  if ((err = cli_main(cli)) < 0) {
     LOG_ERROR("cli_main");
+  } else if (err) {
+    LOG_INFO("cli timeout");
+  } else {
+    LOG_INFO("cli exit");
   }
 
   // stop

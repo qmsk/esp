@@ -79,15 +79,38 @@ static int cli_cmd_error(const struct cmdctx *ctx, enum cmd_error err, const cha
   return 0;
 }
 
-static int cli_getc(struct cli *cli, bool first)
+// wait for initial command to open console
+static int cli_open(struct cli *cli, TickType_t timeout)
 {
-  int timeout = first ? cli->timeout : 0;
+  int c;
 
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, timeout) < 0) {
     LOG_WARN("fcntl stdin: %s", strerror(errno));
   }
 
-  return fgetc(stdin);
+  printf("! Use [ENTER] to open console\n");
+
+  while ((c = fgetc(stdin)) != EOF) {
+    if (c == '\r') {
+      continue;
+    } else if (c == '\n') {
+      break;
+    } else {
+      printf("! Use [ENTER] to open console, ignoring <%02x>\n", c);
+    }
+  }
+
+  if (ferror(stdin)) {
+    LOG_ERROR("stdin: %s", strerror(errno));
+    return -1;
+  }
+
+  if (feof(stdin)) {
+    // timeout
+    return 1;
+  }
+
+  return 0;
 }
 
 // process one line of input
@@ -96,9 +119,14 @@ static int cli_read(struct cli *cli)
   char *ptr = cli->buf;
   int c;
 
+  // disable stdin timeout
+  if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, 0) < 0) {
+    LOG_WARN("fcntl stdin: %s", strerror(errno));
+  }
+
   printf("> ");
 
-  while ((c = cli_getc(cli, (ptr == cli->buf))) != EOF) {
+  while ((c = fgetc(stdin)) != EOF) {
     #ifdef DEBUG
       if (isprint(c)) {
         LOG_DEBUG("%c", c);
@@ -165,6 +193,15 @@ int cli_main(struct cli *cli)
   int err;
 
   LOG_DEBUG("cli=%p", cli);
+
+  if (!cli->timeout) {
+    // skip open() step
+  } else if ((err = cli_open(cli, cli->timeout)) < 0) {
+    LOG_ERROR("cli_open");
+    return err;
+  } else if (err) {
+    return 1;
+  }
 
   for (cli->run = true; cli->run; ) {
     // read lines of input, ignore errors

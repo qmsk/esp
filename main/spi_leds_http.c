@@ -15,6 +15,7 @@ static int spi_leds_api_write_object_enabled(struct json_writer *w, int index, s
   return (
         JSON_WRITE_MEMBER_STRING(w, "interface", config_enum_to_string(spi_leds_interface_enum, options->interface))
     ||  JSON_WRITE_MEMBER_STRING(w, "protocol", config_enum_to_string(spi_leds_protocol_enum, options->protocol))
+    ||  JSON_WRITE_MEMBER_STRING(w, "color_parameter", config_enum_to_string(spi_leds_color_parameter_enum, spi_leds_color_parameter_for_protocol(options->protocol)))
     ||  JSON_WRITE_MEMBER_UINT(w, "count", options->count)
     ||  JSON_WRITE_MEMBER_UINT(w, "active", state->active)
   );
@@ -71,21 +72,44 @@ int spi_leds_api_get(struct http_request *request, struct http_response *respons
 
 
 /* POST /api/leds */
-struct spi_leds_api_state {
+struct spi_leds_api_req {
   struct spi_leds_state *state;
-  enum spi_leds_protocol protocol;
-
-  struct spi_led_color color;
-
-  bool all;
-  unsigned index;
-  uint8_t dimmer, white;
-
-  bool index_set, color_set, parameter_set;
 };
 
-int spi_leds_api_state_parse(struct spi_leds_api_state *req, const char *key, const char *value)
+int spi_leds_api_color_parse(struct spi_led_color *color, enum spi_leds_protocol protocol, const char *value)
 {
+  int rgb;
+  int parameter = spi_leds_default_color_parameter_for_protocol(protocol);
+
+  if (!value) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  if (sscanf(value, "%x.%x", &rgb, &parameter) <= 0) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  if (parameter < 0 || parameter > UINT8_MAX) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  color->r = (rgb >> 16) & 0xFF;
+  color->g = (rgb >>  8) & 0xFF;
+  color->b = (rgb >>  0) & 0xFF;
+  color->parameter = parameter;
+
+  return 0;
+}
+
+int spi_leds_api_state_parse(struct spi_leds_api_req *req, const char *key, const char *value)
+{
+  struct spi_leds *spi_leds = NULL;
+  enum spi_leds_protocol protocol = 0;
+  struct spi_led_color color;
+  unsigned index;
+  int ret;
+
+  // XXX: will only update last state
   if (strcmp(key, "id") == 0) {
     int id;
 
@@ -95,111 +119,49 @@ int spi_leds_api_state_parse(struct spi_leds_api_state *req, const char *key, co
       return HTTP_UNPROCESSABLE_ENTITY;
     } else {
       req->state = &spi_leds_states[id];
-      req->parameter_set = false;
     }
 
-  } else if (strcmp(key, "all") == 0) {
-    req->all = true;
+    return 0;
 
-  } else if (strcmp(key, "index") == 0) {
-    unsigned index;
+  } else if (!req->state) {
+    LOG_WARN("missing id= in request");
+    return HTTP_UNPROCESSABLE_ENTITY;
 
-    if (sscanf(value, "%u", &index) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      req->index = index;
-      req->index_set = true;
+  } else if (!req->state->spi_leds) {
+    LOG_WARN("disabled id= in request");
+    return HTTP_UNPROCESSABLE_ENTITY;
+  } else {
+    spi_leds = req->state->spi_leds;
+    protocol = spi_leds_protocol(req->state->spi_leds);
+  }
+
+  if (strcmp(key, "all") == 0) {
+    if ((ret = spi_leds_api_color_parse(&color, protocol, value))) {
+      return ret;
     }
 
-  } else if (strcmp(key, "rgb") == 0) {
-    int rgb;
+    return spi_leds_set_all(spi_leds, color);
 
-    if (sscanf(value, "%x", &rgb) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      req->color_set = true;
-      req->color.r = (rgb >> 16) & 0xFF;
-      req->color.g = (rgb >>  8) & 0xFF;
-      req->color.b = (rgb >>  0) & 0xFF;
+  } else if (sscanf(key, "%u", &index) > 0) {
+    if ((ret = spi_leds_api_color_parse(&color, protocol, value))) {
+      return ret;
     }
 
-  } else if (strcmp(key, "dimmer") == 0) {
-    unsigned dimmer;
-
-    if (sscanf(value, "%u", &dimmer) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (dimmer > UINT8_MAX) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      req->parameter_set = false;
-      req->dimmer = dimmer;
-    }
-
-  } else if (strcmp(key, "white") == 0) {
-    unsigned white;
-
-    if (sscanf(value, "%u", &white) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (white > UINT8_MAX) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      req->parameter_set = false;
-      req->white = white;
-    }
+    return spi_leds_set(spi_leds, index, color);
 
   } else {
     return HTTP_UNPROCESSABLE_ENTITY;
   }
-
-  if (req->state && req->state->spi_leds) {
-    struct spi_leds *spi_leds = req->state->spi_leds;
-    enum spi_leds_protocol protocol = spi_leds_protocol(spi_leds);
-
-    if (!req->parameter_set) {
-      switch (spi_leds_color_parameter_for_protocol(protocol)) {
-        case SPI_LEDS_COLOR_NONE:
-          req->color.parameter = 0;
-          break;
-
-        case SPI_LEDS_COLOR_DIMMER:
-          req->color.dimmer = req->dimmer;
-          break;
-
-        case SPI_LEDS_COLOR_WHITE:
-          req->color.white = req->white;
-          break;
-      }
-
-      req->parameter_set = true;
-    }
-
-    if (req->all && req->color_set) {
-      spi_leds_set_all(spi_leds, req->color);
-
-      req->all = false;
-    }
-
-    if (req->index_set && req->color_set) {
-      spi_leds_set(spi_leds, req->index, req->color);
-
-      req->color_set = false;
-      req->index++;
-    }
-  }
-
-  return 0;
 }
 
 int spi_leds_api_form(struct http_request *request, struct http_response *response)
 {
-  struct spi_leds_api_state api_state = {
-    .dimmer = 255,
-  };
+  struct spi_leds_api_req req = {};
   char *key, *value;
   int err;
 
   while (!(err = http_request_form(request, &key, &value))) {
-    if ((err = spi_leds_api_state_parse(&api_state, key, value)) < 0) {
+    if ((err = spi_leds_api_state_parse(&req, key, value)) < 0) {
       LOG_ERROR("spi_leds_api_state_parse");
       return err;
     } else if (err) {
@@ -213,8 +175,8 @@ int spi_leds_api_form(struct http_request *request, struct http_response *respon
     return err;
   }
 
-  if (api_state.state && api_state.state->spi_leds) {
-    if ((err = update_spi_leds(api_state.state)) < 0) {
+  if (req.state && req.state->spi_leds) {
+    if ((err = update_spi_leds(req.state)) < 0) {
       LOG_ERROR("update_spi_leds");
       return HTTP_INTERNAL_SERVER_ERROR;
     } else if (err) {

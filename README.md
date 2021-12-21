@@ -469,15 +469,13 @@ Return LED config/state.
 
 Accepts `application/x-www-form-urlencoded` form parameters using the following syntax:
 * `id=%d` (0-3)
-* `all`
-* `index=%u`
-* `rgb=%x` (`RRGGBB`)
-* `dimmer=%u` (0-255)
-* `white=%u` (0-255)
+* `all=%x[.%x]` (`RRGGBB` or `RRGGBB.XX`)
+* `%u=%x[.%x]` (`RRGGBB` or `RRGGBB.XX`)
 
-The `index` auto-increments for each `rgb` command if set.
-
-The `white` and `dimmer` parameters depend on the LED protocol, and modify the following `rgb` command(s).
+The `.XX` suffix is optional, and the interpretation depends on the protocol, per the `GET /api/leds` -> `color_parameter` field:
+* `NONE`: not used
+* `DIMMER`: 0-255 controls the LED brightness
+* `WHITE`: 0-255 controls the white LED
 
 ### `GET /api/leds/test`
 

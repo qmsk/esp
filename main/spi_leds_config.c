@@ -105,6 +105,13 @@ const struct config_enum spi_leds_test_mode_enum[] = {
   {}
 };
 
+const struct config_enum spi_leds_color_parameter_enum[] = {
+  { "NONE",     SPI_LEDS_COLOR_NONE     },
+  { "DIMMER",   SPI_LEDS_COLOR_DIMMER   },
+  { "WHITE",    SPI_LEDS_COLOR_WHITE    },
+  {}
+};
+
 #define SPI_LEDS_CONFIGTAB spi_leds_configtab0
 #define SPI_LEDS_CONFIG spi_leds_configs[0]
 #include "spi_leds_configtab.i"

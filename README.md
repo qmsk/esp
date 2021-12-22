@@ -31,9 +31,19 @@ Please configure a WiFi password, and optionally a HTTP username/password.
 
 ## USB Console
 
-Connect to the serial console to access boot/app logs and the CLI:
+By default, the ESP8266 will print log messages and open a CLI console on UART0, which can be accessed via the same USB UART used for bootloader flashing:
 
     ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
+
+If using the UART0 pins for other IO (e.g. `spi-leds` I2S interface), the console can be closed manually using the `exit` command,
+or automatically at boot using the `timeout` config. The console can be re-started using a short press on the FLASH button;
+this will re-initiate any configured `timeout`. The console can also be disabled completely using the `enabled` config.
+
+If using the UART0 peripheral for other IO (e.g. `dmx-input`), the SDK `CONFIG_ESP_CONSOLE_UART_CUSTOM` config must be used to redirect SDK logging output. The UART0 console can still be temporarily activated at boot using the `timeout` config to briefly show logging output and offer the option of opening the CLI, or disabled completely using the `enabled` config.
+
+If the `timeout` config is used, the console will use the UART0 to prompt the user, before timing out and releasing the UART0:
+
+    ! Use [ENTER] to open console
 
 ## Status LEDs
 
@@ -420,6 +430,8 @@ Supports up to four multiplexed outouts using active-high/low GPIOs.
 The FLASH LED will flash on SPI-LEDs updates.
 
 The ATX PSU output will enable when any SPI-LEDs are active.
+
+The I2S output uses the same IO pins as the UART0 console, and cannot be used while the console is active. Disable the console or set a console timeout to use the I2S output interface.
 
 # HTTP
 

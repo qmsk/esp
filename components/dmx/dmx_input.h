@@ -13,6 +13,7 @@ struct dmx_input {
   struct dmx_input_options options;
 
   struct uart *uart;
+  bool stop;
 
   enum dmx_input_state state;
   enum dmx_cmd state_cmd;

@@ -55,6 +55,7 @@ int dmx_input_open (struct dmx_input *in, struct uart *uart)
   }
 
   in->uart = uart;
+  in->stop = false;
   in->state = DMX_INPUT_STATE_BREAK;
   in->state_len = 0;
 
@@ -137,6 +138,10 @@ int dmx_input_read (struct dmx_input *in)
   uint8_t buf[64];
   int read = -1;
 
+  if (in->stop) {
+    return 0;
+  }
+
   // read until data -> break
   while (!in->state_len || read) {
     // XXX: sync to start of break, but how to determine end of packet?!
@@ -157,6 +162,24 @@ int dmx_input_read (struct dmx_input *in)
   }
 
   return in->state_len;
+}
+
+int dmx_input_stop (struct dmx_input *in)
+{
+  int err;
+
+  if (!in->uart) {
+    return -1;
+  }
+
+  in->stop = true;
+
+  if ((err = uart_abort_read(in->uart))) {
+    LOG_ERROR("uart_abort_read");
+    return err;
+  }
+
+  return 0;
 }
 
 int dmx_input_close (struct dmx_input *in)

@@ -92,11 +92,20 @@ int uart_new(struct uart **uartp, enum uart_port port, size_t rx_buffer_size, si
 int uart_setup(struct uart *uart, struct uart_options options);
 
 /**
- * Setup, but keep rx/tx lock acquired for calling task.
+ * Setup, and keep rx/tx mutex acquired for calling task.
  *
  * Use uart_close() to release.
  */
 int uart_open(struct uart *uart, struct uart_options options);
+
+/**
+ * Acquire RX mutex for calling task. The UART must be setup.
+ *
+ * Use uart_close_rx() to release.
+ *
+ * @return <0 on error, 0 on success, >0 if UART not setup.
+ */
+int uart_open_rx(struct uart *uart);
 
 /**
  * Set timeout for read().
@@ -111,6 +120,20 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
  * @return <0 on error, 0 on timeout or break, otherwise number of bytes copied into buf.
  */
 int uart_read(struct uart *uart, void *buf, size_t size);
+
+/**
+ * Relaes RX mutex for calling task.
+ */
+int uart_close_rx(struct uart *uart);
+
+/**
+ * Acquire TX mutex for calling task. The UART must be setup.
+ *
+ * Use uart_close_tx() to release.
+ *
+ * @return <0 on error, 0 on success, >0 if UART not setup.
+ */
+int uart_open_tx(struct uart *uart);
 
 /**
  * Write one byte. Blocks if TX buffer is full.
@@ -166,6 +189,11 @@ int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us);
  * Return <0 on error.
  */
 int uart_mark(struct uart *uart, unsigned mark_us);
+
+/**
+ * Flush TX and release TX mutex acquire dusing `uart_open_tx()`.
+ */
+int uart_close_tx(struct uart *uart);
 
 /**
  * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.

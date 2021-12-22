@@ -12,8 +12,8 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
 {
   unsigned index = artnet->input_count;
 
-  if (artnet->input_count >= artnet->options.inputs) {
-    LOG_ERROR("exceeded number of supported inputs=%d", artnet->options.inputs);
+  if (artnet->input_count >= artnet->input_size) {
+    LOG_ERROR("exceeded number of supported inputs=%d", artnet->input_size);
     return -1;
   }
 

@@ -54,7 +54,9 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
   }
 
   if (options.inputs) {
-    if (!(artnet->input_ports = calloc(options.inputs, sizeof(*artnet->input_ports)))) {
+    artnet->input_size = options.inputs;
+
+    if (!(artnet->input_ports = calloc(artnet->input_size, sizeof(*artnet->input_ports)))) {
       LOG_ERROR("calloc(inputs)");
       return -1;
     }
@@ -92,6 +94,11 @@ int artnet_new(struct artnet **artnetp, struct artnet_options options)
 struct artnet_options artnet_get_options(struct artnet *artnet)
 {
   return artnet->options;
+}
+
+bool artnet_get_inputs_enabled(struct artnet *artnet)
+{
+  return artnet->input_size > 0;
 }
 
 int artnet_set_options(struct artnet *artnet, struct artnet_options options)

@@ -157,6 +157,11 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  */
 int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue);
 
+/**
+ * Check if inputs are enabled.
+ */
+ bool artnet_get_inputs_enabled(struct artnet *artnet);
+
 /*
  * Return number of inputs.
  */

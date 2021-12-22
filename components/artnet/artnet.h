@@ -67,7 +67,7 @@ struct artnet {
   struct artnet_options options;
 
   struct artnet_input *input_ports;
-  unsigned input_count;
+  unsigned input_size, input_count;
 
   struct artnet_output output_ports[ARTNET_OUTPUTS];
   unsigned output_count;

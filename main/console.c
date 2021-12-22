@@ -127,6 +127,17 @@ int init_console_uart(const struct console_config *config)
   return 0;
 }
 
+int init_console_stdio()
+{
+  // unbuffered input
+  setvbuf(stdin, NULL, _IONBF, 0);
+
+  // line-buffered output
+  setvbuf(stdout, NULL, _IOLBF, 0);
+
+  return 0;
+}
+
 int init_console_cli(const struct console_config *config)
 {
   struct cli_options options = {
@@ -173,6 +184,11 @@ int init_console()
     return err;
   }
 
+  if ((err = init_console_stdio())) {
+    LOG_ERROR("init_console_stdio");
+    return err;
+  }
+
   return 0;
 }
 
@@ -185,26 +201,6 @@ void stop_console_uart()
   if (uart_teardown(console_uart)) {
     LOG_ERROR("uart_teardown");
   }
-}
-
-void console_cli_main(void *arg)
-{
-  struct cli *cli = arg;
-  int err;
-
-  if ((err = cli_main(cli)) < 0) {
-    LOG_ERROR("cli_main");
-  } else if (err) {
-    LOG_INFO("cli timeout");
-  } else {
-    LOG_INFO("cli exit");
-  }
-
-  // stop
-  stop_console_uart();
-
-  console_cli_task = NULL;
-  vTaskDelete(NULL);
 }
 
 int start_console_uart(const struct console_config *config)
@@ -232,15 +228,50 @@ int start_console_uart(const struct console_config *config)
     return err;
   }
 
-  stdio_attach_uart(console_uart);
+  LOG_INFO("started");
+
 
   return 0;
+}
+
+void console_cli_main(void *arg)
+{
+  const struct console_config *config = &console_config;
+  struct cli *cli = arg;
+  int err;
+
+  // NOTE: this may block waiting for other UART users to release
+  if ((err = start_console_uart(config))) {
+    LOG_ERROR("start_console_uart");
+    // TODO: alert?
+    goto exit;
+  }
+
+  // use uart for stdout/stderr
+  stdio_attach_uart(console_uart);
+
+  // set line read timeout
+  cli_set_timeout(cli, config->timeout ? config->timeout / portTICK_PERIOD_MS : 0);
+
+  if ((err = cli_main(cli)) < 0) {
+    LOG_ERROR("cli_main");
+  } else if (err) {
+    LOG_INFO("cli timeout");
+  } else {
+    LOG_INFO("cli exit");
+  }
+
+  // stop
+  stop_console_uart();
+
+exit:
+  console_cli_task = NULL;
+  vTaskDelete(NULL);
 }
 
 int start_console()
 {
   const struct console_config *config = &console_config;
-  int err;
 
   if (!config->enabled) {
     return 0;
@@ -250,20 +281,6 @@ int start_console()
     LOG_WARN("running: task=%p", console_cli_task);
     return 0;
   }
-
-  if ((err = start_console_uart(config))) {
-    LOG_ERROR("start_console_uart");
-    return err;
-  }
-
-  // unbuffered input
-  setvbuf(stdin, NULL, _IONBF, 0);
-
-  // line-buffered output
-  setvbuf(stdout, NULL, _IOLBF, 0);
-
-  // set line read timeout
-  cli_set_timeout(console_cli, config->timeout ? config->timeout / portTICK_PERIOD_MS : 0);
 
   // start task
   if (xTaskCreate(&console_cli_main, "console-cli", CLI_TASK_STACK, console_cli, CLI_TASK_PRIORITY, &console_cli_task) <= 0) {

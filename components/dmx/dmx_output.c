@@ -32,7 +32,7 @@ int dmx_output_new (struct dmx_output **outp, struct dmx_output_options options)
     return -1;
   }
 
-  if (!(err = dmx_output_init(out, options))) {
+  if ((err = dmx_output_init(out, options))) {
     LOG_ERROR("dmx_output_init");
     goto error;
   }

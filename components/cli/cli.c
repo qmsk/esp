@@ -84,6 +84,9 @@ static int cli_open(struct cli *cli, TickType_t timeout)
 {
   int c;
 
+  // reset EOF state
+  clearerr(stdin);
+
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, timeout) < 0) {
     LOG_WARN("fcntl stdin: %s", strerror(errno));
   }
@@ -118,6 +121,9 @@ static int cli_read(struct cli *cli)
 {
   char *ptr = cli->buf;
   int c;
+
+  // reset EOF state
+  clearerr(stdin);
 
   // disable stdin timeout
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, 0) < 0) {

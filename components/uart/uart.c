@@ -69,9 +69,14 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto tx_error;
   }
 
-  if ((err = uart_dev_init(uart))) {
-    LOG_ERROR("uart_dev_init");
-    goto error;
+  if ((err = uart_dev_setup(uart, options))) {
+    LOG_ERROR("uart_dev_setup");
+    goto dev_error;
+  }
+
+  if ((err = uart_pin_setup(uart, options))) {
+    LOG_ERROR("uart_pin_setup");
+    goto dev_error;
   }
 
   uart_intr_setup(uart);
@@ -82,16 +87,20 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto error;
   }
 
-  if ((err = uart_dev_setup(uart, options))) {
-    LOG_ERROR("uart_dev_setup");
-    goto error;
-  }
-
   uart_rx_setup(uart, options);
 
   uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
 
+  xSemaphoreGiveRecursive(uart->tx_mutex);
+  xSemaphoreGiveRecursive(uart->rx_mutex);
+
+  return 0;
+
 error:
+  uart_intr_teardown(uart);
+  uart_pin_teardown(uart);
+  uart_dev_teardown(uart);
+dev_error:
   xSemaphoreGiveRecursive(uart->tx_mutex);
 tx_error:
   xSemaphoreGiveRecursive(uart->rx_mutex);
@@ -502,6 +511,7 @@ int uart_teardown(struct uart *uart)
   err = 0;
 
   uart_intr_teardown(uart);
+  uart_pin_teardown(uart);
   uart_dev_teardown(uart);
 
 error:

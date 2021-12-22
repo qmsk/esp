@@ -11,7 +11,7 @@
 struct uart {
   enum uart_port port;
   uart_dev_t *dev;
-  SemaphoreHandle_t pin_mutex;
+  SemaphoreHandle_t dev_mutex, pin_mutex;
 
   /* RX */
   SemaphoreHandle_t rx_mutex;
@@ -26,9 +26,18 @@ struct uart {
   TaskHandle_t txfifo_empty_notify_task;
 };
 
+/* pin.c */
+int uart_pin_setup(struct uart *uart, struct uart_options options);
+
+/* give pin_mutex */
+void uart_pin_teardown(struct uart *uart);
+
 /* dev.c */
-int uart_dev_init(struct uart *uart);
+
+/* take dev_mutex, set dev */
 int uart_dev_setup(struct uart *uart, struct uart_options options);
+
+/* give dev_mutex, clear dev */
 void uart_dev_teardown(struct uart *uart);
 
 /* rx.c */

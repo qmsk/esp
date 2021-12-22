@@ -70,6 +70,9 @@ struct uart_options {
   // optional read() timeout, 0 -> portMAX_DELAY
   TickType_t read_timeout;
 
+  // Acquire mutex before setting dev interrupts
+  SemaphoreHandle_t dev_mutex;
+
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
 };

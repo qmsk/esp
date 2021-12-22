@@ -5,13 +5,6 @@
 
 #include <stdlib.h>
 
-static const struct uart_options dmx_uart_options = {
-  .clock_div   = UART_BAUD_250000,
-  .data_bits   = UART_DATA_BITS_8,
-  .parity_bits = UART_PARITY_DISABLE,
-  .stop_bits   = UART_STOP_BITS_2,
-};
-
 #define DMX_BREAK_US 92
 #define DMX_MARK_US 12
 
@@ -51,8 +44,11 @@ int dmx_output_cmd (struct dmx_output *out, enum dmx_cmd cmd, void *data, size_t
 {
   int err;
 
-  if ((err = uart_open(out->options.uart, dmx_uart_options))) {
-    LOG_ERROR("uart_open");
+  if ((err = uart_open_tx(out->options.uart)) < 0) {
+    LOG_ERROR("uart_open_tx");
+    return err;
+  } else if (err) {
+    LOG_DEBUG("uart_open_tx: not setup");
     return err;
   }
 
@@ -85,8 +81,13 @@ int dmx_output_cmd (struct dmx_output *out, enum dmx_cmd cmd, void *data, size_t
   }
 
 error:
-  if (uart_close(out->options.uart)) {
-    LOG_WARN("uart_close");
+  if (uart_close_tx(out->options.uart)) {
+    LOG_WARN("uart_close_tx");
+  }
+
+  // disable output
+  if (out->options.gpio_out) {
+    gpio_out_clear(out->options.gpio_out);
   }
 
   return err;

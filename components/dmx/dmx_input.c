@@ -45,20 +45,12 @@ error:
 
 int dmx_input_open (struct dmx_input *in, struct uart *uart)
 {
-  struct uart_options dmx_uart_options = {
-    .clock_div   = UART_BAUD_250000,
-    .data_bits   = UART_DATA_BITS_8,
-    .parity_bits = UART_PARITY_DISABLE,
-    .stop_bits   = UART_STOP_BITS_2,
-
-    .rx_timeout = in->options.frame_timeout,
-  };
   int err;
 
   LOG_DEBUG("dmx_input=%p uart=%p", in, uart);
 
-  if ((err = uart_open(uart, dmx_uart_options))) {
-    LOG_ERROR("uart_open");
+  if ((err = uart_open_rx(uart))) {
+    LOG_ERROR("uart_open_rx");
     return err;
   }
 
@@ -165,4 +157,20 @@ int dmx_input_read (struct dmx_input *in)
   }
 
   return in->state_len;
+}
+
+int dmx_input_close (struct dmx_input *in)
+{
+  int err;
+
+  LOG_DEBUG("dmx_input=%p uart=%p", in, in->uart);
+
+  if ((err = uart_close_rx(in->uart))) {
+    LOG_ERROR("uart_close_rx");
+    return err;
+  }
+
+  in->uart = NULL;
+
+  return 0;
 }

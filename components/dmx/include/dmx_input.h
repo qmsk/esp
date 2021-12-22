@@ -11,15 +11,14 @@ struct dmx_input_options {
 
   /* Offset start of data to 1-indexed channel address*/
   unsigned address;
-
-  /* Detect end of short packet */
-  unsigned frame_timeout; // in units of frames (44us)
 };
 
 int dmx_input_new (struct dmx_input **inp, struct dmx_input_options options);
 
 /*
- * Open and setup UART for RX, and update state to sync to next BREAK.
+ * Open UART for RX, and update state to sync to next BREAK.
+ *
+ * UART must already be setup.
  */
 int dmx_input_open (struct dmx_input *in, struct uart *uart);
 
@@ -29,3 +28,8 @@ int dmx_input_open (struct dmx_input *in, struct uart *uart);
  * @return <0 on error, or number of DMX channels updated.
  */
 int dmx_input_read (struct dmx_input *in);
+
+/*
+ * Close UART for RX.
+ */
+ int dmx_input_close (struct dmx_input *in);

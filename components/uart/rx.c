@@ -91,6 +91,12 @@ enum uart_rx_event uart_rx_event(struct uart *uart)
     event = UART_RX_BREAK;
   }
 
+  if (!event && uart->rx_abort) {
+    uart->rx_abort = false;
+
+    event = UART_RX_ABORT;
+  }
+
   if (!event) {
     // RX buffer emptied and flags cleared, resume copying from RX FIFO if disabled
     uart_rx_intr_resume(uart->dev);
@@ -105,4 +111,20 @@ int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout)
 {
   // block on ISR RX FIFO -> buffer copy
   return xStreamBufferReceive(uart->rx_buffer, buf, size, timeout);
+}
+
+void uart_rx_abort(struct uart *uart)
+{
+  taskENTER_CRITICAL();
+
+  if (uart->dev) {
+    uart_rx_intr_pause(uart->dev);
+  }
+
+  uart->rx_abort = true;
+
+  // wakeup uart_rx_read()
+  vStreamBufferSendCompleted(uart->rx_buffer);
+
+  taskEXIT_CRITICAL();
 }

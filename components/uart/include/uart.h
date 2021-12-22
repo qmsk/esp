@@ -122,7 +122,12 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
 int uart_read(struct uart *uart, void *buf, size_t size);
 
 /**
- * Relaes RX mutex for calling task.
+ * Cause the following uart_read() call, or any currently pending call, to return an error.
+ */
+int uart_abort_read(struct uart *uart);
+
+/**
+ * Releaes RX mutex for calling task.
  */
 int uart_close_rx(struct uart *uart);
 

@@ -1,0 +1,60 @@
+diff --git a/components/freertos/freertos/stream_buffer.c b/components/freertos/freertos/stream_buffer.c
+index c60045f6..db2b9243 100644
+--- a/components/freertos/freertos/stream_buffer.c
++++ b/components/freertos/freertos/stream_buffer.c
+@@ -957,6 +957,16 @@ const StreamBuffer_t * const pxStreamBuffer = ( StreamBuffer_t * ) xStreamBuffer
+ }
+ /*-----------------------------------------------------------*/
+ 
++void vStreamBufferSendCompleted( StreamBufferHandle_t xStreamBuffer )
++{
++StreamBuffer_t * const pxStreamBuffer = ( StreamBuffer_t * ) xStreamBuffer; /*lint !e9087 !e9079 Safe cast as StreamBufferHandle_t is opaque Streambuffer_t. */
++
++	configASSERT( pxStreamBuffer );
++
++	sbSEND_COMPLETED( pxStreamBuffer );
++}
++/*-----------------------------------------------------------*/
++
+ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer, BaseType_t *pxHigherPriorityTaskWoken )
+ {
+ StreamBuffer_t * const pxStreamBuffer = ( StreamBuffer_t * ) xStreamBuffer; /*lint !e9087 !e9079 Safe cast as StreamBufferHandle_t is opaque Streambuffer_t. */
+diff --git a/components/freertos/include/freertos/stream_buffer.h b/components/freertos/include/freertos/stream_buffer.h
+index 5418e05b..6493c8b4 100644
+--- a/components/freertos/include/freertos/stream_buffer.h
++++ b/components/freertos/include/freertos/stream_buffer.h
+@@ -788,6 +788,34 @@ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer
+  */
+ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer, BaseType_t *pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
+ 
++/**
++ * stream_buffer.h
++ *
++<pre>
++void vStreamBufferSendCompleted( StreamBufferHandle_t xStreamBuffer );
++</pre>
++ *
++ * For advanced users only.
++ *
++ * The sbSEND_COMPLETED() macro is called from within the FreeRTOS APIs when
++ * data is sent to a message buffer or stream buffer.  If there was a task that
++ * was blocked on the message or stream buffer waiting for data to arrive then
++ * the sbSEND_COMPLETED() macro sends a notification to the task to remove it
++ * from the Blocked state.  xStreamBufferSendCompleted() does the same
++ * thing.  It is provided to enable application writers to implement their own
++ * version of sbSEND_COMPLETED(), and MUST NOT BE USED AT ANY OTHER TIME.
++ *
++ * See the example implemented in FreeRTOS/Demo/Minimal/MessageBufferAMP.c for
++ * additional information.
++ *
++ * @param xStreamBuffer The handle of the stream buffer to which data was
++ * written.
++ *
++ * \defgroup xStreamBufferSendCompleted
++ * \ingroup StreamBufferManagement
++ */
++void vStreamBufferSendCompleted( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
++
+ /**
+  * stream_buffer.h
+  *

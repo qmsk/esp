@@ -243,6 +243,11 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         ret = 0;
         goto ret;
 
+      case UART_RX_ABORT:
+        LOG_DEBUG("RX break detected");
+        ret = -1;
+        goto ret;
+
       default:
         LOG_ERROR("unknown event");
         ret = -1;
@@ -257,6 +262,18 @@ ret:
   uart_release_rx(uart);
 
   return ret;
+}
+
+int uart_abort_read(struct uart *uart)
+{
+  if (!uart->dev) {
+    LOG_ERROR("dev not setup");
+    return -1;
+  }
+
+  uart_rx_abort(uart);
+
+  return 0;
 }
 
 int uart_close_rx(struct uart *uart)

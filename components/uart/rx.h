@@ -33,6 +33,11 @@ static inline void uart_rx_intr_enable(uart_dev_t *dev)
   dev->int_ena.val |= (UART_RXFIFO_TOUT_INT_ENA | UART_BRK_DET_INT_ENA | UART_RXFIFO_OVF_INT_ENA | UART_FRM_ERR_INT_ENA | UART_PARITY_ERR_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
 }
 
+static inline void uart_rx_intr_pause(uart_dev_t *dev)
+{
+  dev->int_ena.val &= ~(UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
+}
+
 static inline void uart_rx_intr_resume(uart_dev_t *dev)
 {
   dev->int_ena.val |= (UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);

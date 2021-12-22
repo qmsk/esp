@@ -16,7 +16,7 @@ struct uart {
   /* RX */
   SemaphoreHandle_t rx_mutex;
   StreamBufferHandle_t rx_buffer;
-  bool rx_overflow, rx_break, rx_error;
+  bool rx_overflow, rx_break, rx_error, rx_abort;
 
   TickType_t read_timeout;
 
@@ -47,12 +47,14 @@ enum uart_rx_event {
   UART_RX_OVERFLOW,
   UART_RX_ERROR,
   UART_RX_BREAK,
+  UART_RX_ABORT,
 };
 
 int uart_rx_init(struct uart *uart, size_t rx_buffer_size);
 void uart_rx_setup(struct uart *uart, struct uart_options options);
 enum uart_rx_event uart_rx_event(struct uart *uart);
 int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout);
+void uart_rx_abort(struct uart *uart);
 
 /* tx.c */
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);

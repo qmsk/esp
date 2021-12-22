@@ -3,6 +3,7 @@
 #include "artnet.h"
 #include "config.h"
 #include "console.h"
+#include "dmx_init.h"
 #include "status_leds.h"
 #include "system.h"
 
@@ -113,4 +114,5 @@ void user_test_cancel()
 void user_config()
 {
   start_console();
+  restart_dmx();
 }

@@ -112,11 +112,6 @@ static int start_dmx_uart()
   struct uart_options options = dmx_uart_options;
   int err;
 
-  if (!dmx_uart) {
-    LOG_ERROR("DMX UART not initialized");
-    return -1;
-  }
-
   LOG_INFO("clock_div=%u, data_bits=%x parity=%x stop_bits=%x",
     options.clock_div,
     options.data_bits,
@@ -150,28 +145,44 @@ static int start_dmx_uart()
   return 0;
 }
 
+static void stop_dmx_uart()
+{
+  LOG_INFO("DMX UART stopping...");
+
+  if (uart_teardown(dmx_uart)) {
+    LOG_ERROR("uart_teardown");
+  } else {
+    LOG_INFO("DMX UART stopped");
+  };
+}
+
 static void dmx_main(void *ctx)
 {
   int err;
 
-  // use a separate task for UART setup, because it may block if the UART is busy
-  if ((err = start_dmx_uart())) {
-    LOG_ERROR("start_dmx_uart");
-    goto exit;
-  }
-
-  if (dmx_input_state && dmx_input_state->dmx_input) {
-    if ((err = dmx_input_main(dmx_input_state))) {
-      LOG_ERROR("dmx_input_main");
-      goto error;
+  // XXX: is the task delay racy? We want to allow any other UART user to acquire the dev lock
+  for (;; vTaskDelay(1)) {
+    // use a separate task for UART setup, because it may block if the UART is busy
+    if ((err = start_dmx_uart())) {
+      LOG_ERROR("start_dmx_uart");
+      continue;
     }
+
+    if (dmx_input_state && dmx_input_state->dmx_input) {
+      if ((err = dmx_input_main(dmx_input_state))) {
+        LOG_ERROR("dmx_input_main");
+      }
+    } else {
+      LOG_INFO("wait for stop signal...");
+
+      if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+        LOG_ERROR("ulTaskNotifyTake");
+      }
+    }
+
+    stop_dmx_uart();
   }
 
-error:
-  // TODO: stop UART?
-
-
-exit:
   LOG_INFO("stopped task=%p", dmx_task);
   dmx_task = NULL;
   vTaskDelete(NULL);
@@ -186,6 +197,13 @@ int start_dmx()
     return 0;
   }
 
+  if (!dmx_uart) {
+    LOG_ERROR("DMX UART is missing, not starting");
+    return -1;
+  }
+
+  LOG_INFO("start");
+
   if (xTaskCreate(&dmx_main, "dmx", DMX_TASK_STACK, NULL, DMX_TASK_PRIORITY, &dmx_task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
@@ -196,6 +214,33 @@ int start_dmx()
   if ((err = start_dmx_outputs())) {
     LOG_ERROR("start_dmx_outputs");
     return err;
+  }
+
+  return 0;
+}
+
+int restart_dmx()
+{
+  const struct dmx_config *config = &dmx_config;
+  int err;
+
+  if (!config->enabled) {
+    return 0;
+  }
+
+  if (!dmx_task) {
+    return 0;
+  }
+
+  if (dmx_input_state && dmx_input_state->dmx_input) {
+    if ((err = stop_dmx_input(dmx_input_state))) {
+      LOG_ERROR("stop_dmx_input");
+      return err;
+    }
+  } else {
+    LOG_INFO("notify task=%p to restart", dmx_task);
+
+    xTaskNotifyGive(dmx_task);
   }
 
   return 0;

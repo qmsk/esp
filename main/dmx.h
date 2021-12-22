@@ -49,6 +49,8 @@ int init_dmx_inputs();
 
 int dmx_input_main(struct dmx_input_state *state);
 
+int stop_dmx_input();
+
 /* dmx_output.c */
 struct dmx_output_state {
   struct dmx_output *dmx_output;

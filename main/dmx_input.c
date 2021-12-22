@@ -84,10 +84,13 @@ int dmx_input_main(struct dmx_input_state *state)
     if ((read = dmx_input_read(state->dmx_input)) < 0) {
       LOG_ERROR("dmx_input_read");
       continue;
-    } else {
+    } else if (read) {
       LOG_DEBUG("dmx_input_read: len=%d", read);
 
       state->artnet_dmx.len = read;
+    } else {
+      LOG_INFO("dmx_input_read: stopped");
+      break;
     }
 
     user_activity(USER_ACTIVITY_DMX_INPUT);
@@ -101,4 +104,21 @@ int dmx_input_main(struct dmx_input_state *state)
     LOG_ERROR("dmx_input_close");
     return -1;
   }
+
+  return 0;
+}
+
+int stop_dmx_input(struct dmx_input_state *state)
+{
+  int err;
+
+  LOG_INFO("stop dmx_input=%p", state->dmx_input);
+
+  // stop the running dmx_input_main loop
+  if ((err = dmx_input_stop(state->dmx_input))) {
+    LOG_ERROR("dmx_input_stop");
+    return err;
+  }
+
+  return 0;
 }

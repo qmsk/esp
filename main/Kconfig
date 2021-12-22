@@ -1,0 +1,93 @@
+menu "qmsk-esp"
+  choice STATUS_LEDS_USER
+    prompt "GPIO for USER LED/button"
+    default STATUS_LEDS_USER_GPIO_16
+
+    config STATUS_LEDS_USER_GPIO_16
+      bool "GPIO16 (active-low)"
+      help
+        ESP8266 RTC GPIO with integrated LED on NodeMCU.
+
+        Active-low with external pull-up and LED from +3V3 on NodeMCU.
+
+  endchoice
+
+  config STATUS_LEDS_USER_ENABLED
+      bool
+      default y if STATUS_LEDS_USER_GPIO_16
+
+  config STATUS_LEDS_USER_GPIO_NUM
+      int
+      default 16 if STATUS_LEDS_USER_GPIO_16
+
+  config STATUS_LEDS_USER_GPIO_INVERTED
+      bool
+      default y if STATUS_LEDS_USER_GPIO_16
+
+
+  choice STATUS_LEDS_FLASH
+    prompt "GPIO for FLASH LED/button"
+    default STATUS_LEDS_FLASH_GPIO_0
+
+    config STATUS_LEDS_FLASH_GPIO_0
+      bool "GPIO0 (active-low)"
+      help
+        ESP8266 strapping pin for selecting FLASH (high) / UART (low) boot mode.
+
+        Active-low with internal weak-pull-up, external pull-up and integrated button to GND on NodeMCU.
+
+  endchoice
+
+  config STATUS_LEDS_FLASH_ENABLED
+      bool
+      default y if STATUS_LEDS_FLASH_GPIO_0
+
+  config STATUS_LEDS_FLASH_GPIO_NUM
+      int
+      default 0 if STATUS_LEDS_FLASH_GPIO_0
+
+  config STATUS_LEDS_FLASH_GPIO_INVERTED
+      bool
+      default y if STATUS_LEDS_FLASH_GPIO_0
+
+
+  choice STATUS_LEDS_ALERT
+    prompt "GPIO for ALERT LED/button"
+    default STATUS_LEDS_ALERT_GPIO_15 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0
+
+    config STATUS_LEDS_ALERT_GPIO_15
+      bool "GPIO15 (active-high)"
+      help
+        ESP8266 strapping pin for selecting SDIO boot mode.
+
+        Active-high with external pull-down on NodeMCU.
+
+    config STATUS_LEDS_ALERT_GPIO_1
+      bool "GPIO1 (active-low)"
+      help
+        ESP8266 strapping pin for chip_test_mode (active-low).
+
+        Active-low with internal weak-pull-up.
+
+  endchoice
+
+  config STATUS_LEDS_ALERT_ENABLED
+      bool
+
+      default y if STATUS_LEDS_ALERT_GPIO_1
+      default y if STATUS_LEDS_ALERT_GPIO_15
+
+  config STATUS_LEDS_ALERT_GPIO_NUM
+      int
+      range 0 16
+
+      default 1 if STATUS_LEDS_ALERT_GPIO_1
+      default 15 if STATUS_LEDS_ALERT_GPIO_15
+
+  config STATUS_LEDS_ALERT_GPIO_INVERTED
+      bool
+
+      default y if STATUS_LEDS_ALERT_GPIO_1
+      default n if STATUS_LEDS_ALERT_GPIO_15
+
+endmenu

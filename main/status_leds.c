@@ -26,23 +26,6 @@ static xTaskHandle status_leds_task;
 // test if held for >1s
 #define STATUS_LEDS_ALERT_TEST_THRESHOLD 1
 
-#define USER_LED
-#define USER_LED_GPIO      GPIO_NUM_16  // RTC GPIO with integrated LED from +3V3 on NodeMCU
-#define USER_LED_INVERTED  true         // active-low with external pull-up and LED from +3V3 on NodeMCU
-
-#define FLASH_LED
-#define FLASH_LED_GPIO      GPIO_NUM_0  // GPIO0 is a strapping pin for FLASH/UART boot mode (high/low)
-#define FLASH_LED_INVERTED  true        // active-low with internal weak-pull-up, external pull-up and integrated button to GND on NodeMCU
-
-#define ALERT_LED
-#if CONFIG_ESP_CONSOLE_UART_NUM == 0
-# define ALERT_LED_GPIO      GPIO_NUM_15 // XXX: shared with spi_master CS and uart2 TX
-# define ALERT_LED_INVERTED  false       // active-high with external pull-down on NodeMCU
-#else
-# define ALERT_LED_GPIO      GPIO_NUM_1 // U0TXD/GPIO1 is a strapping pin for chip_test_mode (active-low)
-# define ALERT_LED_INVERTED  true       // active-low with internal/external weak-pull-up
-#endif
-
 enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
   [USER_STATE_BOOT]             = STATUS_LED_OFF,
   [USER_STATE_CONNECTING]       = STATUS_LED_FAST,
@@ -57,12 +40,15 @@ enum status_led_mode user_alert_led_mode[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_SETUP]        = STATUS_LED_FAST,
 };
 
-#ifdef USER_LED
+#if CONFIG_STATUS_LEDS_USER_ENABLED
 static int init_user_led()
 {
   const struct status_led_options led_options = {
-    .gpio     = USER_LED_GPIO,
-    .inverted = USER_LED_INVERTED,
+    .gpio     = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
+
+    #if CONFIG_STATUS_LEDS_USER_GPIO_INVERTED
+    .inverted = true,
+    #endif
   };
   const enum status_led_mode led_mode = user_state_led_mode[USER_STATE_BOOT];
 
@@ -77,12 +63,15 @@ static int init_user_led()
 }
 #endif
 
-#ifdef FLASH_LED
+#if CONFIG_STATUS_LEDS_FLASH_ENABLED
 static int init_flash_led()
 {
   const struct status_led_options led_options = {
-    .gpio     = FLASH_LED_GPIO,
-    .inverted = FLASH_LED_INVERTED,
+    .gpio     = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
+
+    #if CONFIG_STATUS_LEDS_FLASH_GPIO_INVERTED
+    .inverted = true,
+    #endif
   };
   const enum status_led_mode led_mode = STATUS_LED_OFF;
 
@@ -97,12 +86,15 @@ static int init_flash_led()
 }
 #endif
 
-#ifdef ALERT_LED
+#if CONFIG_STATUS_LEDS_ALERT_ENABLED
 static int init_alert_led()
 {
   const struct status_led_options led_options = {
-    .gpio     = ALERT_LED_GPIO,
-    .inverted = ALERT_LED_INVERTED,
+    .gpio     = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
+
+    #if CONFIG_STATUS_LEDS_ALERT_GPIO_INVERTED
+    .inverted = true,
+    #endif
   };
   const enum status_led_mode led_mode = STATUS_LED_OFF;
 
@@ -279,21 +271,21 @@ int init_status_leds()
 {
   int err;
 
-#ifdef USER_LED
+#if CONFIG_STATUS_LEDS_USER_ENABLED
   if ((err = init_user_led())) {
     LOG_ERROR("init_user_led");
     return err;
   }
 #endif
 
-#ifdef FLASH_LED
+#if CONFIG_STATUS_LEDS_FLASH_ENABLED
   if ((err = init_flash_led())) {
     LOG_ERROR("init_flash_led");
     return err;
   }
 #endif
 
-#ifdef ALERT_LED
+#if CONFIG_STATUS_LEDS_ALERT_ENABLED
   if ((err = init_alert_led())) {
     LOG_ERROR("init_alert_led");
     return err;

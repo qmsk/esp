@@ -75,10 +75,13 @@ Flashes for ~10ms on each spi-leds/dmx update.
 
 ## Flash Button
 
-The FLASH button on GPIO0 is used to trigger a config reset.
-Press and hold FLASH button for >5s until the USER LED stops flashing, and the system restarts.
+The FLASH button on GPIO0 is used to trigger config mode or a config reset.
 
-If the FLASH button is held pressed at boot, the configuration will not be loaded, and the Alert LED will flash slowly.
+Press the FLASH button briefly until the USER LED starts flashing, and release to enter configuration mode. The UART0 console will be activated if stopped, which will block any I2S output.
+
+Press and hold FLASH button for >5s until the USER LED stops flashing, and the system will reset the configuration and restart.
+
+If the FLASH button is held pressed at app boot, the configuration will not be loaded, and the Alert LED will flash slowly to indicate that the default configuration is active. Note that this only applies on a soft reset, if the FLASH button is held at power reset, the bootloader will enter UART flashing mode.
 
 ## CLI
 

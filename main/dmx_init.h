@@ -1,5 +1,4 @@
 #pragma once
 
-int init_dmx_input();
-
-int init_dmx_outputs();
+int init_dmx();
+int start_dmx();

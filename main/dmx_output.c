@@ -1,41 +1,28 @@
 #include <dmx_output.h>
 #include "dmx.h"
+#include "artnet.h"
 #include "user_event.h"
 
 #include <artnet.h>
-
 #include <logging.h>
+#include <gpio_out.h>
 #include <uart.h>
 
-// fit one complete DMX frame into the uart1 TX buffer
-#define DMX_UART UART_1
-#define DMX_UART_RX_BUFFER_SIZE 0
-#define DMX_UART_TX_BUFFER_SIZE (512 + 1)
+#define DMX_ARTNET_TASK_NAME_FMT "dmx%d"
+#define DMX_ARTNET_TASK_STACK 1024
+#define DMX_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
-struct uart *dmx_uart;
 struct gpio_out dmx_gpio_out;
 struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
-static int dmx_init_uart()
+static int init_dmx_gpio()
 {
-  int err;
-
-  if ((err = uart_new(&dmx_uart, DMX_UART, DMX_UART_RX_BUFFER_SIZE, DMX_UART_TX_BUFFER_SIZE))) {
-    LOG_ERROR("uart_new");
-    return err;
-  }
-
-  return 0;
-}
-
-static int dmx_init_gpio(const struct dmx_output_config *configs)
-{
-  int err;
   enum gpio_out_pins pins = 0;
   enum gpio_out_level level = 0;
+  int err;
 
   for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
-    const struct dmx_output_config *config = &configs[i];
+    const struct dmx_output_config *config = &dmx_output_configs[i];
 
     if (config->gpio_mode != -1) {
       level = config->gpio_mode; // XXX: correctly handle conflicting levels?
@@ -53,7 +40,7 @@ static int dmx_init_gpio(const struct dmx_output_config *configs)
   return 0;
 }
 
-static int dmx_init_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
+static int init_dmx_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
   struct dmx_output_options options = {
     .uart           = dmx_uart,
@@ -63,7 +50,7 @@ static int dmx_init_output(struct dmx_output_state *state, int index, const stru
   };
   int err;
 
-  LOG_INFO("%d: gpio_out_pins=%04x", index, options.gpio_out_pins);
+  LOG_INFO("dmx%d: gpio_out_pins=%04x", index, options.gpio_out_pins);
 
   if ((err = dmx_output_new(&state->dmx_output, options))) {
     LOG_ERROR("dmx_output_new");
@@ -73,36 +60,35 @@ static int dmx_init_output(struct dmx_output_state *state, int index, const stru
   return 0;
 }
 
-static bool dmx_outputs_enabled()
+static int init_dmx_output_artnet(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
-  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
-  {
-    const struct dmx_output_config *config = &dmx_output_configs[i];
+  struct artnet_output_options options = {
+    .port = (enum artnet_port) (index), // use dmx%d index as output port number
+    .address = config->artnet_universe, // net/subnet set by add_artnet_output()
+  };
+  int err;
 
-    if (config->enabled) {
-      return true;
-    }
+  LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
+
+  if (!(state->artnet_queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
   }
 
-  return false;
+  if ((err = add_artnet_output(options, state->artnet_queue))) {
+    LOG_ERROR("add_artnet_output");
+    return err;
+  }
+
+  return 0;
 }
 
 int init_dmx_outputs()
 {
   int err;
 
-  if (!dmx_outputs_enabled()) {
-    LOG_INFO("disabled");
-    return 0;
-  }
-
-  if ((err = dmx_init_uart())) {
-    LOG_ERROR("dmx_init_uart");
-    return err;
-  }
-
-  if ((err = dmx_init_gpio(dmx_output_configs))) {
-    LOG_ERROR("dmx_init_gpio");
+  if ((err = init_dmx_gpio())) {
+    LOG_ERROR("init_dmx_gpio");
     return err;
   }
 
@@ -112,15 +98,15 @@ int init_dmx_outputs()
     struct dmx_output_state *state = &dmx_output_states[i];
 
     if (config->enabled) {
-      if ((err = dmx_init_output(state, i, config))) {
-        LOG_ERROR("dmx_init_output");
+      if ((err = init_dmx_output(state, i, config))) {
+        LOG_ERROR("init_dmx_output");
         return err;
       }
     }
 
     if (config->enabled && config->artnet_enabled) {
-      if ((err = init_dmx_artnet_output(state, i, config))) {
-        LOG_ERROR("init_dmx_artnet_output");
+      if ((err = init_dmx_output_artnet(state, i, config))) {
+        LOG_ERROR("init_dmx_output_artnet");
         return err;
       }
     }
@@ -144,9 +130,74 @@ int output_dmx(struct dmx_output_state *state, void *data, size_t len)
 
   user_activity(USER_ACTIVITY_DMX_OUTPUT);
 
-  if ((err = dmx_output_cmd(state->dmx_output, DMX_CMD_DIMMER, data, len))) {
+  if ((err = dmx_output_cmd(state->dmx_output, DMX_CMD_DIMMER, data, len)) < 0) {
     LOG_ERROR("dmx_output_cmd");
     return err;
+  } else if (err) {
+    LOG_WARN("dmx_output_cmd: UART not setup, DMX not running");
+    return 1;
+  }
+
+  return 0;
+}
+
+static int dmx_output_artnet_dmx(struct dmx_output_state *state, struct artnet_dmx *dmx)
+{
+  LOG_DEBUG("len=%u", dmx->len);
+
+  return output_dmx(state, dmx->data, dmx->len);
+}
+
+static void dmx_output_main(void *ctx)
+{
+  struct dmx_output_state *state = ctx;
+
+  for (;;) {
+    if (!xQueueReceive(state->artnet_queue, &state->artnet_dmx, portMAX_DELAY)) {
+      LOG_WARN("xQueueReceive");
+    } else if (dmx_output_artnet_dmx(state, &state->artnet_dmx) < 0) {
+      LOG_WARN("dmx_output_artnet_dmx");
+    }
+  }
+}
+
+int start_dmx_output(struct dmx_output_state *state, int index)
+{
+  char task_name[configMAX_TASK_NAME_LEN];
+
+  snprintf(task_name, sizeof(task_name), DMX_ARTNET_TASK_NAME_FMT, index);
+
+  if (xTaskCreate(&dmx_output_main, task_name, DMX_ARTNET_TASK_STACK, state, DMX_ARTNET_TASK_PRIORITY, &state->task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  } else {
+    LOG_DEBUG("task=%p", state->task);
+  }
+
+  return 0;
+}
+
+int start_dmx_outputs()
+{
+  int err;
+
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++)
+  {
+    const struct dmx_output_config *config = &dmx_output_configs[i];
+    struct dmx_output_state *state = &dmx_output_states[i];
+
+    if (!config->enabled || !state->dmx_output) {
+      continue;
+    }
+    if (!config->artnet_enabled || !state->artnet_queue) {
+      // only used for Art-NET output
+      continue;
+    }
+
+    if ((err = start_dmx_output(state, i))) {
+      LOG_ERROR("start_dmx_output %d", i);
+      return err;
+    }
   }
 
   return 0;

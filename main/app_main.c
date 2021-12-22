@@ -109,13 +109,8 @@ void app_main()
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
-  if (init_dmx_input()) {
-    LOG_ERROR("init_dmx_input");
-    user_alert(USER_ALERT_ERROR_SETUP);
-  }
-
-  if (init_dmx_outputs()) {
-    LOG_ERROR("init_dmx_outputs");
+  if (init_dmx()) {
+    LOG_ERROR("init_dmx");
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
@@ -123,6 +118,11 @@ void app_main()
 
   if (start_artnet()) {
     LOG_ERROR("start_artnet");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+
+  if (start_dmx()) {
+    LOG_ERROR("start_dmx");
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 }

@@ -3,9 +3,12 @@
 
 #include <artnet.h>
 #include <gpio_out.h>
+#include <uart.h>
 
-struct dmx_input_config dmx_input_config = {
+#include <sdkconfig.h>
 
+struct dmx_config dmx_config = {
+  .uart   = -1,
 };
 
 struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {
@@ -17,6 +20,17 @@ struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {
   },
 };
 
+const struct config_enum dmx_uart_enum[] = {
+ { "OFF",   -1              },
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
+ { "UART0", UART_0_SWAP     },
+#endif
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
+ { "UART1", UART_1          },
+#endif
+ {}
+};
+
 const struct config_enum dmx_gpio_mode_enum[] = {
  { "OFF",  -1              },
  { "HIGH", GPIO_OUT_HIGH   },
@@ -24,17 +38,25 @@ const struct config_enum dmx_gpio_mode_enum[] = {
  {}
 };
 
-const struct configtab dmx_input_configtab[] = {
+const struct configtab dmx_configtab[] = {
  { CONFIG_TYPE_BOOL, "enabled",
-    .bool_type = { .value = &dmx_input_config.enabled },
+    .bool_type = { .value = &dmx_config.enabled },
  },
- { CONFIG_TYPE_BOOL, "artnet_enabled",
+ { CONFIG_TYPE_ENUM, "uart",
+   .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",
+   .enum_type = { .value = &dmx_config.uart, .values = dmx_uart_enum },
+ },
+ { CONFIG_TYPE_BOOL, "input_enabled",
+    .description = "Start DMX input on UART.",
+    .bool_type = { .value = &dmx_config.input_enabled },
+ },
+ { CONFIG_TYPE_BOOL, "input_artnet_enabled",
     .description = "Configure Art-NET input port.",
-    .bool_type = { .value = &dmx_input_config.artnet_enabled },
+    .bool_type = { .value = &dmx_config.input_artnet_enabled },
  },
- { CONFIG_TYPE_UINT16, "artnet_universe",
+ { CONFIG_TYPE_UINT16, "input_artnet_universe",
     .description = "Input to universe (0-15) within [artnet] net/subnet.",
-    .uint16_type = { .value = &dmx_input_config.artnet_universe, .max = ARTNET_UNIVERSE_MAX },
+    .uint16_type = { .value = &dmx_config.input_artnet_universe, .max = ARTNET_UNIVERSE_MAX },
  },
  {}
 };

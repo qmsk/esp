@@ -93,26 +93,25 @@ const struct configmod config_modules[] = {
     ),
     .table = spi_leds_configtab3,
   },
-  { "dmx-input",
+  { "dmx",
+    .alias = "dmx-input",
     .description = (
-      "DMX input via UART0 alternate pins."
+      "DMX input/ouput via UART."
     ),
-    .table = dmx_input_configtab,
+    .table = dmx_configtab,
   },
-  { "dmx-output0",
-    .alias = "dmx0",
+  { "dmx0",
     .description = (
-      "DMX output via UART1 -> RS-485 transceiver."
+      "Multiplexed DMX output via UART -> RS-485 transceiver."
       "\n"
       "Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using"
       " a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable."
     ),
     .table = dmx_output_configtab0,
   },
-  { "dmx-output1",
-    .alias = "dmx1",
+  { "dmx1",
     .description = (
-      "DMX output via UART1 -> RS-485 transceiver."
+      "Multiplexed DMX output via UART -> RS-485 transceiver."
       "\n"
       "Because UART1 TX will spew debug messages reset/flash/boot, avoid DMX glitches by using"
       " a GPIO pin that is kept low during reset/boot to drive the RS-485 transceiver's active-high transmit/output-enable."

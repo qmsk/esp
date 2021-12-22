@@ -1,4 +1,5 @@
 #include "dmx.h"
+#include "dmx_cmd.h"
 
 #include <logging.h>
 

@@ -234,6 +234,10 @@ void cancel_artnet_test()
 {
   int err;
 
+  if (!artnet) {
+    return;
+  }
+
   if ((err = artnet_sync_outputs(artnet))) {
     LOG_ERROR("artnet_sync_outputs");
   }

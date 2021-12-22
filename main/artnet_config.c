@@ -10,12 +10,6 @@ const struct configtab artnet_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &artnet_config.enabled },
   },
-  { CONFIG_TYPE_BOOL, "inputs_enabled",
-    .description = (
-      "Support Art-NET input ports."
-    ),
-    .bool_type = { .value = &artnet_config.inputs_enabled },
-  },
   { CONFIG_TYPE_UINT16, "net",
     .description = "Set network address, 0-127.",
     .uint16_type = { .value = &artnet_config.net, .max = ARTNET_NET_MAX },

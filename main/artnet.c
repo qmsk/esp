@@ -2,6 +2,7 @@
 #include "artnet.h"
 #include "artnet_config.h"
 #include "artnet_init.h"
+#include "dmx_artnet.h"
 #include "system.h"
 
 #include <logging.h>
@@ -24,6 +25,15 @@
 #define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
 struct artnet *artnet;
+
+unsigned count_artnet_inputs()
+{
+  unsigned inputs = 0;
+
+  inputs += count_dmx_artnet_inputs();
+
+  return inputs;
+}
 
 static int init_artnet_options(struct artnet_options *options, const struct artnet_config *config)
 {
@@ -65,13 +75,12 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
   snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
   snprintf(options->long_name, sizeof(options->long_name), "%s", ARTNET_PRODUCT);
 
-  if (config->inputs_enabled) {
-    options->inputs = ARTNET_INPUTS;
-  }
+  options->inputs = count_artnet_inputs();
 
-  LOG_INFO("port=%u address=%04x",
+  LOG_INFO("port=%u address=%04x inputs=%u",
     options->port,
-    options->address
+    options->address,
+    options->inputs
   );
   LOG_INFO("ip_address=%u.%u.%u.%u",
     options->ip_address[0],
@@ -167,7 +176,6 @@ static void artnet_main_inputs(void *ctx)
 
 int start_artnet()
 {
-  const struct artnet_config *config = &artnet_config;
   int err;
 
   if (!artnet) {
@@ -181,7 +189,7 @@ int start_artnet()
     LOG_DEBUG("artnet listen task=%p", artnet_listen_task);
   }
 
-  if (config->inputs_enabled) {
+  if (artnet_get_inputs_enabled(artnet)) {
     if ((err = xTaskCreate(&artnet_main_inputs, ARTNET_INPUTS_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet_inputs_task)) <= 0) {
       LOG_ERROR("xTaskCreate(artnet-inputs)");
       return -1;

@@ -4,7 +4,7 @@
 #include "artnet_cmd.h"
 #include "spi_leds_cmd.h"
 #include "config.h"
-#include "dmx.h"
+#include "dmx_cmd.h"
 #include "log.h"
 #include "spiffs.h"
 #include "status_leds.h"
@@ -215,6 +215,7 @@ int start_console_uart(const struct console_config *config)
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
 
+    .dev_mutex    = dev_mutex[DEV_MUTEX_UART0],
     .pin_mutex    = pin_mutex[PIN_MUTEX_U0RXD],
   };
   int err;

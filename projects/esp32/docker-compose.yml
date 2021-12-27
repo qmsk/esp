@@ -1,3 +1,6 @@
+# Usage:
+#   $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose build sdk
+#   $ docker-compose run --rm build
 version: '3.8'
 services:
   sdk:
@@ -5,7 +8,7 @@ services:
     build:
       context: ../../sdk/esp-idf
       args:
-        ESP_IDF_VERSION: v4.3.1
+        ESP_IDF_VERSION: v4.3.2
         BUILD_UID: ${BUILD_UID}
         BUILD_GID: ${BUILD_GID}
     command: idf.py --version

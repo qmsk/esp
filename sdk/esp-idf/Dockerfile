@@ -24,7 +24,7 @@ ENV \
   ESP_PYTHON=python3
 
 # install.sh
-RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install --targets=${ESP_IDF_TARGETS}
 RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install-python-env
 
 # export.sh

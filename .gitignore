@@ -1,4 +1,4 @@
 .*
 
-/sdkconfig.old
-/build/
+/projects/*/sdkconfig.old
+/projects/*/build/

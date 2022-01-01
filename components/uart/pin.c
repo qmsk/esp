@@ -46,6 +46,24 @@ int uart_pin_setup(struct uart *uart, struct uart_options options)
 
       break;
 
+    case UART_0_SWAP_RXONLY:
+      // swap UART0 CTS <-> RX and RTS <-> TX
+      SET_PERI_REG_MASK(UART_SWAP_REG, UART0_SWAP_BIT);
+
+      // GPIO13 UART0 CTS -> RX
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_UART0_CTS);
+
+      break;
+
+    case UART_0_SWAP_TXONLY:
+      // swap UART0 CTS <-> RX and RTS <-> TX
+      SET_PERI_REG_MASK(UART_SWAP_REG, UART0_SWAP_BIT);
+
+      // GPIO15 UART0 RTS -> TX
+      IDEMPOTENT_PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_UART0_RTS);
+
+      break;
+
     case UART_0_TXDBK:
       // reset UART0 CTS <-> RX and RTS <-> TX
       CLEAR_PERI_REG_MASK(UART_SWAP_REG, UART0_SWAP_BIT);

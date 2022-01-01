@@ -22,12 +22,23 @@ SemaphoreHandle_t dmx_uart_dev_mutex, dmx_uart_pin_mutex;
 
 int init_dmx_uart(const struct dmx_config *config, bool inputs_enabled, bool outputs_enabled)
 {
+  enum uart_port uart_port = config->uart;
   size_t rx_buffer_size = inputs_enabled ? DMX_UART_RX_BUFFER_SIZE : 0;
   size_t tx_buffer_size = outputs_enabled ? DMX_UART_TX_BUFFER_SIZE : 0;
   int err;
 
   switch(config->uart) {
-    case UART_0_SWAP:
+    case UART_0:
+      // avoid USB UART console conflict
+      uart_port |= UART_0_SWAP;
+
+      if (!inputs_enabled) {
+        uart_port |= UART_TXDBK_BIT;
+      }
+      if (!outputs_enabled) {
+        uart_port |= UART_RXONLY_BIT;
+      }
+
       // note that this does NOT need to acquire PIN_MUTEX_U0RXD, as we are using the swapped RTS/CTS pins
       dmx_uart_dev_mutex = dev_mutex[DEV_MUTEX_UART0];
       dmx_uart_pin_mutex = NULL;
@@ -44,7 +55,13 @@ int init_dmx_uart(const struct dmx_config *config, bool inputs_enabled, bool out
       return -1;
   }
 
-  if ((err = uart_new(&dmx_uart, config->uart, rx_buffer_size, tx_buffer_size))) {
+  LOG_INFO("uart_port=%x, rx_buffer_size=%u, tx_buffer_size=%u",
+    uart_port,
+    rx_buffer_size,
+    tx_buffer_size
+  );
+
+  if ((err = uart_new(&dmx_uart, uart_port, rx_buffer_size, tx_buffer_size))) {
     LOG_ERROR("uart_new");
     return err;
   }

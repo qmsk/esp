@@ -23,7 +23,7 @@ struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {
 const struct config_enum dmx_uart_enum[] = {
  { "OFF",   -1              },
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
- { "UART0", UART_0_SWAP     },
+ { "UART0", UART_0          },
 #endif
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
  { "UART1", UART_1          },

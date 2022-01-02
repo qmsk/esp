@@ -3,6 +3,7 @@
 
 #include <logging.h>
 
+#include <errno.h>
 #include <stdlib.h>
 
 static int uart_init(struct uart *uart, enum uart_port port)
@@ -217,25 +218,26 @@ int uart_read(struct uart *uart, void *buf, size_t size)
     switch (uart_rx_event(uart)) {
       case UART_RX_NONE:
         if (read) {
-          // timeout
+          LOG_DEBUG("RX timeout");
+          ret = 0;
           goto ret;
-        } else {
-          // block on RX buffer
-          break;
         }
+
+        // block on RX buffer
+        break;
 
       case UART_RX_DATA:
         // RX buffer has data available
         break;
 
       case UART_RX_OVERFLOW:
-        LOG_WARN("RX overflow detected");
-        ret = -1;
+        LOG_DEBUG("RX overflow detected");
+        ret = -EOVERFLOW;
         goto ret;
 
       case UART_RX_ERROR:
-        LOG_WARN("RX error detected");
-        ret = -1;
+        LOG_DEBUG("RX error detected");
+        ret = -EBADMSG;
         goto ret;
 
       case UART_RX_BREAK:
@@ -244,13 +246,13 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         goto ret;
 
       case UART_RX_ABORT:
-        LOG_DEBUG("RX break detected");
-        ret = -1;
+        LOG_DEBUG("RX abort detected");
+        ret = -EINTR;
         goto ret;
 
       default:
         LOG_ERROR("unknown event");
-        ret = -1;
+        ret = -EINVAL;
         goto ret;
     }
 

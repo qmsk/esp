@@ -122,6 +122,9 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
  * Read data from UART, copying up to size bytes into buf.
  *
  * @return <0 on error, 0 on timeout or break, otherwise number of bytes copied into buf.
+ * @return -EOVERFLOW RX FIFO full
+ * @return -EBADMSG RX framing/parity error
+ * @return -EINTR interrupted using uart_abort_read()
  */
 int uart_read(struct uart *uart, void *buf, size_t size);
 

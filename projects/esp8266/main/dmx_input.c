@@ -82,7 +82,7 @@ int dmx_input_main(struct dmx_input_state *state)
 
   for (;;) {
     if ((read = dmx_input_read(state->dmx_input)) < 0) {
-      LOG_ERROR("dmx_input_read");
+      LOG_DEBUG("dmx_input_read");
       continue;
     } else if (read) {
       LOG_DEBUG("dmx_input_read: len=%d", read);

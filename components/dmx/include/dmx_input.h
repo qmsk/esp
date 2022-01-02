@@ -2,6 +2,7 @@
 
 #include <dmx.h>
 #include <uart.h>
+#include <stats.h>
 
 struct dmx_input;
 struct dmx_input_options {
@@ -13,7 +14,16 @@ struct dmx_input_options {
   unsigned address;
 };
 
+struct dmx_input_stats {
+  struct stats_counter rx_overflow, rx_error;
+};
+
 int dmx_input_new (struct dmx_input **inp, struct dmx_input_options options);
+
+ /*
+  * Get stats for input
+  */
+ void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats);
 
 /*
  * Open UART for RX, and update state to sync to next BREAK.

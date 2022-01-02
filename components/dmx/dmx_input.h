@@ -11,10 +11,13 @@ enum dmx_input_state {
 
 struct dmx_input {
   struct dmx_input_options options;
+  struct dmx_input_stats stats;
 
+  // open
   struct uart *uart;
   bool stop;
 
+  // read
   enum dmx_input_state state;
   enum dmx_cmd state_cmd;
   unsigned state_data_index;

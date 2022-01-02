@@ -3,6 +3,7 @@
 
 #include <logging.h>
 
+#include <errno.h>
 #include <stdlib.h>
 
 int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
@@ -14,6 +15,9 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
   );
 
   in->options = options;
+
+  stats_counter_init(&in->stats.rx_overflow);
+  stats_counter_init(&in->stats.rx_error);
 
   return 0;
 }
@@ -43,6 +47,12 @@ error:
   return err;
 }
 
+void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
+{
+  stats->rx_overflow = stats_counter_copy(&in->stats.rx_overflow);
+  stats->rx_error = stats_counter_copy(&in->stats.rx_error);
+}
+
 int dmx_input_open (struct dmx_input *in, struct uart *uart)
 {
   int err;
@@ -60,6 +70,23 @@ int dmx_input_open (struct dmx_input *in, struct uart *uart)
   in->state_len = 0;
 
   return 0;
+}
+
+static void dmx_input_process_error (struct dmx_input *in, int err)
+{
+  LOG_DEBUG("error=%d", err);
+
+  switch(err) {
+    case EOVERFLOW:
+      stats_counter_increment(&in->stats.rx_overflow);
+      break;
+
+    case EBADMSG:
+      stats_counter_increment(&in->stats.rx_error);
+      break;
+  }
+
+  in->state = DMX_INPUT_STATE_BREAK;
 }
 
 static void dmx_input_process_break (struct dmx_input *in)
@@ -146,10 +173,7 @@ int dmx_input_read (struct dmx_input *in)
   while (!in->state_len || read) {
     // XXX: sync to start of break, but how to determine end of packet?!
     if ((read = uart_read(in->uart, buf, sizeof(buf))) < 0) {
-      // lost sync
-      in->state = DMX_INPUT_STATE_BREAK;
-
-      LOG_ERROR("uart_read");
+      dmx_input_process_error(in, -read);
       return read;
     }
 

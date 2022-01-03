@@ -325,7 +325,7 @@ int status_led_read(struct status_led *led)
   }
 
   // wait
-  if (!xTaskNotifyWait(STATUS_LED_READ_NOTIFY_BIT, STATUS_LED_READ_NOTIFY_BIT, &notify_value, portMAX_DELAY)) {
+  if (!xTaskNotifyWait(0, STATUS_LED_READ_NOTIFY_BIT, &notify_value, portMAX_DELAY)) {
     LOG_ERROR("xTaskNotifyWait");
     ret = -1;
     goto error;

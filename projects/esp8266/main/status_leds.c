@@ -60,40 +60,14 @@ static int init_user_led()
   return 0;
 }
 
-static enum status_led_mode user_led_mode;
-
 static void set_user_led(enum status_led_mode mode)
 {
-  user_led_mode = mode;
-
   if (!user_led) {
     return;
   }
 
-  if (status_led_mode(user_led, mode)) {
-    LOG_WARN("status_led_mode");
-  }
-}
-
-static void override_user_led(enum status_led_mode mode)
-{
-  if (!user_led) {
-    return;
-  }
-
-  if (status_led_mode(user_led, mode)) {
-    LOG_WARN("status_led_mode");
-  }
-}
-
-static void revert_user_led()
-{
-  if (!user_led) {
-    return;
-  }
-
-  if (status_led_mode(user_led, user_led_mode)) {
-    LOG_WARN("status_led_mode");
+  if (status_led_set(user_led, mode)) {
+    LOG_WARN("status_led_set");
   }
 }
 #endif
@@ -128,8 +102,8 @@ static void set_flash_led(enum status_led_mode mode)
     return;
   }
 
-  if (status_led_mode(flash_led, mode)) {
-    LOG_WARN("status_led_mode");
+  if (status_led_set(flash_led, mode)) {
+    LOG_WARN("status_led_set");
   }
 }
 
@@ -166,8 +140,8 @@ static void set_alert_led(enum status_led_mode mode)
     return;
   }
 
-  if (status_led_mode(alert_led, mode)) {
-    LOG_WARN("status_led_mode");
+  if (status_led_set(alert_led, mode)) {
+    LOG_WARN("status_led_set");
   }
 }
 #endif
@@ -243,15 +217,16 @@ static void read_config_button(struct status_led *status_led)
   if (hold > STATUS_LEDS_CONFIG_RESET_THRESHOLD) {
     LOG_WARN("config reset");
     user_state(USER_STATE_RESET);
+    status_leds_revert(status_led);
     user_config_reset();
   } else if (hold == 1) {
     // trigger once at start of flash sequence
     LOG_WARN("config");
-    override_user_led(STATUS_LED_FAST);
+    status_leds_override(status_led, STATUS_LED_PULSE);
     user_config();
   } else if (released > 0) {
     LOG_WARN("cancel");
-    revert_user_led();
+    status_leds_revert(status_led);
   }
 }
 
@@ -278,11 +253,11 @@ static void read_test_button(struct status_led *status_led)
     LOG_WARN("continue");
   } else if (hold == STATUS_LEDS_TEST_THRESHOLD) {
     LOG_WARN("start");
-    override_user_led(STATUS_LED_SLOW);
+    status_leds_override(status_led, STATUS_LED_PULSE);
     user_test();
   } else if (released) {
     LOG_WARN("cancel");
-    revert_user_led();
+    status_leds_revert(status_led);
     user_test_cancel();
   }
 }

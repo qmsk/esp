@@ -5,6 +5,7 @@
 #include <cmd.h>
 
 int init_status_leds();
+int start_status_leds();
 
 /* Update User LED state to reflect event */
 void status_leds_state(enum user_state state);

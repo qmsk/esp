@@ -95,7 +95,13 @@ void update_user_ipv4_address(ip4_addr_t ip_addr){
   }
 }
 
-void user_reset()
+void user_config()
+{
+  start_console();
+  restart_dmx();
+}
+
+void user_config_reset()
 {
   reset_config();
   system_restart();
@@ -109,10 +115,4 @@ void user_test()
 void user_test_cancel()
 {
   cancel_artnet_test();
-}
-
-void user_config()
-{
-  start_console();
-  restart_dmx();
 }

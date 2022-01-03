@@ -1,6 +1,27 @@
 menu "qmsk-esp"
   choice STATUS_LEDS_USER
-    prompt "GPIO for USER LED/button"
+    prompt "USER LED/button mode"
+    default STATUS_LEDS_USER_MODE
+
+    config STATUS_LEDS_USER_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_USER_MODE
+      bool "User LED"
+
+    config STATUS_LEDS_USER_MODE_TEST
+      bool "User LED, Test button"
+
+  endchoice
+
+  config STATUS_LEDS_USER_ENABLED
+      bool
+      default n if STATUS_LEDS_USER_DISABLED
+      default y if STATUS_LEDS_USER_MODE
+      default y if STATUS_LEDS_USER_MODE_TEST
+
+  choice STATUS_LEDS_USER_GPIO
+    prompt "USER LED/button GPIO"
     default STATUS_LEDS_USER_GPIO_16
 
     config STATUS_LEDS_USER_GPIO_16
@@ -12,10 +33,6 @@ menu "qmsk-esp"
 
   endchoice
 
-  config STATUS_LEDS_USER_ENABLED
-      bool
-      default y if STATUS_LEDS_USER_GPIO_16
-
   config STATUS_LEDS_USER_GPIO_NUM
       int
       default 16 if STATUS_LEDS_USER_GPIO_16
@@ -25,8 +42,32 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_USER_GPIO_16
 
 
+
+
+
   choice STATUS_LEDS_FLASH
-    prompt "GPIO for FLASH LED/button"
+    prompt "FLASH LED/button mode"
+    default STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+
+    config STATUS_LEDS_FLASH_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+      bool "Activity LED, Config button"
+
+    config STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+      bool "Alert LED, Config button"
+
+  endchoice
+
+  config STATUS_LEDS_FLASH_ENABLED
+      bool
+      default n if STATUS_LEDS_FLASH_DISABLED
+      default y if STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+      default y if STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+
+  choice STATUS_LEDS_FLASH_GPIO
+    prompt "FLASH LED/button GPIO pin"
     default STATUS_LEDS_FLASH_GPIO_0
 
     config STATUS_LEDS_FLASH_GPIO_0
@@ -38,10 +79,6 @@ menu "qmsk-esp"
 
   endchoice
 
-  config STATUS_LEDS_FLASH_ENABLED
-      bool
-      default y if STATUS_LEDS_FLASH_GPIO_0
-
   config STATUS_LEDS_FLASH_GPIO_NUM
       int
       default 0 if STATUS_LEDS_FLASH_GPIO_0
@@ -51,7 +88,31 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_FLASH_GPIO_0
 
 
+
+
+
   choice STATUS_LEDS_ALERT
+    prompt "ALERT LED/button mode"
+    default STATUS_LEDS_ALERT_MODE_TEST
+
+    config STATUS_LEDS_ALERT_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_ALERT_MODE
+      bool "Alert LED"
+
+    config STATUS_LEDS_ALERT_MODE_TEST
+      bool "Alert LED, Test button"
+
+  endchoice
+
+  config STATUS_LEDS_ALERT_ENABLED
+      bool
+
+      default n if STATUS_LEDS_ALERT_DISABLED
+      default y if STATUS_LEDS_ALERT_MODE_TEST
+
+  choice STATUS_LEDS_ALERT_GPIO
     prompt "GPIO for ALERT LED/button"
     default STATUS_LEDS_ALERT_GPIO_15 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0
 
@@ -83,15 +144,6 @@ menu "qmsk-esp"
         Active-high with external pull-down on NodeMCU.
 
   endchoice
-
-  config STATUS_LEDS_ALERT_ENABLED
-      bool
-
-      default y if STATUS_LEDS_ALERT_GPIO_1
-      default y if STATUS_LEDS_ALERT_GPIO_12
-      default y if STATUS_LEDS_ALERT_GPIO_13
-      default y if STATUS_LEDS_ALERT_GPIO_14
-      default y if STATUS_LEDS_ALERT_GPIO_15
 
   config STATUS_LEDS_ALERT_GPIO_NUM
       int

@@ -27,7 +27,7 @@ void app_main()
 
   if (init_log()) {
     LOG_ERROR("init_log");
-    user_alert(USER_ALERT_ERROR_BOOT); // TODO: early gpio alert output before init_status_leds()?
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
@@ -54,6 +54,12 @@ void app_main()
 
   if (init_console()) {
     LOG_ERROR("init_console");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if (start_status_leds()) {
+    LOG_ERROR("start_status_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

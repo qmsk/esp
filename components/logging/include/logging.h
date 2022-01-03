@@ -8,7 +8,7 @@
 #define LOG_BOOT_ERROR(...)   ESP_EARLY_LOGE(__func__, __VA_ARGS__)
 
 #ifdef DEBUG
-  #define LOG_DEBUG(...)      ESP_EARLY_LOGD(__func__, __VA_ARGS__)
+  #define LOG_DEBUG(...)      ESP_LOG_LEVEL(ESP_LOG_DEBUG, __func__, __VA_ARGS__)
   #define LOG_BOOT_DEBUG(...) ESP_EARLY_LOGD(__func__, __VA_ARGS__)
   #define LOG_ISR_DEBUG(...)  ESP_EARLY_LOGD(__func__, __VA_ARGS__)
 #else

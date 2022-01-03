@@ -7,15 +7,31 @@
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 
+enum status_led_op {
+  STATUS_LED_SET,
+  STATUS_LED_READ,
+};
+
+struct status_led_event {
+  enum status_led_op op;
+  enum status_led_mode mode;
+};
+
 struct status_led {
   struct status_led_options options;
 
   xTaskHandle task;
-  xQueueHandle queue;
-  SemaphoreHandle_t mutex;
-  TaskHandle_t read_task;
 
+  // operations
+  SemaphoreHandle_t mutex;
+  xQueueHandle queue;
+  TaskHandle_t read_task;
+  bool override;
+  enum status_led_mode set_mode;
+
+  // owned by task
   portTickType tick;
   enum status_led_mode mode;
   unsigned state;
+  bool input, input_wait;
 };

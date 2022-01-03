@@ -8,20 +8,24 @@
 #include <esp_err.h>
 
 // 100ms on / 1800ms off
-#define STATUS_LED_BLINK_SLOW_PERIOD_ON 100
-#define STATUS_LED_BLINK_SLOW_PERIOD_OFF 1800
+#define STATUS_LED_SLOW_PERIOD_ON 100
+#define STATUS_LED_SLOW_PERIOD_OFF 1800
 
 // 100ms on / 100ms off
-#define STATUS_LED_BLINK_FAST_PERIOD 100
+#define STATUS_LED_FAST_PERIOD 100
 
-// 100ms on
-#define STATUS_LED_BLINK_PERIOD 10
+// 10ms on
+#define STATUS_LED_FLASH_PERIOD 10
+
+// 50ms off / 200ms on
+#define STATUS_LED_PULSE_PERIOD_OFF 50
+#define STATUS_LED_PULSE_PERIOD_ON 200
 
 // 10ms read wait
-#define STATUS_LED_READ_WAIT_PERIOD 1
+#define STATUS_LED_READ_WAIT_PERIOD 10
 #define STATUS_LED_READ_NOTIFY_BIT 0x1
 
-#if DEBUG
+#ifdef DEBUG
 # define STATUS_LED_TASK_STACK 1024
 #else
 # define STATUS_LED_TASK_STACK 512
@@ -30,7 +34,7 @@
 
 static inline void status_led_output_mode(struct status_led *led)
 {
-  LOG_DEBUG("gpio_set_direction(%d, GPIO_MODE_OUTPUT)", led->options.gpio);
+  LOG_DEBUG("gpio=%d", led->options.gpio);
 
   gpio_set_direction(led->options.gpio, GPIO_MODE_OUTPUT);
 }
@@ -47,78 +51,112 @@ static inline void status_led_on(struct status_led *led)
 
 static inline void status_led_input_mode(struct status_led *led)
 {
-  LOG_DEBUG("gpio_set_direction(%d, GPIO_MODE_INPUT)", led->options.gpio);
+  LOG_DEBUG("gpio=%d", led->options.gpio);
 
   gpio_set_direction(led->options.gpio, GPIO_MODE_INPUT);
 }
 
-static inline int status_led_input(struct status_led *led)
+static inline int status_led_input_read(struct status_led *led)
 {
-  if (led->options.gpio == 1) {
-    LOG_DEBUG("READ_PERI_REG(PERIPHS_IO_MUX_U0TXD_U)=%08x", READ_PERI_REG(PERIPHS_IO_MUX_U0TXD_U));
-  }
-
   int level = gpio_get_level(led->options.gpio);
 
-  LOG_DEBUG("gpio_get_level(%d) -> %d", led->options.gpio, level);
+  LOG_DEBUG("gpio=%d: level=%d", led->options.gpio, level);
 
   return led->options.inverted ? !level : level;
 }
 
-static void status_led_update(struct status_led *led, enum status_led_mode mode)
+static void status_led_set_mode(struct status_led *led, enum status_led_mode mode)
 {
-  LOG_DEBUG("mode=%d", mode);
+  status_led_output_mode(led);
+
+  LOG_DEBUG("gpio=%d: mode=%d", led->options.gpio, mode);
 
   switch(led->mode = mode) {
     case STATUS_LED_OFF:
-      status_led_output_mode(led);
+      led->state = 0;
       status_led_off(led);
       break;
 
     case STATUS_LED_ON:
-      status_led_output_mode(led);
+      led->state = 1;
       status_led_on(led);
       break;
 
     case STATUS_LED_SLOW:
     case STATUS_LED_FAST:
     case STATUS_LED_FLASH:
+    case STATUS_LED_PULSE:
       led->state = 0;
-      status_led_output_mode(led);
       status_led_on(led);
-      break;
-
-    case STATUS_LED_READ:
-      led->state = 0;
-      status_led_off(led);
-      status_led_input_mode(led);
       break;
   }
 }
 
-static void status_led_notify(struct status_led *led, int level)
+static void status_led_read_mode(struct status_led *led)
 {
-  LOG_DEBUG("gpio=%d: level=%d", led->options.gpio, level);
+  LOG_DEBUG("gpio=%d", led->options.gpio);
 
-  xTaskNotify(led->read_task, level ? STATUS_LED_READ_NOTIFY_BIT : 0, eSetBits);
+  status_led_off(led);
+  status_led_input_mode(led);
+
+  led->input = true;
+  led->input_wait = true;
+}
+
+static void status_led_read_notify(struct status_led *led, int level)
+{
+  LOG_DEBUG("gpio=%d: read_task=%p level=%d", led->options.gpio, led->read_task, level);
+
+  if (led->read_task) {
+    xTaskNotify(led->read_task, level ? STATUS_LED_READ_NOTIFY_BIT : 0, eSetBits);
+
+    led->read_task = false;
+  }
 }
 
 static portTickType status_led_tick(struct status_led *led)
 {
+  if (led->input_wait) {
+   // wait for input to settle
+    LOG_DEBUG("gpio=%d: input wait", led->options.gpio);
+
+    led->input_wait = 0;
+
+    return STATUS_LED_READ_WAIT_PERIOD / portTICK_RATE_MS;
+  }
+
+  if (led->input) {
+    // read input and notify waiting task
+    status_led_read_notify(led, status_led_input_read(led));
+
+    // revert back to output mode
+    status_led_output_mode(led);
+
+    led->input = false;
+
+    // fall through
+  }
+
   switch(led->mode) {
     case STATUS_LED_OFF:
+      led->state = 0;
+      status_led_off(led);
+      return 0;
+
     case STATUS_LED_ON:
+      led->state = 1;
+      status_led_on(led);
       return 0;
 
     case STATUS_LED_SLOW:
       if (led->state) {
         led->state = 0;
         status_led_off(led);
-        return STATUS_LED_BLINK_SLOW_PERIOD_OFF / portTICK_RATE_MS;
+        return STATUS_LED_SLOW_PERIOD_OFF / portTICK_RATE_MS;
       } else {
         led->state = 1;
         status_led_on(led);
-        return STATUS_LED_BLINK_SLOW_PERIOD_ON / portTICK_RATE_MS;
+        return STATUS_LED_SLOW_PERIOD_ON / portTICK_RATE_MS;
       }
 
     case STATUS_LED_FAST:
@@ -129,7 +167,7 @@ static portTickType status_led_tick(struct status_led *led)
         led->state = 1;
         status_led_on(led);
       }
-      return STATUS_LED_BLINK_FAST_PERIOD / portTICK_RATE_MS;
+      return STATUS_LED_FAST_PERIOD / portTICK_RATE_MS;
 
     case STATUS_LED_FLASH:
       if (led->state) {
@@ -137,18 +175,18 @@ static portTickType status_led_tick(struct status_led *led)
         return 0;
       } else {
         led->state = 1;
-        return STATUS_LED_BLINK_PERIOD / portTICK_RATE_MS;
+        return STATUS_LED_FLASH_PERIOD / portTICK_RATE_MS;
       }
 
-    case STATUS_LED_READ:
+    case STATUS_LED_PULSE:
       if (led->state) {
-        // read input and notify waiting task
-        status_led_notify(led, status_led_input(led));
-        return 0;
+        led->state = 0;
+        status_led_off(led);
+        return STATUS_LED_PULSE_PERIOD_OFF / portTICK_RATE_MS;
       } else {
-        // wait for input to settle
         led->state = 1;
-        return STATUS_LED_READ_WAIT_PERIOD;
+        status_led_on(led);
+        return STATUS_LED_PULSE_PERIOD_ON / portTICK_RATE_MS;
       }
 
     default:
@@ -190,7 +228,7 @@ static TickType_t status_led_schedule(struct status_led *led, TickType_t period)
 void status_led_task(void *arg)
 {
   struct status_led *led = arg;
-  enum status_led_mode mode;
+  struct status_led_event event;
 
   led->tick = 0;
 
@@ -198,10 +236,21 @@ void status_led_task(void *arg)
     TickType_t period = status_led_tick(led);
     TickType_t delay = status_led_schedule(led, period);
 
-    LOG_DEBUG("mode=%d state=%d -> period=%u delay=%u", led->mode, led->state, period, delay);
+    LOG_DEBUG("input=%d mode=%d state=%d -> period=%u delay=%u", led->input, led->mode, led->state, period, delay);
 
-    if (xQueueReceive(led->queue, &mode, delay)) {
-      status_led_update(led, mode);
+    if (!xQueueReceive(led->queue, &event, delay)) {
+      // tick next frame on timeout
+      continue;
+    }
+
+    switch (event.op) {
+      case STATUS_LED_SET:
+        status_led_set_mode(led, event.mode);
+        break;
+
+      case STATUS_LED_READ:
+        status_led_read_mode(led);
+        break;
     }
   }
 }
@@ -236,9 +285,10 @@ int status_led_new(struct status_led **ledp, const struct status_led_options opt
   }
 
   led->options = options;
+  led->set_mode = mode;
 
   // set initial state
-  status_led_update(led, mode);
+  status_led_set_mode(led, mode);
 
   // enable GPIo output
   if ((err = status_led_init_gpio(led, options))) {
@@ -254,7 +304,7 @@ int status_led_new(struct status_led **ledp, const struct status_led_options opt
   }
 
   // setup task
-  if ((led->queue = xQueueCreate(1, sizeof(enum status_led_mode))) == NULL) {
+  if ((led->queue = xQueueCreate(1, sizeof(struct status_led_event))) == NULL) {
     LOG_ERROR("xQueueCreate");
     err = -1;
     goto error;
@@ -276,18 +326,84 @@ error:
   return err;
 }
 
-int status_led_mode(struct status_led *led, enum status_led_mode mode)
+int status_led_set(struct status_led *led, enum status_led_mode mode)
 {
+  struct status_led_event event = { STATUS_LED_SET, mode };
   int err = 0;
-
-  LOG_DEBUG("gpio=%d: mode=%d", led->options.gpio, mode);
 
   if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
     LOG_ERROR("xSemaphoreTake");
     return -1;
   }
 
-  if (xQueueOverwrite(led->queue, &mode) <= 0) {
+  LOG_DEBUG("gpio=%d: mode=%d", led->options.gpio, mode);
+
+  led->set_mode = mode;
+
+  if (led->override) {
+    // skip set op
+    LOG_DEBUG("override");
+
+  } else if (xQueueOverwrite(led->queue, &event) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+    err = -1;
+    goto error;
+  }
+
+error:
+  if (!xSemaphoreGive(led->mutex)) {
+    LOG_WARN("xSemaphoreGive");
+  }
+
+  return err;
+}
+
+int status_leds_override(struct status_led *led, enum status_led_mode mode)
+{
+  struct status_led_event event = { STATUS_LED_SET, mode };
+  int err = 0;
+
+  if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
+
+  LOG_DEBUG("gpio=%d: mode=%d", led->options.gpio, mode);
+
+  led->override = true;
+
+  if (xQueueOverwrite(led->queue, &event) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+    err = -1;
+    goto error;
+  }
+
+error:
+  if (!xSemaphoreGive(led->mutex)) {
+    LOG_WARN("xSemaphoreGive");
+  }
+
+  return err;
+}
+
+int status_leds_revert(struct status_led *led)
+{
+  struct status_led_event event = { STATUS_LED_SET, 0 };
+  int err = 0;
+
+  if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTake");
+    return -1;
+  }
+
+  LOG_DEBUG("gpio=%d: set_mode=%d", led->options.gpio, led->set_mode);
+
+  led->override = false;
+
+  // use last mode set
+  event.mode = led->set_mode;
+
+  if (xQueueOverwrite(led->queue, &event) <= 0) {
     LOG_ERROR("xQueueOverwrite");
     err = -1;
     goto error;
@@ -303,11 +419,9 @@ error:
 
 int status_led_read(struct status_led *led)
 {
-  enum status_led_mode mode = STATUS_LED_READ;
+  struct status_led_event event = { STATUS_LED_READ, 0 };
   uint32_t notify_value;
   int ret = 0;
-
-  LOG_DEBUG("gpio=%d: read...", led->options.gpio);
 
   if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
     LOG_ERROR("xSemaphoreTake");
@@ -315,10 +429,12 @@ int status_led_read(struct status_led *led)
   }
 
   // request notify
+  LOG_DEBUG("gpio=%d: read_task=%p", led->options.gpio, xTaskGetCurrentTaskHandle());
+
   led->read_task = xTaskGetCurrentTaskHandle();
 
   // set input mode and read
-  if (xQueueOverwrite(led->queue, &mode) <= 0) {
+  if (xQueueOverwrite(led->queue, &event) <= 0) {
     LOG_ERROR("xQueueOverwrite");
     ret = -1;
     goto error;

@@ -20,6 +20,7 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
   stats_counter_init(&in->stats.rx_overflow);
   stats_counter_init(&in->stats.rx_error);
   stats_counter_init(&in->stats.rx_break);
+  stats_counter_init(&in->stats.rx_desync);
   stats_counter_init(&in->stats.cmd_dimmer);
   stats_counter_init(&in->stats.cmd_unknown);
 
@@ -58,6 +59,7 @@ void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
   stats->rx_overflow = stats_counter_copy(&in->stats.rx_overflow);
   stats->rx_error = stats_counter_copy(&in->stats.rx_error);
   stats->rx_break = stats_counter_copy(&in->stats.rx_break);
+  stats->rx_desync = stats_counter_copy(&in->stats.rx_desync);
   stats->cmd_dimmer = stats_counter_copy(&in->stats.cmd_dimmer);
   stats->cmd_unknown = stats_counter_copy(&in->stats.cmd_unknown);
   stats->data_len = stats_gauge_copy(&in->stats.data_len);
@@ -88,11 +90,35 @@ static void dmx_input_process_error (struct dmx_input *in, int err)
 
   switch(err) {
     case EOVERFLOW:
+      if (stats_counter_zero(&in->stats.rx_overflow)) {
+        LOG_WARN("UART RX overflow");
+      }
+
       stats_counter_increment(&in->stats.rx_overflow);
+
       break;
 
     case EBADMSG:
+      if (stats_counter_zero(&in->stats.rx_overflow)) {
+        LOG_WARN("UART RX error");
+      }
+
       stats_counter_increment(&in->stats.rx_error);
+
+      break;
+
+    case ESPIPE:
+      if (stats_counter_zero(&in->stats.rx_overflow)) {
+        LOG_WARN("UART RX break desynchronized");
+      }
+
+      stats_counter_increment(&in->stats.rx_desync);
+
+      break;
+
+    case EINTR:
+      LOG_DEBUG("UART RX abort");
+
       break;
   }
 

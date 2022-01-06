@@ -20,6 +20,11 @@ static inline void stats_counter_init(struct stats_counter *counter)
   counter->count = 0;
 }
 
+static inline bool stats_counter_zero(const struct stats_counter *counter)
+{
+  return counter->count == 0;
+}
+
 static inline void stats_counter_increment(struct stats_counter *counter)
 {
   counter->tick = xTaskGetTickCount();

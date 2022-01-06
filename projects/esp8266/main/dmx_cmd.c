@@ -196,6 +196,7 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
       print_stats_counter(&stats.rx_overflow,     "RX",     "overflow");
       print_stats_counter(&stats.rx_error,        "RX",     "error");
       print_stats_counter(&stats.rx_break,        "RX",     "break");
+      print_stats_counter(&stats.rx_desync,       "RX",     "desync");
 
       print_stats_counter(&stats.cmd_dimmer,      "DMX",    "dimmer");
       print_stats_counter(&stats.cmd_unknown,     "DMX",    "unknown");

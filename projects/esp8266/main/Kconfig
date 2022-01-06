@@ -110,6 +110,7 @@ menu "qmsk-esp"
       bool
 
       default n if STATUS_LEDS_ALERT_DISABLED
+      default y if STATUS_LEDS_ALERT_MODE
       default y if STATUS_LEDS_ALERT_MODE_TEST
 
   choice STATUS_LEDS_ALERT_GPIO
@@ -122,6 +123,24 @@ menu "qmsk-esp"
         ESP8266 strapping pin for chip_test_mode (active-low).
 
         Active-low with internal weak-pull-up.
+
+    config STATUS_LEDS_ALERT_GPIO_2
+      bool "GPIO2 (active-low)"
+      help
+        ESP8266 strapping pin for boot_sel[0], should be pulled high.
+
+        UART071 TXD_BK pin.
+
+        Active-low with external pull-up.
+
+    config STATUS_LEDS_ALERT_GPIO_4
+      bool "GPIO4 (active-low)"
+      help
+        Active-low with internal weak-pull-up on ESP8266.
+    config STATUS_LEDS_ALERT_GPIO_5
+      bool "GPIO5 (active-low)"
+      help
+        Active-low with internal weak-pull-up on ESP8266.
 
     config STATUS_LEDS_ALERT_GPIO_12
       bool "GPIO12 (active-low)"
@@ -149,6 +168,9 @@ menu "qmsk-esp"
       int
 
       default 1 if STATUS_LEDS_ALERT_GPIO_1
+      default 2 if STATUS_LEDS_ALERT_GPIO_2
+      default 4 if STATUS_LEDS_ALERT_GPIO_4
+      default 5 if STATUS_LEDS_ALERT_GPIO_5
       default 12 if STATUS_LEDS_ALERT_GPIO_12
       default 13 if STATUS_LEDS_ALERT_GPIO_13
       default 14 if STATUS_LEDS_ALERT_GPIO_14
@@ -158,6 +180,9 @@ menu "qmsk-esp"
       bool
 
       default y if STATUS_LEDS_ALERT_GPIO_1
+      default y if STATUS_LEDS_ALERT_GPIO_2
+      default y if STATUS_LEDS_ALERT_GPIO_4
+      default y if STATUS_LEDS_ALERT_GPIO_5
       default y if STATUS_LEDS_ALERT_GPIO_12
       default y if STATUS_LEDS_ALERT_GPIO_13
       default y if STATUS_LEDS_ALERT_GPIO_14

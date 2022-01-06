@@ -210,7 +210,7 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, color.parameters.parameter, color.r, color.g, color.b);
 
   if (index >= spi_leds->options.count) {
-    LOG_WARN("index %u >= count %u", index, spi_leds->options.count);
+    LOG_DEBUG("index %u >= count %u", index, spi_leds->options.count);
     return -1;
   }
 
@@ -322,7 +322,7 @@ int spi_leds_set_format(struct spi_leds *spi_leds, enum spi_leds_format format, 
       return 0;
 
     default:
-      LOG_WARN("unknown format=%#x", format);
+      LOG_ERROR("unknown format=%#x", format);
       return -1;
   }
 }

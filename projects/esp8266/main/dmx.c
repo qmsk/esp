@@ -33,7 +33,7 @@ int init_dmx_uart(const struct dmx_config *config, bool inputs_enabled, bool out
       uart_port |= UART_0_SWAP;
 
       if (!inputs_enabled) {
-        uart_port |= UART_TXDBK_BIT;
+        uart_port |= UART_TXONLY_BIT;
       }
       if (!outputs_enabled) {
         uart_port |= UART_RXONLY_BIT;

@@ -34,6 +34,8 @@ int gpio_out_init(struct gpio_out *out, enum gpio_out_pins pins, enum gpio_out_l
   gpio_config_t config = {
     .pin_bit_mask   = pins,
     .mode           = GPIO_MODE_OUTPUT,
+    .pull_up_en     = (level == GPIO_OUT_LOW),  // keep ESP8266 default pull-up enabled if active-low
+    .pull_down_en   = (level == GPIO_OUT_HIGH), // ESP8266 non-RTC GPIO pins only have internal pull-ups
   };
   esp_err_t err;
 

@@ -1,3 +1,4 @@
+#include <dmx_input_stats.h>
 #include "dmx.h"
 #include "dmx_cmd.h"
 
@@ -163,11 +164,45 @@ error:
   return err;
 }
 
+static void print_stats_counter(struct stats_counter counter, const char *title, const char *desc)
+{
+  printf("\t%20s : %10s %8u @ %6u.%03us\n", title, desc,
+    counter.count,
+    stats_counter_milliseconds_passed(&counter) / 1000,
+    stats_counter_milliseconds_passed(&counter) % 1000
+  );
+}
+
+int dmx_cmd_stats(int argc, char **argv, void *ctx)
+{
+
+  if (dmx_input_state && dmx_input_state->dmx_input) {
+
+      struct dmx_input_stats stats;
+
+      dmx_input_stats(dmx_input_state->dmx_input, &stats);
+
+      printf("Input:\n");
+
+      print_stats_counter(stats.rx_overflow,     "RX",     "overflow");
+      print_stats_counter(stats.rx_error,        "RX",     "error");
+      print_stats_counter(stats.rx_break,        "RX",     "break");
+
+      print_stats_counter(stats.cmd_dimmer,      "DMX",    "dimmer");
+      print_stats_counter(stats.cmd_unknown,     "DMX",    "unknown");
+
+      printf("\n");
+  }
+
+  return 0;
+}
+
 const struct cmd dmx_commands[] = {
   { "zero",   dmx_cmd_zero,       .usage = "COUNT",           .describe = "Output COUNT channels at zero on all output" },
   { "all",    dmx_cmd_all,        .usage = "COUNT VALUE",     .describe = "Output COUNT channels at VALUE on all outputs" },
   { "out",    dmx_cmd_out,        .usage = "OUTPUT VALUE...", .describe = "Output given VALUEs as channels on output" },
   { "count",  dmx_cmd_count,      .usage = "OUTPUT COUNT",    .describe = "Output COUNT channels with 0..COUNT as value" },
+  { "stats",  dmx_cmd_stats,      .usage = "",                .describe = "Show input/output stats" },
   { }
 };
 

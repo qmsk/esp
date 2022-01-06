@@ -6,6 +6,8 @@
 struct dmx_input_stats {
   struct stats_counter rx_overflow, rx_error, rx_break;
   struct stats_counter cmd_dimmer, cmd_unknown;
+
+  struct stats_gauge data_len;
 };
 
 /*

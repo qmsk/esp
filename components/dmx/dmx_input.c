@@ -23,6 +23,8 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
   stats_counter_init(&in->stats.cmd_dimmer);
   stats_counter_init(&in->stats.cmd_unknown);
 
+  stats_gauge_init(&in->stats.data_len);
+
   return 0;
 }
 
@@ -58,6 +60,7 @@ void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
   stats->rx_break = stats_counter_copy(&in->stats.rx_break);
   stats->cmd_dimmer = stats_counter_copy(&in->stats.cmd_dimmer);
   stats->cmd_unknown = stats_counter_copy(&in->stats.cmd_unknown);
+  stats->data_len = stats_gauge_copy(&in->stats.data_len);
 }
 
 int dmx_input_open (struct dmx_input *in, struct uart *uart)
@@ -94,6 +97,7 @@ static void dmx_input_process_error (struct dmx_input *in, int err)
   }
 
   in->state = DMX_INPUT_STATE_BREAK;
+  in->state_len = 0;
 }
 
 static void dmx_input_process_break (struct dmx_input *in)
@@ -197,6 +201,9 @@ int dmx_input_read (struct dmx_input *in)
       dmx_input_process(in, buf, read);
     }
   }
+
+  // received complete packet
+  stats_gauge_sample(&in->stats.data_len, in->state_len);
 
   return in->state_len;
 }

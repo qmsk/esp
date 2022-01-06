@@ -7,8 +7,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define UART_RX_BUFFERING (UART_RXBUF_SIZE) // match RX buffer on ISR stack
 #define UART_RX_TIMEOUT 1 // immediately
+#define UART_RX_BUFFERED (UART_RXBUF_SIZE) // half of FIFO size, matching RX buffer on ISR stack
 
 int uart_rx_init(struct uart *uart, size_t rx_buffer_size)
 {
@@ -25,15 +25,6 @@ int uart_rx_init(struct uart *uart, size_t rx_buffer_size)
 void uart_rx_setup(struct uart *uart, struct uart_options options)
 {
   int reset;
-
-  if (!options.rx_buffering) {
-    options.rx_buffering = UART_RX_BUFFERING;
-  }
-
-  if (!options.rx_timeout) {
-    options.rx_timeout = UART_RX_TIMEOUT;
-  }
-
   taskENTER_CRITICAL();
 
   uart_rx_fifo_reset(uart->dev);
@@ -45,14 +36,16 @@ void uart_rx_setup(struct uart *uart, struct uart_options options)
   uart->rx_error = false;
   uart->rx_abort = false;
 
-  uart0.conf1.rxfifo_full_thrhd = options.rx_buffering;
-
-  if (options.rx_timeout > 0) {
-    uart0.conf1.rx_tout_thrhd = options.rx_timeout;
-    uart0.conf1.rx_tout_en = 1;
+  if (options.rx_buffered) {
+    uart_rx_conf_full_threshold(uart->dev, options.rx_buffered);
   } else {
-    uart0.conf1.rx_tout_thrhd = 0;
-    uart0.conf1.rx_tout_en = 0;
+    uart_rx_conf_full_threshold(uart->dev, UART_RX_BUFFERED); // default
+  }
+
+  if (options.rx_timeout) {
+    uart_rx_conf_tout_threshold(uart->dev, options.rx_timeout, true);
+  } else {
+    uart_rx_conf_tout_threshold(uart->dev, UART_RX_TIMEOUT, true); // default
   }
 
   uart_rx_intr_enable(uart->dev);

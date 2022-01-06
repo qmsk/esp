@@ -53,17 +53,21 @@ enum uart_stop_bits {
   UART_STOP_BITS_2   = 0x3,
 };
 
+#define UART_RX_TIMEOUT_MAX ((1 << 7) - 1)
+
 struct uart_options {
   enum uart_baud_rate clock_div;
   enum uart_data_bits data_bits;
   enum uart_parity_bits parity_bits;
   enum uart_stop_bits stop_bits;
 
-  // flush RX buffers after timeout frames (start/data/stop bits) idle
+  // flush RX buffers after timeout frames (~8 bits) idle
+  //  1 -> instant (interrupt on each frame)
   uint32_t rx_timeout : 7;
 
-  // flush RX buffers after buffering frames (start/data/stop bits) available
-  uint32_t rx_buffering : 7;
+  // flush RX buffers after buffered frames (start/data/stop bits) available
+  //  1 -> unbuffered (interrupt on each frame)
+  uint32_t rx_buffered : 7;
 
   // invert RX signals
   uint32_t rx_inverted : 1;

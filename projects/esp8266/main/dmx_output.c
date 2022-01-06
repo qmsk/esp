@@ -1,6 +1,7 @@
 #include <dmx_output.h>
 #include "dmx.h"
 #include "artnet.h"
+#include "console.h"
 #include "user_event.h"
 
 #include <artnet.h>
@@ -115,6 +116,23 @@ int init_dmx_outputs()
   return 0;
 }
 
+int check_dmx_output_interface()
+{
+  const struct dmx_config *config = &dmx_config;
+
+  switch (config->uart) {
+    case UART_0:
+      if (is_console_running()) {
+        LOG_WARN("UART0 busy, console running on UART0");
+        return 1;
+      }
+      return 0;
+
+    default:
+      return 0;
+  }
+}
+
 int output_dmx(struct dmx_output_state *state, void *data, size_t len)
 {
   int err;
@@ -122,6 +140,10 @@ int output_dmx(struct dmx_output_state *state, void *data, size_t len)
   if (!state->dmx_output) {
     LOG_WARN("disabled");
     return -1;
+  }
+
+  if ((err = check_dmx_output_interface())) {
+    return err;
   }
 
   for (int i = 0; i < len; i++) {

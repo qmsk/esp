@@ -73,6 +73,12 @@ enum uart_rx_event uart_rx_event(struct uart *uart)
   if (xStreamBufferBytesAvailable(uart->rx_buffer)) {
     event = UART_RX_DATA;
 
+  } else if (uart->rx_overflow && uart->rx_break) {
+    uart->rx_overflow = false;
+    uart->rx_break = false;
+
+    event = UART_RX_BREAK_OVERFLOW;
+
   } else if (uart->rx_overflow) {
     uart->rx_overflow = false;
 

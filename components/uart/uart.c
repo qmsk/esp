@@ -245,6 +245,11 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         ret = 0;
         goto ret;
 
+      case UART_RX_BREAK_OVERFLOW:
+        LOG_DEBUG("RX break + overflow detected");
+        ret = -ESPIPE;
+        goto ret;
+
       case UART_RX_ABORT:
         LOG_DEBUG("RX abort detected");
         ret = -EINTR;

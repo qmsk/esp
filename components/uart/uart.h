@@ -47,6 +47,7 @@ enum uart_rx_event {
   UART_RX_OVERFLOW,
   UART_RX_ERROR,
   UART_RX_BREAK,
+  UART_RX_BREAK_OVERFLOW,
   UART_RX_ABORT,
 };
 

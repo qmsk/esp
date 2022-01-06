@@ -10,7 +10,7 @@ static inline uint32_t uart_intr_status(uart_dev_t *dev)
   return dev->int_st.val;
 }
 
-static inline void uart_intr_rx_pause(uart_dev_t *dev)
+static inline void uart_intr_rx_disable(uart_dev_t *dev)
 {
   dev->int_ena.val &= ~(UART_RXFIFO_TOUT_INT_ENA | UART_RXFIFO_FULL_INT_ENA);
 }

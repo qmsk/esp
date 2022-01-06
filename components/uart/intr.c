@@ -18,7 +18,12 @@ static inline void uart_intr_rx_flush(struct uart *uart, BaseType_t *task_woken)
   xStreamBufferSendCompletedFromISR(uart->rx_buffer, task_woken);
 
   // stop copying bytes from RX FIFO -> buffer, allow rx_buffer to drain
-  uart_intr_rx_pause(uart->dev);
+  uart_intr_rx_disable(uart->dev);
+}
+
+static inline bool uart_intr_rx_paused(struct uart *uart)
+{
+  return uart->rx_overflow || uart->rx_break || uart->rx_error || uart->rx_abort;
 }
 
 static void IRAM_ATTR uart_intr_rx_overflow_handler(struct uart *uart, BaseType_t *task_woken)
@@ -55,13 +60,21 @@ static void IRAM_ATTR uart_intr_rx_break_handler(struct uart *uart, BaseType_t *
 {
   LOG_ISR_DEBUG("rx break");
 
-  // reset RX fifo to avoid coalescing RX buffer data across breaks
-  // BUG: workaround spurious 0-byte in RX FIFO?
-  uart_rx_fifo_reset(uart->dev);
+  // The BREAK condition decodes as a 0x00 byte, with a framing error
+  if (uart_rx_fifo_count(uart->dev) == 1 && uart_rx_fifo_read(uart->dev) == 0x00) {
+    // clean break, mark for uart_read() return
+    uart->rx_break = true;
+  } else {
+    // break triggered with old data remaining in the FIFO, or was delayed until new data in the FIFO
+    // impossible to delinate where the break happened
+    uart->rx_break = true;
+    uart->rx_overflow = true;
 
-  // mark for uart_read() return
-  uart->rx_break = true;
+    // reset RX fifo to avoid coalescing RX buffer data across breaks
+    uart_rx_fifo_reset(uart->dev);
+  }
 
+  // flush RX buffer, and pause
   uart_intr_rx_flush(uart, task_woken);
 
   uart_intr_rx_break_clear(uart->dev);
@@ -73,7 +86,16 @@ static void IRAM_ATTR uart_intr_rx_handler(struct uart *uart, BaseType_t *task_w
   size_t size = xStreamBufferSpacesAvailable(uart->rx_buffer);
   size_t len = uart_rx_fifo_count(uart->dev);
 
+  if (uart_intr_rx_paused(uart)) {
+    LOG_ISR_DEBUG("rx paused");
+
+    uart_intr_rx_clear(uart->dev);
+
+    return;
+  }
+
   if (len == 0) {
+    // likely due to some earlier interrupt condition's handler
     LOG_ISR_DEBUG("rx fifo empty");
 
     uart_intr_rx_clear(uart->dev);
@@ -85,7 +107,7 @@ static void IRAM_ATTR uart_intr_rx_handler(struct uart *uart, BaseType_t *task_w
     LOG_ISR_DEBUG("rx buffer full");
 
     // wait until UART_RXFIFO_OVF_INT_ST to reset FIFO
-    uart_intr_rx_pause(uart->dev);
+    uart_intr_rx_disable(uart->dev);
     uart_intr_rx_clear(uart->dev);
 
     return;

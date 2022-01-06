@@ -1,5 +1,6 @@
 .*
 
 /projects/*/sdkconfig
+/projects/*/sdkconfig@*
 /projects/*/sdkconfig.old
 /projects/*/build/

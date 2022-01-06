@@ -30,6 +30,9 @@ services:
     user: "${USER_ID:-1000}"
     command: make
     init: true
+    environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
+      SDKCONFIG_DEFAULTS: sdkconfig.defaults /build/boardconfig/${BOARDCONFIG:-qmsk-esp}
 
   flash:
     image: qmsk/esp8266-rtos-sdk
@@ -42,6 +45,7 @@ services:
     devices:
       - "${ESPPORT}"
     environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
       ESPPORT: "${ESPPORT}"
 
   config-reset:
@@ -55,6 +59,7 @@ services:
     devices:
       - "${ESPPORT}"
     environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
       ESPPORT: "${ESPPORT}"
 
   monitor:
@@ -68,6 +73,7 @@ services:
     devices:
       - "${ESPPORT}"
     environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
       ESPPORT: "${ESPPORT}"
       MONITORBAUD: "${MONITORBAUD:-115200}"
 

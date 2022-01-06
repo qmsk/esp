@@ -43,6 +43,7 @@ void uart_rx_setup(struct uart *uart, struct uart_options options)
   uart->rx_overflow = false;
   uart->rx_break = false;
   uart->rx_error = false;
+  uart->rx_abort = false;
 
   uart0.conf1.rxfifo_full_thrhd = options.rx_buffering;
 

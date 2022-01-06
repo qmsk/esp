@@ -31,6 +31,9 @@ static void IRAM_ATTR uart_intr_rx_overflow_handler(struct uart *uart, BaseType_
   // mark for uart_read() return
   uart->rx_overflow = true;
 
+  // invalidate any break state, we will have lost data after the break
+  uart->rx_break = false;
+
   uart_intr_rx_flush(uart, task_woken);
 
   uart_intr_rx_overflow_clear(uart->dev);

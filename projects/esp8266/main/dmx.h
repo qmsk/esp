@@ -8,11 +8,18 @@
 
 #define DMX_OUTPUT_COUNT 2
 
+// buffer RX FIFO until line idle for this many ~8-bit periods
+// this must be short enough to trigger in the MTBP, or the final bytes in the packet will be lost...
+#define DMX_UART_MTBP_UNIT (8 * (1000000 / 250000))
+#define DMX_UART_MTBP_MIN (4 * DMX_UART_MTBP_UNIT)
+#define DMX_UART_MTBP_MAX (UART_RX_TIMEOUT_MAX * DMX_UART_MTBP_UNIT)
+
 /* dmx_config.c */
 struct dmx_config {
   bool enabled;
 
   int uart;
+  uint16_t mtbp_min;
 
   bool input_enabled;
   bool input_artnet_enabled;

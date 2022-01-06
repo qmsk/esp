@@ -10,8 +10,6 @@
 #define DMX_UART_RX_BUFFER_SIZE (512 + 1)
 #define DMX_UART_TX_BUFFER_SIZE (512 + 1)
 
-#define DMX_UART_FRAME_TIMEOUT 20
-
 // used for UART setup + DMX input
 #define DMX_TASK_STACK 2048
 #define DMX_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
@@ -124,19 +122,27 @@ int init_dmx()
   return 0;
 }
 
-static int start_dmx_uart()
+static int start_dmx_uart(const struct dmx_config *config)
 {
   struct uart_options options = dmx_uart_options;
   int err;
 
-  LOG_INFO("clock_div=%u, data_bits=%x parity=%x stop_bits=%x",
+  if (config->mtbp_min >= DMX_UART_MTBP_UNIT) {
+    // after N frame periods
+    options.rx_timeout = config->mtbp_min / DMX_UART_MTBP_UNIT;
+  } else {
+    // after each frame
+    options.rx_buffered = 1;
+  }
+
+  LOG_INFO("clock_div=%u, data_bits=%x parity=%x stop_bits=%x : rx_timeout=%u rx_buffered=%u",
     options.clock_div,
     options.data_bits,
     options.parity_bits,
-    options.stop_bits
+    options.stop_bits,
+    options.rx_timeout,
+    options.rx_buffered
   );
-
-  options.rx_timeout = DMX_UART_FRAME_TIMEOUT;
 
   // this will block on the dev mutex if the console is running
   options.dev_mutex = dmx_uart_dev_mutex;
@@ -175,12 +181,13 @@ static void stop_dmx_uart()
 
 static void dmx_main(void *ctx)
 {
+  const struct dmx_config *config = &dmx_config;
   int err;
 
   // XXX: is the task delay racy? We want to allow any other UART user to acquire the dev lock
   for (;; vTaskDelay(1)) {
     // use a separate task for UART setup, because it may block if the UART is busy
-    if ((err = start_dmx_uart())) {
+    if ((err = start_dmx_uart(config))) {
       LOG_ERROR("start_dmx_uart");
       continue;
     }

@@ -65,39 +65,36 @@ void uart_rx_setup(struct uart *uart, struct uart_options options)
 
 enum uart_rx_event uart_rx_event(struct uart *uart)
 {
-  enum uart_rx_event event = 0;
+  enum uart_rx_event event;
 
   taskENTER_CRITICAL();
 
-  if (!event && xStreamBufferBytesAvailable(uart->rx_buffer)) {
+  if (xStreamBufferBytesAvailable(uart->rx_buffer)) {
     event = UART_RX_DATA;
-  }
 
-  if (!event && uart->rx_overflow) {
+  } else if (uart->rx_overflow) {
     uart->rx_overflow = false;
 
     event = UART_RX_OVERFLOW;
-  }
 
-  if (!event && uart->rx_error) {
+  } else if (uart->rx_error) {
     uart->rx_error = false;
 
     event = UART_RX_ERROR;
-  }
 
-  if (!event && uart->rx_break) {
+  } else if (uart->rx_break) {
     uart->rx_break = false;
 
     event = UART_RX_BREAK;
-  }
 
-  if (!event && uart->rx_abort) {
+  } else if (uart->rx_abort) {
     uart->rx_abort = false;
 
     event = UART_RX_ABORT;
-  }
 
-  if (!event) {
+  } else {
+    event = UART_RX_NONE;
+
     // RX buffer emptied and flags cleared, resume copying from RX FIFO if disabled
     uart_rx_intr_resume(uart->dev);
   }

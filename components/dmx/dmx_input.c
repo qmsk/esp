@@ -1,4 +1,5 @@
 #include <dmx_input.h>
+#include <dmx_input_stats.h>
 #include "dmx_input.h"
 
 #include <logging.h>
@@ -18,6 +19,9 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 
   stats_counter_init(&in->stats.rx_overflow);
   stats_counter_init(&in->stats.rx_error);
+  stats_counter_init(&in->stats.rx_break);
+  stats_counter_init(&in->stats.cmd_dimmer);
+  stats_counter_init(&in->stats.cmd_unknown);
 
   return 0;
 }
@@ -51,6 +55,9 @@ void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
 {
   stats->rx_overflow = stats_counter_copy(&in->stats.rx_overflow);
   stats->rx_error = stats_counter_copy(&in->stats.rx_error);
+  stats->rx_break = stats_counter_copy(&in->stats.rx_break);
+  stats->cmd_dimmer = stats_counter_copy(&in->stats.cmd_dimmer);
+  stats->cmd_unknown = stats_counter_copy(&in->stats.cmd_unknown);
 }
 
 int dmx_input_open (struct dmx_input *in, struct uart *uart)
@@ -93,6 +100,8 @@ static void dmx_input_process_break (struct dmx_input *in)
 {
   LOG_DEBUG("break");
 
+  stats_counter_increment(&in->stats.rx_break);
+
   in->state = DMX_INPUT_STATE_CMD;
 }
 
@@ -105,12 +114,16 @@ static void dmx_input_process_cmd (struct dmx_input *in, enum dmx_cmd cmd)
 
   switch(cmd) {
     case DMX_CMD_DIMMER:
+      stats_counter_increment(&in->stats.cmd_dimmer);
+
       in->state = DMX_INPUT_STATE_DATA;
       in->state_data_index = 0;
 
       break;
 
     default:
+      stats_counter_increment(&in->stats.cmd_unknown);
+
       in->state = DMX_INPUT_STATE_NOOP;
 
       break;

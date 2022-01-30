@@ -35,7 +35,7 @@ int artnet_listen(int *sockp, uint16_t port)
 
 int artnet_send(int sock, const struct artnet_sendrecv *send)
 {
-  LOG_DEBUG("op=%04x len=%u", send->packet->header.opcode, send->len);
+  LOG_DEBUG("op=%04x len=%u", artnet_unpack_u16lh(send->packet->header.opcode), send->len);
 
   if (sendto(sock, send->packet, send->len, 0, &send->addr, send->addrlen) < 0) {
     LOG_ERROR("send: %s", strerror(errno));
@@ -56,7 +56,7 @@ int artnet_recv(int sock, struct artnet_sendrecv *recv)
     recv->len = ret;
   }
 
-  LOG_DEBUG("op=%04x len=%u", recv->packet->header.opcode, recv->len);
+  LOG_DEBUG("op=%04x len=%u", artnet_unpack_u16lh(recv->packet->header.opcode), recv->len);
 
   return 0;
 }

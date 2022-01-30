@@ -207,7 +207,7 @@ unsigned spi_leds_active(struct spi_leds *spi_leds)
 
 int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color color)
 {
-  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, color.parameters.parameter, color.r, color.g, color.b);
+  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, color.parameter, color.r, color.g, color.b);
 
   if (index >= spi_leds->options.count) {
     LOG_DEBUG("index %u >= count %u", index, spi_leds->options.count);
@@ -247,7 +247,7 @@ int spi_leds_set(struct spi_leds *spi_leds, unsigned index, struct spi_led_color
 
 int spi_leds_set_all(struct spi_leds *spi_leds, struct spi_led_color color)
 {
-  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", spi_leds->options.count, color.parameters.parameter, color.r, color.g, color.b);
+  LOG_DEBUG("[%03d] %02x:%02x%02x%02x", spi_leds->options.count, color.parameter, color.r, color.g, color.b);
 
   if (spi_led_color_active(color)) {
     spi_leds->active = true;

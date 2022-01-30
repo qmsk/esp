@@ -225,7 +225,7 @@ int http_file_open (struct http *http, int flags, size_t *read_content_length, F
     mode = "w+";
   }
 
-  LOG_DEBUG("http=%p content_length=%u: mode=%s", http, content_length, mode);
+  LOG_DEBUG("http=%p read_content_length=%u: mode=%s", http, (read_content_length ? *read_content_length : 0), mode);
 
   if (!(*filep = fopencookie(http, mode, functions))) {
     LOG_WARN("fopencookie: %s", strerror(errno));

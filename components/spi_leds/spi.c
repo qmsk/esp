@@ -28,7 +28,7 @@ int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mo
       goto error;
     }
 
-    LOG_DEBUG("spi_leds=%p write %p @ %u -> %d", spi_leds, ptr, len, ret);
+    LOG_DEBUG("spi_master=%p write %p @ %u -> %d", options->spi_master, ptr, len, ret);
 
     ptr += ret;
     len -= ret;

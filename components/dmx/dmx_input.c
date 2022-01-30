@@ -9,10 +9,9 @@
 
 int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 {
-  LOG_DEBUG("data=%p size=%u, frame_timeout=%u",
+  LOG_DEBUG("data=%p size=%u",
     options.data,
-    options.size,
-    options.frame_timeout
+    options.size
   );
 
   in->options = options;

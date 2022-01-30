@@ -16,11 +16,6 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
 {
   int err = 0;
 
-  if ((uart->port & UART_PORT_MASK) >= UART_PORT_MAX) {
-    LOG_ERROR("invalid port=%x", uart->port);
-    return -1;
-  }
-
   if (!uart_dev[uart->port & UART_PORT_MASK]) {
     LOG_ERROR("invalid uart_dev[%d]", (uart->port & UART_PORT_MASK));
     return -1;

@@ -8,6 +8,11 @@
 
 static int uart_init(struct uart *uart, uart_port_t port)
 {
+  if ((uart->port & UART_PORT_MASK) >= UART_PORT_MAX) {
+    LOG_ERROR("invalid port=%x", uart->port);
+    return -1;
+  }
+
   if (!(uart->rx_mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateMutex");
     return -1;

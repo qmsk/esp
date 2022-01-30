@@ -37,7 +37,7 @@ typedef enum {
   UART_BAUD_2500000  = UART_CLK_FREQ / 2500000,
   UART_BAUD_3333333  = UART_CLK_FREQ / 3333333,
   UART_BAUD_4000000  = UART_CLK_FREQ / 4000000,
-} uart_baud_t;
+} uart_clock_div_t;
 
 typedef enum {
   UART_DATA_5_BITS = 0,
@@ -65,7 +65,9 @@ typedef enum {
 #define UART_RX_TIMEOUT_MAX ((1 << 7) - 1)
 
 struct uart_options {
-  uart_baud_t clock_div;
+#if CONFIG_IDF_TARGET_ESP8266
+  uart_clock_div_t clock_div;
+#endif
   uart_word_length_t data_bits;
   uart_parity_t parity_bits;
   uart_stop_bits_t stop_bits;

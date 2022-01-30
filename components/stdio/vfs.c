@@ -1,7 +1,7 @@
 #include <stdio_vfs.h>
 #include <stdio_fcntl.h>
-#include "ets.h"
 #include "log.h"
+#include "os.h"
 #include "uart.h"
 
 #include <esp_err.h>
@@ -20,7 +20,7 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
         if (stdio_uart) {
           return uart_write(stdio_uart, data, size);
         } else {
-          ets_write(data, size);
+          os_write(data, size);
           return size;
         }
 
@@ -30,7 +30,7 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
         }
 
         if (!stdio_uart) {
-          ets_write(data, size);
+          os_write(data, size);
         } else if (uart_write_all(stdio_uart, data, size)) {
           errno = EIO;
           return -1;

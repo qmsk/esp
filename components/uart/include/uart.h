@@ -58,6 +58,25 @@ typedef enum {
   UART_STOP_BITS_2   = 0x3,
 } uart_stop_bits_t;
 
+#elif CONFIG_IDF_TARGET_ESP32
+# include <hal/uart_types.h>
+
+// uart_port_t values
+#define UART_0  (0)     // GPIO1 TX, GPIO3 RX
+#define UART_1  (1)     // GPIO10 TX, GPIO9 RX
+#define UART_2  (2)     // GPIO17 TX, GPIO16 RX
+
+// number of physical UART ports
+#define UART_MAX 3
+
+typedef enum {
+  UART_BAUD_115200  = 115200,
+  UART_BAUD_250000  = 250000,
+  UART_BAUD_2500000 = 2500000,
+  UART_BAUD_3333333 = 3333333,
+  UART_BAUD_4000000 = 4000000,
+} uart_baud_t;
+
 #else
 # error Unsupported target
 #endif
@@ -67,6 +86,8 @@ typedef enum {
 struct uart_options {
 #if CONFIG_IDF_TARGET_ESP8266
   uart_clock_div_t clock_div;
+#elif CONFIG_IDF_TARGET_ESP32
+  uart_baud_t baud_rate;
 #endif
   uart_word_length_t data_bits;
   uart_parity_t parity_bits;

@@ -9,6 +9,8 @@
 
 #if CONFIG_IDF_TARGET_ESP8266
 # include <esp8266/uart_struct.h>
+#elif CONFIG_IDF_TARGET_ESP32
+# include <soc/uart_struct.h>
 #else
 # error Unsupported target
 #endif

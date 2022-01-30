@@ -1,0 +1,69 @@
+diff --git a/components/esp_system/CMakeLists.txt b/components/esp_system/CMakeLists.txt
+index f6e9d7b8a2..8b4f5f233c 100644
+--- a/components/esp_system/CMakeLists.txt
++++ b/components/esp_system/CMakeLists.txt
+@@ -17,6 +17,7 @@ idf_component_register(SRCS "intr_alloc.c"
+                                   # should be removable once using component init functions
+                                   # link-time registration is used.
+                                   esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
++                                  stdio
+                     LDFRAGMENTS "linker.lf")
+ 
+ add_subdirectory(port)
+diff --git a/components/esp_system/startup.c b/components/esp_system/startup.c
+index 5007b3e55a..a93283b3e6 100644
+--- a/components/esp_system/startup.c
++++ b/components/esp_system/startup.c
+@@ -57,6 +57,10 @@
+ #include "esp_vfs_cdcacm.h"
+ #include "esp_vfs_usb_serial_jtag.h"
+ 
++#if CONFIG_VFS_USE_STDIO
++# include <stdio_vfs.h>
++#endif
++
+ #include "esp_rom_sys.h"
+ 
+ // [refactor-todo] make this file completely target-independent
+@@ -273,7 +277,9 @@ static void do_core_init(void)
+     esp_timer_early_init();
+     esp_newlib_time_init();
+ 
+-#ifdef CONFIG_VFS_SUPPORT_IO
++#if defined(CONFIG_VFS_USE_STDIO)
++    ESP_ERROR_CHECK(stdio_vfs_register());
++#elif defined(CONFIG_VFS_SUPPORT_IO)
+ #ifdef CONFIG_ESP_CONSOLE_UART
+     esp_vfs_dev_uart_register();
+     const char *default_stdio_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
+@@ -289,7 +295,14 @@ static void do_core_init(void)
+ #endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+ #endif // CONFIG_VFS_SUPPORT_IO
+ 
+-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
++#if defined(CONFIG_VFS_SUPPORT_IO) && defined(CONFIG_VFS_USE_STDIO)
++    __sinit(_GLOBAL_REENT);
++
++    assert(_GLOBAL_REENT->_stdin != NULL && "Failed to fdopen stdin");
++    assert(_GLOBAL_REENT->_stdout != NULL && "Failed to fdopen stdout");
++    assert(_GLOBAL_REENT->_stderr != NULL && "Failed to fdopen stderr");
++
++#elif defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+     esp_reent_init(_GLOBAL_REENT);
+     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
+     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
+diff --git a/components/vfs/Kconfig b/components/vfs/Kconfig
+index db0fede600..6e7e263710 100644
+--- a/components/vfs/Kconfig
++++ b/components/vfs/Kconfig
+@@ -66,6 +66,10 @@ menu "Virtual file system"
+         help
+             Disabling this option can save memory when the support for termios.h is not required.
+ 
++    config VFS_USE_STDIO
++      bool "Use stdio component for VFS stdin/out/err"
++      depends on VFS_SUPPORT_IO
++      default n
+ 
+     menu "Host File System I/O (Semihosting)"
+         depends on VFS_SUPPORT_IO

@@ -1,0 +1,38 @@
+diff --git a/tools/idf_monitor.py b/tools/idf_monitor.py
+index 490178e53a..9398d3f2a7 100755
+--- a/tools/idf_monitor.py
++++ b/tools/idf_monitor.py
+@@ -618,21 +618,19 @@ class Monitor(object):
+             # add unprocessed part from previous "data" to the first line
+             sp[0] = self._last_line_part + sp[0]
+             self._last_line_part = b''
+-        if sp[-1] != b'':
+-            # last part is not a full line
+-            self._last_line_part = sp.pop()
++        # last part is not a full line
++        self._last_line_part = sp.pop()
+         for line in sp:
+-            if line != b'':
+-                if self._serial_check_exit and line == self.console_parser.exit_key.encode('latin-1'):
+-                    raise SerialStopException()
+-                self.check_panic_decode_trigger(line)
+-                self.check_coredump_trigger_before_print(line)
+-                if self._force_line_print or self._line_matcher.match(line.decode(errors='ignore')):
+-                    self._print(line + b'\n')
+-                    self.handle_possible_pc_address_in_line(line)
+-                self.check_coredump_trigger_after_print(line)
+-                self.check_gdbstub_trigger(line)
+-                self._force_line_print = False
++            if self._serial_check_exit and line == self.console_parser.exit_key.encode('latin-1'):
++                raise SerialStopException()
++            self.check_panic_decode_trigger(line)
++            self.check_coredump_trigger_before_print(line)
++            if self._force_line_print or self._line_matcher.match(line.decode(errors='ignore')):
++                self._print(line + b'\n')
++                self.handle_possible_pc_address_in_line(line)
++            self.check_coredump_trigger_after_print(line)
++            self.check_gdbstub_trigger(line)
++            self._force_line_print = False
+         # Now we have the last part (incomplete line) in _last_line_part. By
+         # default we don't touch it and just wait for the arrival of the rest
+         # of the line. But after some time when we didn't received it we need

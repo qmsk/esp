@@ -1,11 +1,16 @@
 #include <logging.h>
 #include <cli.h>
+#include <stdio_uart.h>
 #include <uart.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #include <sdkconfig.h>
+
+#ifndef CONFIG_VFS_USE_STDIO
+# error console requires VFS_USE_STDIO enabled
+#endif
 
 // uart
 #define UART_PORT (CONFIG_ESP_CONSOLE_UART_NUM)
@@ -128,7 +133,8 @@ int start_console_uart()
 
 int start_console_stdio()
 {
-  // TODO: hookup stdio -> uart
+  // hookup stdio <-> uart
+  stdio_attach_uart(console_uart);
 
   // unbuffered input
   setvbuf(stdin, NULL, _IONBF, 0);

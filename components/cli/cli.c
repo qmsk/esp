@@ -157,6 +157,11 @@ static int cli_read(struct cli *cli)
     // echo
     fputc(c, stdout);
 
+    // handle CR or LF
+    if (c == '\r') {
+      fputc('\n', stdout);
+    }
+
     if (c == '\b' && ptr > cli->buf) {
       // erase one char
       ptr--;
@@ -164,11 +169,7 @@ static int cli_read(struct cli *cli)
       // echo wipeout
       fprintf(stdout, " \b");
 
-    } else if (c == '\r') {
-      // skip
-      continue;
-
-    } else if (c == '\n') {
+    } else if (c == '\r' || c == '\n') {
       *ptr = '\0';
 
       return 0;

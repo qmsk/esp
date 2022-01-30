@@ -218,7 +218,7 @@ void IRAM_ATTR uart_intr_handler(void *ctx)
   }
 }
 
-void uart_intr_setup(struct uart *uart)
+int uart_intr_setup(struct uart *uart)
 {
   taskENTER_CRITICAL();
 
@@ -229,6 +229,8 @@ void uart_intr_setup(struct uart *uart)
   uart_isr_setup(uart->port, uart_intr_handler, uart);
 
   taskEXIT_CRITICAL();
+
+  return 0;
 }
 
 void uart_intr_teardown(struct uart *uart)

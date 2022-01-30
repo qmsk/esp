@@ -80,5 +80,5 @@ void uart_tx_break(struct uart *uart);
 void uart_tx_mark(struct uart *uart);
 
 /* intr.c */
-void uart_intr_setup(struct uart *uart);
+int uart_intr_setup(struct uart *uart);
 void uart_intr_teardown(struct uart *uart);

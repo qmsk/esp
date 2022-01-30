@@ -82,10 +82,13 @@ int uart_setup(struct uart *uart, struct uart_options options)
 
   if ((err = uart_pin_setup(uart, options))) {
     LOG_ERROR("uart_pin_setup");
-    goto dev_error;
+    goto pin_error;
   }
 
-  uart_intr_setup(uart);
+  if ((err = uart_intr_setup(uart))) {
+    LOG_ERROR("uart_intr_setup");
+    goto intr_error;
+  }
 
   // wait TX idle
   if ((err = uart_tx_flush(uart))) {
@@ -104,7 +107,9 @@ int uart_setup(struct uart *uart, struct uart_options options)
 
 error:
   uart_intr_teardown(uart);
+intr_error:
   uart_pin_teardown(uart);
+pin_error:
   uart_dev_teardown(uart);
 dev_error:
   xSemaphoreGiveRecursive(uart->tx_mutex);

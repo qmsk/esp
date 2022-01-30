@@ -14,7 +14,7 @@ int uart_tx_init(struct uart *uart, size_t tx_buffer_size)
   return 0;
 }
 
-void uart_tx_reset(struct uart *uart, struct uart_options options)
+int uart_tx_setup(struct uart *uart, struct uart_options options)
 {
   int reset;
 
@@ -29,6 +29,8 @@ void uart_tx_reset(struct uart *uart, struct uart_options options)
   if (!reset) {
     LOG_WARN("xStreamBufferReset: TX buffer busy");
   }
+
+  return 0;
 }
 
 int uart_tx_one(struct uart *uart, uint8_t byte)

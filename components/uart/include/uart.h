@@ -168,6 +168,9 @@ int uart_read(struct uart *uart, void *buf, size_t size);
 
 /**
  * Cause the following uart_read() call, or any currently pending call, to return an error.
+ *
+ * TODO: make this persistent until close/open?
+ * XXX: interrupt of pending call is not implemented on ESP32
  */
 int uart_abort_read(struct uart *uart);
 

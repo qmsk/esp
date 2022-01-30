@@ -34,13 +34,13 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
     }
   }
 
-  LOG_DEBUG("port=%x: clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffering=%u) inverted(rx=%d, tx=%d)",
+  LOG_DEBUG("port=%x: clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffered=%u) inverted(rx=%d, tx=%d)",
     uart->port,
     options.clock_div,
     options.data_bits,
     options.parity_bits,
     options.stop_bits,
-    options.rx_timeout, options.rx_buffering,
+    options.rx_timeout, options.rx_buffered,
     options.rx_inverted, options.tx_inverted
   );
 

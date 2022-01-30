@@ -22,7 +22,7 @@ int uart_rx_init(struct uart *uart, size_t rx_buffer_size)
   return 0;
 }
 
-void uart_rx_setup(struct uart *uart, struct uart_options options)
+int uart_rx_setup(struct uart *uart, struct uart_options options)
 {
   int reset;
   taskENTER_CRITICAL();
@@ -55,6 +55,8 @@ void uart_rx_setup(struct uart *uart, struct uart_options options)
   if (!reset) {
     LOG_WARN("xStreamBufferReset: RX buffer busy");
   }
+
+  return 0;
 }
 
 enum uart_rx_event uart_rx_event(struct uart *uart)
@@ -114,9 +116,7 @@ void uart_rx_abort(struct uart *uart)
 {
   taskENTER_CRITICAL();
 
-  if (uart->dev) {
-    uart_rx_intr_pause(uart->dev);
-  }
+  uart_rx_intr_pause(uart->dev);
 
   uart->rx_abort = true;
 

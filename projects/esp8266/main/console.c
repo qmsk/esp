@@ -114,7 +114,7 @@ static const struct cmd cli_commands[] = {
 
 int init_console_uart(const struct console_config *config)
 {
-  enum uart_port port = UART_PORT;
+  uart_port_t port = UART_PORT;
   int err;
 
   LOG_INFO("port=%d", port);
@@ -207,7 +207,7 @@ int start_console_uart(const struct console_config *config)
 {
   struct uart_options options = {
     .clock_div    = UART_CLK_FREQ / CONFIG_ESP_CONSOLE_UART_BAUDRATE,
-    .data_bits    = UART_DATA_BITS_8,
+    .data_bits    = UART_DATA_8_BITS,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
 

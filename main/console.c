@@ -1,5 +1,6 @@
 #include <logging.h>
 #include <cli.h>
+#include <uart.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>

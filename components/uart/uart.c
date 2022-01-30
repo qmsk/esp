@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-static int uart_init(struct uart *uart, enum uart_port port)
+static int uart_init(struct uart *uart, uart_port_t port)
 {
   if (!(uart->rx_mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateMutex");
@@ -22,7 +22,7 @@ static int uart_init(struct uart *uart, enum uart_port port)
   return 0;
 }
 
-int uart_new(struct uart **uartp, enum uart_port port, size_t rx_buffer_size, size_t tx_buffer_size)
+int uart_new(struct uart **uartp, uart_port_t port, size_t rx_buffer_size, size_t tx_buffer_size)
 {
   struct uart *uart;
   int err;

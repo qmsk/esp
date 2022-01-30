@@ -123,7 +123,7 @@ int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws281
 {
   struct uart_options uart_options = {
     .clock_div    = UART_BAUD_2500000,
-    .data_bits    = UART_DATA_BITS_7,
+    .data_bits    = UART_DATA_7_BITS,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
 

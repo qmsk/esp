@@ -1,6 +1,5 @@
 #pragma once
 
-#include <esp8266/eagle_soc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
@@ -8,58 +7,68 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-enum uart_port {
-  UART_0,     // GPIO1 TX, GPIO3 RX
-  UART_1,     // GPIO2 TX
+#if CONFIG_IDF_TARGET_ESP8266
+# include <esp8266/eagle_soc.h>
 
-  // number of physical UART ports
-  UART_PORT_MAX,
+typedef int uart_port_t;
 
-  UART_PORT_MASK  = 0x0ff,
-  UART_SWAP_BIT   = 0x100,
-  UART_TXDBK_BIT  = 0x200,
-  UART_RXONLY_BIT = 0x400,
-  UART_TXONLY_BIT = 0x800,
+#define UART_0    (0) // GPIO1 TX, GPIO3 RX
+#define UART_1    (1) // GPIO2 TX
 
-  UART_0_SWAP         = UART_0 | UART_SWAP_BIT,                     // GPIO15 TX, GPIO13 RX
-  UART_0_SWAP_RXONLY  = UART_0 | UART_SWAP_BIT | UART_RXONLY_BIT,   // GPIO13 RX
-  UART_0_SWAP_TXONLY  = UART_0 | UART_SWAP_BIT | UART_TXONLY_BIT,   // GPIO15 TX
-  UART_0_TXDBK        = UART_0 | UART_TXDBK_BIT,                    // GPIO1+GPIO2 TX, GPIO3 RX
-};
+// number of physical UART ports
+#define UART_PORT_MAX   (2)
+#define UART_PORT_MASK  0x0ff
 
-enum uart_baud_rate {
+// flag bits
+#define UART_SWAP_BIT   0x100   // swap RTS/CST AND RX/TX pins
+#define UART_TXDBK_BIT  0x200   // use alternate TX pin
+#define UART_RXONLY_BIT 0x400   // skip TX pin
+#define UART_TXONLY_BIT 0x800   // skip RX pin
+
+#define UART_0_SWAP         (UART_0 | UART_SWAP_BIT)                    // GPIO15 TX, GPIO13 RX
+#define UART_0_SWAP_RXONLY  (UART_0 | UART_SWAP_BIT | UART_RXONLY_BIT)  // GPIO13 RX
+#define UART_0_SWAP_TXONLY  (UART_0 | UART_SWAP_BIT | UART_TXONLY_BIT)  // GPIO15 TX
+#define UART_0_TXDBK        (UART_0 | UART_TXDBK_BIT)                   // GPIO1+GPIO2 TX, GPIO3 RX
+
+// TODO: unify with ESP32 uart_baud_rate to just use the raw baud rate itself
+typedef enum {
+  UART_BAUD_115200   = UART_CLK_FREQ / 115200,
   UART_BAUD_250000   = UART_CLK_FREQ / 250000,
   UART_BAUD_2500000  = UART_CLK_FREQ / 2500000,
   UART_BAUD_3333333  = UART_CLK_FREQ / 3333333,
   UART_BAUD_4000000  = UART_CLK_FREQ / 4000000,
-};
+} uart_baud_t;
 
-enum uart_data_bits {
-  UART_DATA_BITS_5 = 0,
-  UART_DATA_BITS_6 = 1,
-  UART_DATA_BITS_7 = 2,
-  UART_DATA_BITS_8 = 3,
-};
+typedef enum {
+  UART_DATA_5_BITS = 0,
+  UART_DATA_6_BITS = 1,
+  UART_DATA_7_BITS = 2,
+  UART_DATA_8_BITS = 3,
+} uart_word_length_t;
 
-enum uart_parity_bits {
+typedef enum {
   UART_PARITY_DISABLE = 0x0,
   UART_PARITY_EVEN    = 0x2,
   UART_PARITY_ODD     = 0x3,
-};
+} uart_parity_t;
 
-enum uart_stop_bits {
+typedef enum {
   UART_STOP_BITS_1   = 0x1,
   UART_STOP_BITS_1_5 = 0x2,
   UART_STOP_BITS_2   = 0x3,
-};
+} uart_stop_bits_t;
+
+#else
+# error Unsupported target
+#endif
 
 #define UART_RX_TIMEOUT_MAX ((1 << 7) - 1)
 
 struct uart_options {
-  enum uart_baud_rate clock_div;
-  enum uart_data_bits data_bits;
-  enum uart_parity_bits parity_bits;
-  enum uart_stop_bits stop_bits;
+  uart_baud_t clock_div;
+  uart_word_length_t data_bits;
+  uart_parity_t parity_bits;
+  uart_stop_bits_t stop_bits;
 
   // flush RX buffers after timeout frames (~8 bits) idle
   //  1 -> instant (interrupt on each frame)
@@ -92,7 +101,7 @@ struct uart;
  *
  * Does not touch the UART device.
  */
-int uart_new(struct uart **uartp, enum uart_port port, size_t rx_buffer_size, size_t tx_buffer_size);
+int uart_new(struct uart **uartp, uart_port_t port, size_t rx_buffer_size, size_t tx_buffer_size);
 
 /**
  * Setup UART interrupts, flush TX, setup UART device, reset RX.

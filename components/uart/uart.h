@@ -2,14 +2,19 @@
 
 #include <uart.h>
 
-#include <esp8266/uart_struct.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/stream_buffer.h>
 #include <freertos/task.h>
 
+#if CONFIG_IDF_TARGET_ESP8266
+# include <esp8266/uart_struct.h>
+#else
+# error Unsupported target
+#endif
+
 struct uart {
-  enum uart_port port;
+  uart_port_t port;
   uart_dev_t *dev;
   SemaphoreHandle_t dev_mutex, pin_mutex;
 
@@ -80,5 +85,5 @@ void uart_intr_teardown(struct uart *uart);
 typedef void (* uart_intr_func_t)(void *arg);
 
 void uart_isr_init();
-void uart_isr_setup(enum uart_port port, uart_intr_func_t func, void *arg);
-void uart_isr_teardown(enum uart_port port);
+void uart_isr_setup(uart_port_t, uart_intr_func_t func, void *arg);
+void uart_isr_teardown(uart_port_t);

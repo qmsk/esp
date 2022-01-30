@@ -20,7 +20,7 @@ SemaphoreHandle_t dmx_uart_dev_mutex, dmx_uart_pin_mutex;
 
 int init_dmx_uart(const struct dmx_config *config, bool inputs_enabled, bool outputs_enabled)
 {
-  enum uart_port uart_port = config->uart;
+  uart_port_t uart_port = config->uart;
   size_t rx_buffer_size = inputs_enabled ? DMX_UART_RX_BUFFER_SIZE : 0;
   size_t tx_buffer_size = outputs_enabled ? DMX_UART_TX_BUFFER_SIZE : 0;
   int err;

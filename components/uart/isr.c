@@ -12,9 +12,9 @@ static struct uart_intr_handler {
   [UART_1]   = {},
 };
 
-static inline int uart_isr_call(enum uart_port intr)
+static inline int uart_isr_call(uart_port_t port)
 {
-  struct uart_intr_handler *handler = &uart_intr_handler[intr & UART_PORT_MASK];
+  struct uart_intr_handler *handler = &uart_intr_handler[port & UART_PORT_MASK];
 
   if (handler->func) {
     handler->func(handler->arg);
@@ -56,12 +56,12 @@ void uart_isr_init()
   init = true;
 }
 
-void uart_isr_setup(enum uart_port port, uart_intr_func_t func, void *arg)
+void uart_isr_setup(uart_port_t port, uart_intr_func_t func, void *arg)
 {
   uart_intr_handler[port & UART_PORT_MASK] = (struct uart_intr_handler) { func, arg };
 }
 
-void uart_isr_teardown(enum uart_port port)
+void uart_isr_teardown(uart_port_t port)
 {
   uart_intr_handler[port & UART_PORT_MASK] = (struct uart_intr_handler) { NULL, NULL };
 }

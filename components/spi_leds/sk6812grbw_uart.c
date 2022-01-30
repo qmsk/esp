@@ -74,7 +74,7 @@ int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk
 {
   struct uart_options uart_options = {
     .clock_div    = UART_BAUD_3333333,
-    .data_bits    = UART_DATA_BITS_6,
+    .data_bits    = UART_DATA_6_BITS,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
 

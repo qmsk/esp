@@ -1,5 +1,5 @@
 #include <uart.h>
-#include "uart.h"
+#include "../uart.h"
 #include "pin.h"
 
 #include <logging.h>

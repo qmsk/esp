@@ -1,4 +1,4 @@
-#include "uart.h"
+#include "../uart.h"
 #include "isr.h"
 
 // init() called

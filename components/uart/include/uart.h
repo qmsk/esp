@@ -67,7 +67,8 @@ typedef enum {
 #define UART_2  (2)     // GPIO17 TX, GPIO16 RX
 
 // number of physical UART ports
-#define UART_MAX 3
+#define UART_PORT_MAX 3
+#define UART_PORT_MASK  0x0ff
 
 typedef enum {
   UART_BAUD_115200  = 115200,

@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 struct stdio_log {
-    SemaphoreHandle_t *mutex;
+    SemaphoreHandle_t mutex;
 
     char *buf;
     size_t size;

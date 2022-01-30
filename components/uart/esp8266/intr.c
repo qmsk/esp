@@ -1,3 +1,4 @@
+#include "uart.h"
 #include "../uart.h"
 #include "intr.h"
 #include "rx.h"

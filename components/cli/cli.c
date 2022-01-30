@@ -1,7 +1,11 @@
 #include "cli.h"
 #include <cli.h>
-#include <stdio_fcntl.h>
 #include <logging.h>
+
+#if CONFIG_NEWLIB_VFS_STDIO
+#define HAVE_STDIO_FCNTL 1
+#include <stdio_fcntl.h>
+#endif
 
 #include <ctype.h>
 #include <errno.h>
@@ -87,9 +91,11 @@ static int cli_open(struct cli *cli, TickType_t timeout)
   // reset EOF state
   clearerr(stdin);
 
+#if HAVE_STDIO_FCNTL
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, timeout) < 0) {
     LOG_WARN("fcntl stdin: %s", strerror(errno));
   }
+#endif
 
   printf("! Use [ENTER] to open console\n");
 
@@ -125,10 +131,12 @@ static int cli_read(struct cli *cli)
   // reset EOF state
   clearerr(stdin);
 
+#if HAVE_STDIO_FCNTL
   // disable stdin timeout
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, 0) < 0) {
     LOG_WARN("fcntl stdin: %s", strerror(errno));
   }
+#endif
 
   printf("> ");
 

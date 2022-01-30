@@ -3,7 +3,7 @@
 
 #include <cmd.h>
 
-#include <FreeRTOS.h>
+#include <freertos/FreeRTOS.h>
 #include <stddef.h>
 
 struct cli;

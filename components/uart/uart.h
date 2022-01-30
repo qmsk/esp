@@ -10,6 +10,7 @@
 #if CONFIG_IDF_TARGET_ESP8266
 # include <esp8266/uart_struct.h>
 #elif CONFIG_IDF_TARGET_ESP32
+# include <esp_intr_alloc.h>
 # include <soc/uart_struct.h>
 #else
 # error Unsupported target
@@ -18,6 +19,12 @@
 struct uart {
   uart_port_t port;
   uart_dev_t *dev;
+#if CONFIG_IDF_TARGET_ESP32
+  portMUX_TYPE mux;
+  intr_handle_t intr;
+#endif
+
+  /*  */
   SemaphoreHandle_t dev_mutex, pin_mutex;
 
   /* RX */
@@ -30,7 +37,11 @@ struct uart {
   /* TX */
   SemaphoreHandle_t tx_mutex;
   StreamBufferHandle_t tx_buffer;
+#if CONFIG_IDF_TARGET_ESP8266
   TaskHandle_t txfifo_empty_notify_task;
+#elif CONFIG_IDF_TARGET_ESP32
+  TaskHandle_t tx_done_notify_task;
+#endif
 };
 
 /* pin.c */
@@ -59,14 +70,14 @@ enum uart_rx_event {
 };
 
 int uart_rx_init(struct uart *uart, size_t rx_buffer_size);
-void uart_rx_setup(struct uart *uart, struct uart_options options);
+int uart_rx_setup(struct uart *uart, struct uart_options options);
 enum uart_rx_event uart_rx_event(struct uart *uart);
 int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout);
 void uart_rx_abort(struct uart *uart);
 
 /* tx.c */
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);
-void uart_tx_reset(struct uart *uart, struct uart_options options);
+int uart_tx_setup(struct uart *uart, struct uart_options options);
 
 int uart_tx_one(struct uart *uart, uint8_t byte);
 

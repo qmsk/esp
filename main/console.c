@@ -187,6 +187,8 @@ int start_console()
     return -1;
   }
 
+  LOG_INFO("task=%p", console_cli_task);
+
   return 0;
 }
 

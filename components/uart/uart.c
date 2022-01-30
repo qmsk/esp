@@ -24,6 +24,10 @@ static int uart_init(struct uart *uart, uart_port_t port)
 
   uart->port = port;
 
+#if CONFIG_IDF_TARGET_ESP32
+  vPortCPUInitializeMutex(&uart->mux);
+#endif
+
   return 0;
 }
 
@@ -96,7 +100,16 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto error;
   }
 
-  uart_rx_setup(uart, options);
+  // reset RX/TX
+  if ((err = uart_tx_setup(uart, options))) {
+    LOG_ERROR("uart_tx_setup");
+    goto error;
+  }
+
+  if ((err = uart_rx_setup(uart, options))) {
+    LOG_ERROR("uart_rx_setup");
+    goto error;
+  }
 
   uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
 

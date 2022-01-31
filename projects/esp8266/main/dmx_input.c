@@ -76,7 +76,7 @@ int dmx_input_main(struct dmx_input_state *state)
   int err;
 
   if ((err = dmx_input_open(state->dmx_input, dmx_uart))) {
-    LOG_ERROR("dmx_input_setup");
+    LOG_ERROR("dmx_input_open");
     return -1;
   }
 

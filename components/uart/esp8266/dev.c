@@ -16,11 +16,6 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
 {
   int err = 0;
 
-  if (!uart_dev[uart->port & UART_PORT_MASK]) {
-    LOG_ERROR("invalid uart_dev[%d]", (uart->port & UART_PORT_MASK));
-    return -1;
-  }
-
   if (options.dev_mutex) {
     LOG_DEBUG("take dev_mutex=%p", options.dev_mutex);
 
@@ -44,7 +39,10 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
     options.rx_inverted, options.tx_inverted
   );
 
-  uart->dev = uart_dev[uart->port & UART_PORT_MASK];
+  if (!(uart->dev = uart_dev[uart->port & UART_PORT_MASK])) {
+    LOG_ERROR("invalid uart_dev[%d]", (uart->port & UART_PORT_MASK));
+    return -1;
+  }
 
   taskENTER_CRITICAL();
 

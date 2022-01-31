@@ -19,6 +19,15 @@ int uart_pin_setup(struct uart *uart, struct uart_options options)
     }
   }
 
+  LOG_DEBUG("port=%x: uart=%d swap=%d txdbk=%d rxonly=%d txonly=%d",
+    uart->port,
+    uart->port & UART_PORT_MASK,
+    !!(uart->port & UART_SWAP_BIT),
+    !!(uart->port & UART_TXDBK_BIT),
+    !!(uart->port & UART_RXONLY_BIT),
+    !!(uart->port & UART_TXONLY_BIT)
+  );
+
   taskENTER_CRITICAL();
 
   switch(uart->port) {

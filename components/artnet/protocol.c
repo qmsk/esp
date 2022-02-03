@@ -72,7 +72,7 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
         continue;
       }
 
-      if ((input->options.address & 0x7F00) != artnet->options.address) {
+      if ((input->options.address & 0x7FF0) != artnet->options.address) {
         LOG_WARN("skip input address=%04x does not match artnet address=%04x", input->options.address, artnet->options.address);
         continue;
       }
@@ -93,7 +93,7 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
         continue;
       }
 
-      if ((output->options.address & 0x7F00) != artnet->options.address) {
+      if ((output->options.address & 0x7FF0) != artnet->options.address) {
         LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
         continue;
       }

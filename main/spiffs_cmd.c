@@ -30,6 +30,24 @@ int spiffs_info_cmd (int argc, char **argv, void *ctx)
   return 0;
 }
 
+int spiffs_mounted_cmd (int argc, char **argv, void *ctx)
+{
+  const char *label = NULL;
+  esp_err_t err;
+
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &label))) {
+    return err;
+  }
+
+  if (esp_spiffs_mounted(label)) {
+    printf("SPIFFS partition(%s) is mounted\n", label ? label : "");
+  } else {
+    printf("SPIFFS partition(%s) not mounted\n", label ? label : "");
+  }
+
+  return 0;
+}
+
 int spiffs_format_cmd (int argc, char **argv, void *ctx)
 {
   const char *label = NULL;
@@ -50,8 +68,9 @@ int spiffs_format_cmd (int argc, char **argv, void *ctx)
 }
 
 const struct cmd spiffs_commands[] = {
-  { "info",   spiffs_info_cmd,    .usage = "[LABEL]", .describe = "Show SPIFFS partition"   },
-  { "format", spiffs_format_cmd,  .usage = "[LABEL]", .describe = "Format SPIFFS partition" },
+  { "info",     spiffs_info_cmd,    .usage = "[LABEL]", .describe = "Show SPIFFS partition"   },
+  { "mounted",  spiffs_mounted_cmd, .usage = "[LABEL]", .describe = "Check SPIFFS partition"  },
+  { "format",   spiffs_format_cmd,  .usage = "[LABEL]", .describe = "Format SPIFFS partition" },
   {}
 };
 

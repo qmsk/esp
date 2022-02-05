@@ -1,5 +1,9 @@
-#ifndef __SYSTEM_WIFI_H__
-#define __SYSTEM_WIFI_H__
+#pragma once
+
+#include <sdkconfig.h>
+
+// TODO
+#if CONFIG_IDF_TARGET_ESP8266
 
 #include <esp_wifi.h>
 

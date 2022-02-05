@@ -1,5 +1,9 @@
-#ifndef __SYSTEM_INTERFACES_H__
-#define __SYSTEM_INTERFACES_H__
+#pragma once
+
+#include <sdkconfig.h>
+
+// TODO
+#if CONFIG_IDF_TARGET_ESP8266
 
 #include <tcpip_adapter.h>
 

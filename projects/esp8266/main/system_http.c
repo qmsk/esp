@@ -5,8 +5,9 @@
 #include <json.h>
 #include <json_lwip.h>
 #include <system.h>
-#include <system_tasks.h>
 #include <system_interfaces.h>
+#include <system_partition.h>
+#include <system_tasks.h>
 
 #include <errno.h>
 #include <esp_system.h>
@@ -19,27 +20,29 @@
 static int system_api_write_info_object(struct json_writer *w)
 {
   struct system_info info;
+  struct system_image_info image_info;
 
   system_info_get(&info);
+  system_image_info_get(&image_info);
 
   return (
     JSON_WRITE_MEMBER_STRING(w, "chip_model", esp_chip_model_str(info.esp_chip_info.model)) ||
     JSON_WRITE_MEMBER_UINT(w, "chip_revision", info.esp_chip_info.revision) ||
     JSON_WRITE_MEMBER_UINT(w, "cpu_cores", info.esp_chip_info.cores) ||
-    JSON_WRITE_MEMBER_UINT(w, "flash_size", info.spi_flash_chip_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "flash_usage", info.image_info.flash_usage) ||
     JSON_WRITE_MEMBER_STRING(w, "sdk_name", info.esp_idf_name) ||
     JSON_WRITE_MEMBER_STRING(w, "sdk_version", info.esp_idf_version) ||
-    JSON_WRITE_MEMBER_STRING(w, "app_name", info.esp_app_desc.project_name) ||
-    JSON_WRITE_MEMBER_STRING(w, "app_version", info.esp_app_desc.version) ||
-    JSON_WRITE_MEMBER_STRING(w, "build_date", info.esp_app_desc.date) ||
-    JSON_WRITE_MEMBER_STRING(w, "build_time", info.esp_app_desc.time) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_size", info.image_info.iram_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_usage", info.image_info.iram_usage) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_heap", info.image_info.iram_heap_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_size", info.image_info.dram_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_usage", info.image_info.dram_usage) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_heap", info.image_info.dram_heap_size)
+    JSON_WRITE_MEMBER_STRING(w, "app_name", info.esp_app_desc->project_name) ||
+    JSON_WRITE_MEMBER_STRING(w, "app_version", info.esp_app_desc->version) ||
+    JSON_WRITE_MEMBER_STRING(w, "build_date", info.esp_app_desc->date) ||
+    JSON_WRITE_MEMBER_STRING(w, "build_time", info.esp_app_desc->time) ||
+    JSON_WRITE_MEMBER_UINT(w, "flash_size", image_info.flash_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "flash_usage", image_info.flash_usage) ||
+    JSON_WRITE_MEMBER_UINT(w, "iram_size", image_info.iram_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "iram_usage", image_info.iram_usage) ||
+    JSON_WRITE_MEMBER_UINT(w, "iram_heap", image_info.iram_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_size", image_info.dram_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_usage", image_info.dram_usage) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_heap", image_info.dram_heap_size)
   );
 }
 

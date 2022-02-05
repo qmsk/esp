@@ -1,13 +1,16 @@
-#ifndef __SYSTEM_H__
-#define __SYSTEM_H__
+#pragma once
 
-#include <esp_ota_ops.h>
-#include <esp_partition.h>
 #include <esp_system.h>
+#include <esp_ota_ops.h>
 
 #include <stddef.h>
 
+const char *esp_reset_reason_str(esp_reset_reason_t reason);
+const char *esp_chip_model_str(esp_chip_model_t model);
+
 struct system_image_info {
+  size_t flash_size;
+
   void *iram_start, *dram_start, *flash_start;
   void *iram_end, *dram_end, *flash_end;
   size_t iram_usage, dram_usage, flash_usage;
@@ -22,13 +25,11 @@ struct system_image_info {
  */
 struct system_info {
     esp_chip_info_t esp_chip_info;
-    struct system_image_info image_info;
 
-    esp_app_desc_t esp_app_desc;
+    const esp_app_desc_t *esp_app_desc;
 
     const char *esp_idf_name;
     const char* esp_idf_version;
-    size_t spi_flash_chip_size;
 };
 
 /*
@@ -48,14 +49,9 @@ void system_status_get(struct system_status *status);
 
 /* Memory */
 size_t system_get_total_heap_size();
-
-void system_update_maximum_free_heap_size();
+size_t system_get_free_heap_size();
+size_t system_get_minimum_free_heap_size();
 size_t system_get_maximum_free_heap_size();
 
-/* Return string for reset reason */
-const char *esp_reset_reason_str(esp_reset_reason_t reason);
-const char *esp_chip_model_str(esp_chip_model_t model);
-const char *esp_partition_type_str(esp_partition_type_t type);
-const char *esp_partition_subtype_str(esp_partition_type_t type, esp_partition_subtype_t subtype);
-
-#endif
+// used tgo set system_get_maximum_free_heap_size at boot
+void system_update_maximum_free_heap_size();

@@ -2,8 +2,9 @@
 
 #include <logging.h>
 #include <system.h>
-#include <system_tasks.h>
 #include <system_interfaces.h>
+#include <system_partition.h>
+#include <system_tasks.h>
 
 #include <esp_partition.h>
 #include <freertos/FreeRTOS.h>
@@ -23,22 +24,22 @@ static int system_info_cmd(int argc, char **argv, void *ctx)
   printf("CPU cores=%u\n", info.esp_chip_info.cores);
   printf("\n");
   printf("SDK name=%s version=%s\n", info.esp_idf_name, info.esp_idf_version);
-  printf("App name=%s version=%s\n", info.esp_app_desc.project_name, info.esp_app_desc.version);
-  printf("Build date=%s time=%s\n", info.esp_app_desc.date, info.esp_app_desc.time);
-  printf("\n");
-  printf("Flash size=%8u usage=%8u\n", info.spi_flash_chip_size, info.image_info.flash_usage);
-  printf("DRAM  size=%8u usage=%8u heap=%8u\n", info.image_info.dram_size, info.image_info.dram_usage, info.image_info.dram_heap_size);
-  printf("IRAM  size=%8u usage=%8u heap=%8u\n", info.image_info.iram_size, info.image_info.iram_usage, info.image_info.iram_heap_size);
+  printf("App name=%s version=%s\n", info.esp_app_desc->project_name, info.esp_app_desc->version);
+  printf("Build date=%s time=%s\n", info.esp_app_desc->date, info.esp_app_desc->time);
 
   return 0;
 }
 
-static int system_memory_cmd(int argc, char **argv, void *ctx)
+static int system_image_cmd(int argc, char **argv, void *ctx)
 {
   struct system_image_info image_info;
 
   system_image_info_get(&image_info);
 
+  printf("Flash size=%8u usage=%8u\n", image_info.flash_size, image_info.flash_usage);
+  printf("DRAM  size=%8u usage=%8u heap=%8u\n", image_info.dram_size, image_info.dram_usage, image_info.dram_heap_size);
+  printf("IRAM  size=%8u usage=%8u heap=%8u\n", image_info.iram_size, image_info.iram_usage, image_info.iram_heap_size);
+  printf("\n");
   printf("DRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.dram_start, (unsigned) image_info.dram_end, image_info.dram_usage);
   printf("DRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.dram_heap_start, (unsigned) image_info.dram_heap_start + image_info.dram_heap_size, image_info.dram_heap_size);
   printf("IRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.iram_start, (unsigned) image_info.iram_end, image_info.iram_usage);
@@ -314,7 +315,7 @@ static int system_restart_cmd(int argc, char **argv, void *ctx)
 
 static const struct cmd system_commands[] = {
   { "info",       system_info_cmd,        .describe = "Print system info" },
-  { "memory",     system_memory_cmd,      .describe = "Print system memory" },
+  { "image",      system_image_cmd,       .describe = "Print system image" },
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
   { "status",     system_status_cmd,      .describe = "Print system status" },
   { "tasks",      system_tasks_cmd,       .describe = "Print system tasks" },

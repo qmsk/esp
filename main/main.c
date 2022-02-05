@@ -1,4 +1,5 @@
 #include "console.h"
+#include "config.h"
 
 #include <logging.h>
 
@@ -11,6 +12,11 @@ void app_main(void)
   if ((err = init_console())) {
     LOG_ERROR("init_console");
     abort();
+  }
+
+  if ((err = init_config())) {
+    LOG_WARN("init_config");
+    // TODO: alert()
   }
 
   LOG_INFO("start");

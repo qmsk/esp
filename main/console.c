@@ -1,3 +1,5 @@
+#include "console.h"
+
 #include <logging.h>
 #include <cli.h>
 #include <stdio_uart.h>
@@ -25,26 +27,10 @@
 #define CLI_TASK_STACK 2048 // bytes
 #define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
+struct cli *console_cli;
+
 struct uart *console_uart;
-static struct cli *console_cli;
 static xTaskHandle console_cli_task;
-
-// cli commands
-static int console_help_cmd(int argc, char **arv, void *ctx)
-{
-  return cli_help(console_cli);
-}
-
-static int console_exit_cmd(int argc, char **arv, void *ctx)
-{
-  return cli_exit(console_cli);
-}
-
-static const struct cmd console_cli_commands[] = {
-  { "help",   console_help_cmd,     .describe = "Show commands" },
-  { "exit",   console_exit_cmd,     .describe = "Exit CLI" },
-  {}
-};
 
 int init_console_uart()
 {

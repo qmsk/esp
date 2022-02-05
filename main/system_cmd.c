@@ -133,16 +133,21 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
     return -1;
   }
 
-  printf("%4s %-20s %5s\t%6s\t%6s\t%6s\t%6s\t%6s\n", "ID", "NAME", "STATE", "PRI", "TOTAL%", "LAST%", "STACK", "STACK FREE");
+  printf("%4s %-20s %5s\t%3s\t%6s\t%6s\t%6s\t%6s\t%6s\n", "ID", "NAME", "STATE", "CPU", "PRI", "TOTAL%", "LAST%", "STACK", "STACK FREE");
 
   for (const TaskStatus_t *task = state.tasks; task < state.tasks + state.count; task++) {
     uint32_t total_usage = system_tasks_total_usage(&state, task);
     uint32_t last_usage = system_tasks_last_usage(&state, task, &last);
 
-    printf("%4d %-20s %5c\t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%6u\t%6u\n",
+    printf("%4d %-20s %5c\t%3c\t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%6u\t%6u\n",
       task->xTaskNumber,
       task->pcTaskName,
       system_task_state_char(task->eCurrentState),
+#if configTASKLIST_INCLUDE_COREID
+      task->xCoreID == tskNO_AFFINITY ? ' ' : '0' + task->xCoreID,
+#elif
+      ' ',
+#endif
       task->uxBasePriority, task->uxCurrentPriority,
       total_usage / 10, total_usage % 10,
       last_usage / 10, last_usage % 10,

@@ -124,6 +124,7 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
       break;
 
     default:
+      LOG_ERROR("invalid type=%d", tab->type);
       return -1;
   }
 
@@ -188,6 +189,7 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
       return config_set_enum(mod, tab, value);
 
     default:
+      LOG_ERROR("invalid type=%d", tab->type);
       return -1;
   }
 
@@ -241,7 +243,8 @@ int config_get(const struct configmod *mod, const struct configtab *tab, char *b
       return config_get_enum(mod, tab, buf, size);
 
     default:
-      return -CMD_ERR_NOT_IMPLEMENTED;
+      LOG_ERROR("invalid type=%d", tab->type);
+      return -1;
   }
 
   return 0;
@@ -295,6 +298,7 @@ int config_print(const struct configmod *mod, const struct configtab *tab, FILE 
     return config_print_enum(mod, tab, file);
 
   default:
+    LOG_ERROR("invalid type=%d", tab->type);
     return -1;
   }
 

@@ -10,6 +10,7 @@
 #include "wifi_config.h"
 
 #include <config.h>
+#include <config_cmd.h>
 #include <errno.h>
 #include <logging.h>
 

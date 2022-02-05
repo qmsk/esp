@@ -1,12 +1,9 @@
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-
-#include "cmd.h"
 
 #define CONFIG_FILENAME 64
 #define CONFIG_LINE 512
@@ -107,7 +104,3 @@ int config_save(struct config *config);
  * Returns <0 on error, 0 if reset, >0 if nothing to reset.
  */
 int config_reset(struct config *config);
-
-extern const struct cmd config_commands[];
-
-#endif

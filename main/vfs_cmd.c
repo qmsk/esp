@@ -2,6 +2,9 @@
 
 #include <logging.h>
 
+#include <esp_err.h>
+#include <esp_vfs.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -17,16 +20,34 @@ static char dirent_type_char(const struct dirent *d) {
   }
 }
 
-int vfs_ls_cmd(int argc, char **argv, void *ctx)
+esp_err_t vfs_walk_func(esp_vfs_id_t id, const char *path, void *ctx)
 {
-  const char *path;
+  if (strlen(path) == 0) {
+    // fd_range or vfs_id
+    printf("%c <%d>\n", 'V', id);
+  } else {
+    printf("%c %s\n", 'v', path);
+  }
+
+  return 0;
+}
+
+int vfs_ls_root()
+{
+  esp_err_t err;
+
+  if ((err = esp_vfs_walk(vfs_walk_func, NULL))) {
+    LOG_ERROR("esp_vfs_walk: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int vfs_ls_path(const char *path)
+{
   DIR *dir;
   struct dirent *d;
-  int err = 0;
-
-  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
-    return err;
-  }
 
   if (!(dir = opendir(path))) {
     LOG_ERROR("opendir %s: %s", path, strerror(errno));
@@ -41,11 +62,29 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
 
   closedir(dir);
 
+  return 0;
+}
+
+int vfs_ls_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  int err = 0;
+
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (!path || strlen(path) == 0 || strcmp(path, "/") == 0) {
+    return vfs_ls_root();
+  } else {
+    return vfs_ls_path(path);
+  }
+
   return err;
 }
 
 const struct cmd vfs_commands[] = {
-  { "ls",     vfs_ls_cmd,    .usage = "PATH", .describe = "List files"  },
+  { "ls",     vfs_ls_cmd,    .usage = "[PATH]", .describe = "List files"  },
   {}
 };
 

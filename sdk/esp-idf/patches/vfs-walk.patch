@@ -1,0 +1,39 @@
+diff --git a/components/vfs/include/esp_vfs.h b/components/vfs/include/esp_vfs.h
+index 0498a3aa59..100a3735dd 100644
+--- a/components/vfs/include/esp_vfs.h
++++ b/components/vfs/include/esp_vfs.h
+@@ -246,6 +246,8 @@ typedef struct
+ #endif // CONFIG_VFS_SUPPORT_SELECT
+ } esp_vfs_t;
+ 
++esp_err_t esp_vfs_walk(esp_err_t (*func)(esp_vfs_id_t id, const char *base_path, void *ctx), void *ctx);
++
+ /**
+  * Register a virtual filesystem for given path prefix.
+  *
+diff --git a/components/vfs/vfs.c b/components/vfs/vfs.c
+index 9adafe2208..33e7b43b59 100644
+--- a/components/vfs/vfs.c
++++ b/components/vfs/vfs.c
+@@ -108,6 +108,21 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
+     return ESP_OK;
+ }
+ 
++esp_err_t esp_vfs_walk(int (*func)(esp_vfs_id_t id, const char *base_path, void *ctx), void *ctx)
++{
++  esp_err_t err = 0;
++
++  for (size_t i = 0; i < s_vfs_count; ++i) {
++      const vfs_entry_t* vfs = s_vfs[i];
++
++      if ((err = func(i, vfs->path_prefix, ctx))) {
++          break;
++      }
++  }
++
++  return err;
++}
++
+ esp_err_t esp_vfs_register(const char* base_path, const esp_vfs_t* vfs, void* ctx)
+ {
+     return esp_vfs_register_common(base_path, strlen(base_path), vfs, ctx, NULL);

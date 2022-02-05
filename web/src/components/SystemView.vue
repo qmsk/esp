@@ -27,13 +27,13 @@ table.tasks td.stack-free {
           <dd>{{ info.cpu_cores }} core(s) @ {{ status.cpu_frequency | mhz }}</dd>
 
           <dt>Flash</dt>
-          <dd>{{ info.flash_size | mib }} @ {{ info.flash_usage | mib }} code</dd>
+          <dd>{{ info.flash_size | mib }} @ {{ info.irom_size | kib }} code + {{ info.drom_size | kib }} data</dd>
 
           <dt>iRAM</dt>
-          <dd>{{ info.iram_size | kib }} @ {{ info.iram_usage | kib }} code + {{ info.iram_heap | kib }} heap</dd>
+          <dd>{{ info.iram_size | kib }} @ {{ info.iram_static | kib }} static + {{ info.iram_dynamic | kib }} dynamic</dd>
 
           <dt>dRAM</dt>
-          <dd>{{ info.dram_size | kib }} @ {{ info.dram_usage | kib }} code + {{ info.dram_heap | kib }} heap</dd>
+          <dd>{{ info.dram_size | kib }} @ {{ info.dram_static | kib }} static + {{ info.dram_dynamic | kib }} dynamic</dd>
 
           <dt>Reset reason</dt>
           <dd>{{ status.reset_reason }}</dd>

@@ -37,12 +37,14 @@ static int system_api_write_info_object(struct json_writer *w)
     JSON_WRITE_MEMBER_STRING(w, "build_time", info.esp_app_desc->time) ||
     JSON_WRITE_MEMBER_UINT(w, "flash_size", image_info.flash_size) ||
     JSON_WRITE_MEMBER_UINT(w, "flash_usage", image_info.flash_usage) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_size", image_info.iram_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_usage", image_info.iram_usage) ||
-    JSON_WRITE_MEMBER_UINT(w, "iram_heap", image_info.iram_heap_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_size", image_info.dram_size) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_usage", image_info.dram_usage) ||
-    JSON_WRITE_MEMBER_UINT(w, "dram_heap", image_info.dram_heap_size)
+    JSON_WRITE_MEMBER_UINT(w, "iram_size", image_info.iram_total_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "iram_static", image_info.iram_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "iram_dynamic", image_info.iram_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "irom_size", image_info.irom_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_size", image_info.dram_total_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_static", image_info.dram_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "dram_dynamic", image_info.dram_heap_size) ||
+    JSON_WRITE_MEMBER_UINT(w, "drom_size", image_info.drom_size)
   );
 }
 

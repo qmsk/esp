@@ -16,16 +16,22 @@ static int system_info_cmd(int argc, char **argv, void *ctx)
 
   system_info_get(&info);
 
-  printf("Chip model=%s features=%#x revision=%u\n",
-    esp_chip_model_str(info.esp_chip_info.model),
-    info.esp_chip_info.features,
-    info.esp_chip_info.revision
-  );
-  printf("CPU cores=%u\n", info.esp_chip_info.cores);
+  printf("Chip:\n");
+  printf("\tModel     %s\n", esp_chip_model_str(info.esp_chip_info.model));
+  printf("\tFeatures: %#x\n", info.esp_chip_info.features);
+  printf("\tRevision: %u\n", info.esp_chip_info.revision);
   printf("\n");
-  printf("SDK name=%s version=%s\n", info.esp_idf_name, info.esp_idf_version);
-  printf("App name=%s version=%s\n", info.esp_app_desc->project_name, info.esp_app_desc->version);
-  printf("Build date=%s time=%s\n", info.esp_app_desc->date, info.esp_app_desc->time);
+  printf("CPU:\n");
+  printf("\tCores:   %u\n", info.esp_chip_info.cores);
+  printf("\n");
+  printf("SDK:\n");
+  printf("\tName:    %s\n", info.esp_idf_name);
+  printf("\tVersion: %s\n", info.esp_idf_version);
+  printf("\n");
+  printf("App:\n");
+  printf("\tName:    %s\n", info.esp_app_desc->project_name);
+  printf("\tVersion: %s\n", info.esp_app_desc->version);
+  printf("\tBuild:   %s %s\n", info.esp_app_desc->date, info.esp_app_desc->time);
 
   return 0;
 }
@@ -36,15 +42,16 @@ static int system_image_cmd(int argc, char **argv, void *ctx)
 
   system_image_info_get(&image_info);
 
-  printf("Flash size=%8u usage=%8u\n", image_info.flash_size, image_info.flash_usage);
-  printf("DRAM  size=%8u usage=%8u heap=%8u\n", image_info.dram_size, image_info.dram_usage, image_info.dram_heap_size);
-  printf("IRAM  size=%8u usage=%8u heap=%8u\n", image_info.iram_size, image_info.iram_usage, image_info.iram_heap_size);
+  printf("Flash size %6uK image %6uK\n", image_info.flash_size / 1024, image_info.flash_usage / 1024);
+  printf("DRAM  size %6uK image %6uK heap %6uK\n", image_info.dram_total_size / 1024, image_info.dram_size / 1024, image_info.dram_heap_size / 1024);
+  printf("IRAM  size %6uK image %6uK heap %6uK\n", image_info.iram_total_size / 1024, image_info.iram_size / 1024, image_info.iram_heap_size / 1024);
   printf("\n");
-  printf("DRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.dram_start, (unsigned) image_info.dram_end, image_info.dram_usage);
-  printf("DRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.dram_heap_start, (unsigned) image_info.dram_heap_start + image_info.dram_heap_size, image_info.dram_heap_size);
-  printf("IRAM  Image %#08x - %#08x = %8u\n", (unsigned) image_info.iram_start, (unsigned) image_info.iram_end, image_info.iram_usage);
-  printf("IRAM  Heap  %#08x - %#08x = %8u\n", (unsigned) image_info.iram_heap_start, (unsigned) image_info.iram_heap_start + image_info.iram_heap_size, image_info.iram_heap_size);
-  printf("Flash Image %#08x - %#08x = %8u\n", (unsigned) image_info.flash_start, (unsigned) image_info.flash_end, image_info.flash_usage);
+  printf("DROM  Image %#08x - %#08x = %6uK\n", image_info.drom_start, image_info.drom_end, image_info.drom_size / 1024);
+  printf("DRAM  Image %#08x - %#08x = %6uK\n", image_info.dram_start, image_info.dram_end, image_info.dram_size / 1024);
+  printf("DRAM  Heap  %#08x - %#08x = %6uK\n", image_info.dram_heap_start, image_info.dram_heap_end, image_info.dram_heap_size / 1024);
+  printf("IRAM  Image %#08x - %#08x = %6uK\n", image_info.iram_start, image_info.iram_end, image_info.iram_size / 1024);
+  printf("IRAM  Heap  %#08x - %#08x = %6uK\n", image_info.iram_heap_start, image_info.iram_heap_end, image_info.iram_heap_size / 1024);
+  printf("IROM  Image %#08x - %#08x = %6uK\n", image_info.irom_start, image_info.irom_end, image_info.irom_size / 1024);
 
   return 0;
 }
@@ -102,93 +109,37 @@ static int system_status_cmd(int argc, char **argv, void *ctx)
 
   system_status_get(&status);
 
-  printf("Uptime %u.%03us\n", status.uptime_s, status.uptime_us / 1000);
-  printf("Reset reason: %s\n", esp_reset_reason_str(status.reset_reason));
+  printf("System:\n");
+  printf("\tUptime: %u.%03us\n", status.uptime_s, status.uptime_us / 1000);
+  printf("\tReset:  %s\n", esp_reset_reason_str(status.reset_reason));
   printf("\n");
-  printf("CPU frequency=%dMhz\n", status.cpu_frequency / 1000 / 1000);
+  printf("CPU:\n");
+  printf("\tFreq:   %6dMhz\n", status.cpu_frequency / 1000 / 1000);
   printf("\n");
-  printf("Heap total=%8u free=%8u min_free=%u max_free=%u\n",
-    status.total_heap_size,
-    status.free_heap_size,
-    status.minimum_free_heap_size,
-    status.maximum_free_heap_size
-  );
+  printf("Heap:\n");
+  printf("\tTotal:  %6uK\n", status.total_heap_size / 1024);
+  printf("\tFree:   %6uK\n", status.free_heap_size / 1024);
+  printf("\tMin:    %6uK\n", status.minimum_free_heap_size / 1024);
+  printf("\tMax:    %6uK\n", status.maximum_free_heap_size / 1024);
 
   return 0;
 }
 
-// store previous task counters for delta
-static uint32_t last_tasks_runtime;
-static unsigned last_tasks_count;
-static struct system_task_counters {
-  UBaseType_t xTaskNumber;
-  uint32_t ulRunTimeCounter;
-} *last_tasks_counters;
-
-static struct system_task_counters *last_task_counters(UBaseType_t xTaskNumber)
-{
-  if (!last_tasks_counters) {
-      return NULL;
-  }
-
-  for (struct system_task_counters *tc = last_tasks_counters; tc < last_tasks_counters + last_tasks_count; tc++) {
-    if (tc->xTaskNumber == xTaskNumber) {
-      return tc;
-    }
-  }
-
-  return NULL;
-}
-
 static int system_tasks_cmd(int argc, char **argv, void *ctx)
 {
-  unsigned count = uxTaskGetNumberOfTasks();
-  TaskStatus_t *tasks;
-  uint32_t runtime;
-  struct system_task_counters *tasks_counters;
-  int err = 0;
+  static struct system_tasks_state last, state;
+  int err;
 
-  if (!(tasks = calloc(count, sizeof(*tasks)))) {
-    LOG_ERROR("calloc");
+  if ((err = system_tasks_update(&state))) {
+    LOG_ERROR("system_tasks_update");
     return -1;
-  }
-
-  if (!(count = uxTaskGetSystemState(tasks, count, &runtime))) {
-    err = -1;
-    LOG_ERROR("uxTaskGetSystemState");
-    goto error;
-  }
-
-  if (!(tasks_counters = calloc(count, sizeof(*tasks_counters)))) {
-    LOG_ERROR("calloc");
-    goto error;
   }
 
   printf("%4s %-20s %5s\t%6s\t%6s\t%6s\t%6s\t%6s\n", "ID", "NAME", "STATE", "PRI", "TOTAL%", "LAST%", "STACK", "STACK FREE");
 
-  unsigned total_runtime_permille = runtime / 1000; // for .x percentage calcuation
-  unsigned last_runtime_permille = 0;
-
-  if (last_tasks_runtime && runtime > last_tasks_runtime) {
-    last_runtime_permille = (runtime - last_tasks_runtime) / 1000; // for .x percentage calcuation
-  }
-
-  for (unsigned i = 0; i < count; i++) {
-    TaskStatus_t *task = &tasks[i];
-    struct system_task_counters *next_counters = &tasks_counters[i];
-    struct system_task_counters *last_counters = last_task_counters(task->xTaskNumber);
-
-    unsigned total_usage = task->ulRunTimeCounter / total_runtime_permille;
-    unsigned last_usage = 0;
-
-    // calc last
-    if (last_runtime_permille && last_counters && task->ulRunTimeCounter > last_counters->ulRunTimeCounter) {
-      last_usage = (task->ulRunTimeCounter - last_counters->ulRunTimeCounter) / last_runtime_permille;
-    }
-
-    // update for next
-    next_counters->xTaskNumber = task->xTaskNumber;
-    next_counters->ulRunTimeCounter = task->ulRunTimeCounter;
+  for (const TaskStatus_t *task = state.tasks; task < state.tasks + state.count; task++) {
+    uint32_t total_usage = system_tasks_total_usage(&state, task);
+    uint32_t last_usage = system_tasks_last_usage(&state, task, &last);
 
     printf("%4d %-20s %5c\t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%6u\t%6u\n",
       task->xTaskNumber,
@@ -202,19 +153,11 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
     );
   }
 
-  // update for next
-  if (!last_tasks_counters) {
-    free(last_tasks_counters);
-  }
+  // swap
+  system_tasks_release(&last);
+  last = state;
 
-  last_tasks_runtime = runtime;
-  last_tasks_count = count;
-  last_tasks_counters = tasks_counters;
-
-error:
-  free(tasks);
-
-  return err;
+  return 0;
 }
 
 static inline void print_ip4_info(const char *title, ip4_addr_t *ip)

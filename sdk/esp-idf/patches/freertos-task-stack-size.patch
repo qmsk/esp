@@ -1,0 +1,31 @@
+diff --git a/components/freertos/include/freertos/task.h b/components/freertos/include/freertos/task.h
+index 125a924d06..e1d5737580 100644
+--- a/components/freertos/include/freertos/task.h
++++ b/components/freertos/include/freertos/task.h
+@@ -163,6 +163,7 @@ typedef struct xTASK_STATUS
+     UBaseType_t uxBasePriority;                      /* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
+     uint32_t ulRunTimeCounter;                       /* The total run time allocated to the task so far, as defined by the run time stats clock.  See https://www.FreeRTOS.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+     StackType_t * pxStackBase;                       /* Points to the lowest address of the task's stack area. */
++    uint16_t usStackSize;	                           /* The current total stack space for the task. */
+     configSTACK_DEPTH_TYPE usStackHighWaterMark;     /* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+ #if configTASKLIST_INCLUDE_COREID
+     BaseType_t xCoreID;                              /*!< Core this task is pinned to (0, 1, or -1 for tskNO_AFFINITY). This field is present if CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID is set. */
+diff --git a/components/freertos/tasks.c b/components/freertos/tasks.c
+index 40a07839e7..9d9c99f6f3 100644
+--- a/components/freertos/tasks.c
++++ b/components/freertos/tasks.c
+@@ -4287,6 +4287,14 @@ static void prvCheckTasksWaitingTermination( void )
+         pxTaskStatus->pxStackBase = pxTCB->pxStack;
+         pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
+ 
++        #if ( portSTACK_GROWTH > 0 )
++          pxTaskStatus->usStackSize = (pxTCB->pxEndOfStack + 1 - pxTCB->pxStack) * sizeof(StackType_t);
++        #elif ( configRECORD_STACK_HIGH_ADDRESS == 1 )
++          pxTaskStatus->usStackSize = (pxTCB->pxEndOfStack - pxTCB->pxStack) * sizeof(StackType_t) + portBYTE_ALIGNMENT;
++        #else
++          pxTaskStatus->usStackSize = 0;
++        #endif
++
+         #if ( configTASKLIST_INCLUDE_COREID == 1 )
+         pxTaskStatus->xCoreID = pxTCB->xCoreID;
+         #endif /* configTASKLIST_INCLUDE_COREID */

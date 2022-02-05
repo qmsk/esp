@@ -1,7 +1,9 @@
 #include "system.h"
 
+#include <logging.h>
 #include <system.h>
 #include <system_partition.h>
+#include <system_tasks.h>
 
 #include <esp_partition.h>
 #include <sdkconfig.h>
@@ -121,12 +123,47 @@ static int system_partitions_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static int system_tasks_cmd(int argc, char **argv, void *ctx)
+{
+  static struct system_tasks_state last, state;
+  int err;
+
+  if ((err = system_tasks_update(&state))) {
+    LOG_ERROR("system_tasks_update");
+    return -1;
+  }
+
+  printf("%4s %-20s %5s\t%6s\t%6s\t%6s\t%6s\t%6s\n", "ID", "NAME", "STATE", "PRI", "TOTAL%", "LAST%", "STACK", "STACK FREE");
+
+  for (const TaskStatus_t *task = state.tasks; task < state.tasks + state.count; task++) {
+    uint32_t total_usage = system_tasks_total_usage(&state, task);
+    uint32_t last_usage = system_tasks_last_usage(&state, task, &last);
+
+    printf("%4d %-20s %5c\t%2d->%2d\t%3u.%-1u%%\t%3u.%-1u%%\t%6u\t%6u\n",
+      task->xTaskNumber,
+      task->pcTaskName,
+      system_task_state_char(task->eCurrentState),
+      task->uxBasePriority, task->uxCurrentPriority,
+      total_usage / 10, total_usage % 10,
+      last_usage / 10, last_usage % 10,
+      task->usStackSize,
+      task->usStackHighWaterMark
+    );
+  }
+
+  // swap
+  system_tasks_release(&last);
+  last = state;
+
+  return 0;
+}
 
 static const struct cmd system_commands[] = {
   { "info",       system_info_cmd,        .describe = "Print system info" },
   { "image",      system_image_cmd,       .describe = "Print system image" },
   { "status",     system_status_cmd,      .describe = "Print system status" },
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
+  { "tasks",      system_tasks_cmd  ,     .describe = "Print system tasks" },
   {}
 };
 

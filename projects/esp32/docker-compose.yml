@@ -1,6 +1,7 @@
 # Usage:
 #   $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose build sdk
 #   $ docker-compose run --rm build
+#   $ ESPPORT=/dev/ttyUSB0 docker-compose run --rm monitor
 version: '3.8'
 services:
   sdk:

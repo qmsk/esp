@@ -75,4 +75,6 @@ void system_status_get(struct system_status *status)
   status->free_heap_size = system_get_free_heap_size();
   status->minimum_free_heap_size = system_get_minimum_free_heap_size();
   status->maximum_free_heap_size = system_get_maximum_free_heap_size();
+
+  // ESP32 TODO: heap_caps_get_info() for more detailed DRAM/IRAM numbers?
 }

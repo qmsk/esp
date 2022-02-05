@@ -9,15 +9,17 @@ const char *esp_reset_reason_str(esp_reset_reason_t reason);
 const char *esp_chip_model_str(esp_chip_model_t model);
 
 struct system_image_info {
-  size_t flash_size;
+  size_t iram_total_size, dram_total_size;
 
-  void *iram_start, *dram_start, *flash_start;
-  void *iram_end, *dram_end, *flash_end;
-  size_t iram_usage, dram_usage, flash_usage;
-  size_t iram_size, dram_size;
+  unsigned irom_start, iram_start, dram_start, drom_start;
+  unsigned irom_end, iram_end, dram_end, drom_end;
+  size_t irom_size, iram_size, dram_size, drom_size;
 
-  void *iram_heap_start, *dram_heap_start;
+  unsigned iram_heap_start, dram_heap_start;
+  unsigned iram_heap_end, dram_heap_end;
   size_t iram_heap_size, dram_heap_size;
+
+  size_t flash_size, flash_usage;
 };
 
 /*

@@ -2,10 +2,14 @@
 #include "config.h"
 
 #include <logging.h>
+#include <system.h>
 
 void app_main(void)
 {
   int err;
+
+  // heap usage is likely to be lowest at app_main() start
+  system_update_maximum_free_heap_size();
 
   LOG_INFO("boot");
 

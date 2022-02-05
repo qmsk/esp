@@ -1,6 +1,7 @@
 #include "config.h"
 #include "console.h"
 #include "spiffs.h"
+#include "system.h"
 #include "vfs.h"
 
 #include <cli.h>
@@ -20,11 +21,14 @@ const struct cmd console_cli_commands[] = {
   { "help",   console_help_cmd,     .describe = "Show commands" },
   { "exit",   console_exit_cmd,     .describe = "Exit CLI" },
 
-  { "spiffs", .describe = "SPI Flash Filesystem",
+  { "spiffs",   .describe = "SPI Flash Filesystem",
       .subcommands = &spiffs_cmdtab,
   },
-  { "vfs",    .describe = "Virtual File System",
+  { "vfs",      .describe = "Virtual File System",
       .subcommands = &vfs_cmdtab,
+  },
+  { "system",   .describe = "Operating System",
+      .subcommands = &system_cmdtab,
   },
   { "config", .describe = "Configuration",
       .subcommands = &config_cmdtab,

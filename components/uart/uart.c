@@ -25,7 +25,7 @@ static int uart_init(struct uart *uart, uart_port_t port)
   uart->port = port;
 
 #if CONFIG_IDF_TARGET_ESP32
-  vPortCPUInitializeMutex(&uart->mux);
+  portMUX_INITIALIZE(&uart->mux);
 #endif
 
   return 0;

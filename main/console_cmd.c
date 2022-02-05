@@ -1,5 +1,6 @@
 #include "config.h"
 #include "console.h"
+#include "spiffs.h"
 
 #include <cli.h>
 
@@ -18,6 +19,9 @@ const struct cmd console_cli_commands[] = {
   { "help",   console_help_cmd,     .describe = "Show commands" },
   { "exit",   console_exit_cmd,     .describe = "Exit CLI" },
 
+  { "spiffs", .describe = "SPIFFS",
+      .subcommands = &spiffs_cmdtab,
+  },
   { "config", .describe = "Configuration",
       .subcommands = &config_cmdtab,
   },

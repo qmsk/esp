@@ -174,7 +174,7 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
 
 static int print_interface_info(const struct system_interface_info *info, void *ctx)
 {
-  printf("TCP/IP %s: UP\n", system_interface_str(info));
+  printf("TCP/IP %s:\n", system_interface_str(info));
   printf("\t%-20s: %s\n", "Hostname", info->hostname ? info->hostname : "(null)");
   printf("\t%-20s: %s\n", "DHCP Server", system_interface_dhcp_status_str(info->dhcps_status));
   printf("\t%-20s: %s\n", "DHCP Client", system_interface_dhcp_status_str(info->dhcpc_status));
@@ -189,7 +189,6 @@ static int print_interface_info(const struct system_interface_info *info, void *
 
   return 0;
 }
-
 
 static int print_interface_client(const struct system_interface_client *client, void *ctx)
 {

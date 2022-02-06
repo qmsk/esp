@@ -122,7 +122,7 @@ int system_interface_walk(int (*func)(const struct system_interface_info *info, 
   int err;
 
   for (esp_netif_t *interface = esp_netif_next(NULL); interface; interface = esp_netif_next(interface)) {
-    if ((err = system_interface_info(&info, interface) < 0)) {
+    if ((err = system_interface_info(&info, interface)) < 0) {
       LOG_ERROR("system_interface_info");
       return err;
     } else if (err) {
@@ -145,8 +145,13 @@ int system_interface_clients_walk(int (*func)(const struct system_interface_clie
   esp_err_t err;
 
   if ((err = esp_wifi_ap_get_sta_list(&wifi_sta_list))) {
-    LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
-    return -1;
+    if (err == ESP_ERR_WIFI_MODE) {
+      LOG_WARN("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+      return 0;
+    } else {
+      LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+      return -1;
+    }
   }
 
   if ((err = esp_netif_get_sta_list(&wifi_sta_list, &netif_sta_list))) {

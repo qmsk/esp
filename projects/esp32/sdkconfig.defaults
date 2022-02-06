@@ -6,6 +6,9 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 # Use custom stdio VFS
 CONFIG_VFS_USE_STDIO=y
 
+# Reduce stack usage for logging
+CONFIG_NEWLIB_NANO_FORMAT=y
+
 # Use custom partition table
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"

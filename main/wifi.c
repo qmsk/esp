@@ -1,5 +1,6 @@
 #include "wifi.h"
-#include "wifi_internal.h"
+#include "wifi_state.h"
+#include "wifi_config.h"
 #include "user.h"
 
 #include <logging.h>
@@ -268,11 +269,17 @@ int stop_wifi()
   return 0;
 }
 
-int config_wifi()
+int disable_wifi()
 {
   esp_err_t err;
 
-  // TODO
+  LOG_INFO("stopping and disabling...");
+
+  if ((err = esp_wifi_stop())) {
+    LOG_ERROR("esp_wifi_stop: %s", esp_err_to_name(err));
+    return -1;
+  }
+
   if ((err = esp_wifi_set_mode(WIFI_MODE_NULL))) {
     LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
     return -1;
@@ -283,7 +290,7 @@ int config_wifi()
 
 int init_wifi()
 {
-  wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
+  wifi_init_config_t wifi_ini_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_err_t err;
 
   if ((err = init_wifi_events())) {
@@ -291,7 +298,7 @@ int init_wifi()
     return err;
   }
 
-  if ((err = esp_wifi_init(&wifi_config))) {
+  if ((err = esp_wifi_init(&wifi_ini_config))) {
     LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
     return -1;
   }
@@ -301,7 +308,7 @@ int init_wifi()
     return -1;
   }
 
-  if ((err = config_wifi())) {
+  if ((err = config_wifi(&wifi_config))) {
     LOG_ERROR("config_wifi");
     return err;
   }

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "wifi.h"
 
 #include <config.h>
 #include <config_cmd.h>
@@ -15,6 +16,12 @@
 #define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
+  { "wifi",
+    .description = (
+      "WiFi AP/STA mode, using static/dynamic IPv4 addressing."
+    ),
+    .table = wifi_configtab,
+  },
   {}
 };
 

@@ -1,5 +1,6 @@
 #include "wifi.h"
-#include "wifi_internal.h"
+#include "wifi_state.h"
+#include "wifi_config.h"
 
 #include <logging.h>
 #include <system_wifi.h>
@@ -114,7 +115,7 @@ static int print_wifi_info_ap()
   );
 
   printf("\t%-20s: %.32s\n", "SSID", config.ap.ssid);
-  printf("\t%-20s: %.32s\n", "Password", "***");
+  printf("\t%-20s: %.32s\n", "Password", config.ap.password[0] ? "***": "");
   printf("\t%-20s: %d\n", "Channel", config.ap.channel);
   printf("\t%-20s: %s\n", "AuthMode", wifi_auth_mode_str(config.ap.authmode));
   printf("\t%-20s: %s\n", "Hidden", config.ap.ssid_hidden ? "true" : "false");

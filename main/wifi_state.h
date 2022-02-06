@@ -2,12 +2,6 @@
 
 #include <esp_wifi_types.h>
 
-// config defaults
-#define WIFI_AP_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
-#define WIFI_AP_MAX_CONNECTION_DEFAULT 10
-
-#define WIFI_STA_THRESHOLD_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
-
 // state
 extern bool wifi_sta_connect, wifi_sta_started, wifi_sta_connected;
 extern bool wifi_ap_listen, wifi_ap_started;

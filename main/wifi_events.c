@@ -1,5 +1,5 @@
 #include "wifi.h"
-#include "wifi_internal.h"
+#include "wifi_state.h"
 #include "user.h"
 
 #include <logging.h>

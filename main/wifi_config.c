@@ -188,7 +188,7 @@ static int config_wifi_ap(const struct wifi_config *config)
     return err;
   }
 
-/*
+/* TODO
   if ((err = config_wifi_interface_pre(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
     LOG_ERROR("config_wifi_interface_pre");
     return err;
@@ -206,7 +206,7 @@ static int config_wifi_ap(const struct wifi_config *config)
     return -1;
   }
 
-/*
+/* TODO
   if ((err = config_wifi_interface_post(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
     LOG_ERROR("config_wifi_interface_post");
     return err;

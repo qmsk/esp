@@ -4,7 +4,6 @@
 #include <logging.h>
 
 #include <driver/gpio.h>
-#include <esp8266/gpio_struct.h>
 #include <esp_err.h>
 
 // 100ms on / 1800ms off
@@ -25,11 +24,12 @@
 #define STATUS_LED_READ_WAIT_PERIOD 10
 #define STATUS_LED_READ_NOTIFY_BIT 0x1
 
-#ifdef DEBUG
-# define STATUS_LED_TASK_STACK 1024
-#else
+#if CONFIG_IDF_TARGET_ESP8266
 # define STATUS_LED_TASK_STACK 512
+#elif CONFIG_IDF_TARGET_ESP32
+# define STATUS_LED_TASK_STACK 1024
 #endif
+
 #define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static inline void status_led_output_mode(struct status_led *led)

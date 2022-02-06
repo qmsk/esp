@@ -103,7 +103,7 @@ menu "qmsk-esp"
 
   choice STATUS_LEDS_ALERT
     prompt "ALERT LED/button mode"
-    default STATUS_LEDS_ALERT_DISABLED
+    default STATUS_LEDS_ALERT_MODE_TEST
 
     config STATUS_LEDS_ALERT_DISABLED
       bool "Disabled"
@@ -125,8 +125,8 @@ menu "qmsk-esp"
 
   choice STATUS_LEDS_ALERT_GPIO
     prompt "GPIO for ALERT LED/button"
-    default STATUS_LEDS_ALERT_GPIO_15 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0
-    default STATUS_LEDS_ALERT_GPIO_15 if IDF_TARGET="esp32"
+    default STATUS_LEDS_ALERT_GPIO_15 if IDF_TARGET="esp8266" && (ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0)
+    default STATUS_LEDS_ALERT_GPIO_15_INVERTED if IDF_TARGET="esp32"
 
     config STATUS_LEDS_ALERT_GPIO_1
       bool "GPIO1 (active-low)"
@@ -173,6 +173,11 @@ menu "qmsk-esp"
 
         Active-high with external pull-down on NodeMCU.
 
+    config STATUS_LEDS_ALERT_GPIO_15_INVERTED
+      bool "GPIO15 (active-low)"
+      help
+        ESP32 strapping pin with weak-pull-up.
+
   endchoice
 
   config STATUS_LEDS_ALERT_GPIO_NUM
@@ -186,6 +191,7 @@ menu "qmsk-esp"
       default 13 if STATUS_LEDS_ALERT_GPIO_13
       default 14 if STATUS_LEDS_ALERT_GPIO_14
       default 15 if STATUS_LEDS_ALERT_GPIO_15
+      default 15 if STATUS_LEDS_ALERT_GPIO_15_INVERTED
 
   config STATUS_LEDS_ALERT_GPIO_INVERTED
       bool
@@ -198,5 +204,6 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_ALERT_GPIO_13
       default y if STATUS_LEDS_ALERT_GPIO_14
       default n if STATUS_LEDS_ALERT_GPIO_15
+      default y if STATUS_LEDS_ALERT_GPIO_15_INVERTED
 
 endmenu

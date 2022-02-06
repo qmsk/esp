@@ -18,33 +18,33 @@
 
 ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
 {
-    switch(fd) {
-      case STDOUT_FILENO:
-        if (stdio_uart) {
-          return uart_write(stdio_uart, data, size);
-        } else {
-          os_write(data, size);
-          return size;
-        }
-
-      case STDERR_FILENO:
-        if (stderr_log) {
-          size = stdio_log_write(stderr_log, data, size);
-        }
-
-        if (!stdio_uart) {
-          os_write(data, size);
-        } else if (uart_write_all(stdio_uart, data, size)) {
-          errno = EIO;
-          return -1;
-        }
-
+  switch(fd) {
+    case STDOUT_FILENO:
+      if (stdio_uart) {
+        return uart_write(stdio_uart, data, size);
+      } else {
+        os_write(data, size);
         return size;
+      }
 
-      default:
-        errno = EBADF;
+    case STDERR_FILENO:
+      if (stderr_log) {
+        size = stdio_log_write(stderr_log, data, size);
+      }
+
+      if (!stdio_uart) {
+        os_write(data, size);
+      } else if (uart_write_all(stdio_uart, data, size)) {
+        errno = EIO;
         return -1;
-    }
+      }
+
+      return size;
+
+    default:
+      errno = EBADF;
+      return -1;
+  }
 }
 
 off_t stdio_vfs_lseek_log(struct stdio_log *log, off_t size, int mode)

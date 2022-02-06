@@ -2,6 +2,7 @@
 #include "config.h"
 #include "log.h"
 #include "system.h"
+#include "user.h"
 
 #include <logging.h>
 #include <system.h>
@@ -15,6 +16,7 @@ void app_main(void)
 
   if ((err = init_log())) {
     LOG_ERROR("init_log");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
@@ -22,17 +24,24 @@ void app_main(void)
 
   if ((err = init_console())) {
     LOG_ERROR("init_console");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
-  }
-
-  if ((err = init_config())) {
-    LOG_WARN("init_config");
-    // TODO: alert()
   }
 
   if ((err = init_system())) {
     LOG_ERROR("init_system");
+    user_alert(USER_ALERT_ERROR_BOOT);
     abort();
+  }
+
+  LOG_INFO("config");
+
+  if ((err = init_config()) < 0) {
+    LOG_ERROR("init_config");
+    user_alert(USER_ALERT_ERROR_BOOT);
+  } else if (err > 0) {
+    LOG_WARN("init_config: not configured");
+    user_alert(USER_ALERT_ERROR_CONFIG);
   }
 
   LOG_INFO("start");

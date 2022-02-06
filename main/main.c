@@ -1,5 +1,6 @@
 #include "console.h"
 #include "config.h"
+#include "system.h"
 
 #include <logging.h>
 #include <system.h>
@@ -21,6 +22,11 @@ void app_main(void)
   if ((err = init_config())) {
     LOG_WARN("init_config");
     // TODO: alert()
+  }
+
+  if ((err = init_system())) {
+    LOG_ERROR("init_system");
+    abort();
   }
 
   LOG_INFO("start");

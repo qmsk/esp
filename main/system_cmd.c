@@ -222,6 +222,11 @@ static int system_interfaces_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static int system_restart_cmd(int argc, char **argv, void *ctx)
+{
+  system_restart();
+}
+
 static const struct cmd system_commands[] = {
   { "info",       system_info_cmd,        .describe = "Print system info" },
   { "image",      system_image_cmd,       .describe = "Print system image" },
@@ -229,6 +234,7 @@ static const struct cmd system_commands[] = {
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
   { "tasks",      system_tasks_cmd  ,     .describe = "Print system tasks" },
   { "interfaces", system_interfaces_cmd,  .describe = "Print system network interfaces" },
+  { "restart",    system_restart_cmd,     .describe = "Restart system" },
   {}
 };
 

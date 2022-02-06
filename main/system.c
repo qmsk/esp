@@ -88,3 +88,10 @@ int init_system()
 
   return 0;
 }
+
+void system_restart()
+{
+  LOG_INFO("restarting...");
+
+  esp_restart();
+}

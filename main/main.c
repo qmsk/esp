@@ -3,6 +3,7 @@
 #include "log.h"
 #include "system.h"
 #include "user.h"
+#include "wifi.h"
 
 #include <logging.h>
 #include <system.h>
@@ -42,6 +43,14 @@ void app_main(void)
   } else if (err > 0) {
     LOG_WARN("init_config: not configured");
     user_alert(USER_ALERT_ERROR_CONFIG);
+  }
+
+  LOG_INFO("setup");
+
+  if ((err = init_wifi())) {
+    LOG_ERROR("init_wifi");
+    user_alert(USER_ALERT_ERROR_SETUP);
+    abort();
   }
 
   LOG_INFO("start");

@@ -4,6 +4,7 @@
 #include "spiffs.h"
 #include "system.h"
 #include "vfs.h"
+#include "wifi.h"
 
 #include <cli.h>
 
@@ -36,6 +37,9 @@ const struct cmd console_cli_commands[] = {
   },
   { "config", .describe = "Configuration",
       .subcommands = &config_cmdtab,
+  },
+  { "wifi", .describe = "WiFi",
+      .subcommands = &wifi_cmdtab,
   },
   {}
 };

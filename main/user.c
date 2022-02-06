@@ -1,5 +1,7 @@
 #include "user.h"
+#include "config.h"
 #include "status_leds.h"
+#include "system.h"
 
 #include <logging.h>
 
@@ -80,25 +82,26 @@ void user_alert(enum user_alert alert)
 
 void user_config_disable()
 {
-
+  disable_config();
 }
 
 void user_config_mode()
 {
-
+  // TODO
 }
 
 void user_config_reset()
 {
-
+  reset_config();
+  system_restart();
 }
 
 void user_test_mode()
 {
-
+  // TODO
 }
 
 void user_test_cancel()
 {
-
+  // TODO
 }

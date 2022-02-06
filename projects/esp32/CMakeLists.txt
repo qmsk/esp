@@ -15,3 +15,6 @@ set(EXCLUDE_COMPONENTS "wifi_provisioning")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(qmsk-esp32)
+
+# web-dist
+spiffs_create_partition_image(web-dist ../../web/dist FLASH_IN_PROJECT)

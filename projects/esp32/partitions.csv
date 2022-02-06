@@ -6,3 +6,6 @@ factory,  app,  factory, 0x10000, 1M,
 
 # 1MB spiffs /config
 config,   data, spiffs,  0x200000, 0x100000,
+
+# 1MB spiffs /web-dist
+web-dist, data, spiffs,  0x300000, 0x100000,

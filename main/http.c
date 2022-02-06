@@ -165,12 +165,10 @@ int init_http()
     return err;
   }
 
-/* TODO
-  if ((err = init_http_dist(&http, &http_config))) {
+  if ((err = init_http_dist())) {
     LOG_ERROR("init_http_dist");
     return err;
   }
-*/
 
   return 0;
 }

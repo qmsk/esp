@@ -70,7 +70,7 @@ int init_config()
 
   if (config_load(&config)) {
     if (errno == ENOENT) {
-      LOG_WARN("config file at %s not found", config.filename);
+      LOG_WARN("spiffs file at %s not found", config.filename);
       return 1;
     } else {
       LOG_ERROR("config_load(%s)", config.filename);

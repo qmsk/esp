@@ -4,11 +4,14 @@
 #include "os.h"
 #include "uart.h"
 
+#include <logging.h>
+
 #include <esp_err.h>
 #include <esp_vfs.h>
 
-#include <sys/unistd.h>
 #include <sys/errno.h>
+#include <sys/fcntl.h>
+#include <sys/unistd.h>
 
 #define STDIO_VFS_FD_START 0
 #define STDIO_VFS_FD_COUNT 3
@@ -115,11 +118,17 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
     }
 }
 
-int stdio_vfs_fcntl_uart(struct uart *uart, int cmd, int arg)
+int stdio_vfs_fcntl_stdin(int cmd, int arg)
 {
   switch(cmd) {
+    case F_GETFL:
+      return O_RDONLY;
+
     case F_SET_READ_TIMEOUT:
-      if (uart_set_read_timeout(uart, arg ? arg : portMAX_DELAY)) {
+      if (!stdio_uart) {
+        errno = ENODEV;
+        return -1;
+      } else if (uart_set_read_timeout(stdio_uart, arg ? arg : portMAX_DELAY)) {
         errno = EIO;
         return -1;
       }
@@ -132,16 +141,43 @@ int stdio_vfs_fcntl_uart(struct uart *uart, int cmd, int arg)
   }
 }
 
+int stdio_vfs_fcntl_stdout(int cmd, int arg)
+{
+  switch(cmd) {
+    case F_GETFL:
+      return O_WRONLY;
+
+    default:
+      errno = EINVAL;
+      return -1;
+  }
+}
+
+int stdio_vfs_fcntl_stderr(int cmd, int arg)
+{
+  switch(cmd) {
+    case F_GETFL:
+      return O_RDWR;
+
+    default:
+      errno = EINVAL;
+      return -1;
+  }
+}
+
 int stdio_vfs_fcntl(int fd, int cmd, int arg)
 {
+  LOG_BOOT_DEBUG("fd=%d cmd=%d arg=%d", fd, cmd, arg);
+
   switch(fd) {
     case STDIN_FILENO:
-      if (stdio_uart) {
-        return stdio_vfs_fcntl_uart(stdio_uart, cmd, arg);
-      } else {
-        errno = ENODEV;
-        return -1;
-      }
+      return stdio_vfs_fcntl_stdin(cmd, arg);
+
+    case STDOUT_FILENO:
+      return stdio_vfs_fcntl_stdout(cmd, arg);
+
+    case STDERR_FILENO:
+      return stdio_vfs_fcntl_stderr(cmd, arg);
 
     default:
       errno = EBADF;

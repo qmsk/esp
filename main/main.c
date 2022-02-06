@@ -1,6 +1,7 @@
 #include "console.h"
 #include "config.h"
 #include "log.h"
+#include "http.h"
 #include "status_leds.h"
 #include "system.h"
 #include "user.h"
@@ -66,10 +67,21 @@ void app_main(void)
     abort();
   }
 
+  if ((err = init_http())) {
+    LOG_ERROR("init_http");
+    user_alert(USER_ALERT_ERROR_SETUP);
+    abort();
+  }
+
   LOG_INFO("start");
 
   if ((err = start_console())) {
     LOG_ERROR("start_console");
+    abort();
+  }
+
+  if ((err = start_http())) {
+    LOG_ERROR("start_http");
     abort();
   }
 

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "http.h"
 #include "wifi.h"
 
 #include <config.h>
@@ -21,6 +22,10 @@ const struct configmod config_modules[] = {
       "WiFi AP/STA mode, using static/dynamic IPv4 addressing."
     ),
     .table = wifi_configtab,
+  },
+  { "http",
+    .description = "HTTP API + Web frontend with optional HTTP basic authentication.",
+    .table = http_configtab,
   },
   {}
 };

@@ -9,5 +9,9 @@ cmake_minimum_required(VERSION 3.5)
 set(EXTRA_COMPONENT_DIRS "../../main")
 set(COMPONENT_DIRS $ENV{IDF_PATH}/components "../../components" ${EXTRA_COMPONENT_DIRS})
 
+# exclude broken components:
+# * wifi_provisioning: conflicts with custom json module
+set(EXCLUDE_COMPONENTS "wifi_provisioning")
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(qmsk-esp32)

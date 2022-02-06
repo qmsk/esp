@@ -41,15 +41,17 @@ static int print_wifi_info_sta()
 
   /* Connected AP info */
   if ((err = esp_wifi_sta_get_ap_info(&ap))) {
-    if (err == ESP_ERR_WIFI_NOT_CONNECT) {
-      LOG_WARN("esp_wifi_sta_get_ap_info: %s", esp_err_to_name(err));
+    if (err == ESP_ERR_WIFI_CONN) {
+      printf("\t%-20s: %s\n", "State", "Stopped");
+    } else if (err == ESP_ERR_WIFI_NOT_CONNECT) {
+      printf("\t%-20s: %s\n", "State", "Disconnected");
     } else {
       LOG_ERROR("esp_wifi_sta_get_ap_info: %s", esp_err_to_name(err));
       return -1;
     }
+  } else {
+    printf("\t%-20s: %s\n", "State", "Connected");
   }
-
-  printf("\t%-20s:\n", err ? "Disconnected" : "Connected");
 
   if (!err) {
     printf("\t\t%-20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "BSSID",
@@ -250,6 +252,42 @@ int wifi_listen_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int wifi_connect_cmd(int argc, char **argv, void *ctx)
+{
+  wifi_sta_config_t sta_config = {};
+  int err;
+
+  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) sta_config.ssid, sizeof(sta_config.ssid)))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) sta_config.password, sizeof(sta_config.password)))) {
+    return err;
+  }
+
+  if (sta_config.password[0]) {
+    sta_config.threshold.authmode = WIFI_STA_THRESHOLD_AUTHMODE_DEFAULT;
+  }
+
+  if ((err = wifi_connect(&sta_config))) {
+    LOG_ERROR("wifi_connect");
+    return err;
+  }
+
+  return 0;
+}
+
+int wifi_disconnect_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = wifi_disconnect())) {
+    LOG_ERROR("wifi_disconnect");
+    return err;
+  }
+
+  return 0;
+}
+
 int wifi_stop_cmd(int argc, char **argv, void *ctx)
 {
   int err;
@@ -267,6 +305,8 @@ const struct cmd wifi_commands[] = {
   { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"   },
   { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },
   { "listen",     wifi_listen_cmd,      .usage = "[SSID] [PSK]",  .describe = "Establish AP"        },
+  { "connect",    wifi_connect_cmd,     .usage = "[SSID] [PSK]",  .describe = "Connect to AP"       },
+  { "disconnect", wifi_disconnect_cmd,  .usage = "",              .describe = "Disconnect from AP"  },
   { "stop",       wifi_stop_cmd,        .usage = "",              .describe = "Stop WiFi system"    },
   {}
 };

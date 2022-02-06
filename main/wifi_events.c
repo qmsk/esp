@@ -1,4 +1,5 @@
 #include "wifi.h"
+#include "wifi_internal.h"
 #include "user.h"
 
 #include <logging.h>
@@ -21,33 +22,60 @@ static void on_scan_done(wifi_event_sta_scan_done_t *event)
 
 static void on_sta_start()
 {
-  LOG_INFO(" ");
+  esp_err_t err;
+
+  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+
+  if (wifi_state == WIFI_STATE_CONNECT) {
+
+    if ((err = esp_wifi_connect())) {
+      LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
+      user_alert(USER_ALERT_ERROR_WIFI);
+    } else {
+      user_state(USER_STATE_CONNECTING);
+    }
+  }
 }
 
 static void on_sta_stop()
 {
-  LOG_INFO(" ");
+  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_sta_connected(wifi_event_sta_connected_t *event)
 {
-  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u authmode=%s",
+  LOG_INFO("state=%s ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u authmode=%s",
+    wifi_state_str(wifi_state),
     event->ssid,
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     event->channel,
     wifi_auth_mode_str(event->authmode)
   );
+
+  // wait for netif -> IP_EVENT_STA_GOT_IP before USER_STATE_CONNECTED
 }
 
 static void on_sta_disconnected(wifi_event_sta_disconnected_t *event)
 {
-  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x reason=%s",
+  esp_err_t err;
+
+  LOG_INFO("state=%s ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x reason=%s",
+    wifi_state_str(wifi_state),
     event->ssid,
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     wifi_err_reason_str(event->reason)
   );
 
   user_state(USER_STATE_DISCONNECTED);
+
+  // allow re-starting
+  if ((err = esp_wifi_stop())) {
+    LOG_WARN("esp_wifi_stop: %s", esp_err_to_name(err));
+  }
+
+  wifi_state = WIFI_STATE_IDLE;
 
   // TODO: start_wifi_reconnect();
 }
@@ -64,9 +92,11 @@ static void on_sta_bss_rssi_low(wifi_event_bss_rssi_low_t *event)
 
 static void on_ap_start()
 {
-  LOG_INFO(" ");
+  LOG_INFO("state=%s", wifi_state_str(wifi_state));
 
-  user_state(USER_STATE_CONNECTING);
+  if (wifi_state == WIFI_STATE_LISTEN) {
+    user_state(USER_STATE_CONNECTING);
+  }
 
 /* TODO
   tcpip_adapter_ip_info_t ip_info = {};
@@ -89,7 +119,7 @@ static void on_ap_start()
 
 static void on_ap_stop()
 {
-  LOG_INFO(" ");
+  LOG_INFO("state=%s", wifi_state_str(wifi_state));
 
   // TODO: off?
   user_state(USER_STATE_DISCONNECTED);

@@ -8,7 +8,18 @@
 #include <esp_netif.h>
 #include <esp_wifi.h>
 
+enum wifi_state wifi_state;
 esp_netif_t *wifi_ap_netif, *wifi_sta_netif;
+
+const char *wifi_state_str(enum wifi_state state)
+{
+  switch (state) {
+    case WIFI_STATE_IDLE:     return "IDLE";
+    case WIFI_STATE_LISTEN:   return "LISTEN";
+    case WIFI_STATE_CONNECT:  return "CONNECT";
+    default:                  return "?";
+  }
+}
 
 /*
  * Switch from NULL -> AP/STA -> AP_STA mode as required.
@@ -146,8 +157,71 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
   }
 
   // start
+  wifi_state = WIFI_STATE_LISTEN;
+
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_connect(const wifi_sta_config_t *sta_config)
+{
+  wifi_config_t config = { .sta = *sta_config };
+  esp_err_t err;
+
+  // mode
+  if ((err = switch_wifi_mode(WIFI_MODE_STA))) {
+    LOG_ERROR("switch_wifi_mode WIFI_MODE_STA");
+    return err;
+  }
+
+  // netif
+  if (wifi_sta_netif) {
+
+  } else if (!(wifi_sta_netif = esp_netif_create_default_wifi_sta())) {
+    LOG_ERROR("esp_netif_create_default_wifi_sta");
+    return -1;
+  } else {
+    LOG_INFO("created wifi AP netif=%p", wifi_sta_netif);
+  }
+
+  // config
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s",
+    config.sta.channel,
+    config.sta.ssid,
+    config.sta.password[0] ? "***" : "",
+    wifi_auth_mode_str(config.sta.threshold.authmode)
+  );
+
+  if ((err = esp_wifi_set_config(WIFI_IF_STA, &config))) {
+    LOG_ERROR("esp_wifi_set_config WIFI_IF_STA: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // start triggers WIFI_EVENT_STA_START -> esp_wifi_connect() -> USER_STATE_CONNECTING
+  wifi_state = WIFI_STATE_CONNECT;
+
+  if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int wifi_disconnect()
+{
+  esp_err_t err;
+
+  LOG_INFO("disconnecting...");
+
+  wifi_state = WIFI_STATE_IDLE;
+
+  if ((err = esp_wifi_disconnect())) {
+    LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
     return -1;
   }
 

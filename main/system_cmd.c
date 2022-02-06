@@ -2,6 +2,8 @@
 
 #include <logging.h>
 #include <system.h>
+#include <system_interfaces.h>
+#include <system_interfaces_print.h>
 #include <system_partition.h>
 #include <system_tasks.h>
 
@@ -163,12 +165,50 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+#define PRINT_INFO(title, func, ...) \
+  do { \
+    printf("\t%-20s: ", (title)); \
+    func(__VA_ARGS__); \
+    printf("\n"); \
+  } while(0)
+
+static int print_interface_info(const struct system_interface_info *info, void *ctx)
+{
+  printf("TCP/IP %s: UP\n", system_interface_str(info));
+  printf("\t%-20s: %s\n", "Hostname", info->hostname ? info->hostname : "(null)");
+  printf("\t%-20s: %s\n", "DHCP Server", system_interface_dhcp_status_str(info->dhcps_status));
+  printf("\t%-20s: %s\n", "DHCP Client", system_interface_dhcp_status_str(info->dhcpc_status));
+  PRINT_INFO("IP", print_ip4_address, &info->ipv4_address);
+  PRINT_INFO("Netmask", print_ip4_address, &info->ipv4_netmask);
+  PRINT_INFO("Network", print_ip4_cidr, &info->ipv4_network, info->ipv4_prefixlen);
+  PRINT_INFO("Gateway", print_ip4_address, &info->ipv4_gateway);
+  PRINT_INFO("DNS (main)", print_ip_address, &info->dns_main);
+  PRINT_INFO("DNS (backup)", print_ip_address, &info->dns_backup);
+  PRINT_INFO("DNS (fallback)", print_ip_address, &info->dns_fallback);
+
+  return 0;
+}
+
+
+static int system_interfaces_cmd(int argc, char **argv, void *ctx)
+{
+  int err;
+
+  if ((err = system_interface_walk(print_interface_info, NULL))) {
+    LOG_ERROR("system_interface_walk STA");
+    return err;
+  }
+
+  return 0;
+}
+
 static const struct cmd system_commands[] = {
   { "info",       system_info_cmd,        .describe = "Print system info" },
   { "image",      system_image_cmd,       .describe = "Print system image" },
   { "status",     system_status_cmd,      .describe = "Print system status" },
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
   { "tasks",      system_tasks_cmd  ,     .describe = "Print system tasks" },
+  { "interfaces", system_interfaces_cmd,  .describe = "Print system network interfaces" },
   {}
 };
 

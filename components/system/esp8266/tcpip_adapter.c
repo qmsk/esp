@@ -43,6 +43,8 @@ static unsigned ipv4_netmask_prefixlen(const struct ip4_addr *ip)
 
 int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t tcpip_if)
 {
+  tcpip_adapter_ip_info_t ipv4;
+  tcpip_adapter_dns_info_t dns_main = {}, dns_backup = {}, dns_fallback = {}; // initialize ip_addr_t type
   esp_err_t err;
 
   if (!tcpip_adapter_is_netif_up(tcpip_if)) {
@@ -64,32 +66,38 @@ int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t
     return -1;
   }
 
-  if ((err = tcpip_adapter_get_ip_info(tcpip_if, &info->ipv4))) {
+  if ((err = tcpip_adapter_get_ip_info(tcpip_if, &ipv4))) {
     LOG_ERROR("tcpip_adapter_get_ip_info: %s", esp_err_to_name(err));
     return -1;
+  } else {
+    info->ipv4_address = ipv4.ip;
+    info->ipv4_netmask = ipv4.netmask;
+    info->ipv4_gateway = ipv4.gw;
+
+    ip4_addr_get_network(&info->ipv4_network, &ipv4.ip, &ipv4.netmask);
+
+    info->ipv4_prefixlen = ipv4_netmask_prefixlen(&ipv4.netmask);
   }
 
-  ip4_addr_get_network(&info->ipv4_network, &info->ipv4.ip, &info->ipv4.netmask);
-  info->ipv4_prefixlen = ipv4_netmask_prefixlen(&info->ipv4.netmask);
-
-  // initialize ip_addr_t type
-  info->dns_main = (tcpip_adapter_dns_info_t){ };
-  info->dns_backup = (tcpip_adapter_dns_info_t){ };
-  info->dns_fallback = (tcpip_adapter_dns_info_t){ };
-
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &info->dns_main))) {
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_MAIN, &dns_main))) {
     LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_MAIN: %s", esp_err_to_name(err));
     return -1;
+  } else {
+    info->dns_main = dns_main.ip;
   }
 
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_BACKUP, &info->dns_backup))) {
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_BACKUP, &dns_backup))) {
     LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_BACKUP: %s", esp_err_to_name(err));
     return -1;
+  } else {
+    info->dns_backup = dns_backup.ip;
   }
 
-  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_FALLBACK, &info->dns_fallback))) {
+  if ((err = tcpip_adapter_get_dns_info(tcpip_if, TCPIP_ADAPTER_DNS_FALLBACK, &dns_fallback))) {
     LOG_ERROR("tcpip_adapter_get_dns_info TCPIP_ADAPTER_DNS_FALLBACK: %s", esp_err_to_name(err));
     return -1;
+  } else {
+    info->dns_fallback = dns_fallback.ip;
   }
 
   return 0;

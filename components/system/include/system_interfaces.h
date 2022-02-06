@@ -2,30 +2,88 @@
 
 #include <sdkconfig.h>
 
-// TODO
 #if CONFIG_IDF_TARGET_ESP8266
-
-#include <tcpip_adapter.h>
+# include <tcpip_adapter.h>
+#elif CONFIG_IDF_TARGET_ESP32
+# include <esp_netif.h>
+#endif
 
 #include <stdbool.h>
 
-const char *tcpip_adapter_if_str(tcpip_adapter_if_t tcpip_if);
-const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status);
+#if CONFIG_IDF_TARGET_ESP8266
+
+  const char *tcpip_adapter_if_str(tcpip_adapter_if_t tcpip_if);
+  const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status);
+
+
+#elif CONFIG_IDF_TARGET_ESP32
+
+  const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status);
+
+#endif
+
+
+
 
 struct system_interface_info {
+#if CONFIG_IDF_TARGET_ESP8266
+  tcpip_adapter_if_t interface;
+
   const char *hostname;
+
   tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
 
-  tcpip_adapter_ip_info_t ipv4;
+  ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
   ip4_addr_t ipv4_network;
   unsigned ipv4_prefixlen;
 
-  tcpip_adapter_dns_info_t dns_main, dns_backup, dns_fallback;
+  ip_addr_t dns_main, dns_backup, dns_fallback;
+
+#elif CONFIG_IDF_TARGET_ESP32
+  esp_netif_t *interface;
+
+  const char *hostname;
+
+  esp_netif_dhcp_status_t dhcps_status, dhcpc_status;
+
+  esp_ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
+  esp_ip4_addr_t ipv4_network;
+  unsigned ipv4_prefixlen;
+
+  esp_ip_addr_t dns_main, dns_backup, dns_fallback;
+#endif
 };
+
+#if CONFIG_IDF_TARGET_ESP8266
+  static inline const char *system_interface_str(const struct system_interface_info *info)
+  {
+    return tcpip_adapter_if_str(info->interface);
+  }
+
+  static inline const char *system_interface_dhcp_status_str(tcpip_adapter_dhcp_status_t status)
+  {
+    return tcpip_adapter_dhcp_status_str(status);
+  }
+#elif CONFIG_IDF_TARGET_ESP32
+  static inline const char *system_interface_str(const struct system_interface_info *info)
+  {
+    return esp_netif_get_desc(info->interface);
+  }
+
+  static inline const char *system_interface_dhcp_status_str(esp_netif_dhcp_status_t status)
+  {
+    return esp_netif_dhcp_status_str(status);
+  }
+#endif
+
 
 /*
  * Returns <0 on error, 0 if valid, 1 if not configured/enabled/available.
  */
-int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t tcpip_if);
+#if CONFIG_IDF_TARGET_ESP8266
+  int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t interface);
+#elif CONFIG_IDF_TARGET_ESP32
+  int system_interface_info(struct system_interface_info *info, esp_netif_t *interface);
 
+  int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx);
 #endif

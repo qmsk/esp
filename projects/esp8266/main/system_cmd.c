@@ -3,6 +3,7 @@
 #include <logging.h>
 #include <system.h>
 #include <system_interfaces.h>
+#include <system_interfaces_print.h>
 #include <system_partition.h>
 #include <system_tasks.h>
 
@@ -160,51 +161,12 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
-static inline void print_ip4_info(const char *title, ip4_addr_t *ip)
-{
-  printf("\t%-20s: %u.%u.%u.%u\n", title,
-    ip4_addr1(ip),
-    ip4_addr2(ip),
-    ip4_addr3(ip),
-    ip4_addr4(ip)
-  );
-}
-
-static inline void print_ip4_cidr(const char *title, ip4_addr_t *ip, unsigned prefixlen)
-{
-  printf("\t%-20s: %u.%u.%u.%u/%u\n", title,
-    ip4_addr1(ip),
-    ip4_addr2(ip),
-    ip4_addr3(ip),
-    ip4_addr4(ip),
-    prefixlen
-  );
-}
-
-static inline void print_ip6_info(const char *title, ip6_addr_t *ip)
-{
-  printf("\t%-20s: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n", title,
-    IP6_ADDR_BLOCK1(ip),
-    IP6_ADDR_BLOCK2(ip),
-    IP6_ADDR_BLOCK3(ip),
-    IP6_ADDR_BLOCK4(ip),
-    IP6_ADDR_BLOCK5(ip),
-    IP6_ADDR_BLOCK6(ip),
-    IP6_ADDR_BLOCK7(ip),
-    IP6_ADDR_BLOCK8(ip)
- );
-}
-
-static inline void print_ip_info(const char *title, ip_addr_t *ip)
-{
-  if (IP_IS_V4(ip)) {
-    print_ip4_info(title, ip_2_ip4(ip));
-  } else if (IP_IS_V6(ip)) {
-    print_ip6_info(title, ip_2_ip6(ip));
-  } else {
-    LOG_WARN("invalid title=(%s) ip type=%d", title, IP_GET_TYPE(ip));
-  }
-}
+#define PRINT_INFO(title, func, ...) \
+  do { \
+    printf("\t%-20s: ", (title)); \
+    func(__VA_ARGS__); \
+    printf("\n"); \
+  } while(0)
 
 int print_interface_info(tcpip_adapter_if_t tcpip_if)
 {
@@ -223,13 +185,13 @@ int print_interface_info(tcpip_adapter_if_t tcpip_if)
   printf("\t%-20s: %s\n", "Hostname", info.hostname ? info.hostname : "(null)");
   printf("\t%-20s: %s\n", "DHCP Server", tcpip_adapter_dhcp_status_str(info.dhcps_status));
   printf("\t%-20s: %s\n", "DHCP Client", tcpip_adapter_dhcp_status_str(info.dhcpc_status));
-  print_ip4_info("IP", &info.ipv4.ip);
-  print_ip4_info("Netmask", &info.ipv4.netmask);
-  print_ip4_cidr("Network", &info.ipv4_network, info.ipv4_prefixlen);
-  print_ip4_info("Gateway", &info.ipv4.gw);
-  print_ip_info("DNS (main)", &info.dns_main.ip);
-  print_ip_info("DNS (backup)", &info.dns_backup.ip);
-  print_ip_info("DNS (fallback)", &info.dns_fallback.ip);
+  PRINT_INFO("IP", print_ip4_address, &info.ipv4_address);
+  PRINT_INFO("Netmask", print_ip4_address, &info.ipv4_netmask);
+  PRINT_INFO("Network", print_ip4_cidr, &info.ipv4_network, info.ipv4_prefixlen);
+  PRINT_INFO("Gateway", print_ip4_address, &info.ipv4_gateway);
+  PRINT_INFO("DNS (main)", print_ip_address, &info.dns_main);
+  PRINT_INFO("DNS (backup)", print_ip_address, &info.dns_backup);
+  PRINT_INFO("DNS (fallback)", print_ip_address, &info.dns_fallback);
 
   return 0;
 }

@@ -3,6 +3,11 @@
 #include <logging.h>
 
 #include <esp_err.h>
+#include <esp_netif.h>
+#include <esp_netif_sta_list.h>
+#include <esp_wifi.h>
+
+#include <string.h>
 
 const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status)
 {
@@ -125,6 +130,37 @@ int system_interface_walk(int (*func)(const struct system_interface_info *info, 
     }
 
     if ((err = func(&info, ctx))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx)
+{
+  struct system_interface_client client;
+  wifi_sta_list_t wifi_sta_list;
+  esp_netif_sta_list_t netif_sta_list;
+  esp_err_t err;
+
+  if ((err = esp_wifi_ap_get_sta_list(&wifi_sta_list))) {
+    LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_netif_get_sta_list(&wifi_sta_list, &netif_sta_list))) {
+    LOG_ERROR("esp_netif_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  for (int i = 0; i < wifi_sta_list.num && i < netif_sta_list.num; i++) {
+    esp_netif_sta_info_t *netif_sta_info = &netif_sta_list.sta[i];
+
+    memcpy(&client.mac, &netif_sta_info->mac, sizeof(netif_sta_info->mac));
+    memcpy(&client.ipv4, &netif_sta_info->ip, sizeof(netif_sta_info->ip));
+
+    if ((err = func(&client, ctx))) {
       return err;
     }
   }

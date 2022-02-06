@@ -185,20 +185,41 @@ static int print_interface_info(const struct system_interface_info *info, void *
   PRINT_INFO("DNS (main)", print_ip_address, &info->dns_main);
   PRINT_INFO("DNS (backup)", print_ip_address, &info->dns_backup);
   PRINT_INFO("DNS (fallback)", print_ip_address, &info->dns_fallback);
+  printf("\t\n");
 
   return 0;
 }
 
+
+static int print_interface_client(const struct system_interface_client *client, void *ctx)
+{
+  printf("%s: %02x:%02x:%02x:%02x:%02x:%02x\n", "STA",
+    client->mac[0],
+    client->mac[1],
+    client->mac[2],
+    client->mac[3],
+    client->mac[4],
+    client->mac[5]
+  );
+
+  PRINT_INFO("IP", print_ip4_address, &client->ipv4);
+
+  return 0;
+}
 
 static int system_interfaces_cmd(int argc, char **argv, void *ctx)
 {
   int err;
 
   if ((err = system_interface_walk(print_interface_info, NULL))) {
-    LOG_ERROR("system_interface_walk STA");
+    LOG_ERROR("system_interface_walk");
     return err;
   }
 
+  if ((err = system_interface_clients_walk(print_interface_client, NULL))) {
+    LOG_ERROR("system_interface_clients_walk");
+    return err;
+  }
   return 0;
 }
 

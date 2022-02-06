@@ -15,44 +15,44 @@
   const char *tcpip_adapter_if_str(tcpip_adapter_if_t tcpip_if);
   const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status);
 
+  struct system_interface_info {
+    tcpip_adapter_if_t interface;
+
+    const char *hostname;
+
+    tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
+
+    ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
+    ip4_addr_t ipv4_network;
+    unsigned ipv4_prefixlen;
+
+    ip_addr_t dns_main, dns_backup, dns_fallback;
+  };
+
 
 #elif CONFIG_IDF_TARGET_ESP32
 
   const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status);
 
+  struct system_interface_info {
+    esp_netif_t *interface;
+
+    const char *hostname;
+
+    esp_netif_dhcp_status_t dhcps_status, dhcpc_status;
+
+    esp_ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
+    esp_ip4_addr_t ipv4_network;
+    unsigned ipv4_prefixlen;
+
+    esp_ip_addr_t dns_main, dns_backup, dns_fallback;
+  };
+
+  struct system_interface_client {
+    uint8_t mac[6];
+    esp_ip4_addr_t ipv4;
+  };
 #endif
-
-
-
-
-struct system_interface_info {
-#if CONFIG_IDF_TARGET_ESP8266
-  tcpip_adapter_if_t interface;
-
-  const char *hostname;
-
-  tcpip_adapter_dhcp_status_t dhcps_status, dhcpc_status;
-
-  ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
-  ip4_addr_t ipv4_network;
-  unsigned ipv4_prefixlen;
-
-  ip_addr_t dns_main, dns_backup, dns_fallback;
-
-#elif CONFIG_IDF_TARGET_ESP32
-  esp_netif_t *interface;
-
-  const char *hostname;
-
-  esp_netif_dhcp_status_t dhcps_status, dhcpc_status;
-
-  esp_ip4_addr_t ipv4_address, ipv4_netmask, ipv4_gateway;
-  esp_ip4_addr_t ipv4_network;
-  unsigned ipv4_prefixlen;
-
-  esp_ip_addr_t dns_main, dns_backup, dns_fallback;
-#endif
-};
 
 #if CONFIG_IDF_TARGET_ESP8266
   static inline const char *system_interface_str(const struct system_interface_info *info)
@@ -86,4 +86,5 @@ struct system_interface_info {
   int system_interface_info(struct system_interface_info *info, esp_netif_t *interface);
 
   int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx);
+  int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx);
 #endif

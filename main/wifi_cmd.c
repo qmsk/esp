@@ -4,6 +4,23 @@
 #include <logging.h>
 #include <system_wifi.h>
 
+int wifi_state_cmd(int argc, char **argv, void *ctx)
+{
+  printf("%s:\n", "STA");
+  printf("\t%-20s: %s\n", "Connect", wifi_sta_connect ? "true" : "false");
+  printf("\t%-20s: %s\n", "Started", wifi_sta_started ? "true" : "false");
+  printf("\t%-20s: %s\n", "Connected", wifi_sta_connected ? "true" : "false");
+  printf("\t\n");
+
+  printf("%s:\n", "AP");
+  printf("\t%-20s: %s\n", "Listen", wifi_ap_listen ? "true" : "false");
+  printf("\t%-20s: %s\n", "Started", wifi_ap_started ? "true" : "false");
+  printf("\t%-20s: %u\n", "Connected", wifi_ap_connected);
+  printf("\t\n");
+
+  return 0;
+}
+
 static int print_wifi_info_sta()
 {
   uint8_t mac[6];
@@ -301,6 +318,7 @@ int wifi_stop_cmd(int argc, char **argv, void *ctx)
 }
 
 const struct cmd wifi_commands[] = {
+  { "state",      wifi_state_cmd,       .usage = "",              .describe = "Show state"   },
   { "info",       wifi_info_cmd,        .usage = "",              .describe = "Show connected AP"   },
   { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"   },
   { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },

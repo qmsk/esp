@@ -8,6 +8,7 @@ static const char *user_state_str(enum user_state state)
     case USER_STATE_BOOT:             return "BOOT";
     case USER_STATE_CONNECTING:       return "CONNECTING";
     case USER_STATE_CONNECTED:        return "CONNECTED";
+    case USER_STATE_DISCONNECTING:    return "DISCONNECTING";
     case USER_STATE_DISCONNECTED:     return "DISCONNECTED";
     case USER_STATE_RESET:            return "RESET";
     default:                          return NULL;

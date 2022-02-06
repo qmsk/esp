@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_internal.h"
+#include "user.h"
 
 #include <logging.h>
 #include <system_wifi.h>
@@ -8,18 +9,11 @@
 #include <esp_netif.h>
 #include <esp_wifi.h>
 
-enum wifi_state wifi_state;
-esp_netif_t *wifi_ap_netif, *wifi_sta_netif;
+bool wifi_sta_connect, wifi_sta_started, wifi_sta_connected;
+bool wifi_ap_listen, wifi_ap_started;
+unsigned wifi_ap_connected;
 
-const char *wifi_state_str(enum wifi_state state)
-{
-  switch (state) {
-    case WIFI_STATE_IDLE:     return "IDLE";
-    case WIFI_STATE_LISTEN:   return "LISTEN";
-    case WIFI_STATE_CONNECT:  return "CONNECT";
-    default:                  return "?";
-  }
-}
+esp_netif_t *wifi_ap_netif, *wifi_sta_netif;
 
 /*
  * Switch from NULL -> AP/STA -> AP_STA mode as required.
@@ -138,7 +132,7 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
     LOG_ERROR("esp_netif_create_default_wifi_ap");
     return -1;
   } else {
-    LOG_INFO("created wifi AP netif=%p", wifi_ap_netif);
+    LOG_INFO("created wifi_ap_netif=%p", wifi_ap_netif);
   }
 
   // config
@@ -156,8 +150,8 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
     return -1;
   }
 
-  // start
-  wifi_state = WIFI_STATE_LISTEN;
+    // state
+  wifi_ap_listen = true;
 
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
@@ -185,7 +179,7 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
     LOG_ERROR("esp_netif_create_default_wifi_sta");
     return -1;
   } else {
-    LOG_INFO("created wifi AP netif=%p", wifi_sta_netif);
+    LOG_INFO("created wifi_sta_netif=%p", wifi_sta_netif);
   }
 
   // config
@@ -201,12 +195,22 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
     return -1;
   }
 
-  // start triggers WIFI_EVENT_STA_START -> esp_wifi_connect() -> USER_STATE_CONNECTING
-  wifi_state = WIFI_STATE_CONNECT;
+  // state
+  wifi_sta_connect = true;
 
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-    return -1;
+  if (wifi_sta_started) {
+    if ((err = esp_wifi_connect())) {
+      LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
+      user_alert(USER_ALERT_ERROR_WIFI);
+    } else {
+      user_state(USER_STATE_CONNECTING);
+    }
+  } else {
+    // start triggers WIFI_EVENT_STA_START -> esp_wifi_connect() -> USER_STATE_CONNECTING
+    if ((err = esp_wifi_start())) {
+      LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+      return -1;
+    }
   }
 
   return 0;
@@ -216,14 +220,36 @@ int wifi_disconnect()
 {
   esp_err_t err;
 
-  LOG_INFO("disconnecting...");
+  if (wifi_sta_connected) {
+    LOG_INFO("disconnecting...");
 
-  wifi_state = WIFI_STATE_IDLE;
+    user_state(USER_STATE_DISCONNECTING);
 
-  if ((err = esp_wifi_disconnect())) {
-    LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
-    return -1;
+    // disconnect triggers WIFI_EVENT_STA_DISCONNECTED -> USER_STATE_CONNECTED
+    if ((err = esp_wifi_disconnect())) {
+      LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+  } else if (wifi_sta_connect) {
+    LOG_INFO("abort connect...");
+
+    user_state(USER_STATE_DISCONNECTING);
+
+    if ((err = esp_wifi_disconnect())) {
+      LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+    // there will not be a WIFI_EVENT_STA_DISCONNECTED
+    user_state(USER_STATE_DISCONNECTED);
+
+  } else {
+    LOG_WARN("not connected");
+    return 1;
   }
+
+  wifi_sta_connect = false;
 
   return 0;
 }

@@ -24,35 +24,38 @@ static void on_sta_start()
 {
   esp_err_t err;
 
-  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+  wifi_sta_started = true;
 
-  if (wifi_state == WIFI_STATE_CONNECT) {
+  if (wifi_sta_connect) {
+    LOG_INFO("connect...");
 
     if ((err = esp_wifi_connect())) {
       LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
       user_alert(USER_ALERT_ERROR_WIFI);
-    } else {
-      user_state(USER_STATE_CONNECTING);
     }
+
+  } else {
+    LOG_INFO("idle");
   }
 }
 
 static void on_sta_stop()
 {
-  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+  LOG_INFO("connect=%d connected=%d", wifi_sta_connect, wifi_sta_connected);
 
-  user_state(USER_STATE_DISCONNECTED);
+  wifi_sta_started = false;
 }
 
 static void on_sta_connected(wifi_event_sta_connected_t *event)
 {
-  LOG_INFO("state=%s ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u authmode=%s",
-    wifi_state_str(wifi_state),
+  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u authmode=%s",
     event->ssid,
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     event->channel,
     wifi_auth_mode_str(event->authmode)
   );
+
+  wifi_sta_connected = true;
 
   // wait for netif -> IP_EVENT_STA_GOT_IP before USER_STATE_CONNECTED
 }
@@ -61,23 +64,34 @@ static void on_sta_disconnected(wifi_event_sta_disconnected_t *event)
 {
   esp_err_t err;
 
-  LOG_INFO("state=%s ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x reason=%s",
-    wifi_state_str(wifi_state),
+  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x reason=%s",
     event->ssid,
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     wifi_err_reason_str(event->reason)
   );
 
-  user_state(USER_STATE_DISCONNECTED);
+  if (wifi_sta_connect) {
+    if (wifi_sta_connected) {
+      LOG_INFO("reconnect...");
+    } else {
+      LOG_INFO("retry connect...");
+    }
 
-  // allow re-starting
-  if ((err = esp_wifi_stop())) {
-    LOG_WARN("esp_wifi_stop: %s", esp_err_to_name(err));
+    // reconnect
+    if ((err = esp_wifi_connect())) {
+      LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
+      user_alert(USER_ALERT_ERROR_WIFI);
+      user_state(USER_STATE_DISCONNECTED);
+    } else {
+      user_state(USER_STATE_CONNECTING);
+    }
+  } else {
+    LOG_INFO("disconnected");
+
+    user_state(USER_STATE_DISCONNECTED);
   }
 
-  wifi_state = WIFI_STATE_IDLE;
-
-  // TODO: start_wifi_reconnect();
+  wifi_sta_connected = false;
 }
 
 static void on_sta_authmode_change(wifi_event_sta_authmode_change_t *event)
@@ -92,11 +106,13 @@ static void on_sta_bss_rssi_low(wifi_event_bss_rssi_low_t *event)
 
 static void on_ap_start()
 {
-  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+  LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
 
-  if (wifi_state == WIFI_STATE_LISTEN) {
+  if (wifi_ap_listen) {
     user_state(USER_STATE_CONNECTING);
   }
+
+  wifi_ap_started = true;
 
 /* TODO
   tcpip_adapter_ip_info_t ip_info = {};
@@ -119,32 +135,48 @@ static void on_ap_start()
 
 static void on_ap_stop()
 {
-  LOG_INFO("state=%s", wifi_state_str(wifi_state));
+  LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
 
   // TODO: off?
   user_state(USER_STATE_DISCONNECTED);
+
+  wifi_ap_started = false;
+  wifi_ap_connected = 0;
 }
 
 static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
 {
-  // TODO: refcount
-  user_state(USER_STATE_CONNECTED);
 
   LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
     event->aid,
     event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
   );
+
+  wifi_ap_connected++;
+
+  LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
+
+  user_state(USER_STATE_CONNECTED);
 }
 
 static void on_ap_sta_disconnected(wifi_event_ap_stadisconnected_t *event)
 {
-  // TODO: refcount
-  user_state(USER_STATE_DISCONNECTED);
-
   LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
     event->aid,
     event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
   );
+
+  if (wifi_ap_connected == 0) {
+    LOG_WARN("wifi_ap_connected=%d state mismatch", wifi_ap_connected);
+  } else {
+    wifi_ap_connected--;
+
+    LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
+  }
+
+  if (!wifi_ap_connected) {
+    user_state(USER_STATE_DISCONNECTED);
+  }
 }
 
 static void on_ap_probe_req_recved(wifi_event_ap_probe_req_rx_t *event)

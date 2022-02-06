@@ -5,7 +5,10 @@
 #include <system_wifi.h>
 
 #include <esp_err.h>
+#include <esp_netif.h>
 #include <esp_wifi.h>
+
+esp_netif_t *wifi_ap_netif, *wifi_sta_netif;
 
 /*
  * Switch from NULL -> AP/STA -> AP_STA mode as required.
@@ -45,20 +48,6 @@ int start_wifi()
 
   if ((err = esp_wifi_start())) {
     LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
-int stop_wifi()
-{
-  esp_err_t err;
-
-  LOG_INFO("stopping...");
-
-  if ((err = esp_wifi_stop())) {
-    LOG_ERROR("esp_wifi_stop: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -118,6 +107,65 @@ error:
   free(wifi_ap_records);
 
   return err;
+}
+
+int wifi_listen(const wifi_ap_config_t *ap_config)
+{
+  wifi_config_t config = { .ap = *ap_config };
+  esp_err_t err;
+
+  // mode
+  if ((err = switch_wifi_mode(WIFI_MODE_AP))) {
+    LOG_ERROR("switch_wifi_mode WIFI_MODE_AP");
+    return err;
+  }
+
+  // netif
+  if (wifi_ap_netif) {
+
+  } else if (!(wifi_ap_netif = esp_netif_create_default_wifi_ap())) {
+    LOG_ERROR("esp_netif_create_default_wifi_ap");
+    return -1;
+  } else {
+    LOG_INFO("created wifi AP netif=%p", wifi_ap_netif);
+  }
+
+  // config
+  LOG_INFO("channel=%u ssid=%.32s password=%s authmode=%s ssid_hidden=%s max_connection=%d",
+    config.ap.channel,
+    config.ap.ssid,
+    config.ap.password[0] ? "***" : "",
+    wifi_auth_mode_str(config.ap.authmode),
+    config.ap.ssid_hidden ? "true" : "false",
+    config.ap.max_connection
+  );
+
+  if ((err = esp_wifi_set_config(ESP_IF_WIFI_AP, &config))) {
+    LOG_ERROR("esp_wifi_set_config ESP_IF_WIFI_AP: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // start
+  if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
+int stop_wifi()
+{
+  esp_err_t err;
+
+  LOG_INFO("stopping...");
+
+  if ((err = esp_wifi_stop())) {
+    LOG_ERROR("esp_wifi_stop: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
 }
 
 int config_wifi()

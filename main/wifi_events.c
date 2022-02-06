@@ -66,7 +66,7 @@ static void on_ap_start()
 {
   LOG_INFO(" ");
 
-  user_state(USER_STATE_CONNECTED);
+  user_state(USER_STATE_CONNECTING);
 
 /* TODO
   tcpip_adapter_ip_info_t ip_info = {};
@@ -91,11 +91,15 @@ static void on_ap_stop()
 {
   LOG_INFO(" ");
 
+  // TODO: off?
   user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
 {
+  // TODO: refcount
+  user_state(USER_STATE_CONNECTED);
+
   LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
     event->aid,
     event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]
@@ -104,6 +108,9 @@ static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
 
 static void on_ap_sta_disconnected(wifi_event_ap_stadisconnected_t *event)
 {
+  // TODO: refcount
+  user_state(USER_STATE_DISCONNECTED);
+
   LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
     event->aid,
     event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]

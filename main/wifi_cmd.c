@@ -37,7 +37,7 @@ static int print_wifi_info_sta()
   printf("\t%-20s: %d\n", "Channel", config.sta.channel);
   printf("\t%-20s: %s\n", "AuthMode", wifi_auth_mode_str(config.sta.threshold.authmode));
   printf("\t%-20s: %d\n", "RSSI", config.sta.threshold.rssi);
-  printf("\n");
+  printf("\t\n");
 
   /* Connected AP info */
   if ((err = esp_wifi_sta_get_ap_info(&ap))) {
@@ -108,18 +108,21 @@ static int print_wifi_info_ap()
     return -1;
   }
 
-  printf("\t%-20s: %d\n", "Connections", wifi_sta_list.num);
+  printf("\t\n");
 
   for (int i = 0; i < wifi_sta_list.num; i++) {
     wifi_sta_info_t *wifi_sta_info = &wifi_sta_list.sta[i];
 
-    printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x\t%c%c%c%c\n",
-      wifi_sta_info->mac[0], wifi_sta_info->mac[1], wifi_sta_info->mac[2], wifi_sta_info->mac[3], wifi_sta_info->mac[4], wifi_sta_info->mac[5],
+    printf("\t%-20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "STA", wifi_sta_info->mac[0], wifi_sta_info->mac[1], wifi_sta_info->mac[2], wifi_sta_info->mac[3], wifi_sta_info->mac[4], wifi_sta_info->mac[5]);
+
+    printf("\t\t%-20s: %d\n", "RSSI", wifi_sta_info->rssi);
+    printf("\t\t%-20s: %c%c%c%c\n", "Mode",
       wifi_sta_info->phy_11b ? 'b' : ' ',
       wifi_sta_info->phy_11g ? 'g' : ' ',
       wifi_sta_info->phy_11n ? 'n' : ' ',
       wifi_sta_info->phy_lr  ? 'L' : ' '
     );
+    printf("\t\t\n");
   }
 
   return 0;
@@ -221,6 +224,32 @@ int wifi_scan_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int wifi_listen_cmd(int argc, char **argv, void *ctx)
+{
+  wifi_ap_config_t ap_config = {};
+  int err;
+
+  ap_config.max_connection = WIFI_AP_MAX_CONNECTION_DEFAULT;
+
+  if (argc >= 2 && (err = cmd_arg_strncpy(argc, argv, 1, (char *) ap_config.ssid, sizeof(ap_config.ssid)))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_strncpy(argc, argv, 2, (char *) ap_config.password, sizeof(ap_config.password)))) {
+    return err;
+  }
+
+  if (ap_config.password[0]) {
+    ap_config.authmode = WIFI_AP_AUTHMODE_DEFAULT;
+  }
+
+  if ((err = wifi_listen(&ap_config))) {
+    LOG_ERROR("wifi_listen");
+    return err;
+  }
+
+  return 0;
+}
+
 int wifi_stop_cmd(int argc, char **argv, void *ctx)
 {
   int err;
@@ -237,6 +266,7 @@ const struct cmd wifi_commands[] = {
   { "info",       wifi_info_cmd,        .usage = "",              .describe = "Show connected AP"   },
   { "start",      wifi_start_cmd,       .usage = "",              .describe = "Start WiFi system"   },
   { "scan",       wifi_scan_cmd,        .usage = "[SSID]",        .describe = "Scan available APs"  },
+  { "listen",     wifi_listen_cmd,      .usage = "[SSID] [PSK]",  .describe = "Establish AP"        },
   { "stop",       wifi_stop_cmd,        .usage = "",              .describe = "Stop WiFi system"    },
   {}
 };

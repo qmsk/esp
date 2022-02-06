@@ -57,13 +57,23 @@ int system_interface_info(struct system_interface_info *info, esp_netif_t *inter
   }
 
   if ((err = esp_netif_dhcps_get_status(interface, &info->dhcps_status))) {
-    LOG_ERROR("esp_netif_dhcps_get_status: %s", esp_err_to_name(err));
-    return -1;
+    if (err == ESP_ERR_INVALID_ARG) {
+      // not configured
+      info->dhcps_status = ESP_NETIF_DHCP_INIT;
+    } else {
+      LOG_ERROR("esp_netif_dhcps_get_status: %s", esp_err_to_name(err));
+      return -1;
+    }
   }
 
   if ((err = esp_netif_dhcpc_get_status(interface, &info->dhcpc_status))) {
-    LOG_ERROR("esp_netif_dhcpc_get_status: %s", esp_err_to_name(err));
-    return -1;
+    if (err == ESP_ERR_INVALID_ARG) {
+      // not configured
+      info->dhcpc_status = ESP_NETIF_DHCP_INIT;
+    } else {
+      LOG_ERROR("esp_netif_dhcpc_get_status: %s", esp_err_to_name(err));
+      return -1;
+    }
   }
 
   if ((err = esp_netif_get_ip_info(interface, &ipv4))) {

@@ -104,7 +104,7 @@
        return print_ip6_address(&ip->u_addr.ip6);
 
      default:
-       printf("??? (type=%d)", IP_GET_TYPE(ip));
+       printf("??? (type=%d)", ip->type);
     }
   }
 #endif

@@ -28,7 +28,7 @@ static unsigned ipv4_prefixlen(const esp_netif_ip_info_t *ip_info)
   uint32_t addr = esp_netif_htonl(ip_info->ip.addr);
   unsigned len = 0;
 
-  for (u32_t mask = 1 << 31; mask; mask >>= 1) {
+  for (uint32_t mask = 1 << 31; mask; mask >>= 1) {
     if (addr & mask) {
       len++;
     } else {

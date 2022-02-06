@@ -16,5 +16,10 @@ const struct http_route http_routes[] = {
   { "GET",  "api/system",         system_api_handler,         NULL },
   { "GET",  "api/system/tasks",   system_api_tasks_handler,   NULL },
   { "POST", "api/system/restart", system_api_restart_handler, NULL },
+
+  /* wifi_http.c */
+  { "GET",  "api/wifi",           wifi_api_handler,           NULL },
+  { "POST", "api/wifi/scan",      wifi_api_scan_handler,      NULL },
+
   {}
 };

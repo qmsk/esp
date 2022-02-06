@@ -22,12 +22,7 @@ static char dirent_type_char(const struct dirent *d) {
 
 esp_err_t vfs_walk_func(esp_vfs_id_t id, const char *path, void *ctx)
 {
-  if (strlen(path) == 0) {
-    // fd_range or vfs_id
-    printf("%c <%d>\n", 'V', id);
-  } else {
-    printf("%c %s\n", 'v', path);
-  }
+  printf("%c <%d> %s\n", 'v', id, path);
 
   return 0;
 }
@@ -36,8 +31,8 @@ int vfs_ls_root()
 {
   esp_err_t err;
 
-  if ((err = esp_vfs_walk(vfs_walk_func, NULL))) {
-    LOG_ERROR("esp_vfs_walk: %s", esp_err_to_name(err));
+  if ((err = esp_vfs_walk_paths(vfs_walk_func, NULL))) {
+    LOG_ERROR("esp_vfs_walk_paths: %s", esp_err_to_name(err));
     return -1;
   }
 
@@ -83,8 +78,28 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
   return err;
 }
 
+esp_err_t vfs_walk_fd_func(esp_vfs_id_t id, int fd, void *ctx)
+{
+  printf("%3d <%d>\n", fd, id);
+
+  return 0;
+}
+
+int vfs_lsof_cmd(int argc, char **argv, void *ctx)
+{
+  esp_err_t err;
+
+  if ((err = esp_vfs_walk_fds(vfs_walk_fd_func, NULL))) {
+    LOG_ERROR("esp_vfs_walk_fds: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 const struct cmd vfs_commands[] = {
   { "ls",     vfs_ls_cmd,    .usage = "[PATH]", .describe = "List files"  },
+  { "lsof",   vfs_lsof_cmd,                     .describe = "List open file descriptors"  },
   {}
 };
 

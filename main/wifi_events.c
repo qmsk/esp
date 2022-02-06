@@ -109,7 +109,7 @@ static void on_ap_start()
   LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
 
   if (wifi_ap_listen) {
-    user_state(USER_STATE_CONNECTING);
+    user_state(USER_STATE_DISCONNECTED);
   }
 
   wifi_ap_started = true;

@@ -32,3 +32,11 @@ enum user_alert {
 void user_state(enum user_state state);
 void user_activity(enum user_activity activity);
 void user_alert(enum user_alert alert);
+
+// user actions
+void user_config_disable();
+void user_config_mode();
+void user_config_reset();
+
+void user_test_mode();
+void user_test_cancel();

@@ -1,4 +1,5 @@
 #include "user.h"
+#include "status_leds.h"
 
 #include <logging.h>
 
@@ -46,6 +47,8 @@ void user_state(enum user_state state)
   } else {
     LOG_INFO("%d", state);
   }
+
+  status_leds_state(state);
 }
 
 void user_activity(enum user_activity activity)
@@ -58,6 +61,8 @@ void user_activity(enum user_activity activity)
   } else {
     LOG_DEBUG("%05x", activity);
   }
+
+  status_leds_activity(activity);
 }
 
 void user_alert(enum user_alert alert)
@@ -69,4 +74,31 @@ void user_alert(enum user_alert alert)
   } else {
     LOG_WARN("%d", alert);
   }
+
+  status_leds_alert(alert);
+}
+
+void user_config_disable()
+{
+
+}
+
+void user_config_mode()
+{
+
+}
+
+void user_config_reset()
+{
+
+}
+
+void user_test_mode()
+{
+
+}
+
+void user_test_cancel()
+{
+
 }

@@ -1,6 +1,7 @@
 #include "console.h"
 #include "config.h"
 #include "log.h"
+#include "status_leds.h"
 #include "system.h"
 #include "user.h"
 #include "wifi.h"
@@ -23,14 +24,26 @@ void app_main(void)
 
   LOG_INFO("boot");
 
-  if ((err = init_console())) {
-    LOG_ERROR("init_console");
+  if ((err = init_status_leds())) {
+    LOG_ERROR("init_status_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
 
   if ((err = init_system())) {
     LOG_ERROR("init_system");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if ((err = init_console())) {
+    LOG_ERROR("init_console");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if ((err = start_status_leds())) {
+    LOG_ERROR("start_status_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

@@ -2,6 +2,7 @@
 #include "console.h"
 #include "log.h"
 #include "spiffs.h"
+#include "status_leds.h"
 #include "system.h"
 #include "vfs.h"
 #include "wifi.h"
@@ -23,22 +24,25 @@ const struct cmd console_cli_commands[] = {
   { "help",   console_help_cmd,     .describe = "Show commands" },
   { "exit",   console_exit_cmd,     .describe = "Exit CLI" },
 
-  { "spiffs",   .describe = "SPI Flash Filesystem",
+  { "status-leds",  .describe = "Status LEDs",
+      .subcommands = &status_leds_cmdtab,
+  },
+  { "spiffs",       .describe = "SPI Flash Filesystem",
       .subcommands = &spiffs_cmdtab,
   },
-  { "vfs",      .describe = "Virtual File System",
+  { "vfs",          .describe = "Virtual File System",
       .subcommands = &vfs_cmdtab,
   },
-  { "system",   .describe = "Operating System",
+  { "system",       .describe = "Operating System",
       .subcommands = &system_cmdtab,
   },
-  { "log",      .describe = "Logging",
+  { "log",          .describe = "Logging",
       .subcommands = &log_cmdtab,
   },
-  { "config", .describe = "Configuration",
+  { "config",       .describe = "Configuration",
       .subcommands = &config_cmdtab,
   },
-  { "wifi", .describe = "WiFi",
+  { "wifi",         .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
   },
   {}

@@ -1,5 +1,6 @@
 #include "console.h"
 #include "config.h"
+#include "log.h"
 #include "system.h"
 
 #include <logging.h>
@@ -11,6 +12,11 @@ void app_main(void)
 
   // heap usage is likely to be lowest at app_main() start
   system_update_maximum_free_heap_size();
+
+  if ((err = init_log())) {
+    LOG_ERROR("init_log");
+    abort();
+  }
 
   LOG_INFO("boot");
 
@@ -35,4 +41,6 @@ void app_main(void)
     LOG_ERROR("start_console");
     abort();
   }
+
+  LOG_INFO("fini");
 }

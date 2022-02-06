@@ -1,5 +1,6 @@
 #include "config.h"
 #include "console.h"
+#include "log.h"
 #include "spiffs.h"
 #include "system.h"
 #include "vfs.h"
@@ -29,6 +30,9 @@ const struct cmd console_cli_commands[] = {
   },
   { "system",   .describe = "Operating System",
       .subcommands = &system_cmdtab,
+  },
+  { "log",      .describe = "Logging",
+      .subcommands = &log_cmdtab,
   },
   { "config", .describe = "Configuration",
       .subcommands = &config_cmdtab,

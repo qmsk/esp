@@ -85,11 +85,11 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
 
 int leds_cmd_set(int argc, char **argv, void *ctx)
 {
-  unsigned output, index;
+  unsigned leds_id, index;
   int rgb, a = 0xff, w = 0;
   int err;
 
-  if ((err = cmd_arg_uint(argc, argv, 1, &output)))
+  if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
     return err;
   if ((err = cmd_arg_uint(argc, argv, 2, &index)))
     return err;
@@ -106,16 +106,16 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     .b = (rgb >>  0) & 0xFF,
   };
 
-  if (output >= LEDS_COUNT) {
-    LOG_ERROR("output=%u does not exist", output);
+  if (leds_id < 1 || leds_id > LEDS_COUNT) {
+    LOG_ERROR("leds%u does not exist", leds_id);
     return CMD_ERR_ARGV;
   }
 
-  const struct leds_config *config = &leds_configs[output];
-  struct leds_state *state = &leds_states[output];
+  const struct leds_config *config = &leds_configs[leds_id - 1];
+  struct leds_state *state = &leds_states[leds_id - 1];
 
   if (!config->enabled || !state->leds) {
-    LOG_WARN("output=%u is not enabled", output);
+    LOG_WARN("leds%u is not enabled", leds_id);
     return 0;
   }
 
@@ -147,22 +147,22 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
 
 int leds_cmd_test(int argc, char **argv, void *ctx)
 {
-  unsigned output;
+  unsigned leds_id;
   int err;
 
-  if ((err = cmd_arg_uint(argc, argv, 1, &output)))
+  if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
     return err;
 
-  if (output >= LEDS_COUNT) {
-    LOG_ERROR("output=%u does not exist", output);
+  if (leds_id < 1 || leds_id > LEDS_COUNT) {
+    LOG_ERROR("leds%u does not exist", leds_id);
     return CMD_ERR_ARGV;
   }
 
-  const struct leds_config *config = &leds_configs[output];
-  struct leds_state *state = &leds_states[output];
+  const struct leds_config *config = &leds_configs[leds_id - 1];
+  struct leds_state *state = &leds_states[leds_id - 1];
 
   if (!config->enabled || !state->leds) {
-    LOG_WARN("output=%u is not enabled", output);
+    LOG_WARN("leds%u is not enabled", leds_id);
     return 0;
   }
 
@@ -177,10 +177,10 @@ int leds_cmd_test(int argc, char **argv, void *ctx)
 }
 
 const struct cmd leds_commands[] = {
-  { "clear",  leds_cmd_clear, .usage = "",                      .describe = "Clear all output values" },
-  { "all",    leds_cmd_all,   .usage = "RGB [A]",               .describe = "Set all output pixels to value" },
-  { "set",    leds_cmd_set,   .usage = "OUTPUT INDEX RGB [A]",  .describe = "Set one output pixel to value" },
-  { "test",   leds_cmd_test,  .usage = "OUTPUT",                .describe = "Output test patterns" },
+  { "clear",  leds_cmd_clear, .usage = "",                              .describe = "Clear all output values" },
+  { "all",    leds_cmd_all,   .usage = "RGB [A]",                       .describe = "Set all output pixels to value" },
+  { "set",    leds_cmd_set,   .usage = "LEDS-ID LED-INDEX RGB [A]",  .describe = "Set one output pixel to value" },
+  { "test",   leds_cmd_test,  .usage = "LEDS-ID",                    .describe = "Output test patterns" },
   { }
 };
 

@@ -27,8 +27,12 @@ void ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, 
 
 unsigned ws2812b_count_active(struct leds_protocol_ws2812b *protocol, unsigned count);
 
-/* ws2812b_uart.c */
-int leds_tx_uart_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count);
+#if CONFIG_LEDS_UART_ENABLED
+  /* interfaces/uart/ws2812b.c */
+  int leds_tx_uart_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count);
+#endif
 
-/* ws2812b_i2s.c */
-int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count);
+#if CONFIG_LEDS_UART_ENABLED
+  /* interfaces/i2s/ws2812b.c */
+  int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count);
+#endif

@@ -18,11 +18,18 @@ int leds_init_sk6812grbw(struct leds_protocol_sk6812grbw *protocol, const struct
 int leds_tx_sk6812grbw(struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
       return leds_tx_uart_sk6812grbw(options, protocol->pixels, options->count);
+  #endif
 
+  #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
       return leds_tx_i2s_sk6812grbw(options, protocol->pixels, options->count);
+  #endif
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);

@@ -1,5 +1,5 @@
-#include "sk6812grbw.h"
-#include "leds.h"
+#include "../../sk6812grbw.h"
+#include "../../leds.h"
 
 #include <logging.h>
 

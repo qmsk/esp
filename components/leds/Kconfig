@@ -1,0 +1,26 @@
+menu "qmsk-leds"
+  config LEDS_GPIO_ENABLED
+      bool "Enable GPIO output interface multiplexing"
+
+      default y if IDF_TARGET="esp8266"
+      default n
+
+  config LEDS_SPI_ENABLED
+      bool "Enable SPI output interface"
+
+      default y if IDF_TARGET="esp8266"
+      default n
+
+  config LEDS_UART_ENABLED
+      bool "Enable UART output interface"
+
+      default y if IDF_TARGET="esp8266"
+      default n
+
+  config LEDS_I2S_ENABLED
+      bool "Enable I2S output interface"
+
+      default y if IDF_TARGET="esp8266"
+      default n
+
+endmenu

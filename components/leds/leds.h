@@ -34,6 +34,3 @@ void leds_set_format_bgr(struct leds *leds, uint8_t *data, size_t len, struct le
 void leds_set_format_grb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
 void leds_set_format_rgba(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
 void leds_set_format_rgbw(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
-
-/* spi.c */
-int leds_tx_spi(const struct leds_options *options, enum spi_mode spi_mode, void *buf, size_t size);

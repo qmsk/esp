@@ -14,12 +14,20 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
   switch (protocol) {
     case LEDS_PROTOCOL_APA102:
     case LEDS_PROTOCOL_P9813:
+    #if LEDS_SPI_ENABLED
       return LEDS_INTERFACE_SPI;
+    #else
+      return LEDS_INTERFACE_NONE;
+    #endif
 
     case LEDS_PROTOCOL_WS2812B:
     case LEDS_PROTOCOL_SK6812_GRBW:
     case LEDS_PROTOCOL_WS2811:
+    #if LEDS_UART_ENABLED
       return LEDS_INTERFACE_UART;
+    #else
+      return LEDS_INTERFACE_NONE;
+    #endif
 
     default:
       // unknown

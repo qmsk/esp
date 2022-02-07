@@ -1,5 +1,5 @@
-#include "ws2811.h"
-#include "leds.h"
+#include "../../ws2811.h"
+#include "../../leds.h"
 
 #include <logging.h>
 

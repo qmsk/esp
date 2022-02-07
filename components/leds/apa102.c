@@ -1,5 +1,6 @@
 #include "apa102.h"
 #include "leds.h"
+#include "spi.h"
 
 #include <logging.h>
 
@@ -48,8 +49,13 @@ int leds_init_apa102(struct leds_protocol_apa102 *protocol, const struct leds_op
 int leds_tx_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
       return leds_tx_spi(options, APA102_SPI_MODE, protocol->packet, protocol->packet_size);
+  #endif
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);

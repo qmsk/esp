@@ -26,8 +26,12 @@ void sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned c
 
 unsigned sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol, unsigned count);
 
-/* sk6812grbw_uart.c */
-int leds_tx_uart_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);
+#if CONFIG_LEDS_UART_ENABLED
+  /* interfaces/uart/sk6812grbw.c */
+  int leds_tx_uart_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);
+#endif
 
-/* sk6812grbw_i2s.c */
-int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);
+#if CONFIG_LEDS_I2S_ENABLED
+  /* interfaces/i2s/sk6812grbw.c */
+  int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count);
+#endif

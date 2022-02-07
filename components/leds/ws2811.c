@@ -18,11 +18,18 @@ int leds_init_ws2811(struct leds_protocol_ws2811 *protocol, const struct leds_op
 int leds_tx_ws2811(struct leds_protocol_ws2811 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
       return leds_tx_uart_ws2811(options, protocol->pixels, options->count);
+  #endif
 
+  #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
       return leds_tx_i2s_ws2811(options, protocol->pixels, options->count);
+  #endif
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);

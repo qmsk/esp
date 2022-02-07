@@ -1,5 +1,6 @@
 #include "p9813.h"
 #include "leds.h"
+#include "spi.h"
 
 #include <logging.h>
 
@@ -48,8 +49,13 @@ int leds_init_p9813(struct leds_protocol_p9813 *protocol, const struct leds_opti
 int leds_tx_p9813(struct leds_protocol_p9813 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
       return leds_tx_spi(options, P9813_SPI_MODE, protocol->packet, protocol->packet_size);
+  #endif
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);

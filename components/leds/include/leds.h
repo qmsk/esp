@@ -1,10 +1,22 @@
-#ifndef __LEDS_H__
-#define __LEDS_H__
+#pragma once
 
-#include <gpio_out.h>
-#include <i2s_out.h>
-#include <spi_master.h>
-#include <uart.h>
+#include <sdkconfig.h>
+
+#if CONFIG_LEDS_GPIO_ENABLED
+# include <gpio_out.h>
+#endif
+
+#if CONFIG_LEDS_I2S_ENABLED
+# include <i2s_out.h>
+#endif
+
+#if CONFIG_LEDS_SPI_ENABLED
+# include <spi_master.h>
+#endif
+
+#if CONFIG_LEDS_UART_ENABLED
+# include <uart.h>
+#endif
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -14,26 +26,36 @@
 struct leds;
 
 enum leds_interface {
+  /* Dummy, no-op TX */
+  LEDS_INTERFACE_NONE,
+
+#if CONFIG_LEDS_SPI_ENABLED
   /*
    * Supported protocols:
    *  - LEDS_PROTOCOL_APA102
    *  - LEDS_PROTOCOL_P9813
    */
   LEDS_INTERFACE_SPI            = 1,
+#endif
 
+#if CONFIG_LEDS_UART_ENABLED
   /* Supported protocols:
    *  - LEDS_PROTOCOL_WS2812B
    *  - LEDS_PROTOCOL_SK6812_GRBW
    *  - LEDS_PROTOCOL_WS2811
    */
   LEDS_INTERFACE_UART           = 2,
+#endif
 
+#if CONFIG_LEDS_I2S_ENABLED
   /* Supported protocols:
    *  - LEDS_PROTOCOL_WS2812B
    *  - LEDS_PROTOCOL_WS2811
    *  - LEDS_PROTOCOL_SK6812_GRBW
    */
   LEDS_INTERFACE_I2S           = 3,
+#endif
+
 };
 
 enum leds_protocol {
@@ -90,22 +112,30 @@ struct leds_options {
 
   unsigned count;
 
+#if CONFIG_LEDS_SPI_ENABLED
   /** LEDS_INTERFACE_SPI */
   struct spi_master *spi_master;
   enum spi_mode spi_mode_bits; /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
   enum spi_clock spi_clock;
+#endif
 
+#if CONFIG_LEDS_UART_ENABLED
   /** LEDS_INTERFACE_UART */
   struct uart *uart;
   SemaphoreHandle_t uart_pin_mutex;
+#endif
 
+#if CONFIG_LEDS_I2S_ENABLED
   /** LEDS_INTERFACE_I2S */
   struct i2s_out *i2s_out;
   SemaphoreHandle_t i2s_pin_mutex;
+#endif
 
+#if CONFIG_LEDS_GPIO_ENABLED
   /** GPIO for output multiplexing */
   struct gpio_out *gpio_out;
   enum gpio_out_pins gpio_out_pins;
+#endif
 };
 
 /*
@@ -186,7 +216,5 @@ int leds_set_format(struct leds *leds, enum leds_format format, void *data, size
  */
 int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame);
 
-/* Send frames on output interface */
+/* Output frames on interface */
 int leds_tx(struct leds *leds);
-
-#endif

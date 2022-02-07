@@ -10,7 +10,7 @@
       <template v-if="config">
         <form action="/api/config" method="post">
           <fieldset v-for="mod in config.modules" :key="mod.name">
-            <legend>{{ mod.name }}</legend>
+            <legend>{{ modName(mod) }}</legend>
             <div class="module-description" v-if="mod.description">
               <p v-for="line in splitlines(mod.description)">{{ line }}</p>
             </div>
@@ -105,8 +105,19 @@ export default {
     splitlines(description) {
       return description.split('\n');
     },
+    modName(mod) {
+      if (mod.index) {
+        return mod.name + mod.index.toString();
+      } else {
+        return mod.name;
+      }
+    },
     fieldName(mod, tab) {
-      return '[' + mod.name + ']' + tab.name;
+      if (mod.index) {
+        return '[' + mod.name + mod.index.toString() + ']' + tab.name;
+      } else {
+        return '[' + mod.name + ']' + tab.name;
+      }
     },
     restoreInvalid(event) {
       const input = event.target;

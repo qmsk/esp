@@ -200,11 +200,11 @@ static int config_api_write_configtab(struct json_writer *w, const struct config
   );
 }
 
-static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod)
+static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod, const struct configtab *table)
 {
   int err = 0;
 
-  for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
+  for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
     if ((err = config_api_write_configtab(w, tab))) {
       LOG_ERROR("config_api_write_configtab: mod=%s tab=%s", mod->name, tab->name);
       return err;
@@ -214,12 +214,13 @@ static int config_api_write_configmod_table(struct json_writer *w, const struct 
   return err;
 }
 
-static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod)
+static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod, int index, const struct configtab *table)
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "name", mod->name) ||
     (mod->description ? JSON_WRITE_MEMBER_STRING(w, "description", mod->description) : 0) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod))
+    (index ? JSON_WRITE_MEMBER_INT(w, "index", index) : 0) ||
+    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod, table)) // assume all are the same
   );
 }
 
@@ -228,9 +229,18 @@ static int config_api_write_config_modules(struct json_writer *w, const struct c
   int err = 0;
 
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
-    if ((err = config_api_write_configmod(w, mod))) {
-      LOG_ERROR("config_api_write_configmod: mod=%s", mod->name);
-      return err;
+    if (mod->tables_count) {
+      for (int i = 0; i < mod->tables_count; i++) {
+        if ((err = config_api_write_configmod(w, mod, i + 1, mod->tables[i]))) {
+          LOG_ERROR("config_api_write_configmod: mod=%s", mod->name);
+          return err;
+        }
+      }
+    } else {
+      if ((err = config_api_write_configmod(w, mod, 0, mod->table))) {
+        LOG_ERROR("config_api_write_configmod: mod=%s", mod->name);
+        return err;
+      }
     }
   }
 

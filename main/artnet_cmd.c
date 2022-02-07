@@ -13,6 +13,11 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   struct artnet_input_options artnet_input_options[ARTNET_INPUT_COUNT];
   struct artnet_output_options artnet_output_options[ARTNET_OUTPUT_COUNT];
 
+  if (!artnet) {
+    LOG_WARN("artnet disabled");
+    return 1;
+  }
+
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
@@ -90,11 +95,14 @@ static void print_artnet_stats_counter(struct stats_counter counter, const char 
 
 int artnet_cmd_stats(int argc, char **argv, void *ctx)
 {
-  struct artnet_stats stats;
-  unsigned input_count = artnet_get_output_count(artnet);
-  unsigned output_count = artnet_get_output_count(artnet);
+  if (!artnet) {
+    LOG_WARN("artnet disabled");
+    return 1;
+  }
 
-  // receiver stats
+  // network stats
+  struct artnet_stats stats;
+
   artnet_get_stats(artnet, &stats);
 
   printf("Art-Net: \n");
@@ -111,6 +119,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   printf("\n");
 
   // input stats
+  unsigned input_count = artnet_get_output_count(artnet);
+
   for (int i = 0; i < input_count; i++) {
     struct artnet_input_stats input_stats = {};
 
@@ -128,6 +138,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   }
 
   // output stats
+  unsigned output_count = artnet_get_output_count(artnet);
+
   for (int i = 0; i < output_count; i++) {
     struct artnet_output_stats output_stats = {};
 
@@ -154,6 +166,11 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 int artnet_cmd_test(int argc, char **argv, void *ctx)
 {
   int err;
+
+  if (!artnet) {
+    LOG_WARN("artnet disabled");
+    return 1;
+  }
 
   if ((err = artnet_test_outputs(artnet))) {
     LOG_ERROR("artnet_test_outputs");

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "artnet.h"
 #include "http.h"
 #include "wifi.h"
 
@@ -26,6 +27,16 @@ const struct configmod config_modules[] = {
   { "http",
     .description = "HTTP API + Web frontend with optional HTTP basic authentication.",
     .table = http_configtab,
+  },
+  { "artnet",
+    .description = (
+      "Art-Net receiver on UDP port 6454."
+      "\n"
+      "Art-Net addresses consist of the net (0-127) + subnet (0-15) + universe (0-15)."
+      " All outputs share the same net/subnet, each output uses a different universe."
+      " Up to four outputs are supported."
+    ),
+    .table = artnet_configtab,
   },
   {}
 };

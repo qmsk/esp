@@ -1,3 +1,4 @@
+#include "artnet.h"
 #include "console.h"
 #include "config.h"
 #include "log.h"
@@ -73,6 +74,12 @@ void app_main(void)
     abort();
   }
 
+  if ((err = init_artnet())) {
+    LOG_ERROR("init_artnet");
+    user_alert(USER_ALERT_ERROR_SETUP);
+    abort();
+  }
+
   LOG_INFO("start");
 
   if ((err = start_console())) {
@@ -82,6 +89,11 @@ void app_main(void)
 
   if ((err = start_http())) {
     LOG_ERROR("start_http");
+    abort();
+  }
+
+  if ((err = start_artnet())) {
+    LOG_ERROR("start_artnet");
     abort();
   }
 

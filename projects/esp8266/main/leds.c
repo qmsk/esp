@@ -241,10 +241,10 @@ static int init_leds_spi(struct leds_state *state, int index, const struct leds_
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u spi_mode_bits=%04x spi_clock=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.spi_mode_bits, options.spi_clock, options.gpio_out_pins, options.count);
+  LOG_INFO("leds%d: protocol=%u spi_mode_bits=%04x spi_clock=%u gpio_out_pins=%04x count=%u", index + 1, options.protocol, options.spi_mode_bits, options.spi_clock, options.gpio_out_pins, options.count);
 
   if ((err = leds_new(&state->leds, &options))) {
-    LOG_ERROR("spi-leds%d: leds_new", index);
+    LOG_ERROR("leds%d: leds_new", index + 1);
     return err;
   }
 
@@ -268,10 +268,10 @@ static int init_leds_uart(struct leds_state *state, int index, const struct leds
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.gpio_out_pins, options.count);
+  LOG_INFO("leds%d: protocol=%u gpio_out_pins=%04x count=%u", index + 1, options.protocol, options.gpio_out_pins, options.count);
 
   if ((err = leds_new(&state->leds, &options))) {
-    LOG_ERROR("spi-leds%d: leds_new", index);
+    LOG_ERROR("leds%d: leds_new", index + 1);
     return err;
   }
 
@@ -296,10 +296,10 @@ static int init_leds_i2s(struct leds_state *state, int index, const struct leds_
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
-  LOG_INFO("spi-leds%d: protocol=%u gpio_out_pins=%04x count=%u", index, options.protocol, options.gpio_out_pins, options.count);
+  LOG_INFO("leds%d: protocol=%u gpio_out_pins=%04x count=%u", index + 1, options.protocol, options.gpio_out_pins, options.count);
 
   if ((err = leds_new(&state->leds, &options))) {
-    LOG_ERROR("spi-leds%d: leds_new", index);
+    LOG_ERROR("leds%d: leds_new", index +'1');
     return err;
   }
 
@@ -359,21 +359,21 @@ int init_leds()
     switch (interface) {
       case LEDS_INTERFACE_SPI:
         if ((err = init_leds_spi(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_leds_spi", i);
+          LOG_ERROR("leds%d: init_leds_spi", i + 1);
           return err;
         }
         break;
 
       case LEDS_INTERFACE_UART:
         if ((err = init_leds_uart(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_leds_uart", i);
+          LOG_ERROR("leds%d: init_leds_uart", i + 1);
           return err;
         }
         break;
 
       case LEDS_INTERFACE_I2S:
         if ((err = init_leds_i2s(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_leds_i2s", i);
+          LOG_ERROR("leds%d: init_leds_i2s", i + 1);
           return err;
         }
         break;
@@ -386,7 +386,7 @@ int init_leds()
     if (config->test_enabled) {
       for (enum leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
         if ((err = test_leds(state, mode))) {
-          LOG_ERROR("spi-leds%d: test_leds", i);
+          LOG_ERROR("leds%d: test_leds", i + 1);
           return err;
         }
       }
@@ -394,7 +394,7 @@ int init_leds()
 
     if (config->artnet_enabled) {
       if ((err = init_leds_artnet(state, i, config))) {
-        LOG_ERROR("spi-leds%d: init_leds_artnet", i);
+        LOG_ERROR("leds%d: init_leds_artnet", i + 1);
         return err;
       }
     }

@@ -27,7 +27,7 @@ const struct configmod config_modules[] = {
   },
   { "atx_psu",
     .description = (
-      "Control ATX-PSU based on spi-leds output."
+      "Control ATX-PSU based on leds output."
       "\n"
       "The ATX-PSU will be powered on when spi-led outputs are active,"
       " and powered off into standby mode if all spi-led outputs are idle (zero-valued)."

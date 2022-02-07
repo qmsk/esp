@@ -100,7 +100,7 @@ static const struct cmd cli_commands[] = {
   { "artnet", .describe = "ArtNet receiver",
       .subcommands = &artnet_cmdtab,
   },
-  { "spi-leds", .describe = "SPI LEDs",
+  { "leds", .describe = "LEDs",
       .subcommands = &leds_cmdtab,
   },
   { "dmx", .describe = "DMX output",

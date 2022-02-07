@@ -5,7 +5,7 @@
 #include <logging.h>
 #include <leds.h>
 
-#define LEDS_ARTNET_TASK_NAME_FMT "spi-leds%d"
+#define LEDS_ARTNET_TASK_NAME_FMT "leds%d"
 #define LEDS_ARTNET_TASK_STACK 1024
 #define LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
@@ -196,7 +196,7 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
 {
   char task_name[configMAX_TASK_NAME_LEN];
 
-  LOG_INFO("spi-leds%u: mode=%x universe start=%u count=%u step=%u leds=%u", index,
+  LOG_INFO("leds%u: mode=%x universe start=%u count=%u step=%u leds=%u", index + 1,
     config->artnet_mode,
     config->artnet_universe_start,
     config->artnet_universe_count,
@@ -223,7 +223,7 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
   }
 
   // task
-  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, index);
+  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, index + 1);
 
   if (xTaskCreate(&leds_artnet_main, task_name, LEDS_ARTNET_TASK_STACK, state, LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
     LOG_ERROR("xTaskCreate");
@@ -234,13 +234,13 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
 
   for (uint8_t i = 0; i < config->artnet_universe_count; i++) {
     struct artnet_output_options options = {
-      .port = (enum artnet_port) (index), // use spi-ledsX index as output port
+      .port = (enum artnet_port) (index), // use ledsX index as output port
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
       .task = state->artnet.task,
     };
 
-    LOG_INFO("spi-leds%u: artnet output port=%d address=%04x index=%u", index, options.port, options.address, options.index);
+    LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", index + 1, options.port, options.address, options.index);
 
     if (add_artnet_output(options, state->artnet.queues[i])) {
       LOG_ERROR("add_artnet_output");

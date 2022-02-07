@@ -4,40 +4,20 @@
 
 struct leds_config leds_configs[LEDS_COUNT] = {
   [0] = {
-    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_OFF,
-    .artnet_mode = LEDS_FORMAT_BGR,
-    .artnet_universe_count  = 1,
-    .artnet_universe_step   = 1,
-    .artnet_universe_leds   = LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [1] = {
-    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_OFF,
-    .artnet_mode = LEDS_FORMAT_BGR,
-    .artnet_universe_count  = 1,
-    .artnet_universe_step   = 1,
-    .artnet_universe_leds   = LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [2] = {
-    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_OFF,
-    .artnet_mode = LEDS_FORMAT_BGR,
-    .artnet_universe_count  = 1,
-    .artnet_universe_step   = 1,
-    .artnet_universe_leds   = LEDS_ARTNET_UNIVERSE_LEDS,
   },
   [3] = {
-    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_OFF,
-    .artnet_mode = LEDS_FORMAT_BGR,
-    .artnet_universe_count  = 1,
-    .artnet_universe_step   = 1,
-    .artnet_universe_leds   = LEDS_ARTNET_UNIVERSE_LEDS,
   },
 };
 
@@ -81,7 +61,7 @@ const struct config_enum leds_gpio_mode_enum[] = {
   {}
 };
 
-const struct config_enum leds_artnet_mode_enum[] = {
+const struct config_enum leds_format_enum[] = {
   { "RGB",  LEDS_FORMAT_RGB  },
   { "BGR",  LEDS_FORMAT_BGR  },
   { "GRB",  LEDS_FORMAT_GRB  },

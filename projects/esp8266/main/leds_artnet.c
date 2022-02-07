@@ -114,12 +114,12 @@ static void leds_artnet_out(struct leds_state *state, unsigned index, struct art
 
   // set LEDs from artnet data using configured byte format
   struct leds_format_params params = {
-    .count = state->config->artnet_universe_leds,
-    .offset = index * state->config->artnet_universe_leds,
+    .count = state->config->artnet_dmx_leds,
+    .offset = index * state->config->artnet_dmx_leds,
     .segment = state->config->artnet_leds_segment,
   };
 
-  leds_set_format(state->leds, state->config->artnet_mode, data, len, params);
+  leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
 }
 
 static void leds_artnet_main(void *ctx)
@@ -196,26 +196,32 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
 {
   char task_name[configMAX_TASK_NAME_LEN];
 
-  LOG_INFO("leds%u: mode=%x universe start=%u count=%u step=%u leds=%u", index + 1,
-    config->artnet_mode,
+  LOG_INFO("leds%u: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,
     config->artnet_universe_start,
     config->artnet_universe_count,
     config->artnet_universe_step,
-    config->artnet_universe_leds
+    config->artnet_dmx_addr,
+    config->artnet_dmx_leds,
+    config_enum_to_string(leds_format_enum, config->artnet_leds_format),
+    config->artnet_leds_segment
   );
+
+  if (config->artnet_universe_count) {
+    state->artnet.universe_count = config->artnet_universe_count;
+  } else {
+    state->artnet.universe_count = 1;
+  }
 
   if (!(state->artnet.dmx = calloc(1, sizeof(*state->artnet.dmx)))) {
     LOG_ERROR("calloc");
     return -1;
   }
-  if (!(state->artnet.queues = calloc(config->artnet_universe_count, sizeof(*state->artnet.queues)))) {
+  if (!(state->artnet.queues = calloc(state->artnet.universe_count, sizeof(*state->artnet.queues)))) {
     LOG_ERROR("calloc");
     return -1;
   }
 
-  state->artnet.universe_count = config->artnet_universe_count;
-
-  for (uint8_t i = 0; i < config->artnet_universe_count; i++) {
+  for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
     if (!(state->artnet.queues[i] = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
       LOG_ERROR("xQueueCreate");
       return -1;
@@ -232,7 +238,7 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
     LOG_DEBUG("task=%p", state->artnet.task);
   }
 
-  for (uint8_t i = 0; i < config->artnet_universe_count; i++) {
+  for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
     struct artnet_output_options options = {
       .port = (enum artnet_port) (index), // use ledsX index as output port
       .index = i,

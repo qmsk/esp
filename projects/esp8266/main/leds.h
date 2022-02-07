@@ -31,12 +31,12 @@ struct leds_config {
   bool test_enabled;
 
   bool artnet_enabled;
-  int artnet_mode;
   uint16_t artnet_universe_start;
   uint16_t artnet_universe_count;
   uint16_t artnet_universe_step;
-  uint16_t artnet_universe_leds;
   uint16_t artnet_dmx_addr;
+  uint16_t artnet_dmx_leds;
+  int artnet_leds_format;
   uint16_t artnet_leds_segment;
 };
 

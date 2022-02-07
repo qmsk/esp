@@ -483,7 +483,7 @@ Return LED config/state.
 ### `POST /api/leds`
 
 Accepts `application/x-www-form-urlencoded` form parameters using the following syntax:
-* `id=%d` (0-3)
+* `index=%d` (1-4)
 * `all=%x[.%x]` (`RRGGBB` or `RRGGBB.XX`)
 * `%u=%x[.%x]` (`RRGGBB` or `RRGGBB.XX`)
 
@@ -500,5 +500,5 @@ Returns `[{"mode": ...}]` parameters usable for `POST`.
 
 Accepts `application/x-www-form-urlencoded` form parameters using the following syntax:
 
-* `id=%d` (0-3)
+* `index=%d` (1-4)
 * `mode=%s` (see `GET /api/leds/test`)

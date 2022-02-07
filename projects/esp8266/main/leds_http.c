@@ -21,14 +21,14 @@ static int leds_api_write_object_enabled(struct json_writer *w, int index, struc
   );
 }
 
-static int leds_api_write_object(struct json_writer *w, int id, struct leds_state *state)
+static int leds_api_write_object(struct json_writer *w, int index, struct leds_state *state)
 {
   bool enabled = state->config->enabled && state->leds;
 
   return (
-        JSON_WRITE_MEMBER_UINT(w, "id", id)
+        JSON_WRITE_MEMBER_UINT(w, "index", index + 1)
     ||  JSON_WRITE_MEMBER_BOOL(w, "enabled", enabled)
-    ||  (enabled ? leds_api_write_object_enabled(w, id, state) : 0)
+    ||  (enabled ? leds_api_write_object_enabled(w, index, state) : 0)
   );
 }
 
@@ -111,14 +111,12 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
 
   // XXX: will only update last state
   if (strcmp(key, "id") == 0) {
-    int id;
-
-    if (sscanf(value, "%d", &id) <= 0) {
+    if (sscanf(value, "%d", &index) <= 0) {
       return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (id < 0 || id >= LEDS_COUNT) {
+    } else if (index <= 0 || index > LEDS_COUNT) {
       return HTTP_UNPROCESSABLE_ENTITY;
     } else {
-      req->state = &leds_states[id];
+      req->state = &leds_states[index - 1];
     }
 
     return 0;
@@ -250,14 +248,14 @@ int leds_api_test_get(struct http_request *request, struct http_response *respon
 
 /* POST /api/leds/test */
 struct leds_api_test_params {
-  int id;
+  int index;
   enum leds_test_mode mode;
 };
 
 int leds_api_test_params_set(struct leds_api_test_params *params, const char *key, const char *value)
 {
-  if (strcmp(key, "id") == 0) {
-    if (sscanf(value, "%d", &params->id) <= 0) {
+  if (strcmp(key, "index") == 0) {
+    if (sscanf(value, "%d", &params->index) <= 0) {
       return HTTP_UNPROCESSABLE_ENTITY;
     }
   } else if (strcmp(key, "mode") == 0) {
@@ -327,11 +325,11 @@ int leds_api_test_post(struct http_request *request, struct http_response *respo
   // decode
   struct leds_state *state;
 
-  if (params.id < 0 || params.id >= LEDS_COUNT) {
-    LOG_WARN("invalid id=%d", params.id);
+  if (params.index <= 0 || params.index > LEDS_COUNT) {
+    LOG_WARN("invalid index=%d", params.index);
     return HTTP_UNPROCESSABLE_ENTITY;
   } else {
-    state = &leds_states[params.id];
+    state = &leds_states[params.index - 1];
   }
 
   // XXX: may block for some time

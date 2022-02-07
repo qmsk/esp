@@ -66,47 +66,43 @@ void app_main(void)
   if ((err = init_wifi())) {
     LOG_ERROR("init_wifi");
     user_alert(USER_ALERT_ERROR_SETUP);
-    abort();
   }
 
   if ((err = init_http())) {
     LOG_ERROR("init_http");
     user_alert(USER_ALERT_ERROR_SETUP);
-    abort();
   }
 
   if ((err = init_artnet())) {
     LOG_ERROR("init_artnet");
     user_alert(USER_ALERT_ERROR_SETUP);
-    abort();
   }
 
   if ((err = init_leds())) {
     LOG_ERROR("init_leds");
     user_alert(USER_ALERT_ERROR_SETUP);
-    abort();
   }
 
   LOG_INFO("start");
 
   if ((err = start_console())) {
     LOG_ERROR("start_console");
-    abort();
+    user_alert(USER_ALERT_ERROR_START);
   }
 
   if ((err = start_http())) {
     LOG_ERROR("start_http");
-    abort();
+    user_alert(USER_ALERT_ERROR_START);
   }
 
   if ((err = start_artnet())) {
     LOG_ERROR("start_artnet");
-    abort();
+    user_alert(USER_ALERT_ERROR_START);
   }
 
   if ((err = start_leds())) {
     LOG_ERROR("start_leds");
-    abort();
+    user_alert(USER_ALERT_ERROR_START);
   }
 
   LOG_INFO("fini");

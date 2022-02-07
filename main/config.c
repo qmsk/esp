@@ -34,6 +34,12 @@ const struct configmod config_modules[] = {
   },
   // TODO: config support for multiple instances of a table
   { "leds",
+    .description = (
+      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
+      "\n"
+      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
+      " an external driver chip with active-high/low output-enable GPIO lines."
+    ),
     .tables = leds_configtabs,
     .tables_count = LEDS_COUNT,
     .alias = "spi-leds",

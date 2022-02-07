@@ -129,6 +129,11 @@ int artnet_api_handler(struct http_request *request, struct http_response *respo
     return err;
   }
 
+  if (!artnet) {
+    // disabled
+    return HTTP_NO_CONTENT;
+  }
+
   if ((err = write_http_response_json(response, artnet_api_write, artnet))) {
     LOG_WARN("write_http_response_json -> artnet_api_write");
     return err;

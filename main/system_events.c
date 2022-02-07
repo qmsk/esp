@@ -1,4 +1,5 @@
 #include "system.h"
+#include "system_state.h"
 #include "user.h"
 
 #include <logging.h>
@@ -16,16 +17,15 @@ static void on_ip_sta_got_ip(ip_event_got_ip_t *event)
 
   user_state(USER_STATE_CONNECTED);
 
-  // TODO: update_user_ipv4_address(event->ip_info.ip);
+  system_netif_connected(event->esp_netif);
 }
 
 static void on_ip_sta_lost_ip()
 {
   LOG_INFO(" ");
 
-  user_state(USER_STATE_DISCONNECTED);
-
-  // TODO: start_wifi_reconnect();
+  // assume only one and the same interface
+  system_netif_disconnected();
 }
 
 static void on_ip_ap_sta_ip_assigned(ip_event_ap_staipassigned_t *event)

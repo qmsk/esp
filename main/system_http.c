@@ -166,6 +166,7 @@ static int system_api_write_interface_object(const struct system_interface_info 
   const char *interface = system_interface_str(info);
 
   return JSON_WRITE_MEMBER_OBJECT(w, interface,
+    JSON_WRITE_MEMBER_STRING(w, "state", "UP") ||
     (info->hostname ? JSON_WRITE_MEMBER_STRING(w, "hostname", info->hostname) : JSON_WRITE_MEMBER_NULL(w, "hostname")) ||
     JSON_WRITE_MEMBER_STRING(w, "dhcp_server_status", system_interface_dhcp_status_str(info->dhcps_status)) ||
     JSON_WRITE_MEMBER_STRING(w, "dhcp_client_status", system_interface_dhcp_status_str(info->dhcpc_status)) ||

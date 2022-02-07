@@ -24,5 +24,11 @@ const struct http_route http_routes[] = {
   /* artnet_http.c */
   { "GET",  "api/artnet",         artnet_api_handler,         NULL },
 
+  /* leds_http.c */
+  { "GET",  "api/leds",           leds_api_get,           NULL },
+  { "POST", "api/leds",           leds_api_post,          NULL },
+
+  { "GET",  "api/leds/test",      leds_api_test_get,      NULL },
+  { "POST", "api/leds/test",      leds_api_test_post,     NULL },
   {}
 };

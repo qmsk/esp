@@ -1,5 +1,5 @@
 #include "ws2812b.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -119,7 +119,7 @@ static const uint16_t ws2812b_lut[] = {
 };
 
 
-int spi_leds_tx_uart_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count)
+int leds_tx_uart_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count)
 {
   struct uart_options uart_options = {
     .clock_div    = UART_BAUD_2500000,

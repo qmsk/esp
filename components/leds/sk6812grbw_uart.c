@@ -1,5 +1,5 @@
 #include "sk6812grbw.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -70,7 +70,7 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-int spi_leds_tx_uart_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
+int leds_tx_uart_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
 {
   struct uart_options uart_options = {
     .clock_div    = UART_BAUD_3333333,

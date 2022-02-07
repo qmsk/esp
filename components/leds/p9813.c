@@ -1,5 +1,5 @@
 #include "p9813.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -40,16 +40,16 @@ static int p9813_new_packet(struct p9813_packet **packetp, size_t *sizep, unsign
   return 0;
 }
 
-int spi_leds_init_p9813(struct spi_leds_protocol_p9813 *protocol, const struct spi_leds_options *options)
+int leds_init_p9813(struct leds_protocol_p9813 *protocol, const struct leds_options *options)
 {
   return p9813_new_packet(&protocol->packet, &protocol->packet_size, options->count);
 }
 
-int spi_leds_tx_p9813(struct spi_leds_protocol_p9813 *protocol, const struct spi_leds_options *options)
+int leds_tx_p9813(struct leds_protocol_p9813 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
-    case SPI_LEDS_INTERFACE_SPI:
-      return spi_leds_tx_spi(options, P9813_SPI_MODE, protocol->packet, protocol->packet_size);
+    case LEDS_INTERFACE_SPI:
+      return leds_tx_spi(options, P9813_SPI_MODE, protocol->packet, protocol->packet_size);
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
@@ -57,7 +57,7 @@ int spi_leds_tx_p9813(struct spi_leds_protocol_p9813 *protocol, const struct spi
   }
 }
 
-void p9813_set_frame(struct spi_leds_protocol_p9813 *protocol, unsigned index, struct spi_led_color color)
+void p9813_set_frame(struct leds_protocol_p9813 *protocol, unsigned index, struct spi_led_color color)
 {
   protocol->packet->frames[index] = (struct p9813_frame) {
     .control = P9813_CONTROL_BYTE(color.b, color.g, color.r),
@@ -67,7 +67,7 @@ void p9813_set_frame(struct spi_leds_protocol_p9813 *protocol, unsigned index, s
   };
 }
 
-void p9813_set_frames(struct spi_leds_protocol_p9813 *protocol, unsigned count, struct spi_led_color color)
+void p9813_set_frames(struct leds_protocol_p9813 *protocol, unsigned count, struct spi_led_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->packet->frames[index] = (struct p9813_frame) {
@@ -84,7 +84,7 @@ static inline bool p9813_frame_active(const struct p9813_frame frame)
   return frame.b || frame.g || frame.r;
 }
 
-unsigned p9813_count_active(struct spi_leds_protocol_p9813 *protocol, unsigned count)
+unsigned p9813_count_active(struct leds_protocol_p9813 *protocol, unsigned count)
 {
   unsigned active = 0;
 

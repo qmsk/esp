@@ -1,5 +1,5 @@
 #include "sk6812grbw.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -36,7 +36,7 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-int spi_leds_tx_i2s_sk6812grbw(const struct spi_leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
+int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_pixel *pixels, unsigned count)
 {
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit

@@ -1,5 +1,5 @@
 #include "apa102.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -40,16 +40,16 @@ static int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsi
   return 0;
 }
 
-int spi_leds_init_apa102(struct spi_leds_protocol_apa102 *protocol, const struct spi_leds_options *options)
+int leds_init_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options)
 {
   return apa102_new_packet(&protocol->packet, &protocol->packet_size, options->count);
 }
 
-int spi_leds_tx_apa102(struct spi_leds_protocol_apa102 *protocol, const struct spi_leds_options *options)
+int leds_tx_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
-    case SPI_LEDS_INTERFACE_SPI:
-      return spi_leds_tx_spi(options, APA102_SPI_MODE, protocol->packet, protocol->packet_size);
+    case LEDS_INTERFACE_SPI:
+      return leds_tx_spi(options, APA102_SPI_MODE, protocol->packet, protocol->packet_size);
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
@@ -57,7 +57,7 @@ int spi_leds_tx_apa102(struct spi_leds_protocol_apa102 *protocol, const struct s
   }
 }
 
-void apa102_set_frame(struct spi_leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color)
+void apa102_set_frame(struct leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color)
 {
   protocol->packet->frames[index] = (struct apa102_frame) {
     .global = APA102_GLOBAL_BYTE(color.dimmer),
@@ -67,7 +67,7 @@ void apa102_set_frame(struct spi_leds_protocol_apa102 *protocol, unsigned index,
   };
 }
 
-void apa102_set_frames(struct spi_leds_protocol_apa102 *protocol, unsigned count, struct spi_led_color color)
+void apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct spi_led_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->packet->frames[index] = (struct apa102_frame) {
@@ -84,7 +84,7 @@ static inline bool apa102_frame_active(const struct apa102_frame frame)
   return (frame.b || frame.g || frame.r) && frame.global > APA102_GLOBAL_BYTE(0);
 }
 
-unsigned apa102_count_active(struct spi_leds_protocol_apa102 *protocol, unsigned count)
+unsigned apa102_count_active(struct leds_protocol_apa102 *protocol, unsigned count)
 {
   unsigned active = 0;
 

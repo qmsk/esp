@@ -1,5 +1,5 @@
 #include "ws2811.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -65,7 +65,7 @@ static const uint16_t ws2811_lut[] = {
   [0b1111] = WS2811_LUT(0b1111),
 };
 
-int spi_leds_tx_uart_ws2811(const struct spi_leds_options *options, union ws2811_pixel *pixels, unsigned count)
+int leds_tx_uart_ws2811(const struct leds_options *options, union ws2811_pixel *pixels, unsigned count)
 {
   struct uart_options uart_options = {
     .clock_div    = UART_BAUD_4000000,

@@ -1,5 +1,5 @@
 #include "ws2812b.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
@@ -36,7 +36,7 @@ static const uint16_t ws2812b_lut[] = {
   [0b1111] = WS2812B_LUT(0b1111),
 };
 
-int spi_leds_tx_i2s_ws2812b(const struct spi_leds_options *options, union ws2812b_pixel *pixels, unsigned count)
+int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count)
 {
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit

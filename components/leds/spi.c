@@ -1,8 +1,8 @@
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
-int spi_leds_tx_spi(const struct spi_leds_options *options, enum spi_mode spi_mode, void *buf, size_t size)
+int leds_tx_spi(const struct leds_options *options, enum spi_mode spi_mode, void *buf, size_t size)
 {
   struct spi_write_options spi_write_options = {
     .mode   = options->spi_mode_bits | spi_mode | SPI_MODE_SET,

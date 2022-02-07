@@ -1,11 +1,11 @@
 #include "ws2812b.h"
-#include "spi_leds.h"
+#include "leds.h"
 
 #include <logging.h>
 
 #include <stdlib.h>
 
-int spi_leds_init_ws2812b(struct spi_leds_protocol_ws2812b *protocol, const struct spi_leds_options *options)
+int leds_init_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
 {
   if (!(protocol->pixels = calloc(options->count, sizeof(*protocol->pixels)))) {
     LOG_ERROR("malloc");
@@ -15,14 +15,14 @@ int spi_leds_init_ws2812b(struct spi_leds_protocol_ws2812b *protocol, const stru
   return 0;
 }
 
-int spi_leds_tx_ws2812b(struct spi_leds_protocol_ws2812b *protocol, const struct spi_leds_options *options)
+int leds_tx_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
-    case SPI_LEDS_INTERFACE_UART:
-      return spi_leds_tx_uart_ws2812b(options, protocol->pixels, options->count);
+    case LEDS_INTERFACE_UART:
+      return leds_tx_uart_ws2812b(options, protocol->pixels, options->count);
 
-    case SPI_LEDS_INTERFACE_I2S:
-      return spi_leds_tx_i2s_ws2812b(options, protocol->pixels, options->count);
+    case LEDS_INTERFACE_I2S:
+      return leds_tx_i2s_ws2812b(options, protocol->pixels, options->count);
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
@@ -30,7 +30,7 @@ int spi_leds_tx_ws2812b(struct spi_leds_protocol_ws2812b *protocol, const struct
   }
 }
 
-void ws2812b_set_frame(struct spi_leds_protocol_ws2812b *protocol, unsigned index, struct spi_led_color color)
+void ws2812b_set_frame(struct leds_protocol_ws2812b *protocol, unsigned index, struct spi_led_color color)
 {
   protocol->pixels[index] = (union ws2812b_pixel) {
     .b = color.b,
@@ -39,7 +39,7 @@ void ws2812b_set_frame(struct spi_leds_protocol_ws2812b *protocol, unsigned inde
   };
 }
 
-void ws2812b_set_frames(struct spi_leds_protocol_ws2812b *protocol, unsigned count, struct spi_led_color color)
+void ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, struct spi_led_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->pixels[index] = (union ws2812b_pixel) {
@@ -55,7 +55,7 @@ static inline bool ws2812b_pixel_active(const union ws2812b_pixel pixel)
   return pixel.b || pixel.r || pixel.g;
 }
 
-unsigned ws2812b_count_active(struct spi_leds_protocol_ws2812b *protocol, unsigned count)
+unsigned ws2812b_count_active(struct leds_protocol_ws2812b *protocol, unsigned count)
 {
   unsigned active = 0;
 

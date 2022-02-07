@@ -64,7 +64,11 @@ struct configmod {
   const char *name;
   const char *description;
 
-  const struct configtab *table;
+  union {
+    const struct configtab *table;
+    const struct configtab **tables;  // table_count
+  };
+  int tables_count;
 
   /* Migrate from old name */
   const char *alias;
@@ -85,8 +89,8 @@ const char *config_enum_to_string(const struct config_enum *e, int value);
 /* Return value for enum name, or -1 */
 int config_enum_to_value(const struct config_enum *e, const char *name);
 
-int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp);
-int configtab_lookup(const struct configtab *tab, const char *name, const struct configtab **tabp);
+int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep);
+int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);
 int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp);
 
 int config_clear(const struct configmod *mod, const struct configtab *tab);

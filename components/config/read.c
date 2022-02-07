@@ -134,6 +134,7 @@ int config_read(struct config *config, FILE *file)
   int lineno = 0;
 
   const struct configmod *mod = NULL;
+  const struct configtab *table = NULL;
   const struct configtab *tab = NULL;
 
   while (fgets(buf, sizeof(buf), file) != NULL) {
@@ -153,7 +154,7 @@ int config_read(struct config *config, FILE *file)
     if (section) {
       mod = NULL;
 
-      if (configmod_lookup(config->modules, section, &mod)) {
+      if (configmod_lookup(config->modules, section, &mod, &table)) {
         LOG_WARN("Unknown section: %s", section);
       } else {
         LOG_DEBUG("mod=%s", mod->name);
@@ -163,7 +164,9 @@ int config_read(struct config *config, FILE *file)
     if (name && value) {
       if (!mod) {
         LOG_WARN("Invalid name without section: %s", name);
-      } else if (configtab_lookup(mod->table, name, &tab)) {
+      } else if (!table) {
+        LOG_WARN("Invalid mod=%s without table", mod->name);
+      } else if (configtab_lookup(table, name, &tab)) {
         LOG_WARN("Unknown name in section %s: %s", mod->name, name);
       } else if (config_set(mod, tab, value)) {
         LOG_WARN("Invalid value for section %s name %s: %s", mod->name, tab->name, value);

@@ -62,15 +62,32 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
   }
 }
 
-static void print_configmod(const struct configmod *mod)
+static void print_configmod(const struct configmod *mod, const struct configtab *table)
 {
   if (mod->description) {
     print_comment(mod->description);
   }
 
-  printf("[%s]\n", mod->name);
+  if (mod->tables_count) {
+    int index = -1;
 
-  for (const struct configtab *tab = mod->table; tab->type && tab->name; tab++) {
+    for (int i = 0; i < mod->tables_count; i++) {
+      if (mod->tables[i] == table) {
+        index = i;
+      }
+    }
+
+    if (index >= 0) {
+      printf("[%s%d]\n", mod->name, index + 1);
+    } else {
+      printf("[%s???]\n", mod->name);
+    }
+
+  } else {
+    printf("[%s]\n", mod->name);
+  }
+
+  for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
     print_configtab(mod, tab);
   }
 
@@ -80,7 +97,13 @@ static void print_configmod(const struct configmod *mod)
 static void print_config(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
-    print_configmod(mod);
+    if (mod->tables_count) {
+      for (int i = 0; i < mod->tables_count; i++) {
+        print_configmod(mod, mod->tables[i]);
+      }
+    } else {
+      print_configmod(mod, mod->table);
+    }
   }
 }
 
@@ -88,6 +111,7 @@ int config_cmd_show(int argc, char **argv, void *ctx)
 {
   const struct config *config = ctx;
   const struct configmod *mod;
+  const struct configtab *table;
   const char *section;
   int err;
 
@@ -96,12 +120,12 @@ int config_cmd_show(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if (configmod_lookup(config->modules, section, &mod)) {
+    if (configmod_lookup(config->modules, section, &mod, &table)) {
       LOG_ERROR("Unkown config section: %s", section);
       return -CMD_ERR_ARGV;
     }
 
-    print_configmod(mod);
+    print_configmod(mod, table);
   } else {
     print_config(config);
   }

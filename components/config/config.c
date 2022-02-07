@@ -1,6 +1,7 @@
 #include "config.h"
 #include "logging.h"
 
+#include <ctype.h>
 #include <string.h>
 
 int config_enum_lookup(const struct config_enum *e, const char *name, const struct config_enum **enump)
@@ -49,18 +50,89 @@ int config_enum_to_value(const struct config_enum *e, const char *name)
   return -1;
 }
 
-int configmod_lookup(const struct configmod *mod, const char *name, const struct configmod **modp)
+/* Parse section like foo1 into len=3, index=1 */
+int configmod_parse_name(const char *name, int *lenp, int *indexp)
 {
-  for (; mod->name; mod++) {
-    if (strcmp(mod->name, name) == 0) {
-      *modp = mod;
-      return 0;
+  int len = 0;
+  const char *ptr;
+
+  for (ptr = name; *ptr; ptr++) {
+    if (isdigit(*ptr)) {
+      break;
+    } else {
+      len++;
     }
+  }
 
-    if (mod->alias && strcmp(mod->alias, name) == 0) {
-      LOG_WARN("using deprecated %s alias -> %s", name, mod->name);
+  char *end;
+  int index = strtol(ptr, &end, 10);
+
+  if (!*ptr) {
+    index = 0;
+  } else if (end == ptr) {
+    LOG_WARN("Invalid suffix for name: %s", name);
+    return 1;
+  } else if (*end) {
+    LOG_WARN("Invalid suffix for name: %s", name);
+    return 1;
+  }
+
+  LOG_DEBUG("parse name=%s -> len=%d index=%d", name, len, index);
+
+  *lenp = len;
+  *indexp = index;
+
+  return 0;
+}
+
+int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep)
+{
+  for (const struct configmod *mod = modules; mod->name; mod++) {
+    if (mod->tables_count) {
+      int len, index;
+
+      if (configmod_parse_name(name, &len, &index)) {
+        continue;
+      }
+
+      // match first len characters of name
+      if (strncmp(mod->name, name, len) == 0) {
+        LOG_DEBUG("match name=%s -> mod name=%s index=%d", name, mod->name, index);
+
+      } else if (mod->alias && strncmp(mod->alias, name, len) == 0) {
+        LOG_DEBUG("match name=%s -> mod alias=%s index=%d", name, mod->alias, index);
+        LOG_WARN("deprecated alias %s, renamed to %s", name, mod->name);
+      } else {
+        continue;
+      }
+
+      if (!index) {
+        LOG_WARN("invalid %s, missing suffix", name);
+        break;
+      } else if (index > mod->tables_count) {
+        LOG_WARN("invalid %s, max count is %d", name, mod->tables_count);
+        break;
+      }
 
       *modp = mod;
+      *tablep = mod->tables[index - 1];
+
+      return 0;
+
+    } else {
+      if (strcmp(mod->name, name) == 0) {
+        LOG_DEBUG("match name=%s -> mod name=%s", name, mod->name);
+
+      } else if (mod->alias && strcmp(mod->alias, name) == 0) {
+        LOG_DEBUG("match name=%s -> mod alias=%s", name, mod->alias);
+        LOG_WARN("using deprecated alias %s, renamed to %s", name, mod->name);
+      } else {
+        continue;
+      }
+
+      *modp = mod;
+      *tablep = mod->table;
+
       return 0;
     }
   }
@@ -68,9 +140,9 @@ int configmod_lookup(const struct configmod *mod, const char *name, const struct
   return 1;
 }
 
-int configtab_lookup(const struct configtab *tab, const char *name, const struct configtab **tabp)
+int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp)
 {
-  for (; tab->type && tab->name; tab++) {
+  for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
     if (strcmp(tab->name, name) == 0) {
       *tabp = tab;
       return 0;
@@ -89,10 +161,12 @@ int configtab_lookup(const struct configtab *tab, const char *name, const struct
 
 int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp)
 {
-    if (configmod_lookup(config->modules, module, modp)) {
+    const struct configtab *table;
+
+    if (configmod_lookup(config->modules, module, modp, &table)) {
       return 1;
     }
-    if (configtab_lookup((*modp)->table, name, tabp)) {
+    if (configtab_lookup(table, name, tabp)) {
       return 1;
     }
 

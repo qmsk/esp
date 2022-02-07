@@ -162,6 +162,56 @@ static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_co
   return 0;
 }
 
+static int config_wifi_network(wifi_interface_t interface, const struct wifi_config *config)
+{
+  esp_netif_t *netif;
+  esp_netif_ip_info_t ip_info;
+  esp_err_t err;
+
+  if (!config->ip[0] || !config->netmask[0] || !config->gw[0]) {
+    LOG_INFO("Using IPv4 default DHCP addressing");
+    return 0;
+  }
+
+  LOG_INFO("Using IPv4 config: ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
+
+  if ((err = esp_netif_str_to_ip4(config->ip, &ip_info.ip))) {
+    LOG_ERROR("invalid ip=%s", config->ip);
+    return -1;
+  }
+
+  if ((err = esp_netif_str_to_ip4(config->netmask, &ip_info.netmask))) {
+    LOG_ERROR("invalid netmask=%s", config->netmask);
+    return -1;
+  }
+
+  if ((err = esp_netif_str_to_ip4(config->gw, &ip_info.gw))) {
+    LOG_ERROR("invalid gw=%s", config->gw);
+    return -1;
+  }
+
+  if ((err = make_wifi_netif(&netif, interface))) {
+    LOG_ERROR("make_wifi_netif");
+    return err;
+  }
+
+  if (!(err = esp_netif_dhcpc_stop(netif))) {
+
+  } else if (err == ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
+    LOG_WARN("esp_netif_dhcpc_stop: ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED");
+  } else {
+    LOG_ERROR("esp_netif_dhcpc_stop: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_netif_set_ip_info(netif, &ip_info))) {
+    LOG_ERROR("esp_netif_set_ip_info: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 static int config_wifi_null(const struct wifi_config *config)
 {
   esp_err_t err;
@@ -196,6 +246,11 @@ static int config_wifi_sta(const struct wifi_config *config)
 
   if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
     LOG_ERROR("config_wifi_hostname");
+    return err;
+  }
+
+  if ((err = config_wifi_network(WIFI_IF_STA, config))) {
+    LOG_ERROR("config_wifi_network");
     return err;
   }
 
@@ -241,6 +296,11 @@ static int config_wifi_ap(const struct wifi_config *config)
 
   if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_hostname");
+    return err;
+  }
+
+  if ((err = config_wifi_network(WIFI_IF_AP, config))) {
+    LOG_ERROR("config_wifi_network");
     return err;
   }
 

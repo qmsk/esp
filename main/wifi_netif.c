@@ -38,40 +38,30 @@ static int create_wifi_netif(esp_netif_t **netifp, wifi_interface_t interface)
   }
 }
 
-int init_wifi_netif(wifi_interface_t interface)
+int make_wifi_netif(esp_netif_t **netifp, wifi_interface_t interface)
 {
-  struct esp_netif_t *netif;
+  esp_netif_t *netif;
   int err;
 
-  if (wifi_netif[interface]) {
+  if ((netif = wifi_netif[interface])) {
 
   } else if ((err = create_wifi_netif(&netif, interface))) {
     LOG_ERROR("create_wifi_netif(%d)", interface);
     return err;
   } else {
-    LOG_INFO("created wifi_netif[%d]", interface);
+    LOG_INFO("created wifi_netif[%s]: %s", wifi_interface_str(interface), esp_netif_get_desc(netif));
 
     wifi_netif[interface] = netif;
+  }
+
+  if (netifp) {
+    *netifp = netif;
   }
 
   return 0;
 }
 
-int make_wifi_netif(esp_netif_t **netifp, wifi_interface_t interface)
+int init_wifi_netif(wifi_interface_t interface)
 {
-  struct esp_netif_t *netif;
-  int err;
-
-  if (wifi_netif[interface]) {
-
-  } else if ((err = create_wifi_netif(&netif, interface))) {
-    LOG_ERROR("create_wifi_netif(%d)", interface);
-    return err;
-  } else {
-    LOG_INFO("created wifi_netif[%d]", interface);
-
-    *netifp = wifi_netif[interface] = netif;
-  }
-
-  return 0;
+  return make_wifi_netif(NULL, interface);
 }

@@ -1,7 +1,9 @@
 #include <artnet.h>
 #include "artnet.h"
 #include "artnet_state.h"
-//#include "dmx_artnet.h"
+#include "artnet_inputs.h"
+#include "artnet_outputs.h"
+// /TODO: #include "dmx_artnet.h"
 #include "system_network.h"
 
 #include <logging.h>

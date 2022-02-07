@@ -1,8 +1,10 @@
-#include "config.h"
-#include "logging.h"
+#include <config.h>
+
+#include <logging.h>
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
 int config_enum_lookup(const struct config_enum *e, const char *name, const struct config_enum **enump)
 {

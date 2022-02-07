@@ -99,21 +99,23 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
         ||  JSON_WRITE_MEMBER_UINT(w, "net", artnet_address_net(options.address))
         ||  JSON_WRITE_MEMBER_UINT(w, "subnet", artnet_address_subnet(options.address))
         )
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "status",
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "metadata",
             JSON_WRITE_MEMBER_RAW(w, "ip_address", "\"%u.%u.%u.%u\"",
-              options.ip_address[0],
-              options.ip_address[1],
-              options.ip_address[2],
-              options.ip_address[3]
+              options.metadata.ip_address[0],
+              options.metadata.ip_address[1],
+              options.metadata.ip_address[2],
+              options.metadata.ip_address[3]
             )
         ||  JSON_WRITE_MEMBER_RAW(w, "mac_address", "\"%02x:%02x:%02x:%02x:%02x:%02x\"",
-              options.mac_address[0],
-              options.mac_address[1],
-              options.mac_address[2],
-              options.mac_address[3],
-              options.mac_address[4],
-              options.mac_address[5]
+              options.metadata.mac_address[0],
+              options.metadata.mac_address[1],
+              options.metadata.mac_address[2],
+              options.metadata.mac_address[3],
+              options.metadata.mac_address[4],
+              options.metadata.mac_address[5]
             )
+        ||  JSON_WRITE_MEMBER_STRING(w, "short_name", options.metadata.short_name)
+        ||  JSON_WRITE_MEMBER_STRING(w, "long_name", options.metadata.long_name)
         )
     ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w))

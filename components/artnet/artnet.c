@@ -101,10 +101,10 @@ bool artnet_get_inputs_enabled(struct artnet *artnet)
   return artnet->input_size > 0;
 }
 
-int artnet_set_options(struct artnet *artnet, struct artnet_options options)
+int artnet_set_metadata(struct artnet *artnet, const struct artnet_metadata *metadata)
 {
   // XXX: locking for artnet_send_poll_reply()?
-  artnet->options = options;
+  artnet->options.metadata = *metadata;
 
   return 0;
 }

@@ -32,11 +32,13 @@ struct artnet_options {
   // all output ports must be within the same sub-net (lower 4 bits)
   uint16_t address;
 
-  // only used for poll reply, not listen()
-  uint8_t ip_address[4];
-  uint8_t mac_address[6];
-  char short_name[18]; // max 17 chars
-  char long_name[64]; // max 63 chars
+  // metadata used for poll reply, not listen()
+  struct artnet_metadata {
+    uint8_t ip_address[4];
+    uint8_t mac_address[6];
+    char short_name[18]; // max 17 chars
+    char long_name[64]; // max 63 chars
+  } metadata;
 
   // number of input ports supported
   // if >0, will also allocate working memory for artnet_inputs_main()
@@ -113,16 +115,16 @@ uint16_t artnet_address_universe(uint16_t address);
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 
 /**
- * Return options used for artnet discovery.
+ * Return options used for artnet init.
  */
 struct artnet_options artnet_get_options(struct artnet *artnet);
 
 /**
- * Update options for artnet discovery.
+ * Update metadata for artnet discovery.
  *
  * NOTE: changing `port` will not work.
  */
-int artnet_set_options(struct artnet *artnet, struct artnet_options options);
+int artnet_set_metadata(struct artnet *artnet, const struct artnet_metadata *metadata);
 
 /** Patch input port.
  *

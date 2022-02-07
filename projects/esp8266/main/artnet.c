@@ -6,12 +6,12 @@
 #include "system.h"
 
 #include <logging.h>
+#include <system_interfaces.h>
 
 #include <esp_err.h>
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <tcpip_adapter.h>
 
 #include <string.h>
 
@@ -35,11 +35,11 @@ unsigned count_artnet_inputs()
   return inputs;
 }
 
-static int init_artnet_options(struct artnet_options *options, const struct artnet_config *config)
+static int build_artnet_metadata(struct artnet_metadata *metadata)
 {
   uint8_t mac[6] = {};
   const char *hostname = NULL;
-  ip4_addr_t ip_addr = {};
+  ip4_addr_t ipv4_addr = {};
   int err;
 
   if ((err = get_system_mac(mac)) < 0) {
@@ -52,57 +52,37 @@ static int init_artnet_options(struct artnet_options *options, const struct artn
     return err;
   }
 
-  if ((err = get_system_ipv4_addr(&ip_addr)) < 0) {
+  if ((err = get_system_ipv4_addr(&ipv4_addr)) < 0) {
     LOG_ERROR("get_system_ipv4_addr");
     return err;
   }
 
-  options->port = ARTNET_PORT;
-  options->address = artnet_address(config->net, config->subnet, 0);
+  metadata->ip_address[0] = SYSTEM_IPV4_ADDR_BYTE1(&ipv4_addr);
+  metadata->ip_address[1] = SYSTEM_IPV4_ADDR_BYTE2(&ipv4_addr);
+  metadata->ip_address[2] = SYSTEM_IPV4_ADDR_BYTE3(&ipv4_addr);
+  metadata->ip_address[3] = SYSTEM_IPV4_ADDR_BYTE4(&ipv4_addr);
 
-  options->ip_address[0] = ip4_addr1(&ip_addr);
-  options->ip_address[1] = ip4_addr2(&ip_addr);
-  options->ip_address[2] = ip4_addr3(&ip_addr);
-  options->ip_address[3] = ip4_addr4(&ip_addr);
+  metadata->mac_address[0] = mac[0];
+  metadata->mac_address[1] = mac[1];
+  metadata->mac_address[2] = mac[2];
+  metadata->mac_address[3] = mac[3];
+  metadata->mac_address[4] = mac[4];
+  metadata->mac_address[5] = mac[5];
 
-  options->mac_address[0] = mac[0];
-  options->mac_address[1] = mac[1];
-  options->mac_address[2] = mac[2];
-  options->mac_address[3] = mac[3];
-  options->mac_address[4] = mac[4];
-  options->mac_address[5] = mac[5];
-
-  snprintf(options->short_name, sizeof(options->short_name), "%s", hostname ? hostname : "");
-  snprintf(options->long_name, sizeof(options->long_name), "%s", ARTNET_PRODUCT);
-
-  options->inputs = count_artnet_inputs();
-
-  LOG_INFO("port=%u address=%04x inputs=%u",
-    options->port,
-    options->address,
-    options->inputs
-  );
-  LOG_INFO("ip_address=%u.%u.%u.%u",
-    options->ip_address[0],
-    options->ip_address[1],
-    options->ip_address[2],
-    options->ip_address[3]
-  );
-  LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x",
-    options->mac_address[0],
-    options->mac_address[1],
-    options->mac_address[2],
-    options->mac_address[3],
-    options->mac_address[4],
-    options->mac_address[5]
-  );
+  snprintf(metadata->short_name, sizeof(metadata->short_name), "%s", hostname ? hostname : "");
+  snprintf(metadata->long_name, sizeof(metadata->long_name), "%s", ARTNET_PRODUCT);
 
   return 0;
 }
 
 int init_artnet()
 {
-  struct artnet_options options = {};
+  const struct artnet_config *config = &artnet_config;
+  struct artnet_options options = {
+    .port     = ARTNET_PORT,
+    .address  = artnet_address(config->net, config->subnet, 0),
+    .inputs   = count_artnet_inputs(),
+  };
   int err;
 
   if (!artnet_config.enabled) {
@@ -110,10 +90,18 @@ int init_artnet()
     return 0;
   }
 
-  if ((err = init_artnet_options(&options, &artnet_config))) {
-    LOG_ERROR("init_artnet_options");
+  if ((err = build_artnet_metadata(&options.metadata))) {
+    LOG_ERROR("build_artnet_metadata");
     return err;
   }
+
+  LOG_INFO("port=%u address=%04x inputs=%u",
+    options.port,
+    options.address,
+    options.inputs
+  );
+  LOG_INFO("ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
+  LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);
 
   if ((err = artnet_new(&artnet, options))) {
     LOG_ERROR("artnet_new");
@@ -203,22 +191,25 @@ int start_artnet()
 
 int update_artnet()
 {
-  struct artnet_options options = {};
+  struct artnet_metadata metadata = {};
   int err;
 
   if (!artnet) {
     return 0;
   }
 
-  LOG_INFO("re-initialize artnet discovery options");
-
-  if ((err = init_artnet_options(&options, &artnet_config))) {
-    LOG_ERROR("init_artnet_options");
+  if ((err = build_artnet_metadata(&metadata))) {
+    LOG_ERROR("build_artnet_metadata");
     return err;
   }
 
-  if ((err = artnet_set_options(artnet, options))) {
-    LOG_ERROR("artnet_set_options");
+  LOG_INFO("re-initialize Art-NET metadata:");
+  LOG_INFO("\tip_address=%u.%u.%u.%u", metadata.ip_address[0], metadata.ip_address[1], metadata.ip_address[2], metadata.ip_address[3]);
+  LOG_INFO("\tmac_address=%02x:%02x:%02x:%02x:%02x:%02x", metadata.mac_address[0], metadata.mac_address[1], metadata.mac_address[2], metadata.mac_address[3], metadata.mac_address[4], metadata.mac_address[5]);
+  LOG_INFO("\tshort_name=%s", metadata.short_name);
+
+  if ((err = artnet_set_metadata(artnet, &metadata))) {
+    LOG_ERROR("artnet_set_metadata");
     return err;
   }
 

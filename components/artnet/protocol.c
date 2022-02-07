@@ -45,16 +45,16 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   reply->opcode = ARTNET_OP_POLL_REPLY;
 
   // prepare constant fields
-  memcpy(reply->ip_address, artnet->options.ip_address, 4);
+  memcpy(reply->ip_address, artnet->options.metadata.ip_address, 4);
 
   reply->port_number = artnet_pack_u16lh(artnet->options.port);
   reply->net_switch = (artnet->options.address & 0x7F00) >> 8;
   reply->sub_switch = (artnet->options.address & 0x00F0) >> 0;
 
-  strncpy((char *) reply->short_name, artnet->options.short_name, sizeof(reply->short_name) - 1);
-  strncpy((char *) reply->long_name, artnet->options.long_name, sizeof(reply->long_name) - 1);
+  strncpy((char *) reply->short_name, artnet->options.metadata.short_name, sizeof(reply->short_name) - 1);
+  strncpy((char *) reply->long_name, artnet->options.metadata.long_name, sizeof(reply->long_name) - 1);
 
-  memcpy(reply->mac, artnet->options.mac_address, 6);
+  memcpy(reply->mac, artnet->options.metadata.mac_address, 6);
 
   reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
 

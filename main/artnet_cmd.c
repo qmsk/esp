@@ -26,11 +26,12 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
 
   printf("Listen port=%u\n", options.port);
   printf("Address net=%u subnet=%u\n", artnet_address_net(options.address), artnet_address_subnet(options.address));
-  printf("Network IPv4=%u.%u.%u.%u MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-    options.ip_address[0], options.ip_address[1], options.ip_address[2], options.ip_address[3],
-    options.mac_address[0], options.mac_address[1], options.mac_address[2], options.mac_address[3], options.mac_address[4], options.mac_address[5]
+  printf("Metadata:\n");
+  printf("\tNetwork IPv4=%u.%u.%u.%u MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
+    options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3],
+    options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]
   );
-  printf("Name short=%s long=%s\n", options.short_name, options.long_name);
+  printf("\tName short=%s long=%s\n", options.metadata.short_name, options.metadata.long_name);
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");

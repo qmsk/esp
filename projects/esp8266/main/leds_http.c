@@ -176,11 +176,11 @@ int leds_api_form(struct http_request *request, struct http_response *response)
   }
 
   if (req.state && req.state->leds) {
-    if ((err = update_spi_leds(req.state)) < 0) {
-      LOG_ERROR("update_spi_leds");
+    if ((err = update_leds(req.state)) < 0) {
+      LOG_ERROR("update_leds");
       return HTTP_INTERNAL_SERVER_ERROR;
     } else if (err) {
-      LOG_WARN("update_spi_leds");
+      LOG_WARN("update_leds");
       return HTTP_CONFLICT;
     }
   }
@@ -335,11 +335,11 @@ int leds_api_test_post(struct http_request *request, struct http_response *respo
   }
 
   // XXX: may block for some time
-  if ((err = test_spi_leds(state, params.mode)) < 0) {
-    LOG_ERROR("test_spi_leds");
+  if ((err = test_leds(state, params.mode)) < 0) {
+    LOG_ERROR("test_leds");
     return HTTP_INTERNAL_SERVER_ERROR;
   } else if (err) {
-    LOG_WARN("test_spi_leds");
+    LOG_WARN("test_leds");
     return HTTP_CONFLICT;
   }
 

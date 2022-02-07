@@ -184,15 +184,15 @@ static void leds_artnet_main(void *ctx)
 
     // tx output if required
     if (unsync || sync || test) {
-      if (update_spi_leds(state)) {
-        LOG_WARN("update_spi_leds");
+      if (update_leds(state)) {
+        LOG_WARN("update_leds");
         continue;
       }
     }
   }
 }
 
-int init_spi_leds_artnet(struct leds_state *state, unsigned index, const struct leds_config *config)
+int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds_config *config)
 {
   char task_name[configMAX_TASK_NAME_LEN];
 

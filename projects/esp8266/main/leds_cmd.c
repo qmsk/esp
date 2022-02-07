@@ -21,8 +21,8 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_spi_leds(state))) {
-      LOG_ERROR("update_spi_leds");
+    if ((err = update_leds(state))) {
+      LOG_ERROR("update_leds");
       return err;
     }
   }
@@ -74,8 +74,8 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_spi_leds(state))) {
-      LOG_ERROR("update_spi_leds");
+    if ((err = update_leds(state))) {
+      LOG_ERROR("update_leds");
       return err;
     }
   }
@@ -137,8 +137,8 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = update_spi_leds(state))) {
-    LOG_ERROR("update_spi_leds");
+  if ((err = update_leds(state))) {
+    LOG_ERROR("update_leds");
     return err;
   }
 
@@ -167,8 +167,8 @@ int leds_cmd_test(int argc, char **argv, void *ctx)
   }
 
   for (enum leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
-    if ((err = test_spi_leds(state, mode))) {
-      LOG_ERROR("test_spi_leds");
+    if ((err = test_leds(state, mode))) {
+      LOG_ERROR("test_leds");
       return err;
     }
   }

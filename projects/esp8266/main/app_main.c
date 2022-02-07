@@ -110,8 +110,8 @@ void app_main()
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
-  if (init_spi_leds()) {
-    LOG_ERROR("init_spi_leds");
+  if (init_leds()) {
+    LOG_ERROR("init_leds");
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 

@@ -60,7 +60,7 @@ extern struct leds_config leds_configs[LEDS_COUNT];
 extern struct spi_master *spi_master;
 extern struct leds_state leds_states[LEDS_COUNT];
 
-int update_spi_leds(struct leds_state *state);
-int test_spi_leds(struct leds_state *state, enum leds_test_mode mode);
+int update_leds(struct leds_state *state);
+int test_leds(struct leds_state *state, enum leds_test_mode mode);
 
-int init_spi_leds_artnet(struct leds_state *state, unsigned index, const struct leds_config *config);
+int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds_config *config);

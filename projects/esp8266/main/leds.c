@@ -219,7 +219,7 @@ static int init_i2s_out(const struct leds_config *configs)
   return 0;
 }
 
-static int init_spi_leds_spi(struct leds_state *state, int index, const struct leds_config *config)
+static int init_leds_spi(struct leds_state *state, int index, const struct leds_config *config)
 {
   struct leds_options options = {
       .interface  = LEDS_INTERFACE_SPI,
@@ -251,7 +251,7 @@ static int init_spi_leds_spi(struct leds_state *state, int index, const struct l
   return 0;
 }
 
-static int init_spi_leds_uart(struct leds_state *state, int index, const struct leds_config *config)
+static int init_leds_uart(struct leds_state *state, int index, const struct leds_config *config)
 {
   struct leds_options options = {
       .interface  = LEDS_INTERFACE_UART,
@@ -278,7 +278,7 @@ static int init_spi_leds_uart(struct leds_state *state, int index, const struct 
   return 0;
 }
 
-static int init_spi_leds_i2s(struct leds_state *state, int index, const struct leds_config *config)
+static int init_leds_i2s(struct leds_state *state, int index, const struct leds_config *config)
 {
   struct leds_options options = {
       .interface  = LEDS_INTERFACE_I2S,
@@ -320,7 +320,7 @@ static bool leds_enabled()
   return false;
 }
 
-int init_spi_leds()
+int init_leds()
 {
   int err;
 
@@ -358,22 +358,22 @@ int init_spi_leds()
 
     switch (interface) {
       case LEDS_INTERFACE_SPI:
-        if ((err = init_spi_leds_spi(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_spi_leds_spi", i);
+        if ((err = init_leds_spi(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_leds_spi", i);
           return err;
         }
         break;
 
       case LEDS_INTERFACE_UART:
-        if ((err = init_spi_leds_uart(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_spi_leds_uart", i);
+        if ((err = init_leds_uart(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_leds_uart", i);
           return err;
         }
         break;
 
       case LEDS_INTERFACE_I2S:
-        if ((err = init_spi_leds_i2s(state, i, config))) {
-          LOG_ERROR("spi-leds%d: init_spi_leds_i2s", i);
+        if ((err = init_leds_i2s(state, i, config))) {
+          LOG_ERROR("spi-leds%d: init_leds_i2s", i);
           return err;
         }
         break;
@@ -385,16 +385,16 @@ int init_spi_leds()
 
     if (config->test_enabled) {
       for (enum leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
-        if ((err = test_spi_leds(state, mode))) {
-          LOG_ERROR("spi-leds%d: test_spi_leds", i);
+        if ((err = test_leds(state, mode))) {
+          LOG_ERROR("spi-leds%d: test_leds", i);
           return err;
         }
       }
     }
 
     if (config->artnet_enabled) {
-      if ((err = init_spi_leds_artnet(state, i, config))) {
-        LOG_ERROR("spi-leds%d: init_spi_leds_artnet", i);
+      if ((err = init_leds_artnet(state, i, config))) {
+        LOG_ERROR("spi-leds%d: init_leds_artnet", i);
         return err;
       }
     }
@@ -403,7 +403,7 @@ int init_spi_leds()
   return 0;
 }
 
-static void update_spi_leds_active(struct leds_state *state)
+static void update_leds_active(struct leds_state *state)
 {
   bool active = false;
 
@@ -428,7 +428,7 @@ static void update_spi_leds_active(struct leds_state *state)
   }
 }
 
-int check_spi_leds_interface(struct leds_state *state)
+int check_leds_interface(struct leds_state *state)
 {
   switch (leds_interface(state->leds)) {
     case LEDS_INTERFACE_I2S:
@@ -443,13 +443,13 @@ int check_spi_leds_interface(struct leds_state *state)
   }
 }
 
-int update_spi_leds(struct leds_state *state)
+int update_leds(struct leds_state *state)
 {
   int err;
 
-  update_spi_leds_active(state);
+  update_leds_active(state);
 
-  if ((err = check_spi_leds_interface(state))) {
+  if ((err = check_leds_interface(state))) {
     return err;
   }
 
@@ -463,13 +463,13 @@ int update_spi_leds(struct leds_state *state)
   return 0;
 }
 
-int test_spi_leds(struct leds_state *state, enum leds_test_mode mode)
+int test_leds(struct leds_state *state, enum leds_test_mode mode)
 {
   int err;
 
-  update_spi_leds_active(state);
+  update_leds_active(state);
 
-  if ((err = check_spi_leds_interface(state))) {
+  if ((err = check_leds_interface(state))) {
     return err;
   }
 

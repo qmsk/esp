@@ -1,3 +1,3 @@
 #pragma once
 
-int init_spi_leds();
+int init_leds();

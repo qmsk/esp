@@ -21,9 +21,7 @@ const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status)
 
 static esp_ip4_addr_t ipv4_network(const esp_netif_ip_info_t *ip_info)
 {
-  uint32_t address = esp_netif_htonl(ip_info->ip.addr);
-  uint32_t netmask = esp_netif_htonl(ip_info->netmask.addr);
-  uint32_t network = address & netmask;
+  uint32_t network = ip_info->ip.addr & ip_info->netmask.addr;
 
   return (esp_ip4_addr_t){ network };
 }

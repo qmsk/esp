@@ -14,7 +14,7 @@ enum user_state {
 };
 
 enum user_activity {
-  USER_ACTIVITY_SPI_LEDS,
+  USER_ACTIVITY_LEDS,
   USER_ACTIVITY_DMX_INPUT,
   USER_ACTIVITY_DMX_OUTPUT,
 

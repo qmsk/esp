@@ -7,7 +7,7 @@
 #include "log.h"
 #include "mdns.h"
 #include "pin_mutex.h"
-#include "spi_leds_init.h"
+#include "leds_init.h"
 #include "status_leds.h"
 #include "system.h"
 #include "wifi_init.h"

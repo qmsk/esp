@@ -2,7 +2,7 @@
 #include "pin_mutex.h"
 
 #include "artnet_cmd.h"
-#include "spi_leds_cmd.h"
+#include "leds_cmd.h"
 #include "config.h"
 #include "dmx_cmd.h"
 #include "log.h"
@@ -101,7 +101,7 @@ static const struct cmd cli_commands[] = {
       .subcommands = &artnet_cmdtab,
   },
   { "spi-leds", .describe = "SPI LEDs",
-      .subcommands = &spi_leds_cmdtab,
+      .subcommands = &leds_cmdtab,
   },
   { "dmx", .describe = "DMX output",
       .subcommands = &dmx_cmdtab,

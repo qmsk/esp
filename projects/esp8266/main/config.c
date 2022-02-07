@@ -5,7 +5,7 @@
 #include "console.h"
 #include "dmx_config.h"
 #include "http.h"
-#include "spi_leds_config.h"
+#include "leds_config.h"
 #include "spiffs.h"
 #include "wifi_config.h"
 
@@ -56,43 +56,45 @@ const struct configmod config_modules[] = {
     ),
     .table = artnet_configtab,
   },
-  { "spi-leds0",
+  { "leds1",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
       "\n"
       "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
       " an external driver chip with active-high/low output-enable GPIO lines."
     ),
-    .table = spi_leds_configtab0,
-    .alias = "spi_leds",
+    .table = leds_configtab0,
+    .alias = "spi-leds0",
   },
-  { "spi-leds1",
+  { "leds2",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
       "\n"
       "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
       " an external driver chip with active-high/low output-enable GPIO lines."
     ),
-    .table = spi_leds_configtab1,
+    .table = leds_configtab1,
+    .alias = "spi-leds1",
   },
-  { "spi-leds2",
+  { "leds3",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
       "\n"
       "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
       " an external driver chip with active-high/low output-enable GPIO lines."
     ),
-    .table = spi_leds_configtab2,
-    .alias = "spi_leds",
+    .table = leds_configtab2,
+    .alias = "spi-leds2",
   },
-  { "spi-leds3",
+  { "leds4",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
       "\n"
       "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
       " an external driver chip with active-high/low output-enable GPIO lines."
     ),
-    .table = spi_leds_configtab3,
+    .table = leds_configtab3,
+    .alias = "spi-leds3",
   },
   { "dmx",
     .alias = "dmx-input",

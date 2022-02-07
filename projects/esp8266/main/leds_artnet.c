@@ -1,28 +1,28 @@
-#include "spi_leds.h"
+#include "leds.h"
 #include "artnet.h"
 
 #include <artnet.h>
 #include <logging.h>
-#include <spi_leds.h>
+#include <leds.h>
 
-#define SPI_LEDS_ARTNET_TASK_NAME_FMT "spi-leds%d"
-#define SPI_LEDS_ARTNET_TASK_STACK 1024
-#define SPI_LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
+#define LEDS_ARTNET_TASK_NAME_FMT "spi-leds%d"
+#define LEDS_ARTNET_TASK_STACK 1024
+#define LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
-struct spi_leds_artnet_test {
-  enum spi_leds_test_mode mode;
+struct leds_artnet_test {
+  enum leds_test_mode mode;
 
   TickType_t frame_tick;
   unsigned frame;
 };
 
-static bool spi_leds_artnet_test_active(struct spi_leds_artnet_test *test)
+static bool leds_artnet_test_active(struct leds_artnet_test *test)
 {
   return !!test->frame_tick;
 }
 
 /* Return number of ticks to wait for next test frame, or portMAX_DELAY if not in test mode */
-static TickType_t spi_leds_artnet_wait_ticks(struct spi_leds_artnet_test *test)
+static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test)
 {
   if (!test->frame_tick) {
     // not in test mode
@@ -40,7 +40,7 @@ static TickType_t spi_leds_artnet_wait_ticks(struct spi_leds_artnet_test *test)
   }
 }
 
-static void spi_leds_artnet_test_start(struct spi_leds_artnet_test *test)
+static void leds_artnet_test_start(struct leds_artnet_test *test)
 {
   LOG_INFO("test start");
 
@@ -49,7 +49,7 @@ static void spi_leds_artnet_test_start(struct spi_leds_artnet_test *test)
   test->frame = 0;
 }
 
-static void spi_leds_artnet_test_end(struct spi_leds_artnet_test *test)
+static void leds_artnet_test_end(struct leds_artnet_test *test)
 {
   LOG_INFO("test end");
 
@@ -58,7 +58,7 @@ static void spi_leds_artnet_test_end(struct spi_leds_artnet_test *test)
   test->frame = 0;
 }
 
-static void spi_leds_artnet_test_reset(struct spi_leds_artnet_test *test)
+static void leds_artnet_test_reset(struct leds_artnet_test *test)
 {
   LOG_INFO("test reset");
 
@@ -67,7 +67,7 @@ static void spi_leds_artnet_test_reset(struct spi_leds_artnet_test *test)
   test->frame = 0;
 }
 
-static void spi_leds_artnet_test_frame(struct spi_leds_state *state, struct spi_leds_artnet_test *test)
+static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_test *test)
 {
   int frame_ticks;
 
@@ -75,8 +75,8 @@ static void spi_leds_artnet_test_frame(struct spi_leds_state *state, struct spi_
     LOG_INFO("test mode=%d", test->mode);
   }
 
-  if ((frame_ticks = spi_leds_set_test(state->spi_leds, test->mode, test->frame)) < 0) {
-    LOG_ERROR("spi_leds_set_test");
+  if ((frame_ticks = leds_set_test(state->leds, test->mode, test->frame)) < 0) {
+    LOG_ERROR("leds_set_test");
     test->mode = 0;
     test->frame = 0;
   } else if (frame_ticks == 0) {
@@ -90,11 +90,11 @@ static void spi_leds_artnet_test_frame(struct spi_leds_state *state, struct spi_
 
   // end of test cycle?
   if (test->mode > TEST_MODE_END) {
-    spi_leds_artnet_test_reset(test);
+    leds_artnet_test_reset(test);
   }
 }
 
-static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, struct artnet_dmx *dmx)
+static void leds_artnet_out(struct leds_state *state, unsigned index, struct artnet_dmx *dmx)
 {
   // handle DMX address offset
   uint8_t *data = state->artnet.dmx->data;
@@ -113,24 +113,24 @@ static void spi_leds_artnet_out(struct spi_leds_state *state, unsigned index, st
   }
 
   // set LEDs from artnet data using configured byte format
-  struct spi_leds_format_params params = {
+  struct leds_format_params params = {
     .count = state->config->artnet_universe_leds,
     .offset = index * state->config->artnet_universe_leds,
     .segment = state->config->artnet_leds_segment,
   };
 
-  spi_leds_set_format(state->spi_leds, state->config->artnet_mode, data, len, params);
+  leds_set_format(state->leds, state->config->artnet_mode, data, len, params);
 }
 
-static void spi_leds_artnet_main(void *ctx)
+static void leds_artnet_main(void *ctx)
 {
-  struct spi_leds_state *state = ctx;
-  struct spi_leds_artnet_test test_state = {};
+  struct leds_state *state = ctx;
+  struct leds_artnet_test test_state = {};
 
   for (;;) {
     uint32_t notify_bits;
     bool unsync = false, sync = false, test = false;
-    TickType_t wait_ticks = spi_leds_artnet_wait_ticks(&test_state);
+    TickType_t wait_ticks = leds_artnet_wait_ticks(&test_state);
 
     LOG_DEBUG("notify wait ticks=%d", wait_ticks);
 
@@ -149,16 +149,16 @@ static void spi_leds_artnet_main(void *ctx)
 
     }
     if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
-      spi_leds_artnet_test_start(&test_state);
+      leds_artnet_test_start(&test_state);
     }
 
-    if (spi_leds_artnet_test_active(&test_state)) {
+    if (leds_artnet_test_active(&test_state)) {
       if ((notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) || (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT)) {
         // have output data, end test
-        spi_leds_artnet_test_end(&test_state);
+        leds_artnet_test_end(&test_state);
       }
 
-      spi_leds_artnet_test_frame(state, &test_state);
+      leds_artnet_test_frame(state, &test_state);
 
       test = true;
     }
@@ -174,7 +174,7 @@ static void spi_leds_artnet_main(void *ctx)
         continue;
       }
 
-      spi_leds_artnet_out(state, index, state->artnet.dmx);
+      leds_artnet_out(state, index, state->artnet.dmx);
 
       if (!state->artnet.dmx->sync_mode) {
         // at least one DMX update is in non-synchronous mode, so force update
@@ -192,7 +192,7 @@ static void spi_leds_artnet_main(void *ctx)
   }
 }
 
-int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const struct spi_leds_config *config)
+int init_spi_leds_artnet(struct leds_state *state, unsigned index, const struct leds_config *config)
 {
   char task_name[configMAX_TASK_NAME_LEN];
 
@@ -223,9 +223,9 @@ int init_spi_leds_artnet(struct spi_leds_state *state, unsigned index, const str
   }
 
   // task
-  snprintf(task_name, sizeof(task_name), SPI_LEDS_ARTNET_TASK_NAME_FMT, index);
+  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, index);
 
-  if (xTaskCreate(&spi_leds_artnet_main, task_name, SPI_LEDS_ARTNET_TASK_STACK, state, SPI_LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
+  if (xTaskCreate(&leds_artnet_main, task_name, LEDS_ARTNET_TASK_STACK, state, LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {

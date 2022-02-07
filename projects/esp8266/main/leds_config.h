@@ -4,10 +4,7 @@
 
 #define LEDS_COUNT 4
 
-extern const struct configtab leds_configtab0[];
-extern const struct configtab leds_configtab1[];
-extern const struct configtab leds_configtab2[];
-extern const struct configtab leds_configtab3[];
+extern const struct configtab *leds_configtabs[LEDS_COUNT];
 
 extern const struct config_enum leds_interface_enum[];
 extern const struct config_enum leds_protocol_enum[];

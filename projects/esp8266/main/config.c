@@ -56,45 +56,16 @@ const struct configmod config_modules[] = {
     ),
     .table = artnet_configtab,
   },
-  { "leds1",
+  { "leds",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
       "\n"
       "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
       " an external driver chip with active-high/low output-enable GPIO lines."
     ),
-    .table = leds_configtab0,
-    .alias = "spi-leds0",
-  },
-  { "leds2",
-    .description = (
-      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
-      "\n"
-      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
-      " an external driver chip with active-high/low output-enable GPIO lines."
-    ),
-    .table = leds_configtab1,
-    .alias = "spi-leds1",
-  },
-  { "leds3",
-    .description = (
-      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
-      "\n"
-      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
-      " an external driver chip with active-high/low output-enable GPIO lines."
-    ),
-    .table = leds_configtab2,
-    .alias = "spi-leds2",
-  },
-  { "leds4",
-    .description = (
-      "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."
-      "\n"
-      "Multiple serial outputs can be multiplexed from the same SPI driver by using GPIOs to control"
-      " an external driver chip with active-high/low output-enable GPIO lines."
-    ),
-    .table = leds_configtab3,
-    .alias = "spi-leds3",
+    .tables = leds_configtabs,
+    .tables_count = LEDS_COUNT,
+    .alias = "spi-leds",
   },
   { "dmx",
     .alias = "dmx-input",

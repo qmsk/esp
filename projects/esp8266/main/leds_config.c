@@ -135,3 +135,10 @@ const struct config_enum leds_color_parameter_enum[] = {
 #include "leds_configtab.i"
 #undef LEDS_CONFIGTAB
 #undef LEDS_CONFIG
+
+const struct configtab *leds_configtabs[LEDS_COUNT] = {
+  leds_configtab0,
+  leds_configtab1,
+  leds_configtab2,
+  leds_configtab3,
+};

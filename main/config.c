@@ -1,6 +1,7 @@
 #include "config.h"
 #include "artnet.h"
 #include "http.h"
+#include "leds.h"
 #include "wifi.h"
 
 #include <config.h>
@@ -29,14 +30,13 @@ const struct configmod config_modules[] = {
     .table = http_configtab,
   },
   { "artnet",
-    .description = (
-      "Art-Net receiver on UDP port 6454."
-      "\n"
-      "Art-Net addresses consist of the net (0-127) + subnet (0-15) + universe (0-15)."
-      " All outputs share the same net/subnet, each output uses a different universe."
-      " Up to four outputs are supported."
-    ),
     .table = artnet_configtab,
+  },
+  // TODO: config support for multiple instances of a table
+  { "leds",
+    .tables = leds_configtabs,
+    .tables_count = LEDS_COUNT,
+    .alias = "spi-leds",
   },
   {}
 };

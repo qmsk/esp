@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "config.h"
 #include "console.h"
+#include "leds.h"
 #include "log.h"
 #include "spiffs.h"
 #include "status_leds.h"
@@ -46,8 +47,11 @@ const struct cmd console_cli_commands[] = {
   { "wifi",         .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
   },
-  { "artnet",         .describe = "Art-NET",
+  { "artnet",       .describe = "Art-NET",
       .subcommands = &artnet_cmdtab,
+  },
+  { "leds",         .describe = "LED Control",
+      .subcommands = &leds_cmdtab,
   },
   {}
 };

@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "console.h"
 #include "config.h"
+#include "leds.h"
 #include "log.h"
 #include "http.h"
 #include "status_leds.h"
@@ -80,6 +81,12 @@ void app_main(void)
     abort();
   }
 
+  if ((err = init_leds())) {
+    LOG_ERROR("init_leds");
+    user_alert(USER_ALERT_ERROR_SETUP);
+    abort();
+  }
+
   LOG_INFO("start");
 
   if ((err = start_console())) {
@@ -94,6 +101,11 @@ void app_main(void)
 
   if ((err = start_artnet())) {
     LOG_ERROR("start_artnet");
+    abort();
+  }
+
+  if ((err = start_leds())) {
+    LOG_ERROR("start_leds");
     abort();
   }
 

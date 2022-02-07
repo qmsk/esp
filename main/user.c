@@ -21,7 +21,7 @@ static const char *user_state_str(enum user_state state)
 static const char *user_activity_str(enum user_activity activity)
 {
   switch (activity) {
-    case USER_ACTIVITY_SPI_LEDS:      return "SPI_LEDS";
+    case USER_ACTIVITY_LEDS:          return "LEDS";
     case USER_ACTIVITY_DMX_INPUT:     return "DMX_INPUT";
     case USER_ACTIVITY_DMX_OUTPUT:    return "DMX_OUTPUT";
 

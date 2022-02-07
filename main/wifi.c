@@ -7,14 +7,11 @@
 #include <system_wifi.h>
 
 #include <esp_err.h>
-#include <esp_netif.h>
 #include <esp_wifi.h>
 
 bool wifi_sta_connect, wifi_sta_started, wifi_sta_connected;
 bool wifi_ap_listen, wifi_ap_started;
 unsigned wifi_ap_connected;
-
-esp_netif_t *wifi_ap_netif, *wifi_sta_netif;
 
 /*
  * Switch from NULL -> AP/STA -> AP_STA mode as required.
@@ -127,13 +124,9 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
   }
 
   // netif
-  if (wifi_ap_netif) {
-
-  } else if (!(wifi_ap_netif = esp_netif_create_default_wifi_ap())) {
-    LOG_ERROR("esp_netif_create_default_wifi_ap");
-    return -1;
-  } else {
-    LOG_INFO("created wifi_ap_netif=%p", wifi_ap_netif);
+  if ((err = init_wifi_netif(WIFI_IF_AP))) {
+    LOG_ERROR("init_wifi_netif");
+    return err;
   }
 
   // config
@@ -174,13 +167,9 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
   }
 
   // netif
-  if (wifi_sta_netif) {
-
-  } else if (!(wifi_sta_netif = esp_netif_create_default_wifi_sta())) {
-    LOG_ERROR("esp_netif_create_default_wifi_sta");
-    return -1;
-  } else {
-    LOG_INFO("created wifi_sta_netif=%p", wifi_sta_netif);
+  if ((err = init_wifi_netif(WIFI_IF_STA))) {
+    LOG_ERROR("init_wifi_netif");
+    return err;
   }
 
   // config

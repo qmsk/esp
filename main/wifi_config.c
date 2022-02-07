@@ -3,12 +3,14 @@
 #include "wifi_state.h"
 
 #include <logging.h>
+#include <system_wifi.h>
 
 #include <esp_wifi.h>
 
 #include <string.h>
 
 #define WIFI_CONFIG_CHANNEL_MAX 13
+#define WIFI_HOSTNAME_MAX_SIZE 32
 
 #define WIFI_SSID_FMT "qmsk-esp-%02x%02x%02x"
 #define WIFI_HOSTNAME_FMT "qmsk-esp-%02x%02x%02x"
@@ -116,6 +118,50 @@ static int set_wifi_password(void *buf, size_t size, const char *value, wifi_aut
   return 0;
 }
 
+static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_config *config)
+{
+  uint8_t mac[6];
+  char hostname[WIFI_HOSTNAME_MAX_SIZE];
+  bool use_hostname;
+  esp_netif_t *netif;
+  esp_err_t err;
+
+  if (strlen(config->hostname) >= WIFI_HOSTNAME_MAX_SIZE) {
+    LOG_WARN("Invalid hostname with len=%d > max=%d", strlen(config->hostname), WIFI_HOSTNAME_MAX_SIZE);
+
+    use_hostname = false;
+  } else if (strlen(config->hostname) > 0) {
+    use_hostname = true;
+  } else {
+    use_hostname = false;
+  }
+
+  if (use_hostname) {
+    LOG_INFO("Using config hostname: %s", config->hostname);
+
+    strlcpy(hostname, config->hostname, sizeof(hostname));
+
+  } else if ((err = esp_wifi_get_mac(interface, mac))) {
+    LOG_ERROR("esp_wifi_get_mac %s: %s", wifi_interface_str(interface), esp_err_to_name(err));
+    return -1;
+
+  } else {
+    LOG_INFO("Using %s default hostname: " WIFI_HOSTNAME_FMT, wifi_interface_str(interface), mac[3], mac[4], mac[5]);
+
+    snprintf(hostname, sizeof(hostname), WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
+  }
+
+  if ((err = make_wifi_netif(&netif, interface))) {
+    LOG_ERROR("make_wifi_netif");
+    return err;
+  } else if ((err = esp_netif_set_hostname(netif, hostname))) {
+    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 static int config_wifi_null(const struct wifi_config *config)
 {
   esp_err_t err;
@@ -145,6 +191,11 @@ static int config_wifi_sta(const struct wifi_config *config)
 
   if ((err = set_wifi_password(&sta_config.password, sizeof(sta_config.password), config->password, &sta_config.threshold.authmode))) {
     LOG_ERROR("set_wifi_ssid");
+    return err;
+  }
+
+  if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
+    LOG_ERROR("config_wifi_hostname");
     return err;
   }
 
@@ -185,6 +236,11 @@ static int config_wifi_ap(const struct wifi_config *config)
 
   if ((err = set_wifi_password(&ap_config.password, sizeof(ap_config.password), config->password, &ap_config.authmode))) {
     LOG_ERROR("set_wifi_ssid");
+    return err;
+  }
+
+  if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
+    LOG_ERROR("config_wifi_hostname");
     return err;
   }
 

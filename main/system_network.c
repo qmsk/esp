@@ -1,5 +1,6 @@
 #include "system_network.h"
 #include "system_state.h"
+#include "artnet.h"
 
 #include <logging.h>
 
@@ -11,6 +12,8 @@ esp_netif_t *connected_netif;
 void system_netif_connected(esp_netif_t *netif)
 {
   connected_netif = netif;
+
+  update_artnet_network();
 }
 
 void system_netif_disconnected()

@@ -185,24 +185,27 @@ int start_artnet()
   return 0;
 }
 
-int update_artnet()
+int update_artnet_network()
 {
-  struct artnet_options options = {};
+  struct artnet_metadata metadata = {};
   int err;
 
   if (!artnet) {
     return 0;
   }
 
-  LOG_INFO("re-initialize artnet discovery options");
-
-  if ((err = init_artnet_options(&options, &artnet_config))) {
-    LOG_ERROR("init_artnet_options");
+  if ((err = build_artnet_metadata(&metadata))) {
+    LOG_ERROR("build_artnet_metadata");
     return err;
   }
 
-  if ((err = artnet_set_options(artnet, options))) {
-    LOG_ERROR("artnet_set_options");
+  LOG_INFO("re-initialize Art-NET metadata:");
+  LOG_INFO("\tip_address=%u.%u.%u.%u", metadata.ip_address[0], metadata.ip_address[1], metadata.ip_address[2], metadata.ip_address[3]);
+  LOG_INFO("\tmac_address=%02x:%02x:%02x:%02x:%02x:%02x", metadata.mac_address[0], metadata.mac_address[1], metadata.mac_address[2], metadata.mac_address[3], metadata.mac_address[4], metadata.mac_address[5]);
+  LOG_INFO("\tshort_name=%s", metadata.short_name);
+
+  if ((err = artnet_set_metadata(artnet, &metadata))) {
+    LOG_ERROR("artnet_set_metadata");
     return err;
   }
 

@@ -4,6 +4,10 @@
 
 #include <leds.h>
 
+#if CONFIG_LEDS_UART_ENABLED
+# include <uart.h>
+#endif
+
 struct leds_config;
 
 struct leds_state {
@@ -18,6 +22,9 @@ struct leds_state {
 };
 
 extern struct leds_state leds_states[LEDS_COUNT];
+#if CONFIG_LEDS_UART_ENABLED
+  extern struct uart *leds_uart[UART_PORT_MAX];
+#endif
 
 int update_leds(struct leds_state *state);
 

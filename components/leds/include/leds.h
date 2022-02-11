@@ -58,6 +58,11 @@ enum leds_interface {
 
 };
 
+#if CONFIG_LEDS_UART_ENABLED
+# define LEDS_UART_RX_BUFFER_SIZE 0
+# define LEDS_UART_TX_BUFFER_SIZE 512
+#endif
+
 enum leds_protocol {
   LEDS_PROTOCOL_APA102          = 1,
   LEDS_PROTOCOL_P9813           = 2,

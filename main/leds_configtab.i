@@ -26,6 +26,12 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
 #endif
 
+#if CONFIG_LEDS_UART_ENABLED
+  { CONFIG_TYPE_ENUM, "uart_port",
+    .description = "Select uart peripherial for UART interface.",
+    .enum_type = { .value = &LEDS_CONFIG.uart_port, .values = leds_uart_port_enum, .default_value = -1 },
+  },
+#endif
 
 #if CONFIG_LEDS_GPIO_ENABLED
   { CONFIG_TYPE_ENUM, "gpio_mode",

@@ -7,6 +7,8 @@
 
 #include <logging.h>
 
+#include <sdkconfig.h>
+
 // approximation of how many LEDs will fit per ART-NET Universe
 #define LEDS_ARTNET_UNIVERSE_LEDS (ARTNET_DMX_SIZE / 3)
 
@@ -35,6 +37,22 @@ const struct config_enum leds_protocol_enum[] = {
   { "WS2811",       LEDS_PROTOCOL_WS2811      },
   {}
 };
+
+#if CONFIG_LEDS_UART_ENABLED
+const struct config_enum leds_uart_port_enum[] = {
+  { "",              -1       },
+# if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+  { "UART0",         UART_0   },
+# endif
+# if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
+  { "UART1",         UART_1   },
+# endif
+# if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
+  { "UART2",         UART_2   },
+# endif
+  {},
+};
+#endif
 
 const struct config_enum leds_spi_clock_enum[] = {
 #if CONFIG_LEDS_SPI_ENABLED
@@ -125,7 +143,7 @@ const struct configtab *leds_configtabs[LEDS_COUNT] = {
   leds_configtab3,
 };
 
-int config_leds(struct leds_state *state, int index, const struct leds_config *config)
+int config_leds(struct leds_state *state, const struct leds_config *config)
 {
   struct leds_options options = {
       .interface  = config->interface,
@@ -139,14 +157,28 @@ int config_leds(struct leds_state *state, int index, const struct leds_config *c
     options.interface = leds_interface_for_protocol(options.protocol);
   }
 
-  LOG_INFO("leds%d: interface=%s protocol=%s count=%u", index + 1,
+  LOG_INFO("leds%d: interface=%s protocol=%s count=%u", state->index,
     config_enum_to_string(leds_interface_enum, options.interface),
     config_enum_to_string(leds_protocol_enum, options.protocol),
     options.count
   );
 
+  switch(options.interface) {
+    case LEDS_INTERFACE_NONE:
+      break;
+
+  #if CONFIG_LEDS_UART_ENABLED
+    case LEDS_INTERFACE_UART:
+      options.uart = leds_uart[config->uart_port];
+      // TODO: uart_pin_mutex?
+
+      LOG_INFO("leds%d: uart port=%d -> uart=%p", state->index, config->uart_port, options.uart);
+      break;
+  #endif
+  }
+
   if ((err = leds_new(&state->leds, &options))) {
-    LOG_ERROR("leds%d: leds_new", index + 1);
+    LOG_ERROR("leds%d: leds_new", state->index + 1);
     return err;
   }
 

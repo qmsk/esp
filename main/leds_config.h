@@ -17,6 +17,8 @@ struct leds_config {
   int spi_clock;
   uint16_t spi_delay;
 
+  int uart_port;
+
   int gpio_mode;
   uint16_t gpio_pin;
 
@@ -36,10 +38,13 @@ extern struct leds_config leds_configs[LEDS_COUNT];
 
 extern const struct config_enum leds_interface_enum[];
 extern const struct config_enum leds_protocol_enum[];
+#if CONFIG_LEDS_UART_ENABLED
+  extern const struct config_enum leds_uart_port_enum[];
+#endif
 extern const struct config_enum leds_spi_clock_enum[];
 extern const struct config_enum leds_gpio_mode_enum[];
 extern const struct config_enum leds_format_enum[];
 extern const struct config_enum leds_test_mode_enum[];
 extern const struct config_enum leds_color_parameter_enum[];
 
-int config_leds(struct leds_state *state, int index, const struct leds_config *config);
+int config_leds(struct leds_state *state, const struct leds_config *config);

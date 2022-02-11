@@ -17,8 +17,12 @@ struct leds_protocol_apa102 {
   size_t packet_size;
 };
 
-int leds_init_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options);
-int leds_tx_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options);
+size_t leds_protocol_apa102_spi_buffer_size(unsigned count);
+
+union leds_interface_state *interface;
+
+int leds_protocol_apa102_init(union leds_interface_state *interface, struct leds_protocol_apa102 *protocol, const struct leds_options *options);
+int leds_protocol_apa102_tx(union leds_interface_state *interface, struct leds_protocol_apa102 *protocol, const struct leds_options *options);
 
 void apa102_set_frame(struct leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color);
 void apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct spi_led_color color);

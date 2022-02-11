@@ -1,31 +1,29 @@
 #include "p9813.h"
 #include "leds.h"
-#include "spi.h"
 
 #include <logging.h>
 
 #include <stdlib.h>
 
-#define P9813_SPI_MODE (SPI_MODE_0)
+#if CONFIG_LEDS_SPI_ENABLED
+# define P9813_SPI_MODE (SPI_MODE_0)
+#endif
 
 #define P9813_START_FRAME (struct p9813_frame){ 0x00, 0x00, 0x00, 0x00 }
 #define P9813_STOP_FRAME (struct p9813_frame){ 0x00, 0x00, 0x00, 0x00 }
 
 #define P9813_CONTROL_BYTE(b, g, r) (0xC0 | ((~(b) & 0xC0) >> 2) | ((~(g) & 0xC0) >> 4) | ((~(r) & 0xC0) >> 6))
 
-static int p9813_new_packet(struct p9813_packet **packetp, size_t *sizep, unsigned count)
+static size_t p9813_packet_size(unsigned count)
 {
-  unsigned stopframes = 1; // single 32-bit frame3
-  size_t size = (1 + count + stopframes) * sizeof(struct p9813_frame);
-  struct p9813_packet *packet;
+  unsigned stopframes = 1; // single 32-bit frame
 
-  if (!(packet = malloc(size))) {
-    LOG_ERROR("malloc");
-    return -1;
-  }
+  return (1 + count + stopframes) * sizeof(struct p9813_frame);
+}
 
-  *packetp = packet;
-  *sizep = size;
+static void p9813_packet_init(struct p9813_packet *packet, unsigned count)
+{
+  unsigned stopframes = 1; // single 32-bit frame
 
   // frames
   packet->start = P9813_START_FRAME;
@@ -37,16 +35,47 @@ static int p9813_new_packet(struct p9813_packet **packetp, size_t *sizep, unsign
   for (unsigned i = count; i < count + stopframes; i++) {
     packet->frames[i] = P9813_STOP_FRAME;
   }
+}
+
+size_t leds_protocol_p9813_spi_buffer_size(unsigned count)
+{
+  return p9813_packet_size(count);
+}
+
+int leds_protocol_p9813_init(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options)
+{
+  void *buf;
+  size_t size = p9813_packet_size(options->count);
+  int err;
+
+  switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      break;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      if ((err = leds_interface_spi_init(&interface->spi, options, &buf, size, P9813_SPI_MODE))) {
+        LOG_ERROR("leds_interface_spi_init");
+        return err;
+      }
+
+      break;
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", options->interface);
+      return 1;
+  }
+
+  protocol->packet = buf;
+  protocol->packet_size = size;
+
+  p9813_packet_init(protocol->packet, options->count);
 
   return 0;
 }
 
-int leds_init_p9813(struct leds_protocol_p9813 *protocol, const struct leds_options *options)
-{
-  return p9813_new_packet(&protocol->packet, &protocol->packet_size, options->count);
-}
-
-int leds_tx_p9813(struct leds_protocol_p9813 *protocol, const struct leds_options *options)
+int leds_protocol_p9813_tx(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
@@ -54,7 +83,7 @@ int leds_tx_p9813(struct leds_protocol_p9813 *protocol, const struct leds_option
 
   #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
-      return leds_tx_spi(options, P9813_SPI_MODE, protocol->packet, protocol->packet_size);
+      return leds_interface_spi_tx(&interface->spi, options, protocol->packet, protocol->packet_size);
   #endif
 
     default:

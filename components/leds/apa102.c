@@ -1,31 +1,29 @@
 #include "apa102.h"
 #include "leds.h"
-#include "spi.h"
 
 #include <logging.h>
 
 #include <stdlib.h>
 
-#define APA102_SPI_MODE (SPI_MODE_3)
+#if CONFIG_LEDS_SPI_ENABLED
+# define APA102_SPI_MODE (SPI_MODE_3)
+#endif
 
 #define APA102_START_FRAME (struct apa102_frame){ 0x00, 0x00, 0x00, 0x00 }
 #define APA102_STOP_FRAME (struct apa102_frame){ 0x00, 0x00, 0x00, 0x00 }
 
 #define APA102_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
 
-static int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsigned count)
+static size_t apa102_packet_size(unsigned count)
 {
   unsigned stopframes = (1 + count / 32); // one bit per LED, in frames of 32 bits
-  size_t size = (1 + count + stopframes) * sizeof(struct apa102_frame);
-  struct apa102_packet *packet;
 
-  if (!(packet = malloc(size))) {
-    LOG_ERROR("malloc");
-    return -1;
-  }
+  return (1 + count + stopframes) * sizeof(struct apa102_frame);
+}
 
-  *packetp = packet;
-  *sizep = size;
+static void apa102_packet_init(struct apa102_packet *packet, unsigned count)
+{
+  unsigned stopframes = (1 + count / 32); // one bit per LED, in frames of 32 bits
 
   // frames
   packet->start = APA102_START_FRAME;
@@ -37,16 +35,47 @@ static int apa102_new_packet(struct apa102_packet **packetp, size_t *sizep, unsi
   for (unsigned i = count; i < count + stopframes; i++) {
     packet->frames[i] = APA102_STOP_FRAME;
   }
+}
+
+size_t leds_protocol_apa102_spi_buffer_size(unsigned count)
+{
+  return apa102_packet_size(count);
+}
+
+int leds_protocol_apa102_init(union leds_interface_state *interface, struct leds_protocol_apa102 *protocol, const struct leds_options *options)
+{
+  void *buf;
+  size_t size = apa102_packet_size(options->count);
+  int err;
+
+  switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      break;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      if ((err = leds_interface_spi_init(&interface->spi, options, &buf, size, APA102_SPI_MODE))) {
+        LOG_ERROR("leds_interface_spi_init");
+        return err;
+      }
+
+      break;
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", options->interface);
+      return 1;
+  }
+
+  protocol->packet = buf;
+  protocol->packet_size = size;
+
+  apa102_packet_init(protocol->packet, options->count);
 
   return 0;
 }
 
-int leds_init_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options)
-{
-  return apa102_new_packet(&protocol->packet, &protocol->packet_size, options->count);
-}
-
-int leds_tx_apa102(struct leds_protocol_apa102 *protocol, const struct leds_options *options)
+int leds_protocol_apa102_tx(union leds_interface_state *interface, struct leds_protocol_apa102 *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
@@ -54,7 +83,7 @@ int leds_tx_apa102(struct leds_protocol_apa102 *protocol, const struct leds_opti
 
   #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
-      return leds_tx_spi(options, APA102_SPI_MODE, protocol->packet, protocol->packet_size);
+      return leds_interface_spi_tx(&interface->spi, options, protocol->packet, protocol->packet_size);
   #endif
 
     default:

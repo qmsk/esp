@@ -10,8 +10,12 @@
 # include <i2s_out.h>
 #endif
 
-#if CONFIG_LEDS_SPI_ENABLED
+#if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
+// using custom spi_master driver
 # include <spi_master.h>
+#elif CONFIG_LEDS_SPI_ENABLED
+// using esp-idf spi_master driver
+# include <hal/spi_types.h>
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED
@@ -104,12 +108,23 @@ struct leds_format_params {
  */
 enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
-/*
- * Returns total TX buffer sized required for protocol and count LEDs.
- *
- * @return 0 if not supported for protocol
- */
-size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count);
+#if CONFIG_LEDS_SPI_ENABLED
+  /*
+   * Returns total SPI data buffer sized required for protocol and count LEDs.
+   *
+   * @return 0 if not supported for protocol
+   */
+  size_t leds_spi_buffer_for_protocol(enum leds_protocol protocol, unsigned count);
+#endif
+
+#if CONFIG_LEDS_I2S_ENABLED
+  /*
+   * Returns total TX buffer sized required for protocol and count LEDs.
+   *
+   * @return 0 if not supported for protocol
+   */
+  size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count);
+#endif
 
 struct leds_options {
   enum leds_interface interface;
@@ -117,11 +132,17 @@ struct leds_options {
 
   unsigned count;
 
-#if CONFIG_LEDS_SPI_ENABLED
+#if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
   /** LEDS_INTERFACE_SPI */
   struct spi_master *spi_master;
   enum spi_mode spi_mode_bits; /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
   enum spi_clock spi_clock;
+#elif CONFIG_LEDS_SPI_ENABLED
+  /** LEDS_INTERFACE_SPI */
+  spi_host_device_t spi_host;
+  int spi_clock; /* Hz, divisible by APB_CLK_FREQ */
+  int spi_cs_io; /* GPIO pin, -1 if not used */
+  bool spi_cs_high; /* GPIO high during TX, default low */
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED

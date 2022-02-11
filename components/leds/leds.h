@@ -1,6 +1,17 @@
-#pragma once
+ #pragma once
 
 #include <leds.h>
+
+#if CONFIG_LEDS_SPI_ENABLED
+# include "interfaces/spi.h"
+#endif
+
+union leds_interface_state {
+  #if CONFIG_LEDS_SPI_ENABLED
+      struct leds_interface_spi spi;
+  #endif
+};
+
 #include "apa102.h"
 #include "p9813.h"
 #include "sk6812grbw.h"
@@ -12,6 +23,9 @@
 
 struct leds {
   struct leds_options options;
+
+  // interface state
+  union leds_interface_state interface;
 
   // protocol state
   union {

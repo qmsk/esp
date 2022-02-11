@@ -59,6 +59,23 @@ enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol p
   }
 }
 
+#if CONFIG_LEDS_SPI_ENABLED
+  size_t leds_spi_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
+  {
+    switch (protocol) {
+      case LEDS_PROTOCOL_APA102:
+        return leds_protocol_apa102_spi_buffer_size(count);
+
+      case LEDS_PROTOCOL_P9813:
+        return leds_protocol_p9813_spi_buffer_size(count);
+
+      default:
+        // unknown
+        return 0;
+    }
+  }
+#endif
+
 size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
 {
   switch (protocol) {
@@ -113,10 +130,10 @@ int leds_init(struct leds *leds, const struct leds_options *options)
 
   switch(options->protocol) {
     case LEDS_PROTOCOL_APA102:
-      return leds_init_apa102(&leds->state.apa102, options);
+      return leds_protocol_apa102_init(&leds->interface, &leds->state.apa102, options);
 
     case LEDS_PROTOCOL_P9813:
-      return leds_init_p9813(&leds->state.p9813, options);
+      return leds_protocol_p9813_init(&leds->interface, &leds->state.p9813, options);
 
     case LEDS_PROTOCOL_WS2812B:
       return leds_init_ws2812b(&leds->state.ws2812b, options);
@@ -339,12 +356,10 @@ int leds_tx(struct leds *leds)
 {
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
-      leds_tx_apa102(&leds->state.apa102, &leds->options);
-      return 0;
+      return leds_protocol_apa102_tx(&leds->interface, &leds->state.apa102, &leds->options);
 
     case LEDS_PROTOCOL_P9813:
-      leds_tx_p9813(&leds->state.p9813, &leds->options);
-      return 0;
+      return leds_protocol_p9813_tx(&leds->interface, &leds->state.p9813, &leds->options);
 
     case LEDS_PROTOCOL_WS2812B:
       leds_tx_ws2812b(&leds->state.ws2812b, &leds->options);

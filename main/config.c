@@ -70,6 +70,11 @@ int init_config()
   };
   esp_err_t err;
 
+  if ((err = config_init(&config))) {
+    LOG_ERROR("config_init");
+    return err;
+  }
+
   LOG_INFO("mount/format partition=%s at base_path=%s with max_files=%u", conf.partition_label, conf.base_path, conf.max_files);
 
   if ((err = esp_vfs_spiffs_register(&conf))) {

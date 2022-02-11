@@ -67,6 +67,7 @@ enum uart_rx_event {
   UART_RX_BREAK,
   UART_RX_BREAK_OVERFLOW,
   UART_RX_ABORT,
+  UART_RX_DISABLED,
 };
 
 int uart_rx_init(struct uart *uart, size_t rx_buffer_size);

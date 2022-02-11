@@ -278,6 +278,11 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         ret = -EINTR;
         goto ret;
 
+      case UART_RX_DISABLED:
+        LOG_DEBUG("RX disabled");
+        ret = -EINVAL;
+        goto ret;
+
       default:
         LOG_ERROR("unknown event");
         ret = -EINVAL;

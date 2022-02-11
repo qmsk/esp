@@ -12,7 +12,10 @@ int uart_rx_init(struct uart *uart, size_t rx_buffer_size)
 {
   LOG_DEBUG("rx_buffer_size=%u", rx_buffer_size);
 
-  if (!(uart->rx_buffer = xStreamBufferCreate(rx_buffer_size, 1))) {
+  if (rx_buffer_size == 0) {
+    uart->rx_buffer = NULL;
+
+  } else if (!(uart->rx_buffer = xStreamBufferCreate(rx_buffer_size, 1))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }
@@ -79,13 +82,17 @@ int uart_rx_setup(struct uart *uart, struct uart_options options)
 {
   int reset;
 
-  LOG_DEBUG("rx_buffered=%d rx_timeout=%d", options.rx_buffered, options.rx_timeout);
+  LOG_DEBUG("rx_buffer=%p rx_buffered=%d rx_timeout=%d", uart->rx_buffer, options.rx_buffered, options.rx_timeout);
 
   taskENTER_CRITICAL(&uart->mux);
 
   uart_ll_rxfifo_rst(uart->dev);
 
-  reset = xStreamBufferReset(uart->rx_buffer);
+  if (uart->rx_buffer) {
+    reset = xStreamBufferReset(uart->rx_buffer);
+  } else {
+    reset = 1;
+  }
 
   uart->rx_overflow = false;
   uart->rx_break = false;
@@ -104,7 +111,10 @@ int uart_rx_setup(struct uart *uart, struct uart_options options)
     uart_ll_set_rx_tout(uart->dev, UART_RX_TOUT_DEFAULT * uart_symbol_bits(options));
   }
 
-  uart_ll_ena_intr_mask(uart->dev, UART_RX_INTR_MASK);
+
+  if (uart->rx_buffer) {
+    uart_ll_ena_intr_mask(uart->dev, UART_RX_INTR_MASK);
+  }
 
   taskEXIT_CRITICAL(&uart->mux);
 
@@ -121,7 +131,10 @@ enum uart_rx_event uart_rx_event(struct uart *uart)
 
   taskENTER_CRITICAL(&uart->mux);
 
-  if (xStreamBufferBytesAvailable(uart->rx_buffer)) {
+  if (!uart->rx_buffer) {
+    event = UART_RX_DISABLED;
+
+  } else if (xStreamBufferBytesAvailable(uart->rx_buffer)) {
     event = UART_RX_DATA;
 
   } else if (uart->rx_overflow && uart->rx_break) {
@@ -164,6 +177,11 @@ enum uart_rx_event uart_rx_event(struct uart *uart)
 
 int uart_rx_read(struct uart *uart, void *buf, size_t size, TickType_t timeout)
 {
+  if (!uart->rx_buffer) {
+    LOG_ERROR("rx_buffer disabled");
+    return -1;
+  }
+
   // block on ISR RX FIFO -> buffer copy
   return xStreamBufferReceive(uart->rx_buffer, buf, size, timeout);
 }

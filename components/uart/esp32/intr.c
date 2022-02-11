@@ -25,7 +25,9 @@ static const int uart_irq[UART_PORT_MAX] = {
  */
 static inline void uart_intr_rx_flush(struct uart *uart, BaseType_t *task_woken)
 {
-  xStreamBufferSendCompletedFromISR(uart->rx_buffer, task_woken);
+  if (uart->rx_buffer) {
+    xStreamBufferSendCompletedFromISR(uart->rx_buffer, task_woken);
+  }
 
   // stop copying bytes from RX FIFO -> buffer, allow rx_buffer to drain
   uart_ll_disable_intr_mask(uart->dev, UART_RX_READ_INTR_MASK);
@@ -93,7 +95,7 @@ static void IRAM_ATTR uart_intr_rx_break_handler(struct uart *uart, BaseType_t *
 static void IRAM_ATTR uart_intr_rx_handler(struct uart *uart, BaseType_t *task_woken)
 {
   uint8_t buf[UART_RX_BUF_SIZE];
-  size_t size = xStreamBufferSpacesAvailable(uart->rx_buffer);
+  size_t size = uart->rx_buffer ? xStreamBufferSpacesAvailable(uart->rx_buffer) : UART_RX_BUF_SIZE;
   size_t len = uart_ll_get_rxfifo_len(uart->dev);
 
   if (uart_intr_rx_paused(uart)) {
@@ -139,7 +141,10 @@ static void IRAM_ATTR uart_intr_rx_handler(struct uart *uart, BaseType_t *task_w
     buf[i] = uart_rx_read_rxfifo_byte(uart);
   }
 
-  if ((size = xStreamBufferSendFromISR(uart->rx_buffer, buf, len, task_woken)) < len) {
+  if (!uart->rx_buffer) {
+    // blackhole
+
+  } if ((size = xStreamBufferSendFromISR(uart->rx_buffer, buf, len, task_woken)) < len) {
     // should never happen per xStreamBufferSpacesAvailable()
     LOG_ISR_DEBUG("xStreamBufferSendFromISR len=%u: size=%u", len, size);
 

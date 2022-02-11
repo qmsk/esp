@@ -149,6 +149,7 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
  * @return -EBADMSG RX framing/parity error
  * @return -ESPIPE RX break desynchronized, try reducing `rx_timeout` or other interrupt load
  * @return -EINTR interrupted using uart_abort_read()
+ * @return -EINVAL RX disabled (rx_buffer_size=0)
  */
 int uart_read(struct uart *uart, void *buf, size_t size);
 

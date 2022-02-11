@@ -1,4 +1,4 @@
-#include "i2s_out.h"
+#include "../i2s_out.h"
 #include "pin.h"
 
 #include <logging.h>

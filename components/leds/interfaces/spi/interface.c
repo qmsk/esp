@@ -116,7 +116,7 @@
   int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_options *options, void *buf, size_t size)
   {
     spi_transaction_t transaction = {
-      .length = size,
+      .length = size * 8, // transaction length is in bits
       .tx_buffer = buf,
     };
     esp_err_t err;

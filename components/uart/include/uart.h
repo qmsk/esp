@@ -238,7 +238,7 @@ int uart_close_tx(struct uart *uart);
 /**
  * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.
  *
- * WARNING: This does not release any pin_mutex acquired by `uart_open()`  -> `uart_setup()`! Use `uart_teardown()`!
+ * WARNING: This does not release any intr, dev or pin state acquired by `uart_open()` -> `uart_setup()`! Use `uart_teardown()`!
  */
 int uart_close(struct uart *uart);
 

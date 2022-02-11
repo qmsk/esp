@@ -251,7 +251,7 @@ void IRAM_ATTR uart_intr_handler(void *ctx)
 
 int uart_intr_setup(struct uart *uart)
 {
-  esp_err_t err;
+  esp_err_t err = 0;
 
   LOG_DEBUG("");
 
@@ -260,7 +260,9 @@ int uart_intr_setup(struct uart *uart)
   uart_ll_disable_intr_mask(uart->dev, UART_LL_INTR_MASK);
   uart_ll_clr_intsts_mask(uart->dev, UART_LL_INTR_MASK);
 
-  err = esp_intr_alloc(uart_irq[uart->port & UART_PORT_MASK], UART_INTR_ALLOC_FLAGS, uart_intr_handler, uart, &uart->intr);
+  if (!uart->intr) {
+    err = esp_intr_alloc(uart_irq[uart->port & UART_PORT_MASK], UART_INTR_ALLOC_FLAGS, uart_intr_handler, uart, &uart->intr);
+  }
 
   taskEXIT_CRITICAL(&uart->mux);
 
@@ -283,9 +285,9 @@ void uart_intr_teardown(struct uart *uart)
 
   err = esp_intr_free(uart->intr);
 
-  taskEXIT_CRITICAL(&uart->mux);
-
   uart->intr = NULL;
+
+  taskEXIT_CRITICAL(&uart->mux);
 
   if (err) {
     LOG_WARN("esp_intr_free: %s", esp_err_to_name(err));

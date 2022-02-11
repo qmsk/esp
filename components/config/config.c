@@ -175,6 +175,68 @@ int config_lookup(const struct config *config, const char *module, const char *n
     return 0;
 }
 
+int configtab_init(const struct configtab *tab)
+{
+  switch (tab->type) {
+    case CONFIG_TYPE_STRING:
+      break;
+
+    case CONFIG_TYPE_UINT16:
+      break;
+
+    case CONFIG_TYPE_BOOL:
+      break;
+
+    case CONFIG_TYPE_ENUM:
+      *tab->enum_type.value = tab->enum_type.default_value;
+      break;
+
+    default:
+      LOG_ERROR("invalid type=%d", tab->type);
+      return -1;
+  }
+
+  return 0;
+}
+
+
+int configmod_init(const struct configmod *module, const struct configtab *table)
+{
+  int err;
+
+  for (const struct configtab *tab = table; tab->name; tab++) {
+    if ((err = configtab_init(tab))) {
+      LOG_ERROR("configtab_init %s.%s", module->name, tab->name);
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+int config_init(struct config *config)
+{
+  int err;
+
+  for (const struct configmod *mod = config->modules; mod->name; mod++) {
+    if (mod->tables_count) {
+      for (int i = 0; i < mod->tables_count; i++) {
+        if ((err = configmod_init(mod, mod->tables[i]))) {
+          LOG_ERROR("configmod_init: %s%d", mod->name, i + 1);
+          return err;
+        }
+      }
+    } else {
+      if ((err = configmod_init(mod, mod->table))) {
+        LOG_ERROR("configmod_init: %s", mod->name);
+        return err;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int config_clear(const struct configmod *mod, const struct configtab *tab)
 {
   if (tab->readonly) {

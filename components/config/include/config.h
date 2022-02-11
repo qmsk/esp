@@ -56,6 +56,7 @@ struct configtab {
     struct {
       int *value;
       const struct config_enum *values;
+      int default_value;
     } enum_type;
   };
 };
@@ -93,6 +94,10 @@ int configmod_lookup(const struct configmod *modules, const char *name, const st
 int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);
 int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp);
 
+/* Set default values */
+int config_init(struct config *config);
+
+/* Set empty value */
 int config_clear(const struct configmod *mod, const struct configtab *tab);
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value);
 int config_get(const struct configmod *mod, const struct configtab *tab, char *buf, size_t size);

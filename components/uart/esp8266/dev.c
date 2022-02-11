@@ -29,9 +29,9 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
     }
   }
 
-  LOG_DEBUG("port=%x: clock_div=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffered=%u) inverted(rx=%d, tx=%d)",
+  LOG_DEBUG("port=%x: baud_rate=%d data_bits=%x parity_bits=%x stop_bits=%x rx(timeout=%u, buffered=%u) inverted(rx=%d, tx=%d)",
     uart->port,
-    options.clock_div,
+    options.baud_rate,
     options.data_bits,
     options.parity_bits,
     options.stop_bits,
@@ -46,7 +46,7 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
 
   taskENTER_CRITICAL();
 
-  uart->dev->clk_div.div_int = options.clock_div;
+  uart->dev->clk_div.div_int = UART_CLK_FREQ / options.baud_rate;
 
   uart->dev->conf0.parity = options.parity_bits & 0x1;
   uart->dev->conf0.parity_en = options.parity_bits ? 1 : 0;

@@ -206,7 +206,7 @@ void stop_console_uart()
 int start_console_uart(const struct console_config *config)
 {
   struct uart_options options = {
-    .clock_div    = UART_CLK_FREQ / CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+    .baud_rate    = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
     .data_bits    = UART_DATA_8_BITS,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
@@ -216,8 +216,8 @@ int start_console_uart(const struct console_config *config)
   };
   int err;
 
-  LOG_INFO("clock_div=%u, data_bits=%x parity=%x stop_bits=%x",
-    options.clock_div,
+  LOG_INFO("baud_rate=%u, data_bits=%x parity=%x stop_bits=%x",
+    options.baud_rate,
     options.data_bits,
     options.parity_bits,
     options.stop_bits

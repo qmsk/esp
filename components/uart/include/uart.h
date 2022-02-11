@@ -8,7 +8,6 @@
 #include <sys/types.h>
 
 #if CONFIG_IDF_TARGET_ESP8266
-# include <esp8266/eagle_soc.h>
 
 typedef int uart_port_t;
 
@@ -29,15 +28,6 @@ typedef int uart_port_t;
 #define UART_0_SWAP_RXONLY  (UART_0 | UART_SWAP_BIT | UART_RXONLY_BIT)  // GPIO13 RX
 #define UART_0_SWAP_TXONLY  (UART_0 | UART_SWAP_BIT | UART_TXONLY_BIT)  // GPIO15 TX
 #define UART_0_TXDBK        (UART_0 | UART_TXDBK_BIT)                   // GPIO1+GPIO2 TX, GPIO3 RX
-
-// TODO: unify with ESP32 uart_baud_rate to just use the raw baud rate itself
-typedef enum {
-  UART_BAUD_115200   = UART_CLK_FREQ / 115200,
-  UART_BAUD_250000   = UART_CLK_FREQ / 250000,
-  UART_BAUD_2500000  = UART_CLK_FREQ / 2500000,
-  UART_BAUD_3333333  = UART_CLK_FREQ / 3333333,
-  UART_BAUD_4000000  = UART_CLK_FREQ / 4000000,
-} uart_clock_div_t;
 
 typedef enum {
   UART_DATA_5_BITS = 0,
@@ -70,6 +60,10 @@ typedef enum {
 #define UART_PORT_MAX 3
 #define UART_PORT_MASK  0x0ff
 
+#else
+# error Unsupported target
+#endif
+
 typedef enum {
   UART_BAUD_115200  = 115200,
   UART_BAUD_250000  = 250000,
@@ -78,18 +72,10 @@ typedef enum {
   UART_BAUD_4000000 = 4000000,
 } uart_baud_t;
 
-#else
-# error Unsupported target
-#endif
-
 #define UART_RX_TIMEOUT_MAX ((1 << 7) - 1)
 
 struct uart_options {
-#if CONFIG_IDF_TARGET_ESP8266
-  uart_clock_div_t clock_div;
-#elif CONFIG_IDF_TARGET_ESP32
   uart_baud_t baud_rate;
-#endif
   uart_word_length_t data_bits;
   uart_parity_t parity_bits;
   uart_stop_bits_t stop_bits;

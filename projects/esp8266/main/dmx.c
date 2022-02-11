@@ -135,8 +135,8 @@ static int start_dmx_uart(const struct dmx_config *config)
     options.rx_buffered = 1;
   }
 
-  LOG_INFO("clock_div=%u, data_bits=%x parity=%x stop_bits=%x : rx_timeout=%u rx_buffered=%u",
-    options.clock_div,
+  LOG_INFO("baud_rate=%u, data_bits=%x parity=%x stop_bits=%x : rx_timeout=%u rx_buffered=%u",
+    options.baud_rate,
     options.data_bits,
     options.parity_bits,
     options.stop_bits,

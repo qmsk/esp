@@ -91,9 +91,11 @@ int leds_tx_uart_sk6812grbw(const struct leds_options *options, union sk6812grbw
     return err;
   }
 
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+#endif
 
   // temporarily raise task priority to ensure uart TX buffer does not starve
   vTaskPrioritySet(NULL, SK6812_TX_TASK_PRIORITY);
@@ -125,9 +127,11 @@ int leds_tx_uart_sk6812grbw(const struct leds_options *options, union sk6812grbw
   }
 
 error:
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);
   }
+#endif
 
   if ((err = uart_close(options->uart))) {
     LOG_ERROR("uart_close");

@@ -15,6 +15,7 @@ menu "qmsk-leds"
       bool "Enable UART output interface"
 
       default y if IDF_TARGET="esp8266"
+      default y if IDF_TARGET="esp32"
       default n
 
   config LEDS_I2S_ENABLED

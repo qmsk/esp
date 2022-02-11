@@ -140,9 +140,11 @@ int leds_tx_uart_ws2812b(const struct leds_options *options, union ws2812b_pixel
     return err;
   }
 
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+#endif
 
   // temporarily raise task priority to ensure uart TX buffer does not starve
   vTaskPrioritySet(NULL, WS2812B_TX_TASK_PRIORITY);
@@ -170,9 +172,11 @@ int leds_tx_uart_ws2812b(const struct leds_options *options, union ws2812b_pixel
   }
 
 error:
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);
   }
+#endif
 
   if ((err = uart_close(options->uart))) {
     LOG_ERROR("uart_close");

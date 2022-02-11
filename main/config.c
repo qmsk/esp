@@ -32,7 +32,6 @@ const struct configmod config_modules[] = {
   { "artnet",
     .table = artnet_configtab,
   },
-  // TODO: config support for multiple instances of a table
   { "leds",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."

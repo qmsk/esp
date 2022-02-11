@@ -78,17 +78,26 @@
   }
 #else
 # include <esp_heap_caps.h>
+  // give CS pin a couple clock cycles to stabilize
+  #define SPI_DEVICE_CS_ENA_PRETRANS_DEFAULT 4
+  #define SPI_DEVICE_CS_ENA_POSTTRANS_DEFAULT 2
 
   int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_options *options, void **bufp, size_t buf_size, int spi_mode)
   {
     spi_device_interface_config_t device_config = {
-      .command_bits   = 0,
-      .address_bits   = 0,
-      .dummy_bits     = 0,
-      .mode           = spi_mode,
-      .clock_speed_hz = options->spi_clock,
-      .spics_io_num   = options->spi_cs_io,
-      .queue_size     = 1,
+      .command_bits     = 0,
+      .address_bits     = 0,
+      .dummy_bits       = 0,
+      .mode             = spi_mode,
+      .cs_ena_pretrans  = SPI_DEVICE_CS_ENA_PRETRANS_DEFAULT,
+      .cs_ena_posttrans = SPI_DEVICE_CS_ENA_POSTTRANS_DEFAULT,
+      .clock_speed_hz   = options->spi_clock,
+      .spics_io_num     = options->spi_cs_io,
+      .flags            = (
+        // required for cs_ena_pretrans, irrelevant as we skip the MISO phase
+        SPI_DEVICE_HALFDUPLEX
+      ),
+      .queue_size       = 1,
     };
     void *buf;
     esp_err_t err;

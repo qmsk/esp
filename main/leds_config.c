@@ -38,6 +38,15 @@ const struct config_enum leds_protocol_enum[] = {
   {}
 };
 
+const struct config_enum leds_spi_cs_mode_enum[] = {
+  { "",     LEDS_SPI_CS_MODE_DISABLED },
+#if CONFIG_LEDS_SPI_ENABLED
+  { "HIGH", LEDS_SPI_CS_MODE_HIGH     },
+  { "LOW",  LEDS_SPI_CS_MODE_LOW      },
+#endif
+  {}
+};
+
 const struct config_enum leds_spi_clock_enum[] = {
 #if CONFIG_LEDS_SPI_ENABLED
   { "20M",  SPI_CLOCK_20MHZ   },

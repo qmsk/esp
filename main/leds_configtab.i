@@ -25,6 +25,15 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.",
     .uint16_type = { .value = &LEDS_CONFIG.spi_delay, .max = SPI_MODE_MOSI_DELAY_MAX },
   },
+# else
+  { CONFIG_TYPE_ENUM, "spi_cs_mode",
+    .description = "Output SPI Chip Select when transmitting.",
+    .enum_type = { .value = &LEDS_CONFIG.spi_cs_mode, .values = leds_spi_cs_mode_enum, .default_value = LEDS_SPI_CS_MODE_DISABLED },
+  },
+  { CONFIG_TYPE_UINT16, "spi_cs_io",
+    .description = "Output SPI Chip Select to IO pin when transmitting.",
+    .uint16_type = { .value = &LEDS_CONFIG.spi_cs_io, .max = (SOC_GPIO_PIN_COUNT - 1) },
+  },
 # endif
 #endif
 

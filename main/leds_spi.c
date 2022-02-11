@@ -122,8 +122,23 @@
 
     options->spi_host = leds_spi_host;
     options->spi_clock = config->spi_clock;
-    options->spi_cs_io = -1; // TODO
-    options->spi_cs_high = false; // TODO
+
+    switch ((enum leds_spi_cs_mode)(config->spi_cs_mode)) {
+      case LEDS_SPI_CS_MODE_DISABLED:
+        options->spi_cs_io = -1; // disabled
+        options->spi_cs_high = false;
+        break;
+
+      case LEDS_SPI_CS_MODE_LOW:
+        options->spi_cs_io = config->spi_cs_io;
+        options->spi_cs_high = false;
+        break;
+
+      case LEDS_SPI_CS_MODE_HIGH:
+        options->spi_cs_io = config->spi_cs_io;
+        options->spi_cs_high = true;
+        break;
+    }
 
     LOG_INFO("leds%d: spi host=%d clock=%d cs_io=%d cs_high=%d", state->index + 1,
       options->spi_host,

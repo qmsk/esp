@@ -24,6 +24,12 @@ struct leds_state *state;
 
   #define SPI_CLOCK_DEFAULT (SPI_CLOCK_1MHZ)
 
+  enum leds_spi_cs_mode {
+    LEDS_SPI_CS_MODE_DISABLED = -1,
+    LEDS_SPI_CS_MODE_LOW      = 0,
+    LEDS_SPI_CS_MODE_HIGH     = 1,
+  };
+
   struct leds_spi_config {
     int host;
   };
@@ -54,6 +60,9 @@ struct leds_config {
   int spi_clock;
 # if CONFIG_IDF_TARGET_ESP8266
   uint16_t spi_delay;
+# else
+  int spi_cs_mode;
+  uint16_t spi_cs_io;
 # endif
 #endif
 

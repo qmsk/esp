@@ -1,5 +1,4 @@
 set(src_dirs ".")
-set(requires)
 
 if(CONFIG_LEDS_I2S_ENABLED)
   list(APPEND src_dirs "interfaces/i2s")
@@ -11,7 +10,6 @@ endif()
 
 if(CONFIG_LEDS_UART_ENABLED)
   list(APPEND src_dirs "interfaces/uart")
-  list(APPEND requires "uart")
 endif()
 
 idf_component_register(

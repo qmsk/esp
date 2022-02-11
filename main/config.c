@@ -32,6 +32,14 @@ const struct configmod config_modules[] = {
   { "artnet",
     .table = artnet_configtab,
   },
+  { "leds-spi",
+    .description = "LEDS SPI interface",
+    .table = leds_spi_configtab,
+  },
+  { "leds-uart",
+    .description = "LEDS UART interface",
+    .table = leds_uart_configtab,
+  },
   { "leds",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."

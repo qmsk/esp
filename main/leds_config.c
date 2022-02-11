@@ -38,22 +38,6 @@ const struct config_enum leds_protocol_enum[] = {
   {}
 };
 
-#if CONFIG_LEDS_UART_ENABLED
-const struct config_enum leds_uart_port_enum[] = {
-  { "",              -1       },
-# if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
-  { "UART0",         UART_0   },
-# endif
-# if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
-  { "UART1",         UART_1   },
-# endif
-# if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
-  { "UART2",         UART_2   },
-# endif
-  {},
-};
-#endif
-
 const struct config_enum leds_spi_clock_enum[] = {
 #if CONFIG_LEDS_SPI_ENABLED
   { "20M",  SPI_CLOCK_20MHZ   },
@@ -157,7 +141,7 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
     options.interface = leds_interface_for_protocol(options.protocol);
   }
 
-  LOG_INFO("leds%d: interface=%s protocol=%s count=%u", state->index,
+  LOG_INFO("leds%d: interface=%s protocol=%s count=%u", state->index + 1,
     config_enum_to_string(leds_interface_enum, options.interface),
     config_enum_to_string(leds_protocol_enum, options.protocol),
     options.count
@@ -167,12 +151,21 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
     case LEDS_INTERFACE_NONE:
       break;
 
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      if ((err = config_leds_spi(state, config, &options))) {
+        LOG_ERROR("leds%d: config_leds_spi", state->index + 1);
+        return err;
+      }
+      break;
+  #endif
+
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      options.uart = leds_uart[config->uart_port];
-      // TODO: uart_pin_mutex?
-
-      LOG_INFO("leds%d: uart port=%d -> uart=%p", state->index, config->uart_port, options.uart);
+      if ((err = config_leds_uart(state, config, &options))) {
+        LOG_ERROR("leds%d: config_leds_uart", state->index + 1);
+        return err;
+      }
       break;
   #endif
   }

@@ -10,70 +10,22 @@
 
 struct leds_state leds_states[LEDS_COUNT] = {};
 
-#if CONFIG_LEDS_UART_ENABLED
-  struct uart *leds_uart[UART_PORT_MAX];
-
-  int init_leds_uart(uart_port_t uart_port)
-  {
-    bool enabled = false;
-    int err;
-
-    for (int i = 0; i < LEDS_COUNT; i++)
-    {
-      const struct leds_config *config = &leds_configs[i];
-
-      if (!config->enabled) {
-        continue;
-      }
-
-      if (config->interface != LEDS_INTERFACE_UART || config->uart_port != uart_port) {
-        continue;
-      }
-
-      LOG_INFO("leds%d: uart_port=%d enabled", i, uart_port);
-      enabled = true;
-    }
-
-    if (!enabled) {
-      LOG_INFO("leds: uart_port=%d disabled", uart_port);
-      return 0;
-    }
-
-    if ((err = uart_new(&leds_uart[uart_port], uart_port, LEDS_UART_RX_BUFFER_SIZE, LEDS_UART_TX_BUFFER_SIZE))) {
-      LOG_ERROR("uart_new(port=%d)", uart_port);
-      return err;
-    }
-
-    return 0;
-  }
-#endif
-
-
 int init_leds()
 {
   int err;
 
+#if CONFIG_LEDS_SPI_ENABLED
+  if ((err = init_leds_spi())) {
+    LOG_ERROR("init_leds_spi");
+    return 0;
+  }
+#endif
+
 #if CONFIG_LEDS_UART_ENABLED
-# if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
-  if ((err = init_leds_uart(UART_0))) {
-    LOG_ERROR("init_leds_uart(port=%d)", UART_0);
+  if ((err = init_leds_uart())) {
+    LOG_ERROR("init_leds_uart");
     return 0;
   }
-# endif
-
-# if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
-  if ((err = init_leds_uart(UART_1))) {
-    LOG_ERROR("init_leds_uart(port=%d)", UART_1);
-    return 0;
-  }
-# endif
-
-# if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
-  if ((err = init_leds_uart(UART_2))) {
-    LOG_ERROR("init_leds_uart(port=%d)", UART_2);
-    return 0;
-  }
-# endif
 #endif
 
   for (int i = 0; i < LEDS_COUNT; i++)

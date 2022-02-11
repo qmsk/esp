@@ -14,23 +14,18 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
 
 #if CONFIG_LEDS_SPI_ENABLED
-  { CONFIG_TYPE_ENUM, "spi_rate",
-    .alias = "rate",
+  { CONFIG_TYPE_ENUM, "spi_clock",
+    .alias = "spi_rate",
     .description = "Longer cable runs can be noisier, and may need a slower rate to work reliably.",
-    .enum_type = { .value = &LEDS_CONFIG.spi_clock, .values = leds_spi_clock_enum },
+    .enum_type = { .value = &LEDS_CONFIG.spi_clock, .values = leds_spi_clock_enum, .default_value = SPI_CLOCK_DEFAULT },
   },
+# if CONFIG_IDF_TARGET_ESP8266
   { CONFIG_TYPE_UINT16, "spi_delay",
     .alias = "delay",
     .description = "Delay data signal transitions by system clock cycles to offset clock/data transitions and avoid coupling glitches.",
     .uint16_type = { .value = &LEDS_CONFIG.spi_delay, .max = SPI_MODE_MOSI_DELAY_MAX },
   },
-#endif
-
-#if CONFIG_LEDS_UART_ENABLED
-  { CONFIG_TYPE_ENUM, "uart_port",
-    .description = "Select uart peripherial for UART interface.",
-    .enum_type = { .value = &LEDS_CONFIG.uart_port, .values = leds_uart_port_enum, .default_value = -1 },
-  },
+# endif
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED

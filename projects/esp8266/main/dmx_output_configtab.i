@@ -10,7 +10,7 @@ const struct configtab DMX_OUTPUT_CONFIGTAB[] = {
    .description = (
      "GPIO pin will be taken high to enable output once the UART1 TX output is safe."
    ),
-   .uint16_type = { .value = &DMX_OUTPUT_CONFIG.gpio_pin, .max = GPIO_OUT_PIN_MAX },
+   .uint16_type = { .value = &DMX_OUTPUT_CONFIG.gpio_pin, .max = (GPIO_OUT_PIN_COUNT - 1) },
  },
  { CONFIG_TYPE_ENUM, "gpio_mode",
    .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",

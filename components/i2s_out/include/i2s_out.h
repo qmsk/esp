@@ -99,5 +99,12 @@ int i2s_out_flush(struct i2s_out *i2s_out);
 
 /**
  * Flush I2S output, and release the lock acquired using `i2s_out_open()`.
+ *
+ * Tears down the data_gpio pin.
  */
 int i2s_out_close(struct i2s_out *i2s_out);
+
+/**
+ * Tear down all state setup by i2s_out_open(), including state typically shared across multiple open -> close calls.
+ */
+int i2s_out_teardown(struct i2s_out *i2s_out);

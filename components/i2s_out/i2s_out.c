@@ -195,6 +195,21 @@ int i2s_out_close(struct i2s_out *i2s_out)
   int err = i2s_out_flush(i2s_out);
 
   i2s_out_pin_teardown(i2s_out);
+
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+  return err;
+}
+
+int i2s_out_teardown(struct i2s_out *i2s_out)
+{
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
   i2s_out_intr_teardown(i2s_out);
   i2s_out_dev_teardown(i2s_out);
 
@@ -202,5 +217,5 @@ int i2s_out_close(struct i2s_out *i2s_out)
     LOG_WARN("xSemaphoreGiveRecursive");
   }
 
-  return err;
+  return 0;
 }

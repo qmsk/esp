@@ -6,8 +6,15 @@
 #include <freertos/task.h>
 #include <stdlib.h>
 
-int i2s_out_init(struct i2s_out *i2s_out)
+int i2s_out_init(struct i2s_out *i2s_out, i2s_port_t port)
 {
+  if (port < 0 || port >= I2S_PORT_MAX) {
+    LOG_ERROR("invalid port=%x", port);
+    return -1;
+  } else {
+    i2s_out->port = port;
+  }
+
   if (!(i2s_out->mutex = xSemaphoreCreateRecursiveMutex())) {
     LOG_ERROR("xSemaphoreCreateRecursiveMutex");
     return -1;
@@ -16,7 +23,7 @@ int i2s_out_init(struct i2s_out *i2s_out)
   return 0;
 }
 
-int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size)
+int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size)
 {
   struct i2s_out *i2s_out = NULL;
   int err;
@@ -26,7 +33,7 @@ int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size)
     return -1;
   }
 
-  if ((err = i2s_out_init(i2s_out))) {
+  if ((err = i2s_out_init(i2s_out, port))) {
     LOG_ERROR("i2s_out_init");
     goto error;
   }
@@ -76,6 +83,11 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   if ((err = i2s_out_i2s_setup(i2s_out, options))) {
     LOG_ERROR("i2s_out_i2s_setup");
+    goto error;
+  }
+
+  if ((err = i2s_out_intr_setup(i2s_out, options))) {
+    LOG_ERROR("i2s_out_intr_setup");
     goto error;
   }
 
@@ -179,6 +191,7 @@ int i2s_out_close(struct i2s_out *i2s_out)
   int err = i2s_out_flush(i2s_out);
 
   i2s_out_pin_teardown(i2s_out);
+  i2s_out_intr_teardown(i2s_out);
   i2s_out_dev_teardown(i2s_out);
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {

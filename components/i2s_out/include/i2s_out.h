@@ -6,11 +6,20 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+typedef int i2s_port_t;
+
+#if CONFIG_IDF_TARGET_ESP8266
+# define I2S_PORT_0      0
+# define I2S_PORT_MAX    1
+
+#endif
+
 struct i2s_out;
 
 struct i2s_out_clock_options {
-  uint32_t clkm_div   : 6; // clock divider
-  uint32_t bck_div    : 6; // clock divider
+  // using the default 160MHz clock
+  uint32_t clkm_div   : 6; // master clock divider
+  uint32_t bck_div    : 6; // bit clock divider
 };
 
 static const struct i2s_out_clock_options I2S_DMA_CLOCK_3M2 = { .clkm_div = 5, .bck_div = 10 };
@@ -24,14 +33,20 @@ struct i2s_out_options {
   // The EOF value can be repeated to implement a reset frame
   unsigned eof_count;
 
+  // Acquire mutex before configuring dev
+  SemaphoreHandle_t dev_mutex;
+
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
+#if CONFIG_IDF_TARGET_ESP32
+  gpio_num_t data_gpio;
+#endif
 };
 
 /**
  * Allocate a new I2S output with an internal DMA TX buffer.
  */
-int i2s_out_new(struct i2s_out **i2s_outp, size_t buffer_size);
+int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size);
 
 /**
  * Setup the I2S output.

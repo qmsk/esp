@@ -16,6 +16,8 @@
 #define LEDS_UART_RX_BUFFER_SIZE 0
 #define LEDS_UART_TX_BUFFER_SIZE 512
 
+#define LEDS_I2S_PORT I2S_PORT_0
+
 struct uart *leds_uart;
 struct spi_master *leds_spi_master;
 struct i2s_out *leds_i2s_out;
@@ -206,7 +208,7 @@ static int init_i2s_out(const struct leds_config *configs)
 
   LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
 
-  if ((err = i2s_out_new(&leds_i2s_out, max_i2s_buffer_size))) {
+  if ((err = i2s_out_new(&leds_i2s_out, LEDS_I2S_PORT, max_i2s_buffer_size))) {
     LOG_ERROR("i2s_out_new");
     return err;
   }

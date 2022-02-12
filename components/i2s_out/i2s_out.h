@@ -7,7 +7,7 @@
 struct dma_desc;
 
 struct i2s_out {
-  SemaphoreHandle_t pin_mutex;
+  i2s_port_t port;
   SemaphoreHandle_t mutex;
 
 
@@ -53,3 +53,7 @@ void i2s_out_dev_teardown(struct i2s_out *i2s_out);
 /* pin.c */
 int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 void i2s_out_pin_teardown(struct i2s_out *i2s_out);
+
+/* intr.c */
+int i2s_out_intr_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+void i2s_out_intr_teardown(struct i2s_out *i2s_out);

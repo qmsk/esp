@@ -25,7 +25,9 @@ struct i2s_out {
 
   /* pin */
   SemaphoreHandle_t pin_mutex;
-
+#if CONFIG_IDF_TARGET_ESP32
+  gpio_num_t data_gpio;
+#endif
   /* i2s */
   // task waiting for tx_rempty notify
   xTaskHandle i2s_flush_task;
@@ -63,6 +65,7 @@ int i2s_out_dev_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 void i2s_out_dev_teardown(struct i2s_out *i2s_out);
 
 /* pin.c */
+int i2s_out_pin_init(struct i2s_out *i2s_out);
 int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
 void i2s_out_pin_teardown(struct i2s_out *i2s_out);
 

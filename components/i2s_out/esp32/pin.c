@@ -11,6 +11,13 @@ static const uint8_t i2s_data_out_sig[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = I2S1O_DATA_OUT23_IDX,
 };
 
+int i2s_out_pin_init(struct i2s_out *i2s_out)
+{
+  i2s_out->data_gpio = -1;
+
+  return 0;
+}
+
 int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   if (options.pin_mutex) {
@@ -22,15 +29,17 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     }
   }
 
-  LOG_DEBUG("data_gpio=%d", options.data_gpio);
+  i2s_out->data_gpio = options.data_gpio;
+
+  LOG_DEBUG("data_gpio=%d", i2s_out->data_gpio);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[options.data_gpio], PIN_FUNC_GPIO);
-  gpio_ll_input_disable(&GPIO, options.data_gpio);
-  gpio_ll_output_enable(&GPIO, options.data_gpio);
+  gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->data_gpio], PIN_FUNC_GPIO);
+  gpio_ll_input_disable(&GPIO, i2s_out->data_gpio);
+  gpio_ll_output_enable(&GPIO, i2s_out->data_gpio);
 
-  esp_rom_gpio_connect_out_signal(options.data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
+  esp_rom_gpio_connect_out_signal(i2s_out->data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
@@ -41,7 +50,16 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
 {
   LOG_DEBUG("");
 
-  // TODO: place output into a safe state?
+  taskENTER_CRITICAL(&i2s_out->mux);
+
+  // place output into a safe state
+  if (i2s_out->data_gpio >= 0) {
+    gpio_ll_output_disable(&GPIO, i2s_out->data_gpio);
+
+    i2s_out->data_gpio = -1;
+  }
+
+  taskEXIT_CRITICAL(&i2s_out->mux);
 
   if (i2s_out->pin_mutex) {
     xSemaphoreGive(i2s_out->pin_mutex);

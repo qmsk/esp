@@ -52,6 +52,11 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size)
     goto error;
   }
 
+  if ((err = i2s_out_pin_init(i2s_out))) {
+    LOG_ERROR("i2s_out_pin_init");
+    goto error;
+  }
+
   *i2s_outp = i2s_out;
 
   return 0;

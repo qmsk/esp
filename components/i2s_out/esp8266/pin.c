@@ -3,6 +3,11 @@
 
 #include <logging.h>
 
+int i2s_out_pin_init(struct i2s_out *i2s_out)
+{
+  return 0;
+}
+
 int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   if (options.pin_mutex) {

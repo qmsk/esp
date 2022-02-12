@@ -16,8 +16,6 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  i2s_ll_enable_clock(i2s_out->dev);
-
   i2s_ll_tx_stop(i2s_out->dev);
   i2s_ll_tx_reset(i2s_out->dev);
 

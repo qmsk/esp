@@ -1,6 +1,7 @@
 #include "../i2s_out.h"
 
 #include <driver/periph_ctrl.h>
+#include <hal/i2s_ll.h>
 
 #include <logging.h>
 
@@ -44,6 +45,8 @@ int i2s_out_dev_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   // TODO: CONFIG_PM_ENABLE?
 
+  i2s_ll_enable_clock(i2s_out->dev);
+
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   return 0;
@@ -54,6 +57,8 @@ void i2s_out_dev_teardown(struct i2s_out *i2s_out)
   LOG_DEBUG("");
 
   taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_ll_disable_clock(i2s_out->dev);
 
   periph_module_disable(i2s_periph_module[i2s_out->port]);
 

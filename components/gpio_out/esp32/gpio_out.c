@@ -27,14 +27,11 @@ void gpio_out_all(struct gpio_out *out)
   gpio_pins_out(out->pins, out->level);
 }
 
-int gpio_out_init(struct gpio_out *gpio_out, enum gpio_out_pins pins, enum gpio_out_level level)
+int gpio_out_setup(struct gpio_out *gpio_out)
 {
-  gpio_out->pins = pins;
-  gpio_out->level = level;
-
   for (gpio_num_t gpio = 0; gpio < GPIO_OUT_PIN_COUNT; gpio++) {
-    if (pins & gpio_out_pin(gpio)) {
-      gpio_pins_init(gpio, level);
+    if (gpio_out->pins & gpio_out_pin(gpio)) {
+      gpio_pins_init(gpio, gpio_out->level);
     }
   }
 

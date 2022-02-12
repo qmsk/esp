@@ -78,11 +78,15 @@ enum gpio_out_level {
 };
 
 struct gpio_out {
+  // bitmask of pins to enable
   enum gpio_out_pins pins;
+
+  // output level for pins
   enum gpio_out_level level;
 };
 
-int gpio_out_init(struct gpio_out *out, enum gpio_out_pins pins, enum gpio_out_level level);
+/* Setup output pins */
+int gpio_out_setup(struct gpio_out *out);
 
 /* Clear all output pins */
 void gpio_out_clear(struct gpio_out *out);

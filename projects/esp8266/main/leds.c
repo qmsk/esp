@@ -26,8 +26,6 @@ struct leds_state leds_states[LEDS_COUNT];
 
 static int init_spi_master(const struct leds_config *configs)
 {
-  enum gpio_out_pins gpio_out_pins = 0;
-  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
   struct spi_options options = {
       .mode   = LEDS_SPI_MODE,
       .clock  = LEDS_SPI_CLOCK,
@@ -61,13 +59,13 @@ static int init_spi_master(const struct leds_config *configs)
         break;
 
       case GPIO_OUT_HIGH:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        leds_gpio_out_spi.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_spi.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
       case GPIO_OUT_LOW:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_spi.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_spi.level = GPIO_OUT_LOW; // XXX: per-pin output level?
         break;
     }
   }
@@ -78,15 +76,15 @@ static int init_spi_master(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_spi.pins, leds_gpio_out_spi.level);
 
   if ((err = spi_master_new(&leds_spi_master, options))) {
     LOG_ERROR("spi_master_new");
     return err;
   }
 
-  if ((err = gpio_out_init(&leds_gpio_out_spi, gpio_out_pins, gpio_out_level))) {
-    LOG_ERROR("gpio_out_init");
+  if ((err = gpio_out_setup(&leds_gpio_out_spi))) {
+    LOG_ERROR("gpio_out_setup");
     return err;
   }
 
@@ -95,8 +93,6 @@ static int init_spi_master(const struct leds_config *configs)
 
 static int init_uart(const struct leds_config *configs)
 {
-  enum gpio_out_pins gpio_out_pins = 0;
-  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
   bool enabled = 0;
   int err;
 
@@ -120,13 +116,13 @@ static int init_uart(const struct leds_config *configs)
         break;
 
       case GPIO_OUT_HIGH:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        leds_gpio_out_uart.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_uart.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
       case GPIO_OUT_LOW:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_uart.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_uart.level = GPIO_OUT_LOW; // XXX: per-pin output level?
         break;
     }
   }
@@ -137,15 +133,15 @@ static int init_uart(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_uart.pins, leds_gpio_out_uart.level);
 
   if ((err = uart_new(&leds_uart, LEDS_UART, LEDS_UART_RX_BUFFER_SIZE, LEDS_UART_TX_BUFFER_SIZE))) {
     LOG_ERROR("uart_new");
     return err;
   }
 
-  if ((err = gpio_out_init(&leds_gpio_out_uart, gpio_out_pins, gpio_out_level))) {
-    LOG_ERROR("gpio_out_init");
+  if ((err = gpio_out_setup(&leds_gpio_out_uart))) {
+    LOG_ERROR("gpio_out_setup");
     return err;
   }
 
@@ -154,8 +150,6 @@ static int init_uart(const struct leds_config *configs)
 
 static int init_i2s_out(const struct leds_config *configs)
 {
-  enum gpio_out_pins gpio_out_pins = 0;
-  enum gpio_out_level gpio_out_level = GPIO_OUT_LOW;
   size_t max_i2s_buffer_size = 0;
   bool enabled = 0;
   int err;
@@ -182,13 +176,13 @@ static int init_i2s_out(const struct leds_config *configs)
         break;
 
       case GPIO_OUT_HIGH:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_HIGH; // XXX: per-pin output level?
+        leds_gpio_out_i2s.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_i2s.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
       case GPIO_OUT_LOW:
-        gpio_out_pins |= gpio_out_pin(config->gpio_pin);
-        gpio_out_level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_i2s.pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out_i2s.level = GPIO_OUT_LOW; // XXX: per-pin output level?
         break;
     }
 
@@ -206,15 +200,15 @@ static int init_i2s_out(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", gpio_out_pins, gpio_out_level);
+  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_i2s.pins, leds_gpio_out_i2s.level);
 
   if ((err = i2s_out_new(&leds_i2s_out, LEDS_I2S_PORT, max_i2s_buffer_size))) {
     LOG_ERROR("i2s_out_new");
     return err;
   }
 
-  if ((err = gpio_out_init(&leds_gpio_out_i2s, gpio_out_pins, gpio_out_level))) {
-    LOG_ERROR("gpio_out_init");
+  if ((err = gpio_out_setup(&leds_gpio_out_i2s))) {
+    LOG_ERROR("gpio_out_setup");
     return err;
   }
 

@@ -38,17 +38,17 @@ const struct config_enum leds_protocol_enum[] = {
   {}
 };
 
+#if CONFIG_LEDS_SPI_ENABLED
 const struct config_enum leds_spi_cs_mode_enum[] = {
   { "",     LEDS_SPI_CS_MODE_DISABLED },
-#if CONFIG_LEDS_SPI_ENABLED
   { "HIGH", LEDS_SPI_CS_MODE_HIGH     },
   { "LOW",  LEDS_SPI_CS_MODE_LOW      },
-#endif
   {}
 };
+#endif
 
-const struct config_enum leds_spi_clock_enum[] = {
 #if CONFIG_LEDS_SPI_ENABLED
+const struct config_enum leds_spi_clock_enum[] = {
   { "20M",  SPI_CLOCK_20MHZ   },
   { "10M",  SPI_CLOCK_10MHZ   },
   { "5M",   SPI_CLOCK_5MHZ    },
@@ -61,18 +61,18 @@ const struct config_enum leds_spi_clock_enum[] = {
   { "20K",  SPI_CLOCK_20KHZ   },
   { "10K",  SPI_CLOCK_10KHZ   },
   { "1K",   SPI_CLOCK_1KHZ    },
-#endif
   {}
 };
+#endif
 
-const struct config_enum leds_gpio_mode_enum[] = {
-  { "OFF",  -1                        },
 #if CONFIG_LEDS_GPIO_ENABLED
-  { "HIGH", GPIO_OUT_HIGH             },
-  { "LOW",  GPIO_OUT_LOW              },
-#endif
+const struct config_enum leds_gpio_mode_enum[] = {
+  { "",     LEDS_GPIO_MODE_DISABLED   },
+  { "LOW",  LEDS_GPIO_MODE_LOW        },
+  { "HIGH", LEDS_GPIO_MODE_HIGH       },
   {}
 };
+#endif
 
 const struct config_enum leds_format_enum[] = {
   { "RGB",  LEDS_FORMAT_RGB  },
@@ -155,6 +155,22 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
     config_enum_to_string(leds_protocol_enum, options.protocol),
     options.count
   );
+
+#if CONFIG_LEDS_GPIO_ENABLED
+  switch(config->gpio_mode) {
+    case LEDS_GPIO_MODE_DISABLED:
+      break;
+
+    case LEDS_GPIO_MODE_LOW:
+    case LEDS_GPIO_MODE_HIGH:
+      if ((err = config_leds_gpio(state, config, &options))) {
+        LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
+        return err;
+      }
+      break;
+
+  }
+#endif
 
   switch(options.interface) {
     case LEDS_INTERFACE_NONE:

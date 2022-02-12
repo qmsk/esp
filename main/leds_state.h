@@ -19,6 +19,10 @@ struct leds_state {
 
 extern struct leds_state leds_states[LEDS_COUNT];
 
+#if CONFIG_LEDS_GPIO_ENABLED
+  int init_leds_gpio();
+#endif
+
 #if CONFIG_LEDS_SPI_ENABLED
   int init_leds_spi();
 #endif

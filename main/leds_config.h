@@ -7,6 +7,16 @@
 
 struct leds_state *state;
 
+#if CONFIG_LEDS_GPIO_ENABLED
+  enum leds_gpio_mode {
+    LEDS_GPIO_MODE_DISABLED = -1,
+    LEDS_GPIO_MODE_LOW      = 0,
+    LEDS_GPIO_MODE_HIGH     = 1,
+  };
+
+  extern const struct config_enum leds_gpio_mode_enum[];
+#endif
+
 #if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
   #define SPI_CLOCK_20MHZ   (APB_CLK_FREQ / 4)
   #define SPI_CLOCK_10MHZ   (APB_CLK_FREQ / 8)
@@ -37,6 +47,8 @@ struct leds_state *state;
   extern struct leds_spi_config leds_spi_config;
 
   extern const struct config_enum leds_spi_host_enum[];
+  extern const struct config_enum leds_spi_cs_mode_enum[];
+  extern const struct config_enum leds_spi_clock_enum[];
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED
@@ -80,8 +92,10 @@ struct leds_config {
   uint16_t i2s_gpio_pin;
 #endif
 
+#if CONFIG_LEDS_GPIO_ENABLED
   int gpio_mode;
   uint16_t gpio_pin;
+#endif
 
   bool test_enabled;
 
@@ -99,13 +113,15 @@ extern struct leds_config leds_configs[LEDS_COUNT];
 
 extern const struct config_enum leds_interface_enum[];
 extern const struct config_enum leds_protocol_enum[];
-extern const struct config_enum leds_spi_clock_enum[];
-extern const struct config_enum leds_gpio_mode_enum[];
 extern const struct config_enum leds_format_enum[];
 extern const struct config_enum leds_test_mode_enum[];
 extern const struct config_enum leds_color_parameter_enum[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
+
+#if CONFIG_LEDS_GPIO_ENABLED
+  int config_leds_gpio(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+#endif
 
 #if CONFIG_LEDS_SPI_ENABLED
   int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_options *options);

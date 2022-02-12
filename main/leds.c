@@ -14,6 +14,13 @@ int init_leds()
 {
   int err;
 
+#if CONFIG_LEDS_GPIO_ENABLED
+  if ((err = init_leds_gpio())) {
+    LOG_ERROR("init_leds_gpio");
+    return 0;
+  }
+#endif
+
 #if CONFIG_LEDS_SPI_ENABLED
   if ((err = init_leds_spi())) {
     LOG_ERROR("init_leds_spi");

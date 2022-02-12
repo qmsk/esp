@@ -49,11 +49,11 @@ const struct configtab LEDS_CONFIGTAB[] = {
 #if CONFIG_LEDS_GPIO_ENABLED
   { CONFIG_TYPE_ENUM, "gpio_mode",
     .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",
-    .enum_type = { .value = &LEDS_CONFIG.gpio_mode, .values = leds_gpio_mode_enum },
+    .enum_type = { .value = &LEDS_CONFIG.gpio_mode, .values = leds_gpio_mode_enum, .default_value = LEDS_GPIO_MODE_DISABLED },
   },
   { CONFIG_TYPE_UINT16, "gpio_pin",
     .description = "GPIO pin to activate when transmitting on this output",
-    .uint16_type = { .value = &LEDS_CONFIG.gpio_pin, .max = GPIO_OUT_PIN_MAX },
+    .uint16_type = { .value = &LEDS_CONFIG.gpio_pin, .max = (GPIO_OUT_PIN_COUNT - 1) },
   },
 #endif
 

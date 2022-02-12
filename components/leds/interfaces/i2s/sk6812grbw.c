@@ -51,7 +51,7 @@ int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_
 
     // shared IO pins
     .pin_mutex    = options->i2s_pin_mutex,
-#if I2S_OUT_OPTIONS_DATA_GPIO
+#if LEDS_I2S_GPIO_PIN_ENABLED
     .data_gpio    = options->i2s_gpio_pin,
 #endif
   };

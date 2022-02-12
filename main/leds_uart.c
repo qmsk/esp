@@ -58,7 +58,7 @@
         continue;
       }
 
-      LOG_INFO("leds%d: uart%d configured", i, uart_config->port);
+      LOG_INFO("leds%d: uart%d configured", i + 1, uart_config->port);
       enabled = true;
     }
 

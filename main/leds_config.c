@@ -177,6 +177,15 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
       }
       break;
   #endif
+
+  #if CONFIG_LEDS_I2S_ENABLED
+    case LEDS_INTERFACE_I2S:
+      if ((err = config_leds_i2s(state, config, &options))) {
+        LOG_ERROR("leds%d: config_leds_i2s", state->index + 1);
+        return err;
+      }
+      break;
+  #endif
   }
 
   if ((err = leds_new(&state->leds, &options))) {

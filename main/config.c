@@ -40,6 +40,10 @@ const struct configmod config_modules[] = {
     .description = "LEDS UART interface",
     .table = leds_uart_configtab,
   },
+  { "leds-i2s",
+    .description = "LEDS I2S interface",
+    .table = leds_i2s_configtab,
+  },
   { "leds",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."

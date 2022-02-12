@@ -28,6 +28,13 @@ int init_leds()
   }
 #endif
 
+#if CONFIG_LEDS_I2S_ENABLED
+  if ((err = init_leds_i2s())) {
+    LOG_ERROR("init_leds_i2s");
+    return 0;
+  }
+#endif
+
   for (int i = 0; i < LEDS_COUNT; i++)
   {
     struct leds_state *state = &leds_states[i];

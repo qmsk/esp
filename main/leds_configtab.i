@@ -37,6 +37,15 @@ const struct configtab LEDS_CONFIGTAB[] = {
 # endif
 #endif
 
+#if CONFIG_LEDS_I2S_ENABLED
+# if LEDS_I2S_GPIO_PIN_ENABLED
+  { CONFIG_TYPE_UINT16, "i2s_gpio_pin",
+    .description = "Output I2S Data to GPIO pin.",
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_gpio_pin, .max = (GPIO_NUM_MAX - 1) },
+  },
+# endif
+#endif
+
 #if CONFIG_LEDS_GPIO_ENABLED
   { CONFIG_TYPE_ENUM, "gpio_mode",
     .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",

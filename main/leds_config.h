@@ -49,6 +49,16 @@ struct leds_state *state;
   extern const struct config_enum leds_uart_port_enum[];
 #endif
 
+#if CONFIG_LEDS_I2S_ENABLED
+  struct leds_i2s_config {
+    int port;
+  };
+
+  extern struct leds_i2s_config leds_i2s_config;
+
+  extern const struct config_enum leds_i2s_port_enum[];
+#endif
+
 struct leds_config {
   bool enabled;
 
@@ -64,6 +74,10 @@ struct leds_config {
   int spi_cs_mode;
   uint16_t spi_cs_io;
 # endif
+#endif
+
+#if CONFIG_LEDS_I2S_ENABLED && LEDS_I2S_GPIO_PIN_ENABLED
+  uint16_t i2s_gpio_pin;
 #endif
 
   int gpio_mode;
@@ -99,4 +113,8 @@ int config_leds(struct leds_state *state, const struct leds_config *config);
 
 #if CONFIG_LEDS_UART_ENABLED
   int config_leds_uart(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+#endif
+
+#if CONFIG_LEDS_I2S_ENABLED
+  int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
 #endif

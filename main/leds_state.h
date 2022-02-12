@@ -20,17 +20,15 @@ struct leds_state {
 extern struct leds_state leds_states[LEDS_COUNT];
 
 #if CONFIG_LEDS_SPI_ENABLED
-# if !CONFIG_IDF_TARGET_ESP8266
-  extern spi_host_device_t leds_spi_host;
-# endif
-
   int init_leds_spi();
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED
-  extern struct uart *leds_uart;
-
   int init_leds_uart();
+#endif
+
+#if CONFIG_LEDS_I2S_ENABLED
+  int init_leds_i2s();
 #endif
 
 int update_leds(struct leds_state *state);

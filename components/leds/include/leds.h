@@ -8,11 +8,13 @@
 
 #if CONFIG_LEDS_I2S_ENABLED
 # include <i2s_out.h>
+# define LEDS_I2S_GPIO_PIN_ENABLED I2S_OUT_OPTIONS_DATA_GPIO_ENABLED
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
 // using custom spi_master driver
 # include <spi_master.h>
+
 #elif CONFIG_LEDS_SPI_ENABLED
 // using esp-idf spi_master driver
 # include <hal/spi_types.h>
@@ -155,6 +157,9 @@ struct leds_options {
   /** LEDS_INTERFACE_I2S */
   struct i2s_out *i2s_out;
   SemaphoreHandle_t i2s_pin_mutex;
+# if LEDS_I2S_GPIO_PIN_ENABLED
+  gpio_num_t i2s_gpio_pin;
+# endif
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED

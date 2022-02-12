@@ -51,6 +51,9 @@ int leds_tx_i2s_ws2811(const struct leds_options *options, union ws2811_pixel *p
 
     // shared IO pins
     .pin_mutex    = options->i2s_pin_mutex,
+#if I2S_OUT_OPTIONS_DATA_GPIO
+    .data_gpio    = options->i2s_gpio_pin,
+#endif
   };
   uint16_t buf[6];
   int err;

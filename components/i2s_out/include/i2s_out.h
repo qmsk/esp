@@ -12,12 +12,17 @@ typedef int i2s_port_t;
 # define I2S_PORT_0      0
 # define I2S_PORT_MAX    1
 
+# define I2S_OUT_OPTIONS_DATA_GPIO_ENABLED 0
+
 #elif CONFIG_IDF_TARGET_ESP32
 #include <hal/gpio_types.h>
 
 # define I2S_PORT_0      0
 # define I2S_PORT_1      1
 # define I2S_PORT_MAX    2
+
+# define I2S_OUT_OPTIONS_DATA_GPIO_ENABLED 1
+
 #endif
 
 struct i2s_out;
@@ -44,7 +49,9 @@ struct i2s_out_options {
 
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
-#if CONFIG_IDF_TARGET_ESP32
+
+#if I2S_OUT_OPTIONS_DATA_GPIO_ENABLED
+  // Use GPIO pin for data out signal
   gpio_num_t data_gpio;
 #endif
 };

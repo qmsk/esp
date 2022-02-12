@@ -12,6 +12,8 @@ int i2s_out_i2s_init(struct i2s_out *i2s_out)
 
 int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
+  LOG_DEBUG("clock(clkm=1/%d bck=1/%d)", options.clock.clkm_div, options.clock.bck_div);
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_ll_enable_clock(i2s_out->dev);
@@ -54,6 +56,8 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
 void i2s_out_i2s_start(struct i2s_out *i2s_out)
 {
+  LOG_DEBUG("");
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_ll_tx_start(i2s_out->dev);
@@ -80,6 +84,8 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
     LOG_WARN("ulTaskNotifyTake: timeout");
     return -1;
   }
+
+  LOG_DEBUG("wait done");
 
   return 0;
 }

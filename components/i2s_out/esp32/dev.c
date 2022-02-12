@@ -51,6 +51,8 @@ int i2s_out_dev_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
 void i2s_out_dev_teardown(struct i2s_out *i2s_out)
 {
+  LOG_DEBUG("");
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   periph_module_disable(i2s_periph_module[i2s_out->port]);

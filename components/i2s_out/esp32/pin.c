@@ -22,6 +22,8 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     }
   }
 
+  LOG_DEBUG("data_gpio=%d", options.data_gpio);
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[options.data_gpio], PIN_FUNC_GPIO);
@@ -37,6 +39,10 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
 void i2s_out_pin_teardown(struct i2s_out *i2s_out)
 {
+  LOG_DEBUG("");
+
+  // TODO: place output into a safe state?
+
   if (i2s_out->pin_mutex) {
     xSemaphoreGive(i2s_out->pin_mutex);
 

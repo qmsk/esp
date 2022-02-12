@@ -104,6 +104,8 @@ int i2s_out_intr_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   esp_err_t err = 0;
 
+  LOG_DEBUG("intr=%p", i2s_out->intr);
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_intr_disable_all(i2s_out->dev);
@@ -125,6 +127,8 @@ int i2s_out_intr_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 void i2s_out_intr_teardown(struct i2s_out *i2s_out)
 {
   esp_err_t err;
+
+  LOG_DEBUG("intr=%p", i2s_out->intr);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 

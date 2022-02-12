@@ -313,5 +313,7 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out)
     return -1;
   }
 
+  LOG_DEBUG("wait done");
+
   return 0;
 }

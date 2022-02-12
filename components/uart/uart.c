@@ -8,8 +8,8 @@
 
 static int uart_init(struct uart *uart, uart_port_t port)
 {
-  if ((uart->port & UART_PORT_MASK) >= UART_PORT_MAX) {
-    LOG_ERROR("invalid port=%x", uart->port);
+  if (port < 0 || (port & UART_PORT_MASK) >= UART_PORT_MAX) {
+    LOG_ERROR("invalid port=%x", port);
     return -1;
   }
 

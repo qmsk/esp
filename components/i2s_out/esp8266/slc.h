@@ -4,10 +4,10 @@
 #include <esp8266/slc_register.h>
 
 // DMA buffer cannot be shorter than the I2S FIFO size (128 * 32-bit words)
-#define SLC_DESC_SIZE_MIN (128 * 4)
-#define SLC_DESC_SIZE_MAX ((1 << 12) - 4)
+#define DMA_DESC_SIZE_MIN (128 * 4)
+#define DMA_DESC_SIZE_MAX ((1 << 12) - 4)
 
-struct slc_desc {
+struct dma_desc {
   uint32_t size     : 12; // size of *buf in bytes
   uint32_t len      : 12; // number of bytes in *buf
   uint32_t _        : 5;  // unused
@@ -20,7 +20,7 @@ struct slc_desc {
   uint8_t *buf;
 
   // linked list
-  struct slc_desc *next;
+  struct dma_desc *next;
 };
 
 static inline void slc_reset(volatile slc_struct_t *slc)
@@ -60,7 +60,7 @@ static inline void slc_intr_clear(volatile slc_struct_t *slc)
   slc->int_clr.val = slc->int_st.val;
 }
 
-static inline struct slc_desc *slc_rx_eof_desc(volatile slc_struct_t *slc)
+static inline struct dma_desc *slc_rx_eof_desc(volatile slc_struct_t *slc)
 {
-  return (struct slc_desc *) slc->rx_eof_des_addr;
+  return (struct dma_desc *) slc->rx_eof_des_addr;
 }

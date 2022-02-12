@@ -51,7 +51,7 @@ int i2s_out_i2s_init(struct i2s_out *i2s_out)
   return 0;
 }
 
-void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 {
   taskENTER_CRITICAL();
 
@@ -81,6 +81,8 @@ void i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_fifo_dma_enable(&I2S0);
 
   taskEXIT_CRITICAL();
+
+  return 0;
 }
 
 void i2s_out_i2s_start(struct i2s_out *i2s_out)

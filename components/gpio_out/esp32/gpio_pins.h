@@ -20,7 +20,7 @@ static void gpio_pins_init(gpio_num_t gpio, enum gpio_out_level level)
     gpio_ll_pullup_en(&GPIO, gpio);
   }
 
-  gpio_ll_iomux_func_sel(gpio, PIN_FUNC_GPIO);
+  gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
 }
 
 static inline void gpio_pins_set(enum gpio_out_pins pins)

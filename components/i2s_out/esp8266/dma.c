@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ALIGN(size, type) ((size) + (((size) + (sizeof(type) - 1)) & (sizeof(type) - 1)))
+#define ALIGN(size, type) (((size) + (sizeof(type) - 1)) & ~(sizeof(type) - 1))
 
 #define DMA_EOF_BUF_SIZE (DMA_DESC_SIZE_MIN)
 
@@ -96,19 +96,14 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
   size_t buf_size = 0;
   unsigned desc_count = 0;
 
-  // 32-bit aligned
-  if (size % sizeof(uint32_t)) {
-    size += (size % sizeof(uint32_t));
-  }
-
   // calculate buffer size for DMA descriptors
   for (desc_count = 0; buf_size < size; desc_count++) {
-    if (size > DMA_DESC_SIZE_MAX) {
+    if (buf_size + DMA_DESC_SIZE_MAX <= size) {
       buf_size += DMA_DESC_SIZE_MAX;
-    } else if (size < DMA_DESC_SIZE_MIN) {
+    } else if (buf_size + DMA_DESC_SIZE_MIN >= size) {
       buf_size += DMA_DESC_SIZE_MIN;
     } else {
-      buf_size += size;
+      buf_size = size;
     }
   }
 
@@ -122,13 +117,13 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
     LOG_ERROR("dma_malloc(dma_rx_buf)");
     return -1;
   } else {
-    LOG_DEBUG("dma_rx_buf=%p", i2s_out->dma_rx_buf);
+    LOG_DEBUG("dma_rx_buf=%p[%u]", i2s_out->dma_rx_buf, buf_size);
   }
   if (!(i2s_out->dma_eof_buf = dma_malloc(DMA_EOF_BUF_SIZE))) {
     LOG_ERROR("dma_malloc(dma_eof_buf)");
     return -1;
   } else {
-    LOG_DEBUG("dma_eof_buf=%p", i2s_out->dma_eof_buf);
+    LOG_DEBUG("dma_eof_buf=%p[%u]", i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE);
   }
 
   // allocate DMA descriptors

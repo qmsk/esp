@@ -20,6 +20,10 @@ int i2s_out_init(struct i2s_out *i2s_out, i2s_port_t port)
     return -1;
   }
 
+  #if CONFIG_IDF_TARGET_ESP32
+    portMUX_INITIALIZE(&i2s_out->mux);
+  #endif
+
   return 0;
 }
 

@@ -4,12 +4,24 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 
+#if CONFIG_IDF_TARGET_ESP32
+# include <esp_intr_alloc.h>
+# include <soc/i2s_struct.h>
+#endif
+
 struct dma_desc;
 
 struct i2s_out {
   i2s_port_t port;
   SemaphoreHandle_t mutex;
 
+#if CONFIG_IDF_TARGET_ESP32
+  portMUX_TYPE mux;
+    /* dev */
+  SemaphoreHandle_t dev_mutex;
+  i2s_dev_t *dev;
+  intr_handle_t intr;
+#endif
 
   /* pin */
   SemaphoreHandle_t pin_mutex;

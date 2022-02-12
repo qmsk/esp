@@ -12,6 +12,12 @@ typedef int i2s_port_t;
 # define I2S_PORT_0      0
 # define I2S_PORT_MAX    1
 
+#elif CONFIG_IDF_TARGET_ESP32
+#include <hal/gpio_types.h>
+
+# define I2S_PORT_0      0
+# define I2S_PORT_1      1
+# define I2S_PORT_MAX    2
 #endif
 
 struct i2s_out;

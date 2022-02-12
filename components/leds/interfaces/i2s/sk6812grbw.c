@@ -60,9 +60,11 @@ int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_
     return err;
   }
 
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+#endif
 
   for (unsigned i = 0; i < count; i++) {
     uint32_t grbw = pixels[i].grbw;
@@ -88,9 +90,11 @@ int leds_tx_i2s_sk6812grbw(const struct leds_options *options, union sk6812grbw_
   }
 
 error:
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);
   }
+#endif
 
   if ((err = i2s_out_close(options->i2s_out))) {
     LOG_ERROR("i2s_out_close");

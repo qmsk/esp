@@ -60,9 +60,11 @@ int leds_tx_i2s_ws2811(const struct leds_options *options, union ws2811_pixel *p
     return err;
   }
 
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_set(options->gpio_out, options->gpio_out_pins);
   }
+#endif
 
   for (unsigned i = 0; i < count; i++) {
     uint32_t rgb = pixels[i]._rgb;
@@ -86,9 +88,11 @@ int leds_tx_i2s_ws2811(const struct leds_options *options, union ws2811_pixel *p
   }
 
 error:
+#if CONFIG_LEDS_GPIO_ENABLE
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);
   }
+#endif
 
   if ((err = i2s_out_close(options->i2s_out))) {
     LOG_ERROR("i2s_out_close");

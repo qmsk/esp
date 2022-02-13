@@ -142,7 +142,7 @@ void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)
   stats->recv_error = stats_counter_copy(&artnet->stats.recv_error);
   stats->recv_poll = stats_counter_copy(&artnet->stats.recv_poll);
   stats->recv_dmx = stats_counter_copy(&artnet->stats.recv_dmx);
-  stats->recv_sync = stats_counter_copy(&artnet->stats.recv_dmx);
+  stats->recv_sync = stats_counter_copy(&artnet->stats.recv_sync);
   stats->recv_unknown = stats_counter_copy(&artnet->stats.recv_unknown);
   stats->recv_invalid = stats_counter_copy(&artnet->stats.recv_invalid);
   stats->errors = stats_counter_copy(&artnet->stats.errors);

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "artnet.h"
+#include "dmx.h"
 #include "http.h"
 #include "leds.h"
 #include "wifi.h"
@@ -31,6 +32,19 @@ const struct configmod config_modules[] = {
   },
   { "artnet",
     .table = artnet_configtab,
+  },
+  { "dmx-uart",
+    .description = "DMX UART interface",
+    .table = dmx_uart_configtab,
+  },
+  { "dmx-input",
+    .description = "DMX input",
+    .table = dmx_input_configtab,
+  },
+  { "dmx-output",
+    .description = "DMX output",
+    .tables = dmx_output_configtabs,
+    .tables_count = DMX_OUTPUT_COUNT,
   },
   { "leds-spi",
     .description = "LEDS SPI interface",

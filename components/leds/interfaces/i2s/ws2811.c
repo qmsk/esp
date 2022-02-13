@@ -87,7 +87,7 @@ int leds_tx_i2s_ws2811(const struct leds_options *options, union ws2811_pixel *p
 
   if ((err = i2s_out_flush(options->i2s_out))) {
     LOG_ERROR("i2s_out_flush");
-    return err;
+    goto error;
   }
 
 error:

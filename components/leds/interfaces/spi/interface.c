@@ -128,14 +128,35 @@
       .length = size * 8, // transaction length is in bits
       .tx_buffer = buf,
     };
+    int ret;
     esp_err_t err;
 
-    // TODO: additional gpio_out support, if spi_cs is not enough?
-    if ((err = spi_device_transmit(interface->device, &transaction))) {
-      LOG_ERROR("spi_device_transmit");
+    if ((err = spi_device_acquire_bus(interface->device, portMAX_DELAY))) {
+      LOG_ERROR("spi_device_acquire_bus: %s", esp_err_to_name(err));
       return -1;
     }
 
-    return 0;
+  #if CONFIG_LEDS_GPIO_ENABLED
+    if (options->gpio_out) {
+      gpio_out_set(options->gpio_out, options->gpio_out_pins);
+    }
+  #endif
+
+    // TODO: additional gpio_out support, if spi_cs is not enough?
+    if ((ret = spi_device_transmit(interface->device, &transaction))) {
+      LOG_ERROR("spi_device_transmit");
+      goto error;
+    }
+
+error:
+  #if CONFIG_LEDS_GPIO_ENABLED
+    if (options->gpio_out) {
+      gpio_out_clear(options->gpio_out);
+    }
+  #endif
+
+    spi_device_release_bus(interface->device);
+
+    return ret;
   }
 #endif

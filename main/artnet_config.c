@@ -1,6 +1,7 @@
 #include <artnet.h>
 #include "artnet.h"
 #include "artnet_state.h"
+#include "artnet_config.h"
 
 struct artnet_config artnet_config = {
 

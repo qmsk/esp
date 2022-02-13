@@ -1,8 +1,7 @@
 #include <artnet.h>
 #include "artnet.h"
 #include "artnet_state.h"
-#include "artnet_inputs.h"
-#include "artnet_outputs.h"
+#include "artnet_config.h"
 #include "dmx_artnet.h"
 #include "system_network.h"
 #include "tasks.h"

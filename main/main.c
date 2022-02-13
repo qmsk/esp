@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "console.h"
 #include "config.h"
+#include "dmx.h"
 #include "leds.h"
 #include "log.h"
 #include "http.h"
@@ -78,6 +79,11 @@ void app_main(void)
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
+  if ((err = init_dmx())) {
+    LOG_ERROR("init_dmx");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+
   if ((err = init_leds())) {
     LOG_ERROR("init_leds");
     user_alert(USER_ALERT_ERROR_SETUP);
@@ -92,6 +98,11 @@ void app_main(void)
 
   if ((err = start_http())) {
     LOG_ERROR("start_http");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+
+  if ((err = start_dmx())) {
+    LOG_ERROR("start_dmx");
     user_alert(USER_ALERT_ERROR_START);
   }
 

@@ -24,6 +24,7 @@
 
 struct artnet;
 struct artnet_input;
+struct artnet_output;
 
 struct artnet_options {
   // UDP used for listen()
@@ -152,17 +153,34 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  * @param artnet
  * @param options Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
  * @param index differentiate between multiple outputs for a task. Also used as ArtPollReply bind index
- * @param queue `struct artnet_dmx` queue of size 1, overwritten from the artnet task
- * @param task send direct-to-task notification for queue writes
+ * @param task send direct-to-task notification for updates
  *
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
-int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue);
+int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options);
+
+/*
+ * The artnet_output_options->task can wait for output updates.
+ *
+ * @param ticks wait up to ticks
+ *
+ * Returns bitmask of ARTNET_OUTPUT_TASK_INDEX_BITS + ARTNET_OUTPUT_TASK_FLAG_BITS, or 0 on timeout.
+ */
+uint32_t artnet_output_wait(TickType_t ticks);
+
+/*
+ * Read updated `struct artnet_dmx` from output. Call when artnet_output_wait() indicates that a new packet is available.
+
+ ** @param ticks wait up to ticks, 0 -> immediate
+ *
+ * @return <0 on error, 0 on *dmx updated, >0 if no update.
+ */
+int artnet_output_read(struct artnet_output *output, struct artnet_dmx *dmx, TickType_t ticks);
 
 /**
  * Check if inputs are enabled.
  */
- bool artnet_get_inputs_enabled(struct artnet *artnet);
+bool artnet_get_inputs_enabled(struct artnet *artnet);
 
 /*
  * Return number of inputs.

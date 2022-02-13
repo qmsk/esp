@@ -12,13 +12,14 @@ static void init_output_stats(struct artnet_output_stats *stats)
   stats_counter_init(&stats->queue_overwrite);
 }
 
-int artnet_add_output(struct artnet *artnet, struct artnet_output_options options, xQueueHandle queue)
+int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options)
 {
+  xQueueHandle queue;
+
   if (artnet->output_count >= ARTNET_OUTPUTS) {
     LOG_ERROR("too many outputs");
     return -1;
   }
-
 
   if ((options.address & 0xFFF0) != artnet->options.address) {
     LOG_ERROR("port=%u index=%u address=%04x mismatch with artnet.universe=%04x", options.port, options.index, options.address, artnet->options.address);
@@ -26,6 +27,11 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output_options option
   }
 
   LOG_DEBUG("output=%d port=%d index=%u address=%04x", artnet->output_count, options.port, options.index, options.address);
+
+  if (!(queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
 
   struct artnet_output *output = &artnet->output_ports[artnet->output_count++];
 
@@ -35,7 +41,30 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output_options option
 
   init_output_stats(&output->stats);
 
+  *outputp = output;
+
   return 0;
+}
+
+uint32_t artnet_output_wait(TickType_t ticks)
+{
+  uint32_t notify_bits = 0;
+
+  // wait for output/sync, or next test frame
+  if (xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, ticks)) {
+    return notify_bits;
+  } else {
+    return 0;
+  }
+}
+
+int artnet_output_read(struct artnet_output *output, struct artnet_dmx *dmx, TickType_t ticks)
+{
+  if (!xQueueReceive(output->queue, dmx, ticks)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 unsigned artnet_get_output_count(struct artnet *artnet)

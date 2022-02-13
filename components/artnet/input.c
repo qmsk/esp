@@ -10,6 +10,7 @@ static void init_input_stats(struct artnet_input_stats *stats)
 
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options)
 {
+  xQueueHandle queue;
   unsigned index = artnet->input_count;
 
   if (artnet->input_count >= artnet->input_size) {
@@ -24,20 +25,20 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
 
   LOG_DEBUG("input=%d port=%d index=%u address=%04x", artnet->input_count, options.port, options.index, options.address);
 
+  if (!(queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
   struct artnet_input *input = &artnet->input_ports[artnet->input_count++];
 
   input->artnet = artnet;
   input->index = index;
-
   input->type = ARTNET_PORT_TYPE_DMX;
   input->options = options;
+  input->queue = queue;
 
   init_input_stats(&input->stats);
-
-  if (!(input->queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
-  }
 
   *inputp = input;
 

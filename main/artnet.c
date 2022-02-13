@@ -3,7 +3,7 @@
 #include "artnet_state.h"
 #include "artnet_inputs.h"
 #include "artnet_outputs.h"
-// /TODO: #include "dmx_artnet.h"
+#include "dmx_artnet.h"
 #include "system_network.h"
 
 #include <logging.h>
@@ -28,7 +28,7 @@ unsigned count_artnet_inputs()
 {
   unsigned inputs = 0;
 
-  // TODO: inputs += count_dmx_artnet_inputs();
+  inputs += count_dmx_artnet_inputs();
 
   return inputs;
 }
@@ -145,6 +145,8 @@ static void artnet_main_listen(void *ctx)
   struct artnet *artnet = ctx;
   int err;
 
+  LOG_INFO("run network listen loop...");
+
   if ((err = artnet_listen_main(artnet))) {
     LOG_ERROR("artnet_listen_main");
   }
@@ -154,6 +156,8 @@ static void artnet_main_inputs(void *ctx)
 {
   struct artnet *artnet = ctx;
   int err;
+
+  LOG_INFO("run physical input loop...");
 
   if ((err = artnet_inputs_main(artnet))) {
     LOG_ERROR("artnet_inputs_main");

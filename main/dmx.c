@@ -14,6 +14,15 @@
 
 xTaskHandle dmx_task;
 
+unsigned count_dmx_artnet_inputs()
+{
+  if (dmx_input_config.enabled) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 int init_dmx()
 {
   int err;

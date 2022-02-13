@@ -1,5 +1,6 @@
 #include "http.h"
 #include "http_routes.h"
+#include "tasks.h"
 
 #include <esp_ota_ops.h>
 #include <httpserver/server.h>
@@ -26,17 +27,6 @@
 // number of accepted connections to queue up for serving
 #define HTTP_CONNECTION_QUEUE_SIZE 2
 #define HTTP_CONNECTION_QUEUE_TIMEOUT 1000 // 1s
-
-#if CONFIG_IDF_TARGET_ESP8266
-# define HTTP_LISTEN_TASK_STACK 1024
-# define HTTP_SERVER_TASK_STACK 2048
-#elif CONFIG_IDF_TARGET_ESP32
-# define HTTP_LISTEN_TASK_STACK 2048
-# define HTTP_SERVER_TASK_STACK 4096
-#endif
-
-#define HTTP_LISTEN_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-#define HTTP_SERVER_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 #define HTTP_AUTHENTICATION_REALM "HTTP username/password"
 #define HTTP_AUTHORIZATION_HEADER_MAX 64
@@ -392,12 +382,12 @@ int start_http_listen(struct http_state *http, struct http_config *config)
 int start_http_tasks(struct http_state *http)
 {
   // tasks
-  if (xTaskCreate(&http_listen_main, "http-listen", HTTP_LISTEN_TASK_STACK, http, HTTP_LISTEN_TASK_PRIORITY, &http->listen_task) <= 0) {
+  if (xTaskCreate(&http_listen_main, HTTP_LISTEN_TASK_NAME, HTTP_LISTEN_TASK_STACK, http, HTTP_LISTEN_TASK_PRIORITY, &http->listen_task) <= 0) {
     LOG_ERROR("xTaskCreate http-listen");
     return -1;
   }
 
-  if (xTaskCreate(&http_server_main, "http-server", HTTP_SERVER_TASK_STACK, http, HTTP_SERVER_TASK_PRIORITY, &http->server_task) <= 0) {
+  if (xTaskCreate(&http_server_main, HTTP_SERVER_TASK_NAME, HTTP_SERVER_TASK_STACK, http, HTTP_SERVER_TASK_PRIORITY, &http->server_task) <= 0) {
     LOG_ERROR("xTaskCreate http-server");
     return -1;
   }

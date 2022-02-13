@@ -3,19 +3,11 @@
 #include "leds_config.h"
 #include "leds_state.h"
 #include "artnet_outputs.h"
+#include "tasks.h"
 
 #include <artnet.h>
 #include <logging.h>
 #include <leds.h>
-
-#define LEDS_ARTNET_TASK_NAME_FMT "leds%d"
-#define LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-
-#if CONFIG_IDF_TARGET_ESP8266
-# define LEDS_ARTNET_TASK_STACK 1024
-#elif CONFIG_IDF_TARGET_ESP32
-# define LEDS_ARTNET_TASK_STACK 2048
-#endif
 
 struct leds_artnet_test {
   enum leds_test_mode mode;

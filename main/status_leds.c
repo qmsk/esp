@@ -1,6 +1,7 @@
 #include "status_leds.h"
 #include "status_leds_set.h"
 #include "user.h"
+#include "tasks.h"
 
 #include <status_led.h>
 #include <logging.h>
@@ -8,14 +9,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <sdkconfig.h>
-
-#if CONFIG_IDF_TARGET_ESP8266
-# define STATUS_LEDS_TASK_STACK 1024
-#elif CONFIG_IDF_TARGET_ESP32
-# define STATUS_LEDS_TASK_STACK 2048
-#endif
-
-#define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 static xTaskHandle status_leds_task;
 
@@ -45,6 +38,7 @@ enum status_led_mode user_alert_led_mode[USER_ALERT_MAX] = {
 
 #if CONFIG_STATUS_LEDS_USER_ENABLED
 static struct status_led *user_led;
+xTaskHandle user_led_task;
 
 static int init_user_led()
 {
@@ -67,6 +61,16 @@ static int init_user_led()
   return 0;
 }
 
+static int start_user_led()
+{
+  if (xTaskCreate(&status_led_main, STATUS_LEDS_USER_TASK_NAME, STATUS_LED_TASK_STACK, user_led, STATUS_LED_TASK_PRIORITY, &user_led_task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  }
+
+  return 0;
+}
+
 void set_user_led(enum status_led_mode mode)
 {
   if (!user_led) {
@@ -81,6 +85,7 @@ void set_user_led(enum status_led_mode mode)
 
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
 static struct status_led *flash_led;
+xTaskHandle flash_led_task;
 
 static int init_flash_led()
 {
@@ -103,6 +108,16 @@ static int init_flash_led()
   return 0;
 }
 
+static int start_flash_led()
+{
+  if (xTaskCreate(&status_led_main, STATUS_LEDS_FLASH_TASK_NAME, STATUS_LED_TASK_STACK, flash_led, STATUS_LED_TASK_PRIORITY, &flash_led_task) <= 0) {
+    LOG_ERROR("xTaskCreate");
+    return -1;
+  }
+
+  return 0;
+}
+
 void set_flash_led(enum status_led_mode mode)
 {
   if (!flash_led) {
@@ -118,6 +133,7 @@ void set_flash_led(enum status_led_mode mode)
 
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
 static struct status_led *alert_led;
+xTaskHandle alert_led_task;
 
 static int init_alert_led()
 {
@@ -134,6 +150,16 @@ static int init_alert_led()
 
   if (status_led_new(&alert_led, led_options, led_mode)) {
     LOG_ERROR("status_led_new");
+    return -1;
+  }
+
+  return 0;
+}
+
+static int start_alert_led()
+{
+  if (xTaskCreate(&status_led_main, STATUS_LEDS_ALERT_TASK_NAME, STATUS_LED_TASK_STACK, alert_led, STATUS_LED_TASK_PRIORITY, &alert_led_task) <= 0) {
+    LOG_ERROR("xTaskCreate");
     return -1;
   }
 
@@ -277,6 +303,11 @@ static void read_test_button(struct status_led *status_led)
 
 void status_leds_main(void *arg)
 {
+#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+  // needs flash LED task to be running
+  init_config_button(flash_led);
+#endif
+
   for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, STATUS_LEDS_READ_TICKS)) {
   #if CONFIG_STATUS_LEDS_USER_MODE_TEST
     read_test_button(user_led);
@@ -292,11 +323,30 @@ void status_leds_main(void *arg)
 
 int start_status_leds()
 {
-#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
-  init_config_button(flash_led);
+  int err;
+
+#if CONFIG_STATUS_LEDS_USER_ENABLED
+  if ((err = start_user_led())) {
+    LOG_ERROR("start_user_led");
+    return err;
+  }
 #endif
 
-  if (xTaskCreate(&status_leds_main, "status-leds", STATUS_LEDS_TASK_STACK, NULL, STATUS_LEDS_TASK_PRIORITY, &status_leds_task) <= 0) {
+#if CONFIG_STATUS_LEDS_FLASH_ENABLED
+  if ((err = start_flash_led())) {
+    LOG_ERROR("start_flash_led");
+    return err;
+  }
+#endif
+
+#if CONFIG_STATUS_LEDS_ALERT_ENABLED
+  if ((err = start_alert_led())) {
+    LOG_ERROR("start_alert_led");
+    return err;
+  }
+#endif
+
+  if (xTaskCreate(status_leds_main, STATUS_LEDS_TASK_NAME, STATUS_LEDS_TASK_STACK, NULL, STATUS_LEDS_TASK_PRIORITY, &status_leds_task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   }

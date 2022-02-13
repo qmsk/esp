@@ -3,19 +3,11 @@
 #include "dmx_state.h"
 #include "artnet_state.h"
 #include "user.h"
+#include "tasks.h"
 
 #include <artnet.h>
 #include <dmx_output.h>
 #include <logging.h>
-
-#define DMX_OUTPUT_TASK_NAME_FMT "dmx-output%d"
-#define DMX_OUTPUT_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-
-#if CONFIG_IDF_TARGET_ESP8266
-# define DMX_OUTPUT_TASK_STACK 1024
-#elif CONFIG_IDF_TARGET_ESP32
-# define DMX_OUTPUT_TASK_STACK 2048
-#endif
 
 struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 

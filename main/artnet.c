@@ -5,6 +5,7 @@
 #include "artnet_outputs.h"
 #include "dmx_artnet.h"
 #include "system_network.h"
+#include "tasks.h"
 
 #include <logging.h>
 
@@ -16,11 +17,6 @@
 #define ARTNET_PRODUCT "https://github.com/SpComb/esp-projects"
 
 #define ARTNET_INPUTS 4
-
-#define ARTNET_LISTEN_TASK_NAME "artnet-listen"
-#define ARTNET_INPUTS_TASK_NAME "artnet-inputs"
-#define ARTNET_TASK_STACK 2048
-#define ARTNET_TASK_PRIORITY tskIDLE_PRIORITY + 2
 
 struct artnet *artnet;
 

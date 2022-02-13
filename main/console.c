@@ -1,4 +1,5 @@
 #include "console.h"
+#include "tasks.h"
 
 #include <logging.h>
 #include <cli.h>
@@ -23,9 +24,6 @@
 // max line size
 #define CLI_BUF_SIZE 512
 #define CLI_MAX_ARGS 16
-
-#define CLI_TASK_STACK 4096 // bytes
-#define CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 struct cli *console_cli;
 
@@ -174,7 +172,7 @@ int start_console()
   }
 
   // start task
-  if (xTaskCreate(&console_cli_main, "console-cli", CLI_TASK_STACK, console_cli, CLI_TASK_PRIORITY, &console_cli_task) <= 0) {
+  if (xTaskCreate(&console_cli_main, CONSOLE_CLI_TASK_NAME, CONSOLE_CLI_TASK_STACK, console_cli, CONSOLE_CLI_TASK_PRIORITY, &console_cli_task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   }

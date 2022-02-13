@@ -2,15 +2,9 @@
 #include "dmx_config.h"
 #include "dmx_state.h"
 #include "user.h"
+#include "tasks.h"
 
 #include <logging.h>
-
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-
-// used for UART setup + DMX input
-#define DMX_TASK_STACK 2048
-#define DMX_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
 
 xTaskHandle dmx_task;
 
@@ -105,7 +99,7 @@ int start_dmx()
 
   LOG_INFO("start");
 
-  if (xTaskCreate(&dmx_main, "dmx", DMX_TASK_STACK, NULL, DMX_TASK_PRIORITY, &dmx_task) <= 0) {
+  if (xTaskCreate(&dmx_main, DMX_TASK_NAME, DMX_TASK_STACK, NULL, DMX_TASK_PRIORITY, &dmx_task) <= 0) {
     LOG_ERROR("xTaskCreate");
     return -1;
   } else {

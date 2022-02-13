@@ -7,3 +7,7 @@ idf_component_register(
 set_source_files_properties(url.c PROPERTIES
   COMPILE_FLAGS -Wno-missing-field-initializers
 )
+
+set_source_files_properties(http.c PROPERTIES
+  COMPILE_FLAGS -Wno-missing-field-initializers
+)

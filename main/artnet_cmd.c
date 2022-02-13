@@ -4,6 +4,7 @@
 #include <artnet.h>
 #include <artnet_stats.h>
 #include <logging.h>
+#include <stats_print.h>
 
 #define ARTNET_INPUT_COUNT 4
 #define ARTNET_OUTPUT_COUNT 16
@@ -85,15 +86,6 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   return 0;
 }
 
-static void print_artnet_stats_counter(struct stats_counter counter, const char *title, const char *desc)
-{
-  printf("\t%20s : %10s %8u @ %6u.%03us\n", title, desc,
-    counter.count,
-    stats_counter_milliseconds_passed(&counter) / 1000,
-    stats_counter_milliseconds_passed(&counter) % 1000
-  );
-}
-
 int artnet_cmd_stats(int argc, char **argv, void *ctx)
 {
   if (!artnet) {
@@ -108,14 +100,14 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
   printf("Art-Net: \n");
 
-  print_artnet_stats_counter(stats.recv_poll,     "Poll",     "received");
-  print_artnet_stats_counter(stats.recv_dmx,      "DMX",      "received");
-  print_artnet_stats_counter(stats.dmx_discard,   "DMX",      "discarded");
-  print_artnet_stats_counter(stats.recv_sync,     "Sync",     "received");
-  print_artnet_stats_counter(stats.recv_unknown,  "Unknown",  "received");
-  print_artnet_stats_counter(stats.recv_error,    "Recv",     "errors");
-  print_artnet_stats_counter(stats.recv_invalid,  "Recv",     "invalid");
-  print_artnet_stats_counter(stats.errors,        "Errors",   "");
+  print_stats_counter("Poll",     "received",   &stats.recv_poll);
+  print_stats_counter("DMX",      "received",   &stats.recv_dmx);
+  print_stats_counter("DMX",      "discarded",  &stats.dmx_discard);
+  print_stats_counter("Sync",     "received",   &stats.recv_sync);
+  print_stats_counter("Unknown",  "received",   &stats.recv_unknown);
+  print_stats_counter("Recv",     "errors",     &stats.recv_error);
+  print_stats_counter("Recv",     "invalid",    &stats.recv_invalid);
+  print_stats_counter("Errors",   "",           &stats.errors);
 
   printf("\n");
 
@@ -132,8 +124,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Input %d: \n", i);
 
-    print_artnet_stats_counter(input_stats.dmx_recv,          "DMX",    "received");
-    print_artnet_stats_counter(input_stats.queue_overwrite,   "Queue",  "overflowed");
+    print_stats_counter("DMX",    "received",   &input_stats.dmx_recv);
+    print_stats_counter("Queue",  "overflowed", &input_stats.queue_overwrite);
 
     printf("\n");
   }
@@ -151,12 +143,12 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Output %d: \n", i);
 
-    print_artnet_stats_counter(output_stats.sync_recv,        "Sync",   "received");
-    print_artnet_stats_counter(output_stats.dmx_recv,         "DMX",    "received");
-    print_artnet_stats_counter(output_stats.dmx_sync,         "DMX",    "synced");
-    print_artnet_stats_counter(output_stats.seq_skip,         "Seq",    "skipped");
-    print_artnet_stats_counter(output_stats.seq_drop,         "Seq",    "dropped");
-    print_artnet_stats_counter(output_stats.queue_overwrite,  "Queue",  "overflowed");
+    print_stats_counter("Sync",   "received",   &output_stats.sync_recv);
+    print_stats_counter("DMX",    "received",   &output_stats.dmx_recv);
+    print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
+    print_stats_counter("Seq",    "skipped",    &output_stats.seq_skip);
+    print_stats_counter("Seq",    "dropped",    &output_stats.seq_drop);
+    print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);
 
     printf("\n");
   }

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-
 #include <esp_timer.h>
 
 struct stats_timer {
@@ -52,6 +49,34 @@ static inline void stats_timer_stop(struct stats_timer *timer, struct stats_time
   stats_timer_update(timer, 1, stop - sample->start);
 
   sample->running = false;
+}
+
+static inline float stats_timer_seconds_passed(const struct stats_timer *timer)
+{
+  if (timer->update > timer->reset) {
+    return ((float)(timer->update - timer->reset)) / 1000000.0f;
+  } else {
+    return 0.0f;
+  }
+}
+
+static inline float stats_timer_average_seconds(const struct stats_timer *timer)
+{
+  if (timer->count) {
+    return ((float) timer->total) / ((float) timer->count) / 1000000.0f;
+  } else {
+    return 0.0f;
+  }
+}
+
+/* Return portion total time over seconds passed, as a ratio 0..1  */
+static inline float stats_timer_utilization(const struct stats_timer *timer)
+{
+  if (timer->update > timer->reset) {
+    return ((float) timer->total) / ((float)(timer->update - timer->reset));
+  } else {
+    return 0.0f;
+  }
 }
 
 #define WITH_STATS_TIMER(timer) \

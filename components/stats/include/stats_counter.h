@@ -1,16 +1,15 @@
 #pragma once
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include <esp_timer.h>
 
 struct stats_counter {
-  uint32_t tick;
+  uint64_t reset, update;
   uint32_t count;
 };
 
 static inline void stats_counter_init(struct stats_counter *counter)
 {
-  counter->tick = xTaskGetTickCount();
+  counter->reset = esp_timer_get_time();
   counter->count = 0;
 }
 
@@ -21,7 +20,7 @@ static inline bool stats_counter_zero(const struct stats_counter *counter)
 
 static inline void stats_counter_increment(struct stats_counter *counter)
 {
-  counter->tick = xTaskGetTickCount();
+  counter->update = esp_timer_get_time();
   counter->count++;
 }
 
@@ -31,11 +30,11 @@ static inline struct stats_counter stats_counter_copy(const struct stats_counter
   return *counter;
 }
 
-static inline unsigned stats_counter_ticks_passed(const struct stats_counter *counter)
+static inline float stats_counter_seconds_passed(const struct stats_counter *counter)
 {
-  return (xTaskGetTickCount() - counter->tick);
-}
-static inline unsigned stats_counter_milliseconds_passed(const struct stats_counter *counter)
-{
-  return ((xTaskGetTickCount() - counter->tick) * portTICK_PERIOD_MS);
+  if (counter->update > counter->reset) {
+    return ((float)(counter->update - counter->reset)) / 1000000.0f;
+  } else {
+    return 0.0f;
+  }
 }

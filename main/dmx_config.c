@@ -3,6 +3,7 @@
 
 #include <artnet.h>
 #include <gpio_out.h>
+#include <dmx_uart.h>
 
 struct dmx_uart_config dmx_uart_config;
 struct dmx_input_config dmx_input_config = {};
@@ -44,7 +45,7 @@ const struct configtab dmx_input_configtab[] = {
  { CONFIG_TYPE_UINT16, "mtbp_min",
     .description = (
       "Minimum mark-time-between-packets (us, approximately).\n"
-      "Values ~128us or above are recommended.\n"
+      "Values ~128us or above are recommended. Default 0 -> 128us\n"
       "Values below 32us will drastically increase DMX input -> UART RX interrupt overhead, and may cause WiFi connections to fail."
       "DMX input may fail with UART RX break desynchronization errors if this is too high.\n"
     ),

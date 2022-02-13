@@ -5,12 +5,6 @@
 #include <config.h>
 #include <uart.h>
 
-// buffer RX FIFO until line idle for this many ~8-bit periods
-// this must be short enough to trigger in the MTBP, or the final bytes in the packet will be lost...
-#define DMX_UART_MTBP_UNIT (8 * (1000000 / 250000))
-#define DMX_UART_MTBP_MIN (4 * DMX_UART_MTBP_UNIT)
-#define DMX_UART_MTBP_MAX (UART_RX_TIMEOUT_MAX * DMX_UART_MTBP_UNIT)
-
 enum dmx_gpio_mode {
   DMX_GPIO_MODE_DISABLED  = -1,
   DMX_GPIO_MODE_LOW       = 0,

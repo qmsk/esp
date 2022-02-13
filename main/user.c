@@ -36,6 +36,7 @@ static const char *user_alert_str(enum user_alert alert)
     case USER_ALERT_ERROR_CONFIG:     return "ERROR_CONFIG";
     case USER_ALERT_ERROR_SETUP:      return "ERROR_SETUP";
     case USER_ALERT_ERROR_WIFI:       return "ERROR_WIFI";
+    case USER_ALERT_ERROR_DMX:        return "ERROR_DMX";
     default:                          return NULL;
   }
 }

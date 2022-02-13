@@ -55,3 +55,51 @@ int init_dmx_uart()
 
   return 0;
 }
+
+int start_dmx_uart()
+{
+  struct dmx_uart_options options = {
+    .mtbp_min = DMX_UART_MTBP_MIN,
+  };
+  int err;
+
+  if (!dmx_uart) {
+    LOG_INFO("disabled");
+    return 1;
+  }
+
+  if (dmx_input_config.enabled && dmx_input_config.mtbp_min) {
+    LOG_INFO("dmx-input: use uart mtbp_min=%u", dmx_input_config.mtbp_min);
+
+    options.mtbp_min = dmx_input_config.mtbp_min;
+  }
+
+  LOG_INFO("setup mtbp_min=%d", options.mtbp_min);
+
+  if ((err = dmx_uart_setup(dmx_uart, options))) {
+    LOG_ERROR("dmx_uart_setup");
+    return err;
+  }
+
+  return 0;
+}
+
+int open_dmx_input_uart(struct dmx_input *input)
+{
+  if (!dmx_uart) {
+    LOG_INFO("disabled");
+    return 1;
+  }
+
+  return dmx_input_open(input, dmx_uart);
+}
+
+int open_dmx_output_uart(struct dmx_output *output)
+{
+  if (!dmx_uart) {
+    LOG_INFO("disabled");
+    return 1;
+  }
+
+  return dmx_output_open(output, dmx_uart);
+}

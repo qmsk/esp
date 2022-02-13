@@ -10,10 +10,12 @@ struct dmx_output_state;
 struct dmx_output_config;
 
 /* dmx_uart.c */
-extern struct uart *dmx_uart;
-
 int init_dmx_uart();
+
 int start_dmx_uart();
+
+int open_dmx_input_uart(struct dmx_input *input);
+int open_dmx_output_uart(struct dmx_output *output);
 
 /* dmx_gpio.c */
 int init_dmx_gpio();
@@ -40,7 +42,7 @@ struct dmx_output_state {
 
   struct dmx_output *dmx_output;
 
-  xTaskHandle task;
+  xTaskHandle artnet_task;
 
   xQueueHandle artnet_queue;
   struct artnet_dmx *artnet_dmx;
@@ -49,6 +51,7 @@ struct dmx_output_state {
 extern struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];
 
 int init_dmx_outputs();
+
 int start_dmx_outputs();
 
 int output_dmx(struct dmx_output_state *state, void *data, size_t len);

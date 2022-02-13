@@ -154,7 +154,6 @@ static void leds_artnet_main(void *ctx)
     // start/stop test mode
     if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
       sync = true;
-
     }
     if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
       leds_artnet_test_start(&test_state);

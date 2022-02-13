@@ -202,6 +202,10 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
       }
       break;
   #endif
+
+    default:
+      LOG_ERROR("leds%d: invalid interface=%d", state->index + 1, options.interface);
+      return -1;
   }
 
   if ((err = leds_new(&state->leds, &options))) {

@@ -62,6 +62,7 @@ enum leds_interface {
   LEDS_INTERFACE_I2S           = 3,
 #endif
 
+  LEDS_INTERFACE_COUNT
 };
 
 #if CONFIG_LEDS_UART_ENABLED
@@ -163,7 +164,11 @@ struct leds_options {
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  /** GPIO for output multiplexing */
+  /**
+   * GPIO used for output multiplexing.
+   * The `gpio_out_pins` will be set before TX start, and cleared after TX end.
+   * Any other `gpio_out->pins` will be cleared.
+   */
   struct gpio_out *gpio_out;
   enum gpio_out_pins gpio_out_pins;
 #endif

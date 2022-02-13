@@ -140,12 +140,12 @@ static void leds_artnet_main(void *ctx)
     bool unsync = false, sync = false, test = false;
     TickType_t wait_ticks = leds_artnet_wait_ticks(&test_state);
 
-    LOG_DEBUG("notify wait ticks=%d", wait_ticks);
+    LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
 
     // wait for output/sync, or next test frame
     xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, wait_ticks);
 
-    LOG_DEBUG("notify index=%04x: sync=%d test=%d",
+    LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
       (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
       !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT),
       !!(notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT)
@@ -177,7 +177,7 @@ static void leds_artnet_main(void *ctx)
       }
 
       if (!xQueueReceive(state->artnet.queues[index], state->artnet.dmx, 0)) {
-        LOG_WARN("xQueueReceive");
+        LOG_WARN("leds%d: xQueueReceive: queue[%u] empty", state->index + 1, index);
         continue;
       }
 
@@ -192,7 +192,7 @@ static void leds_artnet_main(void *ctx)
     // tx output if required
     if (unsync || sync || test) {
       if (update_leds(state)) {
-        LOG_WARN("update_leds");
+        LOG_WARN("leds%d: update_leds", state->index + 1);
         continue;
       }
     }
@@ -201,7 +201,7 @@ static void leds_artnet_main(void *ctx)
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
 {
-  LOG_INFO("leds%u: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,
+  LOG_INFO("leds%d: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,
     config->artnet_universe_start,
     config->artnet_universe_count,
     config->artnet_universe_step,

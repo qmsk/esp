@@ -43,9 +43,8 @@ struct dmx_output_state {
   struct dmx_output *dmx_output;
 
   xTaskHandle artnet_task;
-
-  xQueueHandle artnet_queue;
   struct artnet_dmx *artnet_dmx;
+  struct artnet_output *artnet_output;
 };
 
 extern struct dmx_output_state dmx_output_states[DMX_OUTPUT_COUNT];

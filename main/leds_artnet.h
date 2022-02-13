@@ -1,8 +1,9 @@
 #pragma once
 
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <freertos/task.h>
+
+#include <artnet.h>
 
 struct leds_config;
 struct leds_state;
@@ -12,7 +13,7 @@ struct leds_artnet {
 
   unsigned universe_count;
   xTaskHandle task;
-  xQueueHandle *queues;
+  struct artnet_output **outputs;
 };
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config);

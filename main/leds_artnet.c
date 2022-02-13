@@ -2,7 +2,7 @@
 #include "leds_artnet.h"
 #include "leds_config.h"
 #include "leds_state.h"
-#include "artnet_outputs.h"
+#include "artnet_state.h"
 #include "tasks.h"
 
 #include <artnet.h>
@@ -122,20 +122,23 @@ static void leds_artnet_out(struct leds_state *state, unsigned index, struct art
   leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
 }
 
+static uint32_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
+{
+  TickType_t wait_ticks = leds_artnet_wait_ticks(test_state);
+
+  LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
+
+  return artnet_output_wait(wait_ticks);
+}
+
 static void leds_artnet_main(void *ctx)
 {
   struct leds_state *state = ctx;
   struct leds_artnet_test test_state = {};
 
   for (;;) {
-    uint32_t notify_bits;
+    uint32_t notify_bits = leds_artnet_wait(state, &test_state);
     bool unsync = false, sync = false, test = false;
-    TickType_t wait_ticks = leds_artnet_wait_ticks(&test_state);
-
-    LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
-
-    // wait for output/sync, or next test frame
-    xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, wait_ticks);
 
     LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
       (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
@@ -168,8 +171,8 @@ static void leds_artnet_main(void *ctx)
         continue;
       }
 
-      if (!xQueueReceive(state->artnet.queues[index], state->artnet.dmx, 0)) {
-        LOG_WARN("leds%d: xQueueReceive: queue[%u] empty", state->index + 1, index);
+      if (artnet_output_read(state->artnet.outputs[index], state->artnet.dmx, 0)) {
+        LOG_WARN("leds%d: artnet_output[%d] empty", state->index + 1, index);
         continue;
       }
 
@@ -213,16 +216,10 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     LOG_ERROR("calloc");
     return -1;
   }
-  if (!(state->artnet.queues = calloc(state->artnet.universe_count, sizeof(*state->artnet.queues)))) {
+
+  if (!(state->artnet.outputs = calloc(state->artnet.universe_count, sizeof(*state->artnet.outputs)))) {
     LOG_ERROR("calloc");
     return -1;
-  }
-
-  for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
-    if (!(state->artnet.queues[i] = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
-      LOG_ERROR("xQueueCreate");
-      return -1;
-    }
   }
 
   return 0;
@@ -257,7 +254,7 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
 
     LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", state->index + 1, options.port, options.address, options.index);
 
-    if (add_artnet_output(options, state->artnet.queues[i])) {
+    if (add_artnet_output(&state->artnet.outputs[i], options)) {
       LOG_ERROR("add_artnet_output");
       return -1;
     }

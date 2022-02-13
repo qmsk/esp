@@ -45,11 +45,6 @@ int init_dmx_output(struct dmx_output_state *state, int index, const struct dmx_
       LOG_ERROR("calloc: artnet_dmx");
       return -1;
     }
-
-    if (!(state->artnet_queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
-      LOG_ERROR("xQueueCreate");
-      return -1;
-    }
   }
 
   return 0;
@@ -110,10 +105,8 @@ void dmx_output_main(void *ctx)
   int err;
 
   for (;;) {
-    uint32_t notify_bits;
-
-    // wait for output/sync, or next test frame
-    xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, portMAX_DELAY);
+    // wait for output/sync
+    uint32_t notify_bits = artnet_output_wait(portMAX_DELAY);
 
     LOG_DEBUG("notify index=%04x: sync=%d test=%d",
       (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
@@ -123,8 +116,8 @@ void dmx_output_main(void *ctx)
 
     // only one index=0 output
     if (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) {
-      if (!xQueueReceive(state->artnet_queue, state->artnet_dmx, 0)) {
-        LOG_WARN("xQueueReceive");
+      if (!artnet_output_read(state->artnet_output, state->artnet_dmx, 0)) {
+        LOG_WARN("dmx-output%d: artnet_output empty", state->index + 1);
         continue;
       }
 
@@ -163,7 +156,7 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
     options.task = state->artnet_task;
   }
 
-  if ((err = add_artnet_output(options, state->artnet_queue))) {
+  if ((err = add_artnet_output(&state->artnet_output, options))) {
     LOG_ERROR("add_artnet_output");
     return err;
   }

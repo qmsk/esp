@@ -138,7 +138,15 @@ void dmx_output_main(void *ctx)
 
 int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_config *config)
 {
-  char task_name[configMAX_TASK_NAME_LEN];
+  struct task_options task_options = {
+    .main       = dmx_output_main,
+    .name_fmt   = DMX_OUTPUT_TASK_NAME_FMT,
+    .stack_size = DMX_OUTPUT_TASK_STACK,
+    .arg        = state,
+    .priority   = DMX_OUTPUT_TASK_PRIORITY,
+    .handle     = &state->artnet_task,
+    .affinity   = DMX_OUTPUT_TASK_AFFINITY,
+  };
   struct artnet_output_options options = {
     .port     = (enum artnet_port) (state->index), // use dmx%d index as output port number
     .index    = 0,
@@ -146,13 +154,8 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
   };
   int err;
 
-  if (snprintf(task_name, sizeof(task_name), DMX_OUTPUT_TASK_NAME_FMT, state->index + 1) >= sizeof(task_name)) {
-    LOG_ERROR("snprintf: task_name overflow");
-    return -1;
-  }
-
-  if (xTaskCreate(&dmx_output_main, task_name, DMX_OUTPUT_TASK_STACK, state, DMX_OUTPUT_TASK_PRIORITY, &state->artnet_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  if (start_taskf(task_options, state->index + 1)) {
+    LOG_ERROR("start_taskf");
     return -1;
   } else {
     LOG_DEBUG("task=%p", state->artnet_task);

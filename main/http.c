@@ -381,14 +381,33 @@ int start_http_listen(struct http_state *http, struct http_config *config)
 
 int start_http_tasks(struct http_state *http)
 {
-  // tasks
-  if (xTaskCreate(&http_listen_main, HTTP_LISTEN_TASK_NAME, HTTP_LISTEN_TASK_STACK, http, HTTP_LISTEN_TASK_PRIORITY, &http->listen_task) <= 0) {
-    LOG_ERROR("xTaskCreate http-listen");
+  struct task_options http_listen_options = {
+    .main       = http_listen_main,
+    .name       = HTTP_LISTEN_TASK_NAME,
+    .stack_size = HTTP_LISTEN_TASK_STACK,
+    .arg        = http,
+    .priority   = HTTP_LISTEN_TASK_PRIORITY,
+    .handle     = &http->listen_task,
+    .affinity   = HTTP_LISTEN_TASK_AFFINITY,
+  };
+
+  if (start_task(http_listen_options)) {
+    LOG_ERROR("start_task http-listen");
     return -1;
   }
 
-  if (xTaskCreate(&http_server_main, HTTP_SERVER_TASK_NAME, HTTP_SERVER_TASK_STACK, http, HTTP_SERVER_TASK_PRIORITY, &http->server_task) <= 0) {
-    LOG_ERROR("xTaskCreate http-server");
+  struct task_options http_server_options = {
+    .main       = http_server_main,
+    .name       = HTTP_SERVER_TASK_NAME,
+    .stack_size = HTTP_SERVER_TASK_STACK,
+    .arg        = http,
+    .priority   = HTTP_SERVER_TASK_PRIORITY,
+    .handle     = &http->server_task,
+    .affinity   = HTTP_SERVER_TASK_AFFINITY,
+  };
+
+  if (start_task(http_server_options)) {
+    LOG_ERROR("start_task http-server");
     return -1;
   }
 

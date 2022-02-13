@@ -162,26 +162,44 @@ static void artnet_main_inputs(void *ctx)
 
 int start_artnet()
 {
+  struct task_options listen_task_options = {
+    .main       = artnet_main_listen,
+    .name       = ARTNET_LISTEN_TASK_NAME,
+    .stack_size = ARTNET_TASK_STACK,
+    .arg        = artnet,
+    .priority   = ARTNET_TASK_PRIORITY,
+    .handle     = &artnet_listen_task,
+    .affinity   = ARTNET_TASK_AFFINITY,
+  };
+  struct task_options input_task_options = {
+    .main       = artnet_main_inputs,
+    .name       = ARTNET_INPUTS_TASK_NAME,
+    .stack_size = ARTNET_TASK_STACK,
+    .arg        = artnet,
+    .priority   = ARTNET_TASK_PRIORITY,
+    .handle     = &artnet_inputs_task,
+    .affinity   = ARTNET_TASK_AFFINITY,
+  };
   int err;
 
   if (!artnet) {
     return 0;
   }
 
-  if ((err = xTaskCreate(&artnet_main_listen, ARTNET_LISTEN_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet_listen_task)) <= 0) {
-    LOG_ERROR("xTaskCreate(artnet-listen)");
+  if ((err = start_task(listen_task_options))) {
+    LOG_ERROR("start_task(artnet-listen)");
     return -1;
   } else {
     LOG_DEBUG("artnet listen task=%p", artnet_listen_task);
   }
 
-  if (artnet_get_inputs_enabled(artnet)) {
-    if ((err = xTaskCreate(&artnet_main_inputs, ARTNET_INPUTS_TASK_NAME, ARTNET_TASK_STACK, artnet, ARTNET_TASK_PRIORITY, &artnet_inputs_task)) <= 0) {
-      LOG_ERROR("xTaskCreate(artnet-inputs)");
-      return -1;
-    } else {
-      LOG_DEBUG("artnet inputs task=%p", artnet_inputs_task);
-    }
+  if (!artnet_get_inputs_enabled(artnet)) {
+    LOG_DEBUG("no artnet inputs configured");
+  } else if ((err = start_task(input_task_options))) {
+    LOG_ERROR("start_task(artnet-inputs)");
+    return -1;
+  } else {
+    LOG_DEBUG("artnet inputs task=%p", artnet_inputs_task);
   }
 
   return 0;

@@ -166,18 +166,25 @@ exit:
 
 int start_console()
 {
+  struct task_options task_options = {
+    .main       = console_cli_main,
+    .name       = CONSOLE_CLI_TASK_NAME,
+    .stack_size = CONSOLE_CLI_TASK_STACK,
+    .arg        = console_cli,
+    .priority   = CONSOLE_CLI_TASK_PRIORITY,
+    .handle     = &console_cli_task,
+    .affinity   = CONSOLE_CLI_TASK_AFFINITY,
+  };
+
   if (console_cli_task) {
     LOG_WARN("running: task=%p", console_cli_task);
     return 1;
-  }
-
-  // start task
-  if (xTaskCreate(&console_cli_main, CONSOLE_CLI_TASK_NAME, CONSOLE_CLI_TASK_STACK, console_cli, CONSOLE_CLI_TASK_PRIORITY, &console_cli_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  } else if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
+  } else {
+    LOG_INFO("task=%p", console_cli_task);
   }
-
-  LOG_INFO("task=%p", console_cli_task);
 
   return 0;
 }

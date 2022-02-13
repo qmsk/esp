@@ -79,6 +79,15 @@ error:
 
 int start_dmx()
 {
+  struct task_options task_options = {
+    .main       = dmx_main,
+    .name       = DMX_TASK_NAME,
+    .stack_size = DMX_TASK_STACK,
+    .arg        = NULL,
+    .priority   = DMX_TASK_PRIORITY,
+    .handle     = &dmx_task,
+    .affinity   = DMX_TASK_AFFINITY,
+  };
   bool enabled = false;
   int err;
 
@@ -99,8 +108,8 @@ int start_dmx()
 
   LOG_INFO("start");
 
-  if (xTaskCreate(&dmx_main, DMX_TASK_NAME, DMX_TASK_STACK, NULL, DMX_TASK_PRIORITY, &dmx_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
   } else {
     LOG_DEBUG("task=%p", dmx_task);

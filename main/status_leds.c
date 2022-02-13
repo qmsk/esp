@@ -63,8 +63,18 @@ static int init_user_led()
 
 static int start_user_led()
 {
-  if (xTaskCreate(&status_led_main, STATUS_LEDS_USER_TASK_NAME, STATUS_LED_TASK_STACK, user_led, STATUS_LED_TASK_PRIORITY, &user_led_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  struct task_options task_options = {
+    .main       = status_led_main,
+    .name       = STATUS_LEDS_USER_TASK_NAME,
+    .stack_size = STATUS_LED_TASK_STACK,
+    .arg        = user_led,
+    .priority   = STATUS_LED_TASK_PRIORITY,
+    .handle     = &user_led_task,
+    .affinity   = STATUS_LED_TASK_AFFINITY,
+  };
+
+  if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
   }
 
@@ -110,8 +120,18 @@ static int init_flash_led()
 
 static int start_flash_led()
 {
-  if (xTaskCreate(&status_led_main, STATUS_LEDS_FLASH_TASK_NAME, STATUS_LED_TASK_STACK, flash_led, STATUS_LED_TASK_PRIORITY, &flash_led_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  struct task_options task_options = {
+    .main       = status_led_main,
+    .name       = STATUS_LEDS_FLASH_TASK_NAME,
+    .stack_size = STATUS_LED_TASK_STACK,
+    .arg        = flash_led,
+    .priority   = STATUS_LED_TASK_PRIORITY,
+    .handle     = &flash_led_task,
+    .affinity   = STATUS_LED_TASK_AFFINITY,
+  };
+
+  if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
   }
 
@@ -158,8 +178,18 @@ static int init_alert_led()
 
 static int start_alert_led()
 {
-  if (xTaskCreate(&status_led_main, STATUS_LEDS_ALERT_TASK_NAME, STATUS_LED_TASK_STACK, alert_led, STATUS_LED_TASK_PRIORITY, &alert_led_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  struct task_options task_options = {
+    .main       = status_led_main,
+    .name       = STATUS_LEDS_ALERT_TASK_NAME,
+    .stack_size = STATUS_LED_TASK_STACK,
+    .arg        = alert_led,
+    .priority   = STATUS_LED_TASK_PRIORITY,
+    .handle     = &alert_led_task,
+    .affinity   = STATUS_LED_TASK_AFFINITY,
+  };
+
+  if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
   }
 
@@ -323,6 +353,15 @@ void status_leds_main(void *arg)
 
 int start_status_leds()
 {
+  struct task_options task_options = {
+    .main       = status_leds_main,
+    .name       = STATUS_LEDS_TASK_NAME,
+    .stack_size = STATUS_LEDS_TASK_STACK,
+    .arg        = NULL,
+    .priority   = STATUS_LEDS_TASK_PRIORITY,
+    .handle     = &status_leds_task,
+    .affinity   = STATUS_LEDS_TASK_AFFINITY,
+  };
   int err;
 
 #if CONFIG_STATUS_LEDS_USER_ENABLED
@@ -346,8 +385,8 @@ int start_status_leds()
   }
 #endif
 
-  if (xTaskCreate(status_leds_main, STATUS_LEDS_TASK_NAME, STATUS_LEDS_TASK_STACK, NULL, STATUS_LEDS_TASK_PRIORITY, &status_leds_task) <= 0) {
-    LOG_ERROR("xTaskCreate");
+  if (start_task(task_options)) {
+    LOG_ERROR("start_task");
     return -1;
   }
 

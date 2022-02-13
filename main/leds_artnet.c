@@ -230,13 +230,18 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
 
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config)
 {
-  char task_name[configMAX_TASK_NAME_LEN];
+  struct task_options task_options = {
+    .main       = leds_artnet_main,
+    .name_fmt   = LEDS_ARTNET_TASK_NAME_FMT,
+    .stack_size = LEDS_ARTNET_TASK_STACK,
+    .arg        = state,
+    .priority   = LEDS_ARTNET_TASK_PRIORITY,
+    .handle     = &state->artnet.task,
+    .affinity   = LEDS_ARTNET_TASK_AFFINITY,
+  };
 
-  // task
-  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, state->index + 1);
-
-  if (xTaskCreate(&leds_artnet_main, task_name, LEDS_ARTNET_TASK_STACK, state, LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
-    LOG_ERROR("leds%d: xTaskCreate", state->index + 1);
+  if (start_taskf(task_options, state->index + 1)) {
+    LOG_ERROR("start_taskf");
     return -1;
   } else {
     LOG_INFO("leds%d: start artnet task=%p", state->index + 1, state->artnet.task);

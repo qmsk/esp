@@ -120,24 +120,14 @@ int init_dmx()
 
 static int start_dmx_uart(const struct dmx_config *config)
 {
-  struct uart_options options = dmx_uart_options;
+  struct dmx_uart_options options = {
+    .mtbp_min = config->mtbp_min,
+  };
   int err;
 
-  if (config->mtbp_min >= DMX_UART_MTBP_UNIT) {
-    // after N frame periods
-    options.rx_timeout = config->mtbp_min / DMX_UART_MTBP_UNIT;
-  } else {
-    // after each frame
-    options.rx_buffered = 1;
-  }
 
-  LOG_INFO("baud_rate=%u, data_bits=%x parity=%x stop_bits=%x : rx_timeout=%u rx_buffered=%u",
-    options.baud_rate,
-    options.data_bits,
-    options.parity_bits,
-    options.stop_bits,
-    options.rx_timeout,
-    options.rx_buffered
+  LOG_INFO("mtbp_min=%u",
+    options.mtbp_min
   );
 
   // this will block on the dev mutex if the console is running
@@ -154,8 +144,8 @@ static int start_dmx_uart(const struct dmx_config *config)
     LOG_WARN("DMX dev_mutex=%p will wait for UART to become available...", dmx_uart_dev_mutex);
   }
 
-  if ((err = uart_setup(dmx_uart, options))) {
-    LOG_ERROR("uart_setup");
+  if ((err = dmx_uart_setup(dmx_uart, options))) {
+    LOG_ERROR("dmx_uart_setup");
     return err;
   }
 

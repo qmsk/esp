@@ -10,10 +10,15 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 
-#define LEDS_GPIO_OFF (-1)
 #define LEDS_SPI_CLOCK (SPI_CLOCK_1MHZ)
 
 #define LEDS_ARTNET_UNIVERSE_LEDS (512 / 3)
+
+enum {
+  LEDS_GPIO_MODE_OFF   = -1,
+  LEDS_GPIO_MODE_LOW   = 0,
+  LEDS_GPIO_MODE_HIGH  = 1,
+};
 
 struct leds_config {
   bool enabled;

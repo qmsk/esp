@@ -55,17 +55,16 @@ static int init_spi_master(const struct leds_config *configs)
     }
 
     switch (config->gpio_mode) {
-      case LEDS_GPIO_OFF:
+      case LEDS_GPIO_MODE_OFF:
         break;
 
-      case GPIO_OUT_HIGH:
+      case LEDS_GPIO_MODE_HIGH:
         leds_gpio_out_spi.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_spi.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
-      case GPIO_OUT_LOW:
+      case LEDS_GPIO_MODE_LOW:
         leds_gpio_out_spi.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_spi.level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_spi.inverted |= gpio_out_pin(config->gpio_pin);
         break;
     }
   }
@@ -76,7 +75,7 @@ static int init_spi_master(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_spi.pins, leds_gpio_out_spi.level);
+  LOG_INFO("gpio pins=%04x inverted=%08x", leds_gpio_out_spi.pins, leds_gpio_out_spi.inverted);
 
   if ((err = spi_master_new(&leds_spi_master, options))) {
     LOG_ERROR("spi_master_new");
@@ -112,17 +111,16 @@ static int init_uart(const struct leds_config *configs)
     enabled = true;
 
     switch (config->gpio_mode) {
-      case LEDS_GPIO_OFF:
+      case LEDS_GPIO_MODE_OFF:
         break;
 
-      case GPIO_OUT_HIGH:
+      case LEDS_GPIO_MODE_HIGH:
         leds_gpio_out_uart.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_uart.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
-      case GPIO_OUT_LOW:
+      case LEDS_GPIO_MODE_LOW:
         leds_gpio_out_uart.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_uart.level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_uart.inverted |= gpio_out_pin(config->gpio_pin);
         break;
     }
   }
@@ -133,7 +131,7 @@ static int init_uart(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_uart.pins, leds_gpio_out_uart.level);
+  LOG_INFO("gpio pins=%04x inverted=%08x", leds_gpio_out_uart.pins, leds_gpio_out_uart.inverted);
 
   if ((err = uart_new(&leds_uart, LEDS_UART, LEDS_UART_RX_BUFFER_SIZE, LEDS_UART_TX_BUFFER_SIZE))) {
     LOG_ERROR("uart_new");
@@ -172,17 +170,16 @@ static int init_i2s_out(const struct leds_config *configs)
     enabled = true;
 
     switch (config->gpio_mode) {
-      case LEDS_GPIO_OFF:
+      case LEDS_GPIO_MODE_OFF:
         break;
 
-      case GPIO_OUT_HIGH:
+      case LEDS_GPIO_MODE_HIGH:
         leds_gpio_out_i2s.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_i2s.level = GPIO_OUT_HIGH; // XXX: per-pin output level?
         break;
 
-      case GPIO_OUT_LOW:
+      case LEDS_GPIO_MODE_LOW:
         leds_gpio_out_i2s.pins |= gpio_out_pin(config->gpio_pin);
-        leds_gpio_out_i2s.level = GPIO_OUT_LOW; // XXX: per-pin output level?
+        leds_gpio_out_i2s.inverted |= gpio_out_pin(config->gpio_pin);
         break;
     }
 
@@ -200,7 +197,7 @@ static int init_i2s_out(const struct leds_config *configs)
     return 0;
   }
 
-  LOG_INFO("gpio pins=%04x level=%d", leds_gpio_out_i2s.pins, leds_gpio_out_i2s.level);
+  LOG_INFO("gpio pins=%04x inverted=%08x", leds_gpio_out_i2s.pins, leds_gpio_out_i2s.inverted);
 
   if ((err = i2s_out_new(&leds_i2s_out, LEDS_I2S_PORT, max_i2s_buffer_size))) {
     LOG_ERROR("i2s_out_new");
@@ -233,7 +230,7 @@ static int init_leds_spi(struct leds_state *state, int index, const struct leds_
     options.spi_mode_bits |= (config->spi_delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
   }
 
-  if (config->gpio_mode != LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+  if (config->gpio_mode != LEDS_GPIO_MODE_OFF && gpio_out_pin(config->gpio_pin)) {
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
@@ -260,7 +257,7 @@ static int init_leds_uart(struct leds_state *state, int index, const struct leds
   };
   int err;
 
-  if (config->gpio_mode != LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+  if (config->gpio_mode != LEDS_GPIO_MODE_OFF && gpio_out_pin(config->gpio_pin)) {
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 
@@ -288,7 +285,7 @@ static int init_leds_i2s(struct leds_state *state, int index, const struct leds_
   };
   int err;
 
-  if (config->gpio_mode != LEDS_GPIO_OFF && gpio_out_pin(config->gpio_pin)) {
+  if (config->gpio_mode != LEDS_GPIO_MODE_OFF && gpio_out_pin(config->gpio_pin)) {
     options.gpio_out_pins = gpio_out_pin(config->gpio_pin);
   }
 

@@ -14,6 +14,12 @@
 #define DMX_UART_MTBP_MIN (4 * DMX_UART_MTBP_UNIT)
 #define DMX_UART_MTBP_MAX (UART_RX_TIMEOUT_MAX * DMX_UART_MTBP_UNIT)
 
+enum {
+  DMX_GPIO_MODE_OFF   = -1,
+  DMX_GPIO_MODE_LOW   = 0,
+  DMX_GPIO_MODE_HIGH  = 1,
+};
+
 /* dmx_config.c */
 struct dmx_config {
   bool enabled;

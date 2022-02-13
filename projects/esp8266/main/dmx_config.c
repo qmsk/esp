@@ -33,9 +33,9 @@ const struct config_enum dmx_uart_enum[] = {
 };
 
 const struct config_enum dmx_gpio_mode_enum[] = {
- { "OFF",  -1              },
- { "HIGH", GPIO_OUT_HIGH   },
- { "LOW",  GPIO_OUT_LOW    },
+ { "OFF",  DMX_GPIO_MODE_OFF    },
+ { "LOW",  DMX_GPIO_MODE_LOW    },
+ { "HIGH", DMX_GPIO_MODE_HIGH   },
  {}
 };
 

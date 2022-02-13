@@ -23,13 +23,17 @@ static int init_dmx_gpio()
   for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
     const struct dmx_output_config *config = &dmx_output_configs[i];
 
-    if (config->gpio_mode != -1) {
-      dmx_gpio_out.level = config->gpio_mode; // XXX: correctly handle conflicting levels?
+    if (config->gpio_mode != DMX_GPIO_MODE_OFF) {
       dmx_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
     }
+
+    if (config->gpio_mode == DMX_GPIO_MODE_LOW) {
+      dmx_gpio_out.inverted |= gpio_out_pin(config->gpio_pin);
+    }
+
   }
 
-  LOG_INFO("pins=%04x level=%d", dmx_gpio_out.pins, dmx_gpio_out.level);
+  LOG_INFO("pins=%04x inverted=%08x", dmx_gpio_out.pins, dmx_gpio_out.inverted);
 
   if ((err = gpio_out_setup(&dmx_gpio_out))) {
     LOG_ERROR("gpio_out_setup");

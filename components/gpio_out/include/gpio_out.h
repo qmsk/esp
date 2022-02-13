@@ -7,6 +7,8 @@
 #if CONFIG_IDF_TARGET_ESP8266
   // GPIO16 is not supported
   #define GPIO_OUT_PIN_COUNT 16
+  #define GPIO_OUT_PINS_NONE 0
+  #define GPIO_OUT_PINS_ALL 0xffff
 
   enum gpio_out_pins {
     GPIO_OUT_PIN_GPIO0    = 1 << 0,
@@ -32,6 +34,8 @@
 
   // GPIO32-33 is not supported
   #define GPIO_OUT_PIN_COUNT 32
+  #define GPIO_OUT_PINS_NONE 0
+  #define GPIO_OUT_PINS_ALL 0xffffffff
 
   enum gpio_out_pins {
     GPIO_OUT_PIN_GPIO0    = 1 << 0,
@@ -72,17 +76,12 @@
 /* Return gpio_out_pins bitmask for numbered pin, or 0 if invalid */
 enum gpio_out_pins gpio_out_pin(int pin);
 
-enum gpio_out_level {
-  GPIO_OUT_LOW          = 0,
-  GPIO_OUT_HIGH         = 1,
-};
-
 struct gpio_out {
   // bitmask of pins to enable
   enum gpio_out_pins pins;
 
-  // output level for pins
-  enum gpio_out_level level;
+  // invert output for pins
+  enum gpio_out_pins inverted;
 };
 
 /* Setup output pins */

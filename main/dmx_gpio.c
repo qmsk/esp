@@ -15,7 +15,6 @@ int init_dmx_gpio()
   // outputs
   for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
     const struct dmx_output_config *config = &dmx_output_configs[i];
-    struct dmx_output_state *state = &dmx_output_states[i];
 
     if (!config->enabled) {
       continue;
@@ -31,7 +30,8 @@ int init_dmx_gpio()
         LOG_INFO("dmx-output%d: gpio mode=LOW pin=%d", i + 1, config->gpio_pin);
 
         dmx_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
-        dmx_gpio_out.level = GPIO_OUT_LOW; // XXX: per-pin
+        dmx_gpio_out.inverted |= gpio_out_pin(config->gpio_pin);
+        break;
 
       case DMX_GPIO_MODE_HIGH:
         enabled = true;
@@ -39,7 +39,7 @@ int init_dmx_gpio()
         LOG_INFO("dmx-output%d: gpio mode=HIGH pin=%d", i + 1, config->gpio_pin);
 
         dmx_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
-        dmx_gpio_out.level = GPIO_OUT_HIGH; // XXX: per-pin
+        break;
 
       default:
         LOG_ERROR("dmx-output%d: invalid gpio_mode=%d", i + 1, config->gpio_mode);
@@ -52,9 +52,9 @@ int init_dmx_gpio()
     return 0;
   }
 
-  LOG_INFO("dmx: gpio -> pins=%08x level=%d",
+  LOG_INFO("dmx: gpio -> pins=%08x inverted=%08x",
     dmx_gpio_out.pins,
-    dmx_gpio_out.level
+    dmx_gpio_out.inverted
   );
 
   if ((err = gpio_out_setup(&dmx_gpio_out))) {

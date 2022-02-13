@@ -32,16 +32,15 @@
           LOG_INFO("leds%d: gpio mode=LOW pin=%d", i + 1, config->gpio_pin);
 
           leds_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
-          leds_gpio_out.level = GPIO_OUT_LOW; // XXX: per-pin
+          leds_gpio_out.inverted |= gpio_out_pin(config->gpio_pin);
           break;
 
         case LEDS_GPIO_MODE_HIGH:
           enabled = true;
 
-          LOG_INFO("leds%d: gpio mode=HIG pin=%d", i + 1, config->gpio_pin);
+          LOG_INFO("leds%d: gpio mode=HIGH pin=%d", i + 1, config->gpio_pin);
 
           leds_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
-          leds_gpio_out.level = GPIO_OUT_HIGH; // XXX: per-pin
           break;
 
         default:
@@ -55,9 +54,9 @@
       return 0;
     }
 
-    LOG_INFO("leds: gpio -> pins=%08x level=%d",
+    LOG_INFO("leds: gpio -> pins=%08x inverted=%08x",
       leds_gpio_out.pins,
-      leds_gpio_out.level
+      leds_gpio_out.inverted
     );
 
     if ((err = gpio_out_setup(&leds_gpio_out))) {

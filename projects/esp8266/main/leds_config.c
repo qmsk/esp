@@ -5,19 +5,19 @@
 struct leds_config leds_configs[LEDS_COUNT] = {
   [0] = {
     .spi_clock   = LEDS_SPI_CLOCK,
-    .gpio_mode   = LEDS_GPIO_OFF,
+    .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [1] = {
     .spi_clock   = LEDS_SPI_CLOCK,
-    .gpio_mode   = LEDS_GPIO_OFF,
+    .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [2] = {
     .spi_clock   = LEDS_SPI_CLOCK,
-    .gpio_mode   = LEDS_GPIO_OFF,
+    .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [3] = {
     .spi_clock   = LEDS_SPI_CLOCK,
-    .gpio_mode   = LEDS_GPIO_OFF,
+    .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
 };
 
@@ -55,9 +55,9 @@ const struct config_enum leds_rate_enum[] = {
 };
 
 const struct config_enum leds_gpio_mode_enum[] = {
-  { "OFF",  LEDS_GPIO_OFF         },
-  { "HIGH", GPIO_OUT_HIGH             },
-  { "LOW",  GPIO_OUT_LOW              },
+  { "OFF",  LEDS_GPIO_MODE_OFF        },
+  { "LOW",  LEDS_GPIO_MODE_LOW        },
+  { "HIGH", LEDS_GPIO_MODE_HIGH       },
   {}
 };
 

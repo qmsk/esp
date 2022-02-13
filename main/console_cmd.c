@@ -1,6 +1,7 @@
 #include "artnet.h"
 #include "config.h"
 #include "console.h"
+#include "dmx.h"
 #include "leds.h"
 #include "log.h"
 #include "spiffs.h"
@@ -49,6 +50,9 @@ const struct cmd console_cli_commands[] = {
   },
   { "artnet",       .describe = "Art-NET",
       .subcommands = &artnet_cmdtab,
+  },
+  { "dmx",          .describe = "DMX",
+      .subcommands = &dmx_cmdtab,
   },
   { "leds",         .describe = "LED Control",
       .subcommands = &leds_cmdtab,

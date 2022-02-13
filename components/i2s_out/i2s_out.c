@@ -170,7 +170,7 @@ int i2s_out_flush(struct i2s_out *i2s_out)
     return -1;
   }
 
-  if (i2s_out_dma_ready(i2s_out)) {
+  if (i2s_out_dma_pending(i2s_out)) {
     i2s_out_dma_start(i2s_out);
     i2s_out_i2s_start(i2s_out);
   }

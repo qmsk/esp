@@ -180,7 +180,8 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
-  // reset write desc
+  // reset write state
+  i2s_out->dma_start = false;
   i2s_out->dma_write_desc = i2s_out->dma_rx_desc;
 
   LOG_DEBUG("dma_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
@@ -240,9 +241,9 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
   return size;
 }
 
-int i2s_out_dma_ready(struct i2s_out *i2s_out)
+int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
-  if (i2s_out->dma_write_desc->owner) {
+  if (i2s_out->dma_start) {
     // start() already haṕpened
     return 0;
   }
@@ -292,6 +293,8 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   i2s_intr_enable(i2s_out->dev, I2S_OUT_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
+
+  i2s_out->dma_start = true;
 }
 
 int i2s_out_dma_flush(struct i2s_out *i2s_out)

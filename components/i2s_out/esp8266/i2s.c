@@ -100,6 +100,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL();
 
+  // TODO: optimize to recognize if TX_REMPTY already happened?
   i2s_out->i2s_flush_task = xTaskGetCurrentTaskHandle();
 
   i2s_intr_clear(&I2S0);

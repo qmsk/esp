@@ -289,7 +289,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
   return size;
 }
 
-int i2s_out_dma_ready(struct i2s_out *i2s_out)
+int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
   if (i2s_out->dma_write_desc->owner) {
     // start() already haṕpened

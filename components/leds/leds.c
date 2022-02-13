@@ -1,7 +1,5 @@
 #include <leds.h>
 #include "leds.h"
-#include "apa102.h"
-#include "p9813.h"
 
 #include <logging.h>
 
@@ -198,11 +196,11 @@ unsigned leds_active(struct leds *leds)
   if (leds->active) {
     switch(leds->options.protocol) {
       case LEDS_PROTOCOL_APA102:
-        active = apa102_count_active(&leds->state.apa102, leds->options.count);
+        active = leds_protocol_apa102_count_active(&leds->state.apa102, leds->options.count);
         break;
 
       case LEDS_PROTOCOL_P9813:
-        active = p9813_count_active(&leds->state.p9813, leds->options.count);
+        active = leds_protocol_p9813_count_active(&leds->state.p9813, leds->options.count);
         break;
 
       case LEDS_PROTOCOL_WS2812B:
@@ -245,11 +243,11 @@ int leds_set(struct leds *leds, unsigned index, struct spi_led_color color)
 
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
-      apa102_set_frame(&leds->state.apa102, index, color);
+      leds_protocol_apa102_set_frame(&leds->state.apa102, index, color);
       return 0;
 
     case LEDS_PROTOCOL_P9813:
-      p9813_set_frame(&leds->state.p9813, index, color);
+      leds_protocol_p9813_set_frame(&leds->state.p9813, index, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:
@@ -282,11 +280,11 @@ int leds_set_all(struct leds *leds, struct spi_led_color color)
 
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
-      apa102_set_frames(&leds->state.apa102, leds->options.count, color);
+      leds_protocol_apa102_set_frames(&leds->state.apa102, leds->options.count, color);
       return 0;
 
     case LEDS_PROTOCOL_P9813:
-      p9813_set_frames(&leds->state.p9813, leds->options.count, color);
+      leds_protocol_p9813_set_frames(&leds->state.p9813, leds->options.count, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:

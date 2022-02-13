@@ -6,14 +6,15 @@
 # include "interfaces/spi.h"
 #endif
 
+#include "protocols/apa102.h"
+#include "protocols/p9813.h"
+
 union leds_interface_state {
   #if CONFIG_LEDS_SPI_ENABLED
       struct leds_interface_spi spi;
   #endif
 };
 
-#include "apa102.h"
-#include "p9813.h"
 #include "sk6812grbw.h"
 #include "ws2811.h"
 #include "ws2812b.h"

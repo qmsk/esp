@@ -1,4 +1,4 @@
-set(src_dirs ".")
+set(src_dirs . ./protocols)
 
 if(CONFIG_LEDS_I2S_ENABLED)
   list(APPEND src_dirs "interfaces/i2s")

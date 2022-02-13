@@ -1,4 +1,4 @@
-COMPONENT_SRCDIRS := .
+COMPONENT_SRCDIRS := . ./protocols
 
 ifdef CONFIG_LEDS_I2S_ENABLED
 	COMPONENT_SRCDIRS += ./interfaces/i2s

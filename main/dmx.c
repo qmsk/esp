@@ -85,7 +85,7 @@ error:
 
 int start_dmx()
 {
-  bool enabled;
+  bool enabled = false;
   int err;
 
   if (dmx_input_config.enabled && dmx_input_state.dmx_input) {

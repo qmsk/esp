@@ -2,6 +2,7 @@
 #include "leds_artnet.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "leds_stats.h"
 #include "artnet_state.h"
 #include "tasks.h"
 
@@ -94,7 +95,7 @@ static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_
   }
 }
 
-static void leds_artnet_out(struct leds_state *state, unsigned index, struct artnet_dmx *dmx)
+static void leds_artnet_set(struct leds_state *state, unsigned index, struct artnet_dmx *dmx)
 {
   // handle DMX address offset
   uint8_t *data = state->artnet.dmx->data;
@@ -136,9 +137,8 @@ static void leds_artnet_main(void *ctx)
   struct leds_state *state = ctx;
   struct leds_artnet_test test_state = {};
 
-  for (;;) {
+  for(struct stats_timer_sample loop_sample;; stats_timer_stop(&leds_stats_artnet_loop, &loop_sample)) {
     uint32_t notify_bits = leds_artnet_wait(state, &test_state);
-    bool unsync = false, sync = false, test = false;
 
     LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
       (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
@@ -146,7 +146,11 @@ static void leds_artnet_main(void *ctx)
       !!(notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT)
     );
 
+    loop_sample = stats_timer_start(&leds_stats_artnet_loop);
+
     // start/stop test mode
+    bool unsync = false, sync = false, test = false;
+
     if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
       sync = true;
     }
@@ -160,7 +164,9 @@ static void leds_artnet_main(void *ctx)
         leds_artnet_test_end(&test_state);
       }
 
-      leds_artnet_test_frame(state, &test_state);
+      WITH_STATS_TIMER(&leds_stats_artnet_test) {
+        leds_artnet_test_frame(state, &test_state);
+      }
 
       test = true;
     }
@@ -176,7 +182,9 @@ static void leds_artnet_main(void *ctx)
         continue;
       }
 
-      leds_artnet_out(state, index, state->artnet.dmx);
+      WITH_STATS_TIMER(&leds_stats_artnet_set) {
+        leds_artnet_set(state, index, state->artnet.dmx);
+      }
 
       if (!state->artnet.dmx->sync_mode) {
         // at least one DMX update is in non-synchronous mode, so force update
@@ -186,9 +194,11 @@ static void leds_artnet_main(void *ctx)
 
     // tx output if required
     if (unsync || sync || test) {
-      if (update_leds(state)) {
-        LOG_WARN("leds%d: update_leds", state->index + 1);
-        continue;
+      WITH_STATS_TIMER(&leds_stats_artnet_update) {
+        if (update_leds(state)) {
+          LOG_WARN("leds%d: update_leds", state->index + 1);
+          continue;
+        }
       }
     }
   }

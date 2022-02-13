@@ -1,6 +1,7 @@
 #include "leds.h"
 #include "leds_state.h"
 #include "leds_config.h"
+#include "leds_stats.h"
 
 #include <logging.h>
 #include <leds.h>
@@ -203,12 +204,34 @@ int leds_cmd_test(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static void print_stats_timer(const char *title, const char *desc, const struct stats_timer timer)
+{
+  printf("\t%10s : %-10s %12.3fs total / %6u count @ %12.3fs = %6.1fms avg, %5.1f%% util\n", title, desc,
+    (float)(timer.total) / 1000 / 1000,
+    timer.count,
+    timer.reset < timer.update ? (float)(timer.update - timer.reset) / 1000 / 1000 : 0,
+    timer.count ? (float)(timer.total) / (float)(timer.count) / 1000 : 0,
+    timer.reset < timer.update ? (float)(timer.total) / (float)(timer.update - timer.reset) * 100 : 0
+  );
+}
+
+int leds_cmd_stats(int argc, char **argv, void *ctx)
+{
+  print_stats_timer("artnet", "loop",   leds_stats_artnet_loop);
+  print_stats_timer("artnet", "test",   leds_stats_artnet_test);
+  print_stats_timer("artnet", "set",    leds_stats_artnet_set);
+  print_stats_timer("artnet", "update", leds_stats_artnet_update);
+
+  return 0;
+}
+
 const struct cmd leds_commands[] = {
   { "info",   leds_cmd_info,                                        .describe = "Show LED info" },
   { "clear",  leds_cmd_clear,                                       .describe = "Clear all output values" },
   { "all",    leds_cmd_all,   .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
   { "set",    leds_cmd_set,   .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "test",   leds_cmd_test,  .usage = "LEDS-ID",                   .describe = "Output test patterns" },
+  { "stats",  leds_cmd_stats,                                       .describe = "Show LED stats" },
   { }
 };
 

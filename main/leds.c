@@ -2,6 +2,7 @@
 #include "leds_artnet.h"
 #include "leds_state.h"
 #include "leds_config.h"
+#include "leds_stats.h"
 #include "user.h"
 
 #include <leds.h>
@@ -13,6 +14,8 @@ struct leds_state leds_states[LEDS_COUNT] = {};
 int init_leds()
 {
   int err;
+
+  leds_stats_init();
 
 #if CONFIG_LEDS_GPIO_ENABLED
   if ((err = init_leds_gpio())) {

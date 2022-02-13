@@ -100,6 +100,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
   printf("Art-Net: \n");
 
+  print_stats_timer  ("Network",  "receive",    &stats.recv);
+
   print_stats_counter("Poll",     "received",   &stats.recv_poll);
   print_stats_counter("DMX",      "received",   &stats.recv_dmx);
   print_stats_counter("DMX",      "discarded",  &stats.dmx_discard);

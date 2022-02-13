@@ -4,6 +4,9 @@
 #include <stats.h>
 
 struct artnet_stats {
+  /* Complete recv -> send packet handling */
+  struct stats_timer recv;
+
   /* Failed to receive ArtNet packet. */
   struct stats_counter recv_error;
 

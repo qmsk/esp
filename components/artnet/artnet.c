@@ -39,6 +39,8 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 
   artnet->options = options;
 
+  stats_timer_init(&artnet->stats.recv);
+
   stats_counter_init(&artnet->stats.recv_error);
   stats_counter_init(&artnet->stats.recv_poll);
   stats_counter_init(&artnet->stats.recv_dmx);
@@ -125,20 +127,24 @@ int artnet_listen_main(struct artnet *artnet)
       LOG_WARN("artnet_recv");
       stats_counter_increment(&artnet->stats.recv_error);
       continue;
-    } else if ((err = artnet_sendrecv(artnet, &sendrecv)) < 0) {
-      LOG_ERROR("artnet_sendrecv");
-      stats_counter_increment(&artnet->stats.errors);
-      continue;
-    } else if (err) {
-      LOG_WARN("artnet_sendrecv");
-      stats_counter_increment(&artnet->stats.recv_invalid);
-      continue;
+    }
+
+    WITH_STATS_TIMER(&artnet->stats.recv) {
+      if ((err = artnet_sendrecv(artnet, &sendrecv)) < 0) {
+        LOG_ERROR("artnet_sendrecv");
+        stats_counter_increment(&artnet->stats.errors);
+      } else if (err) {
+        LOG_WARN("artnet_sendrecv");
+        stats_counter_increment(&artnet->stats.recv_invalid);
+      }
     }
   }
 }
 
 void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)
 {
+  stats->recv = stats_timer_copy(&artnet->stats.recv);
+
   stats->recv_error = stats_counter_copy(&artnet->stats.recv_error);
   stats->recv_poll = stats_counter_copy(&artnet->stats.recv_poll);
   stats->recv_dmx = stats_counter_copy(&artnet->stats.recv_dmx);

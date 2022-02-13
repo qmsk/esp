@@ -202,7 +202,6 @@ error:
 
 int dmx_cmd_stats(int argc, char **argv, void *ctx)
 {
-
   if (dmx_input_state.dmx_input) {
     struct dmx_input_stats stats;
 

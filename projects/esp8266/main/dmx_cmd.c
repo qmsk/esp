@@ -3,6 +3,7 @@
 #include "dmx_cmd.h"
 
 #include <logging.h>
+#include <stats_print.h>
 
 #include <stdlib.h>
 
@@ -164,46 +165,27 @@ error:
   return err;
 }
 
-static void print_stats_counter(const struct stats_counter *counter, const char *title, const char *desc)
-{
-  printf("\t%20s : %10s %8u @ %6u.%03us\n", title, desc,
-    counter->count,
-    stats_counter_milliseconds_passed(counter) / 1000,
-    stats_counter_milliseconds_passed(counter) % 1000
-  );
-}
-
-static void print_stats_gauge(const struct stats_gauge *gauge, const char *title, const char *desc)
-{
-  printf("\t%20s : %10s %8u / min %8u / max %8u\n", title, desc,
-    gauge->val,
-    gauge->min,
-    gauge->max
-  );
-}
-
 int dmx_cmd_stats(int argc, char **argv, void *ctx)
 {
+  if (dmx_input_state->dmx_input) {
+    struct dmx_input_stats stats;
 
-  if (dmx_input_state && dmx_input_state->dmx_input) {
+    dmx_input_stats(dmx_input_state->dmx_input, &stats);
 
-      struct dmx_input_stats stats;
+    printf("Input:\n");
 
-      dmx_input_stats(dmx_input_state->dmx_input, &stats);
-
-      printf("Input:\n");
-
-      print_stats_counter(&stats.rx_overflow,     "RX",     "overflow");
-      print_stats_counter(&stats.rx_error,        "RX",     "error");
-      print_stats_counter(&stats.rx_break,        "RX",     "break");
-      print_stats_counter(&stats.rx_desync,       "RX",     "desync");
-
-      print_stats_counter(&stats.cmd_dimmer,      "DMX",    "dimmer");
-      print_stats_counter(&stats.cmd_unknown,     "DMX",    "unknown");
-
-      print_stats_gauge(&stats.data_len,          "Data",   "len");
-
-      printf("\n");
+    print_stats_timer  ("UART",   "RX",       &stats.uart_rx);
+    printf("\t\n");
+    print_stats_counter("RX",     "overflow", &stats.rx_overflow);
+    print_stats_counter("RX",     "error",    &stats.rx_error);
+    print_stats_counter("RX",     "break",    &stats.rx_break);
+    print_stats_counter("RX",     "desync",   &stats.rx_desync);
+    printf("\t\n");
+    print_stats_counter("DMX",    "dimmer",   &stats.cmd_dimmer);
+    print_stats_counter("DMX",    "unknown",  &stats.cmd_unknown);
+    printf("\t\n");
+    print_stats_gauge(  "Data",   "len",      &stats.data_len);
+    printf("\n");
   }
 
   return 0;

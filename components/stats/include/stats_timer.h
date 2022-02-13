@@ -2,6 +2,8 @@
 
 #include <esp_timer.h>
 
+#include <stdbool.h>
+
 struct stats_timer {
   uint64_t reset, update;
   uint32_t count;

@@ -92,7 +92,7 @@ static void print_artnet_stats_counter(struct stats_counter counter, const char 
 int artnet_cmd_stats(int argc, char **argv, void *ctx)
 {
   struct artnet_stats stats;
-  unsigned input_count = artnet_get_output_count(artnet);
+  unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
 
   // receiver stats

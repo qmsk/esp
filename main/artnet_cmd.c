@@ -120,7 +120,7 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   printf("\n");
 
   // input stats
-  unsigned input_count = artnet_get_output_count(artnet);
+  unsigned input_count = artnet_get_input_count(artnet);
 
   for (int i = 0; i < input_count; i++) {
     struct artnet_input_stats input_stats = {};

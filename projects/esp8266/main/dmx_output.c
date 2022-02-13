@@ -42,8 +42,6 @@ static int init_dmx_gpio()
 static int init_dmx_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
   struct dmx_output_options options = {
-    .uart           = dmx_uart,
-
     .gpio_out       = &dmx_gpio_out,
     .gpio_out_pins  = gpio_out_pin(config->gpio_pin),
   };
@@ -150,15 +148,25 @@ int output_dmx(struct dmx_output_state *state, void *data, size_t len)
 
   user_activity(USER_ACTIVITY_DMX_OUTPUT);
 
-  if ((err = dmx_output_cmd(state->dmx_output, DMX_CMD_DIMMER, data, len)) < 0) {
-    LOG_ERROR("dmx_output_cmd");
-    return err;
-  } else if (err) {
-    LOG_WARN("dmx_output_cmd: UART not setup, DMX not running");
-    return 1;
+  if ((err = dmx_output_open(state->dmx_output, dmx_uart))) {
+    if (err > 0) {
+      LOG_WARN("dmx_output_open: UART not setup, DMX not running");
+      return 1;
+    } else {
+      LOG_ERROR("dmx_output_open");
+      return err;
+    }
+  } else if ((err = dmx_output_write(state->dmx_output, DMX_CMD_DIMMER, data, len)) < 0) {
+    LOG_ERROR("dmx_output_write");
+    goto error;
   }
 
-  return 0;
+error:
+  if (dmx_output_close(state->dmx_output)) {
+    LOG_WARN("dmx_output_close");
+  }
+
+  return err;
 }
 
 static int dmx_output_artnet_dmx(struct dmx_output_state *state, struct artnet_dmx *dmx)

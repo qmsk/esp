@@ -40,16 +40,25 @@ error:
   return err;
 }
 
-int dmx_output_cmd (struct dmx_output *out, enum dmx_cmd cmd, void *data, size_t len)
+int dmx_output_open (struct dmx_output *out, struct uart *uart)
 {
   int err;
 
-  if ((err = uart_open_tx(out->options.uart)) < 0) {
+  if (out->uart) {
+    LOG_ERROR("already opened");
+    return -1;
+  }
+
+  if ((err = uart_open_tx(uart)) < 0) {
     LOG_ERROR("uart_open_tx");
     return err;
   } else if (err) {
     LOG_DEBUG("uart_open_tx: not setup");
     return err;
+  } else {
+    LOG_DEBUG("uart=%p", uart);
+
+    out->uart = uart;
   }
 
   // enable output
@@ -57,32 +66,54 @@ int dmx_output_cmd (struct dmx_output *out, enum dmx_cmd cmd, void *data, size_t
     gpio_out_set(out->options.gpio_out, out->options.gpio_out_pins);
   }
 
-  // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
-  if ((err = uart_break(out->options.uart, DMX_BREAK_US, DMX_MARK_US))) {
-    LOG_ERROR("uart1_break");
-    goto error;
+  return 0;
+}
+
+int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size_t len)
+{
+  int err;
+
+  if (!out->uart) {
+    LOG_ERROR("not open");
+    return 1;
   }
 
-  if ((err = uart_putc(out->options.uart, cmd)) < 0) {
+  // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
+  if ((err = uart_break(out->uart, DMX_BREAK_US, DMX_MARK_US))) {
+    LOG_ERROR("uart1_break");
+    return err;
+  }
+
+  if ((err = uart_putc(out->uart, cmd)) < 0) {
     LOG_ERROR("uart_putc");
-    goto error;
+    return err;
   }
 
   for (uint8_t *ptr = data; len > 0; ) {
     ssize_t write;
 
-    if ((write = uart_write(out->options.uart, ptr, len)) < 0) {
+    if ((write = uart_write(out->uart, ptr, len)) < 0) {
       LOG_ERROR("uart_write");
-      goto error;
+      return write;
     }
 
     ptr += write;
     len -= write;
   }
 
-error:
-  if (uart_close_tx(out->options.uart)) {
-    LOG_WARN("uart_close_tx");
+  if ((err = uart_flush_write(out->uart))) {
+    LOG_ERROR("uart_flush_write");
+    return err;
+  }
+
+  return 0;
+}
+
+int dmx_output_close (struct dmx_output *out)
+{
+  if (!out->uart) {
+    LOG_ERROR("no opened uart");
+    return 1;
   }
 
   // disable output
@@ -90,5 +121,11 @@ error:
     gpio_out_clear(out->options.gpio_out);
   }
 
-  return err;
+  if (uart_close_tx(out->uart)) {
+    LOG_WARN("uart_close_tx");
+  }
+
+  out->uart = NULL;
+
+  return 0;
 }

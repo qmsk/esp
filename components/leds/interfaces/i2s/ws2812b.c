@@ -1,4 +1,4 @@
-#include "../../ws2812b.h"
+#include "../ws2812b.h"
 #include "../../leds.h"
 
 #include <logging.h>

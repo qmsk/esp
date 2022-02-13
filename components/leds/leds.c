@@ -78,13 +78,13 @@ size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
 {
   switch (protocol) {
     case LEDS_PROTOCOL_WS2812B:
-      return WS2812B_I2S_SIZE * count;
+      return leds_protocol_ws2812b_i2s_buffer_size(count);
 
     case LEDS_PROTOCOL_WS2811:
-      return WS2811_I2S_SIZE * count;
+      return leds_protocol_ws2811_i2s_buffer_size(count);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return SK6812_GRBW_I2S_SIZE * count;
+      return leds_protocol_sk6812grbw_i2s_buffer_size(count);
 
     default:
       // unknown
@@ -134,13 +134,13 @@ int leds_init(struct leds *leds, const struct leds_options *options)
       return leds_protocol_p9813_init(&leds->interface, &leds->state.p9813, options);
 
     case LEDS_PROTOCOL_WS2812B:
-      return leds_init_ws2812b(&leds->state.ws2812b, options);
+      return leds_protocol_ws2812b_init(&leds->interface, &leds->state.ws2812b, options);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_init_sk6812grbw(&leds->state.sk6812grbw, options);
+      return leds_protocol_sk6812grbw_init(&leds->interface, &leds->state.sk6812grbw, options);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_init_ws2811(&leds->state.ws2811, options);
+      return leds_protocol_ws2811_init(&leds->interface, &leds->state.ws2811, options);
 
     default:
       LOG_ERROR("unknown protocol=%#x", options->protocol);
@@ -204,15 +204,15 @@ unsigned leds_active(struct leds *leds)
         break;
 
       case LEDS_PROTOCOL_WS2812B:
-        active = ws2812b_count_active(&leds->state.ws2812b, leds->options.count);
+        active = leds_protocol_ws2812b_count_active(&leds->state.ws2812b, leds->options.count);
         break;
 
       case LEDS_PROTOCOL_SK6812_GRBW:
-        active = sk6812grbw_count_active(&leds->state.sk6812grbw, leds->options.count);
+        active = leds_protocol_sk6812grbw_count_active(&leds->state.sk6812grbw, leds->options.count);
         break;
 
       case LEDS_PROTOCOL_WS2811:
-        active = ws2811_count_active(&leds->state.ws2811, leds->options.count);
+        active = leds_protocol_ws2811_count_active(&leds->state.ws2811, leds->options.count);
         break;
 
       default:
@@ -251,15 +251,15 @@ int leds_set(struct leds *leds, unsigned index, struct spi_led_color color)
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:
-      ws2812b_set_frame(&leds->state.ws2812b, index, color);
+      leds_protocol_ws2812b_set_frame(&leds->state.ws2812b, index, color);
       return 0;
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      sk6812grbw_set_frame(&leds->state.sk6812grbw, index, color);
+      leds_protocol_sk6812grbw_set_frame(&leds->state.sk6812grbw, index, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2811:
-      ws2811_set_frame(&leds->state.ws2811, index, color);
+      leds_protocol_ws2811_set_frame(&leds->state.ws2811, index, color);
       return 0;
 
     default:
@@ -288,15 +288,15 @@ int leds_set_all(struct leds *leds, struct spi_led_color color)
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:
-      ws2812b_set_frames(&leds->state.ws2812b, leds->options.count, color);
+      leds_protocol_ws2812b_set_frames(&leds->state.ws2812b, leds->options.count, color);
       return 0;
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      sk6812grbw_set_frames(&leds->state.sk6812grbw, leds->options.count, color);
+      leds_protocol_sk6812grbw_set_frames(&leds->state.sk6812grbw, leds->options.count, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2811:
-      ws2811_set_frames(&leds->state.ws2811, leds->options.count, color);
+      leds_protocol_ws2811_set_frames(&leds->state.ws2811, leds->options.count, color);
       return 0;
 
     default:
@@ -360,16 +360,13 @@ int leds_tx(struct leds *leds)
       return leds_protocol_p9813_tx(&leds->interface, &leds->state.p9813, &leds->options);
 
     case LEDS_PROTOCOL_WS2812B:
-      leds_tx_ws2812b(&leds->state.ws2812b, &leds->options);
-      return 0;
+      return leds_protocol_ws2812b_tx(&leds->interface, &leds->state.ws2812b, &leds->options);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      leds_tx_sk6812grbw(&leds->state.sk6812grbw, &leds->options);
-      return 0;
+      return leds_protocol_sk6812grbw_tx(&leds->interface, &leds->state.sk6812grbw, &leds->options);
 
     case LEDS_PROTOCOL_WS2811:
-      leds_tx_ws2811(&leds->state.ws2811, &leds->options);
-      return 0;
+      return leds_protocol_ws2811_tx(&leds->interface, &leds->state.ws2811, &leds->options);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);

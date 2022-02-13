@@ -1,11 +1,13 @@
 #include "ws2812b.h"
-#include "leds.h"
+#include "../leds.h"
+#include "../interfaces/ws2812b.h"
 
 #include <logging.h>
 
 #include <stdlib.h>
 
-int leds_init_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
+
+int leds_protocol_ws2812b_init(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
 {
   if (!(protocol->pixels = calloc(options->count, sizeof(*protocol->pixels)))) {
     LOG_ERROR("malloc");
@@ -15,7 +17,7 @@ int leds_init_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_
   return 0;
 }
 
-int leds_tx_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
+int leds_protocol_ws2812b_tx(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
@@ -37,7 +39,7 @@ int leds_tx_ws2812b(struct leds_protocol_ws2812b *protocol, const struct leds_op
   }
 }
 
-void ws2812b_set_frame(struct leds_protocol_ws2812b *protocol, unsigned index, struct spi_led_color color)
+void leds_protocol_ws2812b_set_frame(struct leds_protocol_ws2812b *protocol, unsigned index, struct spi_led_color color)
 {
   protocol->pixels[index] = (union ws2812b_pixel) {
     .b = color.b,
@@ -46,7 +48,7 @@ void ws2812b_set_frame(struct leds_protocol_ws2812b *protocol, unsigned index, s
   };
 }
 
-void ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, struct spi_led_color color)
+void leds_protocol_ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, struct spi_led_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->pixels[index] = (union ws2812b_pixel) {
@@ -57,12 +59,7 @@ void ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, 
   }
 }
 
-static inline bool ws2812b_pixel_active(const union ws2812b_pixel pixel)
-{
-  return pixel.b || pixel.r || pixel.g;
-}
-
-unsigned ws2812b_count_active(struct leds_protocol_ws2812b *protocol, unsigned count)
+unsigned leds_protocol_ws2812b_count_active(struct leds_protocol_ws2812b *protocol, unsigned count)
 {
   unsigned active = 0;
 

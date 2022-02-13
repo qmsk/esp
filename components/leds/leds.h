@@ -8,16 +8,15 @@
 
 #include "protocols/apa102.h"
 #include "protocols/p9813.h"
+#include "protocols/sk6812grbw.h"
+#include "protocols/ws2811.h"
+#include "protocols/ws2812b.h"
 
 union leds_interface_state {
   #if CONFIG_LEDS_SPI_ENABLED
       struct leds_interface_spi spi;
   #endif
 };
-
-#include "sk6812grbw.h"
-#include "ws2811.h"
-#include "ws2812b.h"
 
 #include <stdbool.h>
 #include <stddef.h>

@@ -2,9 +2,9 @@
 
 #include <leds.h>
 
-struct p9813_packet;
-
 union leds_interface_state *interface;
+
+struct p9813_packet;
 
 struct leds_protocol_p9813 {
   struct p9813_packet *packet;

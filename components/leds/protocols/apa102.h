@@ -2,9 +2,9 @@
 
 #include <leds.h>
 
-struct apa102_packet *packet;
-
 union leds_interface_state *interface;
+
+struct apa102_packet *packet;
 
 struct leds_protocol_apa102 {
   struct apa102_packet *packet;

@@ -4,18 +4,22 @@
 
 struct leds_config leds_configs[LEDS_COUNT] = {
   [0] = {
+    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [1] = {
+    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [2] = {
+    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },
   [3] = {
+    .protocol    = LEDS_PROTOCOL_APA102,
     .spi_clock   = LEDS_SPI_CLOCK,
     .gpio_mode   = LEDS_GPIO_MODE_OFF,
   },

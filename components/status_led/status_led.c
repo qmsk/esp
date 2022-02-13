@@ -24,14 +24,6 @@
 #define STATUS_LED_READ_WAIT_PERIOD 10
 #define STATUS_LED_READ_NOTIFY_BIT 0x1
 
-#if CONFIG_IDF_TARGET_ESP8266
-# define STATUS_LED_TASK_STACK 512
-#elif CONFIG_IDF_TARGET_ESP32
-# define STATUS_LED_TASK_STACK 1024
-#endif
-
-#define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 2)
-
 static inline void status_led_output_mode(struct status_led *led)
 {
   LOG_DEBUG("gpio=%d", led->options.gpio);
@@ -225,7 +217,7 @@ static TickType_t status_led_schedule(struct status_led *led, TickType_t period)
   }
 }
 
-void status_led_task(void *arg)
+void status_led_main(void *arg)
 {
   struct status_led *led = arg;
   struct status_led_event event;
@@ -307,12 +299,6 @@ int status_led_new(struct status_led **ledp, const struct status_led_options opt
   // setup task
   if ((led->queue = xQueueCreate(1, sizeof(struct status_led_event))) == NULL) {
     LOG_ERROR("xQueueCreate");
-    err = -1;
-    goto error;
-  }
-
-  if (xTaskCreate(&status_led_task, "status-led", STATUS_LED_TASK_STACK, led, STATUS_LED_TASK_PRIORITY, &led->task) <= 0) {
-    LOG_ERROR("xTaskCreate");
     err = -1;
     goto error;
   }

@@ -20,8 +20,6 @@ struct status_led_event {
 struct status_led {
   struct status_led_options options;
 
-  xTaskHandle task;
-
   // operations
   SemaphoreHandle_t mutex;
   xQueueHandle queue;

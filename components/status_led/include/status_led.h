@@ -26,6 +26,13 @@ struct status_led;
 int status_led_new(struct status_led **ledp, const struct status_led_options options, enum status_led_mode mode);
 
 /*
+ * Run status_led mainloop.
+ *
+ * @param arg `struct status_led *`
+ */
+void status_led_main(void *arg);
+
+/*
  * Set output mode. Newest update wins.
  */
 int status_led_set(struct status_led *led, enum status_led_mode mode);

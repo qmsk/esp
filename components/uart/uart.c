@@ -482,6 +482,11 @@ ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len)
       buf += write;
       len -= write;
     }
+
+    if (!len) {
+      LOG_WARN("tx stuck, tx_buffer=%p", uart->tx_buffer);
+      return -1;
+    }
   }
 
   uart_release_tx(uart);

@@ -8,7 +8,10 @@
 
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size)
 {
-  if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {
+  if (!tx_buffer_size) {
+    uart->tx_buffer = NULL;
+
+  } else if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }
@@ -18,14 +21,16 @@ int uart_tx_init(struct uart *uart, size_t tx_buffer_size)
 
 int uart_tx_setup(struct uart *uart, struct uart_options options)
 {
-  int reset;
+  int reset = 1;
 
   taskENTER_CRITICAL(&uart->mux);
 
   // XXX: this is only implemented for UART0?
   uart_ll_txfifo_rst(uart->dev);
 
-  reset = xStreamBufferReset(uart->tx_buffer);
+  if (uart->tx_buffer) {
+    reset = xStreamBufferReset(uart->tx_buffer);
+  }
 
   taskEXIT_CRITICAL(&uart->mux);
 
@@ -49,7 +54,7 @@ int uart_tx_one(struct uart *uart, uint8_t byte)
 
     ret = 0;
 
-  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+  } else if (uart->tx_buffer && xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
     LOG_ISR_DEBUG("tx buffer");
 
     // byte was written
@@ -88,14 +93,14 @@ size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
   size_t write = 0;
 
   // assume no crtical section required, as uart is locked and ISR should not be running
-  if (xStreamBufferIsEmpty(uart->tx_buffer)) {
+  if (!uart->tx_buffer || xStreamBufferIsEmpty(uart->tx_buffer)) {
     // fastpath via HW FIFO
     write = uart_tx_raw(uart, buf, len);
 
     LOG_ISR_DEBUG("raw len=%u: write=%u", len, write);
   }
 
-  if (!write) {
+  if (!write && uart->tx_buffer) {
     // write as many bytes as possible, ensure tx buffer is not empty
     write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
 
@@ -109,10 +114,14 @@ size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-
 size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
 {
   size_t write;
+
+  if (!uart->tx_buffer) {
+    LOG_DEBUG("TX buffer disabled");
+    return 0;
+  }
 
   // write as many bytes as possible, ensure tx buffer is not empty
   write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
@@ -131,6 +140,11 @@ size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
 size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
 {
   size_t write;
+
+  if (!uart->tx_buffer) {
+    LOG_DEBUG("TX buffer disabled");
+    return 0;
+  }
 
   // does not use a critical section, inter enable racing with stream send / ISR is harmless
   write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
@@ -153,7 +167,7 @@ int uart_tx_flush(struct uart *uart)
 
   taskENTER_CRITICAL(&uart->mux);
 
-  if (!xStreamBufferIsEmpty(uart->tx_buffer)) {
+  if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
     // notify task once complete
     uart->tx_done_notify_task = task;
 

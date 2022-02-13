@@ -184,9 +184,13 @@ void IRAM_ATTR uart_intr_tx_handler(struct uart *uart, BaseType_t *task_woken)
     size = sizeof(buf);
   }
 
-  len = xStreamBufferReceiveFromISR(uart->tx_buffer, buf, size, task_woken);
+  if (uart->tx_buffer) {
+    len = xStreamBufferReceiveFromISR(uart->tx_buffer, buf, size, task_woken);
 
-  LOG_ISR_DEBUG("xStreamBufferReceiveFromISR size=%u: len=%u", size, len);
+    LOG_ISR_DEBUG("xStreamBufferReceiveFromISR size=%u: len=%u", size, len);
+  } else {
+    len = 0;
+  }
 
   if (len) {
     uart_ll_write_txfifo(uart->dev, buf, len);

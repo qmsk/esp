@@ -57,13 +57,19 @@ int start_taskf(struct task_options options, ...);
 
 #define DMX_TASK_STACK 2048
 
-// used for ArtNET network protocol, input -> output
-#define ARTNET_LISTEN_TASK_NAME "artnet-listen"
+// used for physical UART -> Art-NET inputs
 #define ARTNET_INPUTS_TASK_NAME "artnet-inputs"
-#define ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 6)
-#define ARTNET_TASK_AFFINITY TASKS_CPU_PRO
+#define ARTNET_INPUTS_TASK_PRIORITY (tskIDLE_PRIORITY + 10)
+#define ARTNET_INPUTS_TASK_AFFINITY TASKS_CPU_APP
 
-#define ARTNET_TASK_STACK 2048
+#define ARTNET_INPUTS_TASK_STACK 2048
+
+// used for TCP/IP ArtNET network protocol -> output
+#define ARTNET_LISTEN_TASK_NAME "artnet-listen"
+#define ARTNET_LISTEN_TASK_PRIORITY (tskIDLE_PRIORITY + 10)
+#define ARTNET_LISTEN_TASK_AFFINITY TASKS_CPU_PRO
+
+#define ARTNET_LISTEN_TASK_STACK 2048
 
 // used for polling status led button inputs
 #define STATUS_LEDS_TASK_NAME "status-leds"

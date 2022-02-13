@@ -164,20 +164,20 @@ int start_artnet()
   struct task_options listen_task_options = {
     .main       = artnet_main_listen,
     .name       = ARTNET_LISTEN_TASK_NAME,
-    .stack_size = ARTNET_TASK_STACK,
+    .stack_size = ARTNET_LISTEN_TASK_STACK,
     .arg        = artnet,
-    .priority   = ARTNET_TASK_PRIORITY,
+    .priority   = ARTNET_LISTEN_TASK_PRIORITY,
     .handle     = &artnet_listen_task,
-    .affinity   = ARTNET_TASK_AFFINITY,
+    .affinity   = ARTNET_LISTEN_TASK_AFFINITY,
   };
   struct task_options input_task_options = {
     .main       = artnet_main_inputs,
     .name       = ARTNET_INPUTS_TASK_NAME,
-    .stack_size = ARTNET_TASK_STACK,
+    .stack_size = ARTNET_INPUTS_TASK_STACK,
     .arg        = artnet,
-    .priority   = ARTNET_TASK_PRIORITY,
+    .priority   = ARTNET_INPUTS_TASK_PRIORITY,
     .handle     = &artnet_inputs_task,
-    .affinity   = ARTNET_TASK_AFFINITY,
+    .affinity   = ARTNET_INPUTS_TASK_AFFINITY,
   };
   int err;
 

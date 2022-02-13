@@ -202,8 +202,6 @@ static void leds_artnet_main(void *ctx)
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
 {
-  char task_name[configMAX_TASK_NAME_LEN];
-
   LOG_INFO("leds%u: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,
     config->artnet_universe_start,
     config->artnet_universe_count,
@@ -236,25 +234,32 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     }
   }
 
+  return 0;
+}
+
+int start_leds_artnet(struct leds_state *state, const struct leds_config *config)
+{
+  char task_name[configMAX_TASK_NAME_LEN];
+
   // task
-  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, index + 1);
+  snprintf(task_name, sizeof(task_name), LEDS_ARTNET_TASK_NAME_FMT, state->index + 1);
 
   if (xTaskCreate(&leds_artnet_main, task_name, LEDS_ARTNET_TASK_STACK, state, LEDS_ARTNET_TASK_PRIORITY, &state->artnet.task) <= 0) {
-    LOG_ERROR("leds%d: xTaskCreate", index + 1);
+    LOG_ERROR("leds%d: xTaskCreate", state->index + 1);
     return -1;
   } else {
-    LOG_DEBUG("task=%p", state->artnet.task);
+    LOG_INFO("leds%d: start artnet task=%p", state->index + 1, state->artnet.task);
   }
 
   for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
     struct artnet_output_options options = {
-      .port = (enum artnet_port) (index), // use ledsX index as output port
+      .port = (enum artnet_port) (state->index), // use ledsX index as output port
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
       .task = state->artnet.task,
     };
 
-    LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", index + 1, options.port, options.address, options.index);
+    LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", state->index + 1, options.port, options.address, options.index);
 
     if (add_artnet_output(options, state->artnet.queues[i])) {
       LOG_ERROR("add_artnet_output");

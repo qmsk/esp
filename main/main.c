@@ -95,13 +95,14 @@ void app_main(void)
     user_alert(USER_ALERT_ERROR_START);
   }
 
-  if ((err = start_artnet())) {
-    LOG_ERROR("start_artnet");
+  if ((err = start_leds())) {
+    LOG_ERROR("start_leds");
     user_alert(USER_ALERT_ERROR_START);
   }
 
-  if ((err = start_leds())) {
-    LOG_ERROR("start_leds");
+  // after inputs/outputs added
+  if ((err = start_artnet())) {
+    LOG_ERROR("start_artnet");
     user_alert(USER_ALERT_ERROR_START);
   }
 

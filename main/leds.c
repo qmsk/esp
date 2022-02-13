@@ -79,13 +79,41 @@ int init_leds()
 
 int start_leds()
 {
-  // TODO:
+  int err;
+
+  for (int i = 0; i < LEDS_COUNT; i++)
+  {
+    struct leds_state *state = &leds_states[i];
+    const struct leds_config *config = &leds_configs[i];
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    if (!state->leds) {
+      LOG_WARN("leds%d: not initialized", i + 1);
+      continue;
+    }
+
+    if (config->artnet_enabled) {
+      if ((err = start_leds_artnet(state, config))) {
+        LOG_ERROR("leds%d: start_leds_artnet", i + 1);
+        return err;
+      }
+    }
+  }
+
   return 0;
 }
 
 int update_leds(struct leds_state *state)
 {
   int err;
+
+  if (!state->leds) {
+    LOG_WARN("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
 
   user_activity(USER_ACTIVITY_LEDS);
 

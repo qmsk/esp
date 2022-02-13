@@ -125,7 +125,7 @@ int add_artnet_input(struct artnet_input **inputp, struct artnet_input_options o
   return artnet_add_input(artnet, inputp, options);
 }
 
-int add_artnet_output(struct artnet_output_options options, xQueueHandle queue)
+int add_artnet_output(struct artnet_output **outputp, struct artnet_output_options options)
 {
   const struct artnet_config *config = &artnet_config;
 
@@ -136,7 +136,7 @@ int add_artnet_output(struct artnet_output_options options, xQueueHandle queue)
 
   options.address = artnet_address(config->net, config->subnet, options.address);
 
-  return artnet_add_output(artnet, options, queue);
+  return artnet_add_output(artnet, outputp, options);
 }
 
 // task

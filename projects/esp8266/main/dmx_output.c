@@ -63,22 +63,9 @@ static int init_dmx_output(struct dmx_output_state *state, int index, const stru
 
 static int init_dmx_output_artnet(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
-  struct artnet_output_options options = {
-    .port = (enum artnet_port) (index), // use dmx%d index as output port number
-    .address = config->artnet_universe, // net/subnet set by add_artnet_output()
-  };
-  int err;
-
-  LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
-
-  if (!(state->artnet_queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
-    LOG_ERROR("xQueueCreate");
+  if (!(state->artnet_dmx = calloc(1, sizeof(*state->artnet_dmx)))) {
+    LOG_ERROR("calloc");
     return -1;
-  }
-
-  if ((err = add_artnet_output(options, state->artnet_queue))) {
-    LOG_ERROR("add_artnet_output");
-    return err;
   }
 
   return 0;
@@ -185,16 +172,24 @@ static void dmx_output_main(void *ctx)
   struct dmx_output_state *state = ctx;
 
   for (;;) {
-    if (!xQueueReceive(state->artnet_queue, &state->artnet_dmx, portMAX_DELAY)) {
-      LOG_WARN("xQueueReceive");
-    } else if (dmx_output_artnet_dmx(state, &state->artnet_dmx) < 0) {
+    if (!artnet_output_wait(portMAX_DELAY)) {
+      LOG_WARN("artnet_output_wait");
+    } else if (!artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
+      LOG_WARN("artnet_output_read");
+    } else if (dmx_output_artnet_dmx(state, state->artnet_dmx) < 0) {
       LOG_WARN("dmx_output_artnet_dmx");
     }
   }
 }
 
-int start_dmx_output(struct dmx_output_state *state, int index)
+int start_dmx_output(struct dmx_output_state *state, int index, const struct dmx_output_config *config)
 {
+  struct artnet_output_options options = {
+    .port = (enum artnet_port) (index), // use dmx%d index as output port number
+    .address = config->artnet_universe, // net/subnet set by add_artnet_output()
+  };
+  int err;
+
   char task_name[configMAX_TASK_NAME_LEN];
 
   snprintf(task_name, sizeof(task_name), DMX_ARTNET_TASK_NAME_FMT, index);
@@ -204,6 +199,15 @@ int start_dmx_output(struct dmx_output_state *state, int index)
     return -1;
   } else {
     LOG_DEBUG("task=%p", state->task);
+
+    options.task = state->task;
+  }
+
+  LOG_INFO("dmx%d: artnet_universe=%u", index, config->artnet_universe);
+
+  if ((err = add_artnet_output(&state->artnet_output, options))) {
+    LOG_ERROR("add_artnet_output");
+    return err;
   }
 
   return 0;
@@ -221,12 +225,12 @@ int start_dmx_outputs()
     if (!config->enabled || !state->dmx_output) {
       continue;
     }
-    if (!config->artnet_enabled || !state->artnet_queue) {
+    if (!config->artnet_enabled) {
       // only used for Art-NET output
       continue;
     }
 
-    if ((err = start_dmx_output(state, i))) {
+    if ((err = start_dmx_output(state, i, config))) {
       LOG_ERROR("start_dmx_output %d", i);
       return err;
     }

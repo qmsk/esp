@@ -53,11 +53,11 @@ struct leds_state {
   unsigned active;
 
   struct leds_artnet {
+    struct artnet_output **outputs;
     struct artnet_dmx *dmx;
 
     unsigned universe_count;
     xTaskHandle task;
-    xQueueHandle *queues;
   } artnet;
 };
 

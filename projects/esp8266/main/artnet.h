@@ -3,7 +3,6 @@
 #include <artnet.h>
 
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <freertos/task.h>
 
 struct artnet_config {
@@ -23,7 +22,7 @@ extern struct artnet *artnet;
 /*
  * options.address: univers: 0-15 to be combined with artnet net/subnet
  */
-int add_artnet_output(struct artnet_output_options options, xQueueHandle queue);
+int add_artnet_output(struct artnet_output **outputp, struct artnet_output_options options);
 
 /*
  * reconfigure artnet receiver

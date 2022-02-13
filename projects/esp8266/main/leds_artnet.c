@@ -128,14 +128,12 @@ static void leds_artnet_main(void *ctx)
   struct leds_artnet_test test_state = {};
 
   for (;;) {
-    uint32_t notify_bits;
-    bool unsync = false, sync = false, test = false;
     TickType_t wait_ticks = leds_artnet_wait_ticks(&test_state);
 
     LOG_DEBUG("notify wait ticks=%d", wait_ticks);
 
-    // wait for output/sync, or next test frame
-    xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, wait_ticks);
+    // wait for output/sync, or next test frame tick
+    uint32_t notify_bits = artnet_output_wait(wait_ticks);
 
     LOG_DEBUG("notify index=%04x: sync=%d test=%d",
       (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
@@ -144,6 +142,8 @@ static void leds_artnet_main(void *ctx)
     );
 
     // start/stop test mode
+    bool unsync = false, sync = false, test = false;
+
     if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
       sync = true;
 
@@ -169,8 +169,8 @@ static void leds_artnet_main(void *ctx)
         continue;
       }
 
-      if (!xQueueReceive(state->artnet.queues[index], state->artnet.dmx, 0)) {
-        LOG_WARN("xQueueReceive");
+      if (artnet_output_read(state->artnet.outputs[index], state->artnet.dmx, 0)) {
+        LOG_WARN("artnet_output_read");
         continue;
       }
 
@@ -216,16 +216,9 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
     LOG_ERROR("calloc");
     return -1;
   }
-  if (!(state->artnet.queues = calloc(state->artnet.universe_count, sizeof(*state->artnet.queues)))) {
+  if (!(state->artnet.outputs = calloc(state->artnet.universe_count, sizeof(*state->artnet.outputs)))) {
     LOG_ERROR("calloc");
     return -1;
-  }
-
-  for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
-    if (!(state->artnet.queues[i] = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
-      LOG_ERROR("xQueueCreate");
-      return -1;
-    }
   }
 
   // task
@@ -248,7 +241,7 @@ int init_leds_artnet(struct leds_state *state, unsigned index, const struct leds
 
     LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", index + 1, options.port, options.address, options.index);
 
-    if (add_artnet_output(options, state->artnet.queues[i])) {
+    if (add_artnet_output(&state->artnet.outputs[i], options)) {
       LOG_ERROR("add_artnet_output");
       return -1;
     }

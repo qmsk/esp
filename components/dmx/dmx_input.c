@@ -16,6 +16,8 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 
   in->options = options;
 
+  stats_timer_init(&in->stats.uart_rx);
+
   stats_counter_init(&in->stats.rx_overflow);
   stats_counter_init(&in->stats.rx_error);
   stats_counter_init(&in->stats.rx_break);
@@ -55,12 +57,15 @@ error:
 
 void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
 {
+  stats->uart_rx = stats_timer_copy(&in->stats.uart_rx);
+
   stats->rx_overflow = stats_counter_copy(&in->stats.rx_overflow);
   stats->rx_error = stats_counter_copy(&in->stats.rx_error);
   stats->rx_break = stats_counter_copy(&in->stats.rx_break);
   stats->rx_desync = stats_counter_copy(&in->stats.rx_desync);
   stats->cmd_dimmer = stats_counter_copy(&in->stats.cmd_dimmer);
   stats->cmd_unknown = stats_counter_copy(&in->stats.cmd_unknown);
+
   stats->data_len = stats_gauge_copy(&in->stats.data_len);
 }
 
@@ -213,10 +218,11 @@ int dmx_input_read (struct dmx_input *in)
 
   // read until data -> break
   while (!in->state_len || read) {
-    // XXX: sync to start of break, but how to determine end of packet?!
-    if ((read = uart_read(in->uart, buf, sizeof(buf))) < 0) {
-      dmx_input_process_error(in, -read);
-      return read;
+    WITH_STATS_TIMER(&in->stats.uart_rx) {
+      if ((read = uart_read(in->uart, buf, sizeof(buf))) < 0) {
+        dmx_input_process_error(in, -read);
+        return read;
+      }
     }
 
     // detect break

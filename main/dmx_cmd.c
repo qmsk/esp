@@ -210,16 +210,17 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Input:\n");
 
+    print_stats_timer  ("UART",   "RX",       &stats.uart_rx);
+    printf("\t\n");
     print_stats_counter("RX",     "overflow", &stats.rx_overflow);
     print_stats_counter("RX",     "error",    &stats.rx_error);
     print_stats_counter("RX",     "break",    &stats.rx_break);
     print_stats_counter("RX",     "desync",   &stats.rx_desync);
-
+    printf("\t\n");
     print_stats_counter("DMX",    "dimmer",   &stats.cmd_dimmer);
     print_stats_counter("DMX",    "unknown",  &stats.cmd_unknown);
-
+    printf("\t\n");
     print_stats_gauge(  "Data",   "len",      &stats.data_len);
-
     printf("\n");
   }
 

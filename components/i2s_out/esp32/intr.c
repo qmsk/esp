@@ -19,9 +19,9 @@ static const int i2s_irq[I2S_PORT_MAX] = {
 
 void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
-  LOG_ISR_DEBUG("");
+  LOG_ISR_WARN("");
 
-  i2s_ll_clear_intr_status(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
@@ -39,18 +39,18 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
   i2s_ll_rx_stop_link(i2s_out->dev);
 
   // mark as done
-  eof_desc->owner = 0;
+  i2s_out->dma_eof = true;
 
   // notify flush() if waiting
-  if (i2s_out->dma_flush_task) {
-    LOG_ISR_DEBUG("notify task=%p", i2s_out->dma_flush_task);
+  if (i2s_out->dma_eof_task) {
+    LOG_ISR_DEBUG("notify task=%p", i2s_out->dma_eof_task);
 
-    vTaskNotifyGiveFromISR(i2s_out->dma_flush_task, task_wokenp);
+    vTaskNotifyGiveFromISR(i2s_out->dma_eof_task, task_wokenp);
 
-    i2s_out->dma_flush_task = NULL;
+    i2s_out->dma_eof_task = NULL;
   }
 
-  i2s_ll_clear_intr_status(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
@@ -68,7 +68,7 @@ void IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *t
 
   // interrupt will fire until disabled
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
-  i2s_ll_clear_intr_status(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+  i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_handler(void *arg)

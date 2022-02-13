@@ -165,9 +165,16 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_ll_tx_stop_link(i2s_out->dev);
 
   i2s_intr_disable(i2s_out->dev, I2S_OUT_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA);
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR | I2S_OUT_DSCR_ERR_INT_CLR);
 
   i2s_ll_rx_reset_dma(i2s_out->dev);
   i2s_ll_tx_reset_dma(i2s_out->dev);
+
+  i2s_out->dma_eof = false; // flag set by ISR
+
+  i2s_ll_dma_enable_eof_on_fifo_empty(i2s_out->dev, true);
+  i2s_ll_dma_enable_owner_check(i2s_out->dev, true);
+  i2s_ll_dma_enable_auto_write_back(i2s_out->dev, true);
 
   i2s_ll_set_out_link_addr(i2s_out->dev, (uint32_t) i2s_out->dma_rx_desc);
 
@@ -279,8 +286,10 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_ll_enable_dma(i2s_out->dev, true);
-  i2s_intr_enable(i2s_out->dev, I2S_OUT_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA);
   i2s_ll_start_out_link(i2s_out->dev);
+
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR | I2S_OUT_DSCR_ERR_INT_CLR);
+  i2s_intr_enable(i2s_out->dev, I2S_OUT_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 }
@@ -291,10 +300,10 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  if (i2s_out->dma_eof_desc->owner) {
+  if (!i2s_out->dma_eof) {
     wait = 1;
 
-    i2s_out->dma_flush_task = xTaskGetCurrentTaskHandle();
+    i2s_out->dma_eof_task = xTaskGetCurrentTaskHandle();
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);
@@ -305,7 +314,7 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out)
     return 0;
   }
 
-  LOG_DEBUG("wait eof, task=%p", i2s_out->dma_flush_task);
+  LOG_DEBUG("wait eof, task=%p", i2s_out->dma_eof_task);
 
   // wait for tx to complete and break to start
   if (!ulTaskNotifyTake(true, portMAX_DELAY)) {

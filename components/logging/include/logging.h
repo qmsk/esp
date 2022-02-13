@@ -10,6 +10,8 @@
 #endif
 
 #define LOG_ISR_DEBUG(...)  IF_DEBUG({ ESP_EARLY_LOGD(__func__, __VA_ARGS__); })
+#define LOG_ISR_INFO(...)  IF_DEBUG({ ESP_EARLY_LOGI(__func__, __VA_ARGS__); })
+#define LOG_ISR_WARN(...)  IF_DEBUG({ ESP_EARLY_LOGW(__func__, __VA_ARGS__); })
 
 /* Bypass stdio */
 #define LOG_BOOT_DEBUG(...)   IF_DEBUG({ ESP_EARLY_LOGD(__func__, __VA_ARGS__); })

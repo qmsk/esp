@@ -20,6 +20,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_ll_tx_reset(i2s_out->dev);
 
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
+  i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
   i2s_ll_enable_dma(i2s_out->dev, false);
 
@@ -71,6 +72,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 
   i2s_out->i2s_flush_task = xTaskGetCurrentTaskHandle();
 
+  i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
 
   taskEXIT_CRITICAL(&i2s_out->mux);

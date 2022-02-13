@@ -174,7 +174,7 @@ static void dmx_output_main(void *ctx)
   for (;;) {
     if (!artnet_output_wait(portMAX_DELAY)) {
       LOG_WARN("artnet_output_wait");
-    } else if (!artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
+    } else if (artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
       LOG_WARN("artnet_output_read");
     } else if (dmx_output_artnet_dmx(state, state->artnet_dmx) < 0) {
       LOG_WARN("dmx_output_artnet_dmx");

@@ -91,7 +91,7 @@ int leds_tx_i2s_ws2811(const struct leds_options *options, union ws2811_pixel *p
   }
 
 error:
-#if CONFIG_LEDS_GPIO_ENABLE
+#if CONFIG_LEDS_GPIO_ENABLED
   if (options->gpio_out) {
     gpio_out_clear(options->gpio_out);
   }

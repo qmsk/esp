@@ -42,6 +42,8 @@ struct configtab {
 
       /* inclusive, default 0 -> unlimited */
       uint16_t max;
+
+      uint16_t default_value;
     } uint16_type;
 
     struct {

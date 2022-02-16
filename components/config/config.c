@@ -182,6 +182,7 @@ int configtab_init(const struct configtab *tab)
       break;
 
     case CONFIG_TYPE_UINT16:
+      *tab->uint16_type.value = tab->uint16_type.default_value;
       break;
 
     case CONFIG_TYPE_BOOL:

@@ -26,7 +26,7 @@ menu "qmsk-esp"
     default STATUS_LEDS_USER_GPIO_2 if IDF_TARGET="esp32"
 
     config STATUS_LEDS_USER_GPIO_2
-      bool "GPIO16 (active-low)"
+      bool "GPIO2 (active-low)"
       help
         ESP32 strpping pin with weak-pull-down.
 
@@ -87,15 +87,22 @@ menu "qmsk-esp"
 
         Active-low with internal weak-pull-up, external pull-up and integrated button to GND on NodeMCU.
 
+    config STATUS_LEDS_FLASH_GPIO_4
+      bool "GPIO4 (active-low)"
+      help
+        For 30-pin ESP32 board without any GPIO0 pin.
+
   endchoice
 
   config STATUS_LEDS_FLASH_GPIO_NUM
       int
       default 0 if STATUS_LEDS_FLASH_GPIO_0
+      default 4 if STATUS_LEDS_FLASH_GPIO_4
 
   config STATUS_LEDS_FLASH_GPIO_INVERTED
       bool
       default y if STATUS_LEDS_FLASH_GPIO_0
+      default y if STATUS_LEDS_FLASH_GPIO_4
 
 
 

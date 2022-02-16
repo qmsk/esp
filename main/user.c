@@ -1,4 +1,5 @@
 #include "user.h"
+#include "artnet.h"
 #include "config.h"
 #include "status_leds.h"
 #include "system.h"
@@ -99,10 +100,10 @@ void user_config_reset()
 
 void user_test_mode()
 {
-  // TODO
+  test_artnet();
 }
 
 void user_test_cancel()
 {
-  // TODO
+  cancel_artnet_test();
 }

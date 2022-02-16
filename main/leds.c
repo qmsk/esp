@@ -3,6 +3,7 @@
 #include "leds_state.h"
 #include "leds_config.h"
 #include "leds_stats.h"
+#include "atx_psu_state.h"
 #include "user.h"
 
 #include <leds.h>
@@ -109,6 +110,15 @@ int start_leds()
   return 0;
 }
 
+void update_leds_active(struct leds_state *state, bool force)
+{
+  if ((state->active = leds_active(state->leds)) || force) {
+    activate_atx_psu(ATX_PSU_BIT_LEDS1 + state->index);
+  } else {
+    deactivate_atx_psu(ATX_PSU_BIT_LEDS1 + state->index);
+  }
+}
+
 int update_leds(struct leds_state *state)
 {
   int err;
@@ -118,6 +128,7 @@ int update_leds(struct leds_state *state)
     return -1;
   }
 
+  update_leds_active(state, false);
   user_activity(USER_ACTIVITY_LEDS);
 
   if ((err = leds_tx(state->leds))) {
@@ -130,10 +141,11 @@ int update_leds(struct leds_state *state)
 
 int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
 {
-  int err;
+  int err = 0;
 
   LOG_INFO("mode=%d", mode);
 
+  update_leds_active(state, true);
   user_activity(USER_ACTIVITY_LEDS);
 
   // animate
@@ -143,13 +155,12 @@ int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
   for (unsigned frame = 0; ; frame++) {
     if ((ticks = leds_set_test(state->leds, mode, frame)) < 0) {
       LOG_ERROR("leds%d: leds_set_test(%d, %u)", state->index + 1, mode, frame);
-
-      return -1;
+      goto error;
     }
 
     if ((err = leds_tx(state->leds))) {
       LOG_ERROR("leds%d: leds_tx", state->index + 1);
-      return err;
+      goto error;
     }
 
     if (ticks) {
@@ -159,7 +170,10 @@ int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
     }
   }
 
-  return 0;
+error:
+  update_leds_active(state, false);
+
+  return err;
 }
 
 int test_leds(struct leds_state *state)

@@ -1,5 +1,6 @@
 #include "config.h"
 #include "artnet.h"
+#include "atx_psu.h"
 #include "dmx.h"
 #include "http.h"
 #include "leds.h"
@@ -29,6 +30,17 @@ const struct configmod config_modules[] = {
   { "http",
     .description = "HTTP API + Web frontend with optional HTTP basic authentication.",
     .table = http_configtab,
+  },
+  { "atx-psu",
+    .description = (
+      "Control ATX-PSU based on leds output."
+      "\n"
+      "The ATX-PSU will be powered on when led outputs are active,"
+      " and powered off into standby mode if all led outputs are idle (zero-valued)."
+      "\n"
+      "Assumes an active-high NPN transistor with POWER_EN -> collector, gpio -> 1k ohm -> base, emitter -> GND."
+    ),
+    .table = atx_psu_configtab,
   },
   { "artnet",
     .table = artnet_configtab,

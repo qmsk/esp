@@ -1,4 +1,5 @@
 #include "artnet.h"
+#include "atx_psu.h"
 #include "console.h"
 #include "config.h"
 #include "dmx.h"
@@ -74,6 +75,11 @@ void app_main(void)
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
+  if ((err = init_atx_psu())) {
+    LOG_ERROR("init_atx_psu");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+
   if ((err = init_artnet())) {
     LOG_ERROR("init_artnet");
     user_alert(USER_ALERT_ERROR_SETUP);
@@ -98,6 +104,11 @@ void app_main(void)
 
   if ((err = start_http())) {
     LOG_ERROR("start_http");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+
+  if ((err = start_atx_psu())) {
+    LOG_ERROR("start_atx_psu");
     user_alert(USER_ALERT_ERROR_START);
   }
 

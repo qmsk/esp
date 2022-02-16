@@ -64,6 +64,17 @@ int start_taskf(struct task_options options, ...);
 
 #define ARTNET_INPUTS_TASK_STACK 2048
 
+// used for controlling ATX PSU power-on/standby
+#define ATX_PSU_TASK_NAME "atx-psu"
+#define ATX_PSU_TASK_PRIORITY (tskIDLE_PRIORITY + 6)
+#define ATX_PSU_TASK_AFFINITY TASKS_CPU_APP
+
+#if CONFIG_IDF_TARGET_ESP8266
+# define ATX_PSU_TASK_STACK 1024
+#elif CONFIG_IDF_TARGET_ESP32
+# define ATX_PSU_TASK_STACK 2048
+#endif
+
 // used for TCP/IP ArtNET network protocol -> output
 #define ARTNET_LISTEN_TASK_NAME "artnet-listen"
 #define ARTNET_LISTEN_TASK_PRIORITY (tskIDLE_PRIORITY + 10)

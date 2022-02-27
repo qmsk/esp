@@ -10,7 +10,7 @@
 #include <freertos/FreeRTOS.h>
 
 enum atx_psu_bit {
-  ATX_PSU_BIT_CLEAR   = 0,
+  ATX_PSU_BIT_0,
   ATX_PSU_BIT_1,
   ATX_PSU_BIT_2,
   ATX_PSU_BIT_3,
@@ -18,7 +18,6 @@ enum atx_psu_bit {
   ATX_PSU_BIT_5,
   ATX_PSU_BIT_6,
   ATX_PSU_BIT_7,
-  ATX_PSU_BIT_8,
 
   ATX_PSU_BIT_COUNT
 };

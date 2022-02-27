@@ -215,6 +215,9 @@ int wifi_disconnect()
 
     user_state(USER_STATE_DISCONNECTING);
 
+    // disable reconnect before triggering event handler
+    wifi_sta_connect = false;
+
     // disconnect triggers WIFI_EVENT_STA_DISCONNECTED -> USER_STATE_CONNECTED
     if ((err = esp_wifi_disconnect())) {
       LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
@@ -226,6 +229,9 @@ int wifi_disconnect()
 
     user_state(USER_STATE_DISCONNECTING);
 
+    // disable reconnect before triggering event handler
+    wifi_sta_connect = false;
+
     if ((err = esp_wifi_disconnect())) {
       LOG_ERROR("esp_wifi_disconnect: %s", esp_err_to_name(err));
       return -1;
@@ -236,10 +242,11 @@ int wifi_disconnect()
 
   } else {
     LOG_WARN("not connected");
+
+    wifi_sta_connect = false;
+
     return 1;
   }
-
-  wifi_sta_connect = false;
 
   return 0;
 }

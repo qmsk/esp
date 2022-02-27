@@ -34,6 +34,27 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static int lookup_leds(unsigned index, const struct leds_config **configp, struct leds_state **statep)
+{
+  if (index < 1 || index > LEDS_COUNT) {
+    LOG_ERROR("leds%u does not exist", index);
+    return CMD_ERR_ARGV;
+  }
+
+  const struct leds_config *config = &leds_configs[index - 1];
+  struct leds_state *state = &leds_states[index - 1];
+
+  if (!config->enabled || !state->leds) {
+    LOG_WARN("leds%u is not enabled", index);
+    return 1;
+  }
+
+  *configp = config;
+  *statep = state;
+
+  return 0;
+}
+
 int leds_cmd_clear(int argc, char **argv, void *ctx)
 {
   struct spi_led_color spi_led_color = { }; // off
@@ -116,6 +137,8 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
 
 int leds_cmd_set(int argc, char **argv, void *ctx)
 {
+  const struct leds_config *config;
+  struct leds_state *state;
   unsigned leds_id, index;
   int rgb, a = 0xff, w = 0;
   int err;
@@ -131,24 +154,15 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
   if ((argc > 4) && (err = cmd_arg_int(argc, argv, 4, &w)))
     return err;
 
+  if ((err = lookup_leds(leds_id, &config, &state))) {
+    return err;
+  }
+
   struct spi_led_color spi_led_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
     .b = (rgb >>  0) & 0xFF,
   };
-
-  if (leds_id < 1 || leds_id > LEDS_COUNT) {
-    LOG_ERROR("leds%u does not exist", leds_id);
-    return CMD_ERR_ARGV;
-  }
-
-  const struct leds_config *config = &leds_configs[leds_id - 1];
-  struct leds_state *state = &leds_states[leds_id - 1];
-
-  if (!config->enabled || !state->leds) {
-    LOG_WARN("leds%u is not enabled", leds_id);
-    return 0;
-  }
 
   switch (leds_color_parameter_for_protocol(config->protocol)) {
     case LEDS_COLOR_NONE:
@@ -178,28 +192,59 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
 
 int leds_cmd_test(int argc, char **argv, void *ctx)
 {
+  const struct leds_config *config;
+  struct leds_state *state;
   unsigned leds_id;
   int err;
 
   if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
     return err;
 
-  if (leds_id < 1 || leds_id > LEDS_COUNT) {
-    LOG_ERROR("leds%u does not exist", leds_id);
-    return CMD_ERR_ARGV;
-  }
-
-  const struct leds_config *config = &leds_configs[leds_id - 1];
-  struct leds_state *state = &leds_states[leds_id - 1];
-
-  if (!config->enabled || !state->leds) {
-    LOG_WARN("leds%u is not enabled", leds_id);
-    return 0;
+  if ((err = lookup_leds(leds_id, &config, &state))) {
+    return err;
   }
 
   if ((err = test_leds(state))) {
     LOG_ERROR("test_leds");
     return err;
+  }
+
+  return 0;
+}
+
+int leds_cmd_update(int argc, char **argv, void *ctx)
+{
+  const struct leds_config *config;
+  struct leds_state *state;
+  unsigned leds_id = 0;
+  int err;
+
+  if (argc > 1 && (err = cmd_arg_uint(argc, argv, 1, &leds_id)))
+    return err;
+
+  if (leds_id) {
+    if ((err = lookup_leds(leds_id, &config, &state))) {
+      return err;
+    }
+
+    if ((err = update_leds(state))) {
+      LOG_ERROR("update_leds");
+      return err;
+    }
+  } else {
+    for (int i = 0; i < LEDS_COUNT; i++) {
+      const struct leds_config *config = &leds_configs[i];
+      struct leds_state *state = &leds_states[i];
+
+      if (!config->enabled || !state->leds) {
+        continue;
+      }
+
+      if ((err = update_leds(state))) {
+        LOG_ERROR("update_leds");
+        return err;
+      }
+    }
   }
 
   return 0;
@@ -216,12 +261,13 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 }
 
 const struct cmd leds_commands[] = {
-  { "info",   leds_cmd_info,                                        .describe = "Show LED info" },
-  { "clear",  leds_cmd_clear,                                       .describe = "Clear all output values" },
-  { "all",    leds_cmd_all,   .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
-  { "set",    leds_cmd_set,   .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
-  { "test",   leds_cmd_test,  .usage = "LEDS-ID",                   .describe = "Output test patterns" },
-  { "stats",  leds_cmd_stats,                                       .describe = "Show LED stats" },
+  { "info",     leds_cmd_info,                                          .describe = "Show LED info" },
+  { "clear",    leds_cmd_clear,                                         .describe = "Clear all output values" },
+  { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
+  { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
+  { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
+  { "test",     leds_cmd_test,    .usage = "LEDS-ID",                   .describe = "Output test patterns" },
+  { "stats",    leds_cmd_stats,                                         .describe = "Show LED stats" },
   { }
 };
 

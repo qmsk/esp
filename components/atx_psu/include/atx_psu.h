@@ -30,8 +30,20 @@ struct atx_psu_options {
    *  ATX POWER_EN -> collector
    *  gpio -> 1k ohm -> base
    *  GND <- emitter
+   *
+   * Use <0 to disable.
    */
-  gpio_num_t gpio;
+  gpio_num_t power_enable_gpio;
+
+  /*
+   * Assumes an active-low NPN transistor:
+   *  gpio -> collector -> 10k -> 3V3
+   *  ATX POWER_GOOD -> 1k -> base
+   *  emitter -> GND
+   *
+   * Use <0 to disable.
+   */
+  gpio_num_t power_good_gpio;
 
   /*
    * Return ATX PSU into standby mode once all bits are inactive, and the timeout has passed.
@@ -48,6 +60,15 @@ void atx_psu_main(void *arg);
  * Enable ATX power immediately, as soon as one bit is activated.
  */
 void atx_psu_power_enable(struct atx_psu *atx_psu, enum atx_psu_bit bit);
+
+/*
+ * Enable ATX power immediately, as soon as one bit is activated.
+ *
+ * Wait for ATX power good signal, if power_good_gpio is configured.
+ *
+ * @return 0 on timeout, >0 when power good.
+ */
+int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t timeout);
 
 /*
  * Disable ATX power and return to standby mode, once all bits are inactive and the timeout has passed.

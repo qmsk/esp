@@ -9,7 +9,8 @@
 
 struct atx_psu_config {
   bool enabled;
-  uint16_t gpio;
+  uint16_t power_enable_gpio;
+  uint16_t power_good_gpio;
   uint16_t timeout;
 };
 
@@ -21,8 +22,12 @@ const struct configtab atx_psu_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &atx_psu_config.enabled },
   },
-  { CONFIG_TYPE_UINT16, "gpio",
-    .uint16_type = { .value = &atx_psu_config.gpio, .max = (GPIO_NUM_MAX - 1) },
+  { CONFIG_TYPE_UINT16, "power_enable_gpio",
+    .alias = "gpio",
+    .uint16_type = { .value = &atx_psu_config.power_enable_gpio, .max = (GPIO_NUM_MAX - 1) },
+  },
+  { CONFIG_TYPE_UINT16, "power_good_gpio",
+    .uint16_type = { .value = &atx_psu_config.power_good_gpio, .max = (GPIO_NUM_MAX - 1) },
   },
   { CONFIG_TYPE_UINT16, "timeout",
     .description = "Power off ATX PSU after timeout seconds of idle",
@@ -37,7 +42,9 @@ xTaskHandle atx_psu_task;
 int init_atx_psu()
 {
   struct atx_psu_options options = {
-    .gpio     = atx_psu_config.gpio,
+    .power_enable_gpio  = atx_psu_config.power_enable_gpio ? atx_psu_config.power_enable_gpio : GPIO_NUM_NC,
+    .power_good_gpio    = atx_psu_config.power_good_gpio ? atx_psu_config.power_good_gpio : GPIO_NUM_NC,
+
     .timeout  = (atx_psu_config.timeout * 1000) / portTICK_PERIOD_MS,
   };
 
@@ -46,7 +53,7 @@ int init_atx_psu()
     return 0;
   }
 
-  LOG_INFO("gpio=%u timeout=%u", options.gpio, options.timeout);
+  LOG_INFO("power_enable_gpio=%u power_good_gpio=%u timeout=%u", options.power_enable_gpio, options.power_good_gpio, options.timeout);
 
   if (atx_psu_new(&atx_psu, options)) {
     LOG_ERROR("atx_psu_new");
@@ -81,14 +88,26 @@ int start_atx_psu()
   return 0;
 }
 
-void activate_atx_psu(enum atx_psu_bit bit)
+void set_atx_psu_bit(enum atx_psu_bit bit)
 {
   if (atx_psu) {
     atx_psu_power_enable(atx_psu, bit);
   }
 }
 
-void deactivate_atx_psu(enum atx_psu_bit bit)
+int wait_atx_psu_bit(enum atx_psu_bit bit, TickType_t timeout)
+{
+  if (!atx_psu) {
+    return 1;
+  } else if (atx_psu_power_good(atx_psu, bit, timeout)) {
+    return 0;
+  } else {
+    LOG_WARN("power_good timeout=%d expired, is ATX-PSU connected?", timeout);
+    return -1;
+  }
+}
+
+void clear_atx_psu_bit(enum atx_psu_bit bit)
 {
   if (atx_psu) {
     atx_psu_standby(atx_psu, bit);

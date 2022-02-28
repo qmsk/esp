@@ -10,6 +10,9 @@
 
 #include <logging.h>
 
+// wait up to one second for ATX-PSU to signal power good
+#define LEDS_ATX_PSU_POWER_GOOD_TIMEOUT (1000 / portTICK_PERIOD_MS)
+
 struct leds_state leds_states[LEDS_COUNT] = {};
 
 int init_leds()
@@ -112,10 +115,13 @@ int start_leds()
 
 void update_leds_active(struct leds_state *state, bool force)
 {
-  if ((state->active = leds_active(state->leds)) || force) {
-    activate_atx_psu(ATX_PSU_BIT_LEDS1 + state->index);
+  state->active = leds_active(state->leds);
+
+  if (state->active || force) {
+    // wait for power_good before sending first frame
+    wait_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index, LEDS_ATX_PSU_POWER_GOOD_TIMEOUT);
   } else {
-    deactivate_atx_psu(ATX_PSU_BIT_LEDS1 + state->index);
+    clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
   }
 }
 

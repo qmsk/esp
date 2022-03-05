@@ -65,6 +65,10 @@ int leds_protocol_p9813_init(union leds_interface_state *interface, struct leds_
 
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
+      if (!(buf = malloc(size))) {
+        LOG_ERROR("malloc");
+        return -1;
+      }
       break;
 
   #if CONFIG_LEDS_SPI_ENABLED

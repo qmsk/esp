@@ -1,5 +1,4 @@
-#ifndef __LIB_JSON_H__
-#define __LIB_JSON_H__
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -68,7 +67,5 @@ int json_write_uint64(struct json_writer *w, uint64_t value);
 
 #define JSON_WRITE_MEMBER_INT64(w, name, value) (json_open_object_member((w), (name)) || json_write_int64((w), (value)))
 #define JSON_WRITE_MEMBER_UINT64(w, name, value) (json_open_object_member((w), (name)) || json_write_uint((w), (value)))
-
-#endif
 
 #endif

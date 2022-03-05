@@ -11,7 +11,9 @@
 
 #include <sdkconfig.h>
 
-#ifndef CONFIG_VFS_USE_STDIO
+#if CONFIG_IDF_TARGET_ESP8266 && !CONFIG_NEWLIB_VFS_STDIO
+# error "CONFIG_NEWLIB_VFS_STDIO is required"
+#elif !CONFIG_IDF_TARGET_ESP8266 && !CONFIG_VFS_USE_STDIO
 # error console requires VFS_USE_STDIO enabled
 #endif
 

@@ -19,8 +19,8 @@ int start_task(struct task_options options);
 int start_taskf(struct task_options options, ...);
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define TASKS_CPU_PRO
-# define TASKS_CPU_APP
+# define TASKS_CPU_PRO -1
+# define TASKS_CPU_APP -1
 
 #elif CONFIG_IDF_TARGET_ESP32
 # define TASKS_CPU_PRO 0 // used for networking and management

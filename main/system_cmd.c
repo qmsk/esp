@@ -147,7 +147,7 @@ static int system_tasks_cmd(int argc, char **argv, void *ctx)
       system_task_state_char(task->eCurrentState),
 #if configTASKLIST_INCLUDE_COREID
       task->xCoreID == tskNO_AFFINITY ? ' ' : '0' + task->xCoreID,
-#elif
+#else
       ' ',
 #endif
       task->uxBasePriority, task->uxCurrentPriority,

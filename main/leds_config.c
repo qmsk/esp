@@ -38,7 +38,7 @@ const struct config_enum leds_protocol_enum[] = {
   {}
 };
 
-#if CONFIG_LEDS_SPI_ENABLED
+#if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
 const struct config_enum leds_spi_cs_mode_enum[] = {
   { "",     LEDS_SPI_CS_MODE_DISABLED },
   { "HIGH", LEDS_SPI_CS_MODE_HIGH     },

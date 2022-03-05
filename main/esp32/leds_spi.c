@@ -1,11 +1,8 @@
-#include "leds.h"
-#include "leds_config.h"
-#include "leds_state.h"
+#include "../leds.h"
+#include "../leds_config.h"
+#include "../leds_state.h"
 
-#if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
-// using custom spi_master driver
-# include <spi_master.h>
-#elif CONFIG_LEDS_SPI_ENABLED
+#if CONFIG_LEDS_SPI_ENABLED
 // using esp-idf spi_master driver
 # include <driver/spi_master.h>
 #endif
@@ -31,18 +28,19 @@
     {}
   };
 
-  const struct configtab leds_spi_configtab[] = {
-  #if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
-    { CONFIG_TYPE_ENUM, "host",
-      .description = "Select host peripherial for SPI interface.",
-      .enum_type = { .value = &leds_spi_config.host, .values = leds_spi_host_enum, .default_value = -1 },
-    },
-  #endif
-    {},
-  };
 #endif
 
-#if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
+const struct configtab leds_spi_configtab[] = {
+#if CONFIG_LEDS_SPI_ENABLED
+  { CONFIG_TYPE_ENUM, "host",
+    .description = "Select host peripherial for SPI interface.",
+    .enum_type = { .value = &leds_spi_config.host, .values = leds_spi_host_enum, .default_value = -1 },
+  },
+#endif
+  {},
+};
+
+#if CONFIG_LEDS_SPI_ENABLED
   spi_host_device_t leds_spi_host = -1;
 
   int init_leds_spi()

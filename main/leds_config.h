@@ -17,7 +17,11 @@ struct leds_state *state;
   extern const struct config_enum leds_gpio_mode_enum[];
 #endif
 
-#if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
+#if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
+
+  #define SPI_CLOCK_DEFAULT (SPI_CLOCK_1MHZ)
+
+#elif CONFIG_LEDS_SPI_ENABLED
   #define SPI_CLOCK_20MHZ   (APB_CLK_FREQ / 4)
   #define SPI_CLOCK_10MHZ   (APB_CLK_FREQ / 8)
   #define SPI_CLOCK_5MHZ    (APB_CLK_FREQ / 16)

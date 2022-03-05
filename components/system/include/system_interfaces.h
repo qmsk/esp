@@ -3,6 +3,7 @@
 #include <sdkconfig.h>
 
 #if CONFIG_IDF_TARGET_ESP8266
+
 # include <tcpip_adapter.h>
 
 # define SYSTEM_INTERFACE_TYPE tcpip_adapter_if_t
@@ -19,6 +20,7 @@
   const char *tcpip_adapter_dhcp_status_str(tcpip_adapter_dhcp_status_t status);
 
 #elif CONFIG_IDF_TARGET_ESP32
+
 # include <esp_netif.h>
 
 
@@ -33,6 +35,7 @@
 # define SYSTEM_IP_ADDR_TYPE esp_ip_addr_t
 
   const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status);
+
 #endif
 
 struct system_interface_info {
@@ -50,10 +53,12 @@ struct system_interface_info {
 };
 
 #if CONFIG_IDF_TARGET_ESP32
+
   struct system_interface_client {
     uint8_t mac[6];
     esp_ip4_addr_t ipv4;
   };
+
 #endif
 
 #if CONFIG_IDF_TARGET_ESP8266
@@ -71,7 +76,9 @@ struct system_interface_info {
    * Returns <0 on error, 0 if valid, 1 if not configured/enabled/available.
    */
   int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t interface);
+
 #elif CONFIG_IDF_TARGET_ESP32
+
   static inline const char *system_interface_str(const struct system_interface_info *info)
   {
     return esp_netif_get_desc(info->interface);
@@ -87,11 +94,11 @@ struct system_interface_info {
    */
   int system_interface_info(struct system_interface_info *info, esp_netif_t *interface);
 
-  int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx);
   int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx);
+
 #endif
 
-
-#if CONFIG_IDF_TARGET_ESP8266
-#elif CONFIG_IDF_TARGET_ESP32
-#endif
+/*
+ * Call func with info on each configured system network interface.
+ */
+int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx);

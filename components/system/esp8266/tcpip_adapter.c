@@ -102,3 +102,25 @@ int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t
 
   return 0;
 }
+
+int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx)
+{
+  struct system_interface_info info;
+  int err;
+
+  for (tcpip_adapter_if_t interface = 0; interface < TCPIP_ADAPTER_IF_MAX; interface++) {
+    if ((err = system_interface_info(&info, interface)) < 0) {
+      LOG_ERROR("system_interface_info");
+      return err;
+    } else if (err) {
+      continue;
+    }
+
+    if ((err = func(&info, ctx))) {
+      return err;
+    }
+  }
+
+  return 0;
+
+}

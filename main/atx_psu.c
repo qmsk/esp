@@ -42,8 +42,8 @@ xTaskHandle atx_psu_task;
 int init_atx_psu()
 {
   struct atx_psu_options options = {
-    .power_enable_gpio  = atx_psu_config.power_enable_gpio ? atx_psu_config.power_enable_gpio : GPIO_NUM_NC,
-    .power_good_gpio    = atx_psu_config.power_good_gpio ? atx_psu_config.power_good_gpio : GPIO_NUM_NC,
+    .power_enable_gpio  = atx_psu_config.power_enable_gpio ? atx_psu_config.power_enable_gpio : -1,
+    .power_good_gpio    = atx_psu_config.power_good_gpio ? atx_psu_config.power_good_gpio : -1,
 
     .timeout  = (atx_psu_config.timeout * 1000) / portTICK_PERIOD_MS,
   };

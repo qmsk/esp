@@ -2,24 +2,46 @@ Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS
 
 # Build
 
+Build the Web UI files for the `web-dist` image to be flashed onto the device:
+
+    $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm install
+    $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm run build
+
+### ESP8266
+
 Prepare the SDK/toolchain:
 
-    $ docker-compose build sdk
-
-Build webapp:
-
-    $ USER_ID=$UID docker-compose run --rm npm install
-    $ USER_ID=$UID docker-compose run --rm npm run build
+    $ docker-compose -f projects/esp8266/docker-compose.yml build sdk
 
 Build firmware images (bootloader + app + web-dist):
 
-    $ USER_ID=$UID docker-compose run --rm build
+    $ USER_ID=$UID docker-compose -f projects/esp8266/docker-compose.yml run --rm build
 
-# Flash
+Flash firmware images (bootloader + app + web-dist) to NodeMCU devkit:
 
-Flash to correct nodeMCU device:
+    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp8266/docker-compose.yml run --rm flash
 
-    ESPPORT=/dev/ttyUSB? docker-compose run --rm flash
+Access the USB console:
+
+    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp8266/docker-compose.yml run --rm monitor
+
+### ESP32
+
+Prepare the SDK/toolchain:
+
+    $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose -f projects/esp32/docker-compose.yml build sdk
+
+Build firmware images (bootloader + app + web-dist):
+
+    $ docker-compose -f projects/esp32/docker-compose.yml run --rm build
+
+Flash firmware images (bootloader + app + web-dist) to the ESP32-devkit:
+
+    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp32/docker-compose.yml run --rm flash
+
+Access the USB console:
+
+    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp32/docker-compose.yml run --rm monitor
 
 # Usage
 

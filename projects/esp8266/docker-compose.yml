@@ -7,12 +7,6 @@
 #   ESPPORT=/dev/ttyUSB? docker-compose up config-reset
 #
 # @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#environment-variables
-#
-#
-#   USER_ID=$UID docker-compose run --rm npm install
-#   USER_ID=$UID docker-compose run --rm npm run build
-#   USER_ID=$UID API_URL=http://172.29.16.47 docker-compose run --rm npm start
-
 version: '3.8'
 services:
   sdk:
@@ -76,16 +70,3 @@ services:
       SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
       ESPPORT: "${ESPPORT}"
       MONITORBAUD: "${MONITORBAUD:-115200}"
-
-  npm:
-    image: qmsk/esp-web
-    build:
-      context: ../../web
-    volumes:
-      - ../..:/build
-    user: "${USER_ID:-1000}"
-    working_dir: /build/web
-    entrypoint: npm
-    environment:
-      API_URL: $API_URL
-    network_mode: host

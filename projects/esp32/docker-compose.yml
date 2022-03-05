@@ -2,10 +2,6 @@
 #   $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose build sdk
 #   $ docker-compose run --rm build
 #   $ ESPPORT=/dev/ttyUSB0 docker-compose run --rm monitor
-#
-#   BUILD_UID=$UID docker-compose run --rm npm install
-#   BUILD_UID=$UID docker-compose run --rm npm run build
-#   BUILD_UID=$UID API_URL=http://172.29.16.47 docker-compose run --rm npm start
 version: '3.8'
 services:
   sdk:
@@ -49,16 +45,3 @@ services:
       - "${ESPPORT}"
     environment:
       ESPPORT: "${ESPPORT}"
-
-  npm:
-    image: qmsk/esp-web
-    build:
-      context: ../../web
-    volumes:
-      - ../..:/build
-    user: "${BUILD_UID:-1000}"
-    working_dir: /build/web
-    entrypoint: npm
-    environment:
-      API_URL: $API_URL
-    network_mode: host

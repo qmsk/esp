@@ -6,6 +6,9 @@
 #include <dmx_output.h>
 #include <uart.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 struct dmx_output_state;
 struct dmx_output_config;
 

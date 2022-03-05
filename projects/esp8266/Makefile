@@ -1,7 +1,8 @@
 # @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/api-guides/build-system.html
 
 PROJECT_NAME := qmsk-esp
-EXTRA_COMPONENT_DIRS := $(abspath ../../components)
+EXTRA_COMPONENT_DIRS :=
+COMPONENT_DIRS := $(abspath ../../components) ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components $(abspath ../../main)
 
 include $(IDF_PATH)/make/project.mk
 

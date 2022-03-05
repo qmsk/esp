@@ -1,10 +1,10 @@
 #include "system.h"
+#include "system_init.h"
 
 #include <logging.h>
 
-#include <esp_event.h>
 #include <esp_err.h>
-#include <esp_netif.h>
+#include <esp_system.h>
 #include <nvs_flash.h>
 
 static int init_system_nvs_harder()
@@ -37,7 +37,9 @@ static int init_system_nvs()
       return 0;
 
     case ESP_ERR_NVS_NO_FREE_PAGES:
+  #if !CONFIG_IDF_TARGET_ESP8266
     case ESP_ERR_NVS_NEW_VERSION_FOUND:
+  #endif
       LOG_WARN("nvs_flash_init: %s", esp_err_to_name(err));
       return init_system_nvs_harder();
 
@@ -45,30 +47,6 @@ static int init_system_nvs()
       LOG_ERROR("nvs_flash_init: %s", esp_err_to_name(err));
       return -1;
   }
-}
-
-static int init_system_network()
-{
-  esp_err_t err;
-
-  LOG_INFO("init network stack...");
-
-  if ((err = esp_netif_init())) {
-    LOG_ERROR("esp_netif_init: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_event_loop_create_default())) {
-    LOG_ERROR("esp_event_loop_create_default: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = init_system_events())) {
-    LOG_ERROR("init_system_events");
-    return err;
-  }
-
-  return 0;
 }
 
 int init_system()
@@ -85,6 +63,10 @@ int init_system()
     return err;
   }
 
+  if ((err = init_system_events())) {
+    LOG_ERROR("init_system_events");
+    return err;
+  }
 
   return 0;
 }

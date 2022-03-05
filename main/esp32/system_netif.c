@@ -1,13 +1,35 @@
-#include "system_network.h"
-#include "system_state.h"
-#include "artnet.h"
+#include "system_netif.h"
+#include "../system_init.h"
+#include "../system_network.h"
+#include "../artnet.h"
 
 #include <logging.h>
 
+#include <esp_netif.h>
 #include <esp_err.h>
+#include <esp_event.h>
 
 // last connected netif
 esp_netif_t *connected_netif;
+
+int init_system_network()
+{
+  esp_err_t err;
+
+  LOG_INFO("init network stack...");
+
+  if ((err = esp_netif_init())) {
+    LOG_ERROR("esp_netif_init: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_event_loop_create_default())) {
+    LOG_ERROR("esp_event_loop_create_default: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
 
 void system_netif_connected(esp_netif_t *netif)
 {

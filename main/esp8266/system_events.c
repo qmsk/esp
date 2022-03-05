@@ -1,23 +1,24 @@
-#include "system.h"
-#include "system_state.h"
-#include "user.h"
+#include "system_tcpip_adapter.h"
+#include "../system_init.h"
+#include "../user.h"
 
 #include <logging.h>
+#include <system_interfaces.h>
 
 #include <esp_event.h>
-#include <esp_netif_types.h>
+#include <tcpip_adapter.h>
 
 static void on_ip_sta_got_ip(ip_event_got_ip_t *event)
 {
   LOG_INFO("if=%s ip=%d.%d.%d.%d changed=%s",
-    esp_netif_get_desc(event->esp_netif),
-    esp_ip4_addr1(&event->ip_info.ip), esp_ip4_addr2(&event->ip_info.ip), esp_ip4_addr3(&event->ip_info.ip), esp_ip4_addr4(&event->ip_info.ip),
+    tcpip_adapter_if_str(event->if_index),
+    ip4_addr1_val(event->ip_info.ip), ip4_addr2_val(event->ip_info.ip), ip4_addr3_val(event->ip_info.ip), ip4_addr4_val(event->ip_info.ip),
     event->ip_changed ? "true" : "false"
   );
 
   user_state(USER_STATE_CONNECTED);
 
-  system_netif_connected(event->esp_netif);
+  system_tcpip_adapter_connected(event->if_index);
 }
 
 static void on_ip_sta_lost_ip()
@@ -25,28 +26,28 @@ static void on_ip_sta_lost_ip()
   LOG_INFO(" ");
 
   // assume only one and the same interface
-  system_netif_disconnected();
+  system_tcpip_adapter_disconnected();
 }
 
 static void on_ip_ap_sta_ip_assigned(ip_event_ap_staipassigned_t *event)
 {
   LOG_INFO("ip=%d.%d.%d.%d",
-    esp_ip4_addr1(&event->ip), esp_ip4_addr2(&event->ip), esp_ip4_addr3(&event->ip), esp_ip4_addr4(&event->ip)
+    ip4_addr1_val(event->ip), ip4_addr2_val(event->ip), ip4_addr3_val(event->ip), ip4_addr4_val(event->ip)
   );
 }
 
 static void on_ip_got_ip6(ip_event_got_ip6_t *event)
 {
   LOG_INFO("if=%s ip=%4x:%4x:%4x:%4x:%4x:%4x:%4x:%4x",
-    esp_netif_get_desc(event->esp_netif),
-    ESP_IP6_ADDR_BLOCK1(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK2(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK4(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK3(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK5(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK6(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK7(&event->ip6_info.ip),
-    ESP_IP6_ADDR_BLOCK8(&event->ip6_info.ip)
+    tcpip_adapter_if_str(event->if_index),
+    IP6_ADDR_BLOCK1(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK2(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK3(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK4(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK5(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK6(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK7(&event->ip6_info.ip),
+    IP6_ADDR_BLOCK8(&event->ip6_info.ip)
   );
 }
 

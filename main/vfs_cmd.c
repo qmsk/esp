@@ -10,6 +10,8 @@
 #include <string.h>
 #include <sys/dirent.h>
 
+#include <sdkconfig.h>
+
 static char dirent_type_char(const struct dirent *d) {
   if (d->d_type == DT_DIR) {
     return 'd';
@@ -20,24 +22,28 @@ static char dirent_type_char(const struct dirent *d) {
   }
 }
 
-esp_err_t vfs_walk_func(esp_vfs_id_t id, const char *path, void *ctx)
-{
-  printf("%c <%d> %s\n", 'v', id, path);
+#if !CONFIG_IDF_TARGET_ESP8266
 
-  return 0;
-}
+  esp_err_t vfs_walk_func(esp_vfs_id_t id, const char *path, void *ctx)
+  {
+    printf("%c <%d> %s\n", 'v', id, path);
 
-int vfs_ls_root()
-{
-  esp_err_t err;
-
-  if ((err = esp_vfs_walk_paths(vfs_walk_func, NULL))) {
-    LOG_ERROR("esp_vfs_walk_paths: %s", esp_err_to_name(err));
-    return -1;
+    return 0;
   }
 
-  return 0;
-}
+  int vfs_ls_root()
+  {
+    esp_err_t err;
+
+    if ((err = esp_vfs_walk_paths(vfs_walk_func, NULL))) {
+      LOG_ERROR("esp_vfs_walk_paths: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+    return 0;
+  }
+
+#endif
 
 int vfs_ls_path(const char *path)
 {
@@ -70,7 +76,11 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
   }
 
   if (!path || strlen(path) == 0 || strcmp(path, "/") == 0) {
+  #if CONFIG_IDF_TARGET_ESP8266
+    return CMD_ERR_ARGV;
+  #else
     return vfs_ls_root();
+  #endif
   } else {
     return vfs_ls_path(path);
   }
@@ -78,28 +88,34 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
   return err;
 }
 
-esp_err_t vfs_walk_fd_func(esp_vfs_id_t id, int fd, void *ctx)
-{
-  printf("%3d <%d>\n", fd, id);
+#if !CONFIG_IDF_TARGET_ESP8266
 
-  return 0;
-}
+  esp_err_t vfs_walk_fd_func(esp_vfs_id_t id, int fd, void *ctx)
+  {
+    printf("%3d <%d>\n", fd, id);
 
-int vfs_lsof_cmd(int argc, char **argv, void *ctx)
-{
-  esp_err_t err;
-
-  if ((err = esp_vfs_walk_fds(vfs_walk_fd_func, NULL))) {
-    LOG_ERROR("esp_vfs_walk_fds: %s", esp_err_to_name(err));
-    return -1;
+    return 0;
   }
 
-  return 0;
-}
+  int vfs_lsof_cmd(int argc, char **argv, void *ctx)
+  {
+    esp_err_t err;
+
+    if ((err = esp_vfs_walk_fds(vfs_walk_fd_func, NULL))) {
+      LOG_ERROR("esp_vfs_walk_fds: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+    return 0;
+  }
+
+#endif
 
 const struct cmd vfs_commands[] = {
   { "ls",     vfs_ls_cmd,    .usage = "[PATH]", .describe = "List files"  },
+#if !CONFIG_IDF_TARGET_ESP8266
   { "lsof",   vfs_lsof_cmd,                     .describe = "List open file descriptors"  },
+#endif
   {}
 };
 

@@ -5,6 +5,8 @@
 #include <logging.h>
 #include <system_wifi.h>
 
+#include <sdkconfig.h>
+
 int wifi_state_cmd(int argc, char **argv, void *ctx)
 {
   printf("%s:\n", "STA");
@@ -135,7 +137,9 @@ static int print_wifi_info_ap()
 
     printf("\t%-20s: %02x:%02x:%02x:%02x:%02x:%02x\n", "STA", wifi_sta_info->mac[0], wifi_sta_info->mac[1], wifi_sta_info->mac[2], wifi_sta_info->mac[3], wifi_sta_info->mac[4], wifi_sta_info->mac[5]);
 
+#if !CONFIG_IDF_TARGET_ESP8266
     printf("\t\t%-20s: %d\n", "RSSI", wifi_sta_info->rssi);
+#endif
     printf("\t\t%-20s: %c%c%c%c\n", "Mode",
       wifi_sta_info->phy_11b ? 'b' : ' ',
       wifi_sta_info->phy_11g ? 'g' : ' ',

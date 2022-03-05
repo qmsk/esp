@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_config.h"
+#include "wifi_interface.h"
 #include "wifi_state.h"
 
 #include <logging.h>
@@ -8,6 +9,8 @@
 #include <esp_wifi.h>
 
 #include <string.h>
+
+#include <sdkconfig.h>
 
 #define WIFI_CONFIG_CHANNEL_MAX 13
 #define WIFI_HOSTNAME_MAX_SIZE 32
@@ -36,7 +39,9 @@ const struct config_enum wifi_auth_mode_enum[] = {
   { "WPA/2-PSK",      WIFI_AUTH_WPA_WPA2_PSK },
   { "WPA3-PSK",       WIFI_AUTH_WPA3_PSK },
   { "WPA2/3-PSK",     WIFI_AUTH_WPA2_WPA3_PSK },
+#if !CONFIG_IDF_TARGET_ESP8266
   { "WPAI-PSK",       WIFI_AUTH_WAPI_PSK },
+#endif
   {}
 };
 
@@ -123,7 +128,6 @@ static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_co
   uint8_t mac[6];
   char hostname[WIFI_HOSTNAME_MAX_SIZE];
   bool use_hostname;
-  esp_netif_t *netif;
   esp_err_t err;
 
   if (strlen(config->hostname) >= WIFI_HOSTNAME_MAX_SIZE) {
@@ -151,12 +155,9 @@ static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_co
     snprintf(hostname, sizeof(hostname), WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
   }
 
-  if ((err = make_wifi_netif(&netif, interface))) {
-    LOG_ERROR("make_wifi_netif");
+  if ((err = set_wifi_interface_hostname(interface, hostname))) {
+    LOG_ERROR("set_wifi_interface_hostname");
     return err;
-  } else if ((err = esp_netif_set_hostname(netif, hostname))) {
-    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
-    return -1;
   }
 
   return 0;
@@ -164,9 +165,7 @@ static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_co
 
 static int config_wifi_network(wifi_interface_t interface, const struct wifi_config *config)
 {
-  esp_netif_t *netif;
-  esp_netif_ip_info_t ip_info;
-  esp_err_t err;
+  int err;
 
   if (!config->ip[0] || !config->netmask[0] || !config->gw[0]) {
     LOG_INFO("Using IPv4 default DHCP addressing");
@@ -175,38 +174,9 @@ static int config_wifi_network(wifi_interface_t interface, const struct wifi_con
 
   LOG_INFO("Using IPv4 config: ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
 
-  if ((err = esp_netif_str_to_ip4(config->ip, &ip_info.ip))) {
-    LOG_ERROR("invalid ip=%s", config->ip);
-    return -1;
-  }
-
-  if ((err = esp_netif_str_to_ip4(config->netmask, &ip_info.netmask))) {
-    LOG_ERROR("invalid netmask=%s", config->netmask);
-    return -1;
-  }
-
-  if ((err = esp_netif_str_to_ip4(config->gw, &ip_info.gw))) {
-    LOG_ERROR("invalid gw=%s", config->gw);
-    return -1;
-  }
-
-  if ((err = make_wifi_netif(&netif, interface))) {
-    LOG_ERROR("make_wifi_netif");
+  if ((err = set_wifi_interface_ip(interface, config->ip, config->netmask, config->gw))) {
+    LOG_ERROR("set_wifi_interface_ip");
     return err;
-  }
-
-  if (!(err = esp_netif_dhcpc_stop(netif))) {
-
-  } else if (err == ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED) {
-    LOG_WARN("esp_netif_dhcpc_stop: ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED");
-  } else {
-    LOG_ERROR("esp_netif_dhcpc_stop: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_netif_set_ip_info(netif, &ip_info))) {
-    LOG_ERROR("esp_netif_set_ip_info: %s", esp_err_to_name(err));
-    return -1;
   }
 
   return 0;
@@ -244,10 +214,13 @@ static int config_wifi_sta(const struct wifi_config *config)
     return err;
   }
 
+#if !CONFIG_IDF_TARGET_ESP8266
+  // configure interface before listen, if possible
   if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
     LOG_ERROR("config_wifi_hostname");
     return err;
   }
+#endif
 
   if ((err = config_wifi_network(WIFI_IF_STA, config))) {
     LOG_ERROR("config_wifi_network");
@@ -265,12 +238,13 @@ static int config_wifi_sta(const struct wifi_config *config)
     return -1;
   }
 
-/* TODO
-  if ((err = config_wifi_interface_post(config, WIFI_IF_STA, TCPIP_ADAPTER_IF_STA))) {
-    LOG_ERROR("config_wifi_interface_post");
+#if CONFIG_IDF_TARGET_ESP8266
+  // requires interface to be up
+  if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
+    LOG_ERROR("config_wifi_hostname");
     return err;
   }
-*/
+#endif
 
   return 0;
 }
@@ -294,22 +268,18 @@ static int config_wifi_ap(const struct wifi_config *config)
     return err;
   }
 
+#if !CONFIG_IDF_TARGET_ESP8266
+  // configure interface before listen, if possible
   if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_hostname");
     return err;
   }
+#endif
 
   if ((err = config_wifi_network(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_network");
     return err;
   }
-
-/* TODO
-  if ((err = config_wifi_interface_pre(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
-    LOG_ERROR("config_wifi_interface_pre");
-    return err;
-  }
-*/
 
   // ensure default AP mode/config
   if ((err = esp_wifi_set_mode(WIFI_MODE_AP))) {
@@ -322,12 +292,14 @@ static int config_wifi_ap(const struct wifi_config *config)
     return -1;
   }
 
-/* TODO
-  if ((err = config_wifi_interface_post(config, WIFI_IF_AP, TCPIP_ADAPTER_IF_AP))) {
-    LOG_ERROR("config_wifi_interface_post");
+#if CONFIG_IDF_TARGET_ESP8266
+  // requires interface to be up
+  if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
+    LOG_ERROR("config_wifi_hostname");
     return err;
   }
-*/
+#endif
+
   return 0;
 }
 

@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_state.h"
+#include "wifi_interface.h"
 #include "wifi_config.h"
 #include "user.h"
 
@@ -124,8 +125,8 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
   }
 
   // netif
-  if ((err = init_wifi_netif(WIFI_IF_AP))) {
-    LOG_ERROR("init_wifi_netif");
+  if ((err = init_wifi_interface(WIFI_IF_AP))) {
+    LOG_ERROR("init_wifi_interface");
     return err;
   }
 
@@ -167,8 +168,8 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
   }
 
   // netif
-  if ((err = init_wifi_netif(WIFI_IF_STA))) {
-    LOG_ERROR("init_wifi_netif");
+  if ((err = init_wifi_interface(WIFI_IF_STA))) {
+    LOG_ERROR("init_wifi_interface");
     return err;
   }
 

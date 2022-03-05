@@ -52,14 +52,10 @@ struct system_interface_info {
   SYSTEM_IP_ADDR_TYPE dns_main, dns_backup, dns_fallback;
 };
 
-#if CONFIG_IDF_TARGET_ESP32
-
-  struct system_interface_client {
-    uint8_t mac[6];
-    esp_ip4_addr_t ipv4;
-  };
-
-#endif
+struct system_interface_client {
+  uint8_t mac[6];
+  SYSTEM_IPV4_ADDR_TYPE ipv4;
+};
 
 #if CONFIG_IDF_TARGET_ESP8266
   static inline const char *system_interface_str(const struct system_interface_info *info)
@@ -94,7 +90,6 @@ struct system_interface_info {
    */
   int system_interface_info(struct system_interface_info *info, esp_netif_t *interface);
 
-  int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx);
 
 #endif
 
@@ -102,3 +97,8 @@ struct system_interface_info {
  * Call func with info on each configured system network interface.
  */
 int system_interface_walk(int (*func)(const struct system_interface_info *info, void *ctx), void *ctx);
+
+/*
+ * Call func with info on each connected wifi (client) station.
+ */
+int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx);

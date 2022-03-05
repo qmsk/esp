@@ -3,6 +3,9 @@
 #include <logging.h>
 
 #include <esp_err.h>
+#include <esp_wifi.h>
+
+#include <string.h>
 
 const char *tcpip_adapter_if_str(tcpip_adapter_if_t tcpip_if)
 {
@@ -123,4 +126,40 @@ int system_interface_walk(int (*func)(const struct system_interface_info *info, 
 
   return 0;
 
+}
+
+int system_interface_clients_walk(int (*func)(const struct system_interface_client *client, void *ctx), void *ctx)
+{
+  struct system_interface_client client;
+  wifi_sta_list_t wifi_sta_list;
+  tcpip_adapter_sta_list_t tcpip_sta_list;
+  esp_err_t err;
+
+  if ((err = esp_wifi_ap_get_sta_list(&wifi_sta_list))) {
+    if (err == ESP_ERR_WIFI_MODE) {
+      LOG_WARN("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+      return 0;
+    } else {
+      LOG_ERROR("esp_wifi_ap_get_sta_list: %s", esp_err_to_name(err));
+      return -1;
+    }
+  }
+
+  if ((err = tcpip_adapter_get_sta_list(&wifi_sta_list, &tcpip_sta_list))) {
+    LOG_ERROR("tcpip_adapter_get_sta_list: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  for (int i = 0; i < wifi_sta_list.num && i < tcpip_sta_list.num; i++) {
+    tcpip_adapter_sta_info_t *tcpip_sta_info = &tcpip_sta_list.sta[i];
+
+    memcpy(&client.mac, &tcpip_sta_info->mac, sizeof(client.mac));
+    memcpy(&client.ipv4, &tcpip_sta_info->ip, sizeof(client.ipv4));
+
+    if ((err = func(&client, ctx))) {
+      return err;
+    }
+  }
+
+  return 0;
 }

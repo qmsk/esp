@@ -50,6 +50,8 @@ int system_interface_info(struct system_interface_info *info, tcpip_adapter_if_t
   tcpip_adapter_dns_info_t dns_main = {}, dns_backup = {}, dns_fallback = {}; // initialize ip_addr_t type
   esp_err_t err;
 
+  info->interface = tcpip_if;
+
   if (!tcpip_adapter_is_netif_up(tcpip_if)) {
     return 1;
   }

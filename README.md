@@ -1,15 +1,15 @@
-Using the [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) (v3.4)
-
 # Build
 
-Build the Web UI files for the `web-dist` image to be flashed onto the device:
+## Web UI
+
+Run the webpack build for the `web-dist` files to be included in the SPIFFS image:
 
     $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm install
     $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm run build
 
-### ESP8266
+## ESP8266
 
-Prepare the SDK/toolchain:
+Using the docker-based [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) [v3.4](https://github.com/espressif/ESP8266_RTOS_SDK/releases/tag/v3.4) + patches SDK/toolchain:
 
     $ docker-compose -f projects/esp8266/docker-compose.yml build sdk
 
@@ -25,9 +25,9 @@ Access the USB console:
 
     $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp8266/docker-compose.yml run --rm monitor
 
-### ESP32
+## ESP32
 
-Prepare the SDK/toolchain:
+Using the docker-based [Espressif ESP-IDF](https://github.com/espressif/esp-idf) [v4.4](https://github.com/espressif/esp-idf/releases/tag/v4.4) + patches SDK/toolchain:
 
     $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose -f projects/esp32/docker-compose.yml build sdk
 

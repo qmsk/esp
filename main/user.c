@@ -1,6 +1,7 @@
 #include "user.h"
 #include "artnet.h"
 #include "config.h"
+#include "console.h"
 #include "status_leds.h"
 #include "system.h"
 
@@ -89,7 +90,7 @@ void user_config_disable()
 
 void user_config_mode()
 {
-  // TODO
+  start_console();
 }
 
 void user_config_reset()

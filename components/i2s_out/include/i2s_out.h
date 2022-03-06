@@ -50,6 +50,9 @@ struct i2s_out_options {
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
 
+  // Timeout for acquiring pin mutex, default 0 -> immediate error if pin in use
+  TickType_t pin_timeout;
+
 #if I2S_OUT_OPTIONS_DATA_GPIO_ENABLED
   // Use GPIO pin for data out signal
   gpio_num_t data_gpio;

@@ -158,6 +158,7 @@ struct leds_options {
   /** LEDS_INTERFACE_I2S */
   struct i2s_out *i2s_out;
   SemaphoreHandle_t i2s_pin_mutex;
+  TickType_t i2s_pin_timeout;
 # if LEDS_I2S_GPIO_PIN_ENABLED
   gpio_num_t i2s_gpio_pin;
 # endif

@@ -1,4 +1,6 @@
 #include "console.h"
+#include "console_config.h"
+#include "console_state.h"
 #include "tasks.h"
 
 #include <logging.h>
@@ -49,15 +51,20 @@ int init_console_uart()
 
 int init_console_cli()
 {
+  const struct console_config *config = &console_config;
   struct cli_options options = {
     .buf_size = CLI_BUF_SIZE,
     .max_args = CLI_MAX_ARGS,
+
+    // this will always use the compile-time default, as it happens before config load
+    .timeout  = config->timeout ? config->timeout / portTICK_PERIOD_MS : 0,
   };
   int err;
 
-  LOG_INFO("buf_size=%u max_args=%u",
+  LOG_INFO("buf_size=%u max_args=%u timeout=%u",
     options.buf_size,
-    options.max_args
+    options.max_args,
+    options.timeout
   );
 
   // interactive CLI on stdin/stdout
@@ -131,8 +138,20 @@ int start_console_stdio()
   return 0;
 }
 
+void stop_console_uart()
+{
+  LOG_INFO("closing console, use short CONFIG button press to re-start");
+
+  stdio_detach_uart();
+
+  if (uart_teardown(console_uart)) {
+    LOG_ERROR("uart_teardown");
+  }
+}
+
 void console_cli_main(void *arg)
 {
+  const struct console_config *config = &console_config;
   struct cli *cli = arg;
   int err;
 
@@ -150,6 +169,9 @@ void console_cli_main(void *arg)
     goto exit;
   }
 
+  // set line read timeout
+  cli_set_timeout(cli, config->timeout ? config->timeout / portTICK_PERIOD_MS : 0);
+
   if ((err = cli_main(cli)) < 0) {
     LOG_ERROR("cli_main");
   } else if (err) {
@@ -158,8 +180,8 @@ void console_cli_main(void *arg)
     LOG_INFO("cli exit");
   }
 
-  // TODO:
-  //stop_console_uart();
+  // stop
+  stop_console_uart();
 
 exit:
   console_cli_task = NULL;
@@ -168,6 +190,7 @@ exit:
 
 int start_console()
 {
+  const struct console_config *config = &console_config;
   struct task_options task_options = {
     .main       = console_cli_main,
     .name       = CONSOLE_CLI_TASK_NAME,
@@ -177,6 +200,11 @@ int start_console()
     .handle     = &console_cli_task,
     .affinity   = CONSOLE_CLI_TASK_AFFINITY,
   };
+
+  if (!config->enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
 
   if (console_cli_task) {
     LOG_WARN("running: task=%p", console_cli_task);

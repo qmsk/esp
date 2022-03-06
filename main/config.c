@@ -1,6 +1,7 @@
 #include "config.h"
 #include "artnet.h"
 #include "atx_psu.h"
+#include "console.h"
 #include "dmx.h"
 #include "http.h"
 #include "leds.h"
@@ -21,6 +22,12 @@
 #define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
+  { "console",
+    .description = (
+      "UART Console"
+    ),
+    .table = console_configtab,
+  },
   { "wifi",
     .description = (
       "WiFi AP/STA mode, using static/dynamic IPv4 addressing."

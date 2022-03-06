@@ -1,6 +1,8 @@
+#include "console.h"
+#include "console_state.h"
+
 #include "artnet.h"
 #include "config.h"
-#include "console.h"
 #include "dmx.h"
 #include "leds.h"
 #include "log.h"

@@ -15,13 +15,13 @@
 #define WIFI_CONFIG_CHANNEL_MAX 13
 #define WIFI_HOSTNAME_MAX_SIZE 32
 
+#define WIFI_CONFIG_MODE_DEFAULT WIFI_MODE_AP
+#define WIFI_CONFIG_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
+
 #define WIFI_SSID_FMT "qmsk-esp-%02x%02x%02x"
 #define WIFI_HOSTNAME_FMT "qmsk-esp-%02x%02x%02x"
 
-struct wifi_config wifi_config = {
-  .mode       = WIFI_MODE_AP,
-  .auth_mode  = WIFI_CONFIG_AUTHMODE_DEFAULT,
-};
+struct wifi_config wifi_config = {};
 
 const struct config_enum wifi_mode_enum[] = {
   { "OFF",    WIFI_MODE_NULL  },
@@ -47,14 +47,14 @@ const struct config_enum wifi_auth_mode_enum[] = {
 
 const struct configtab wifi_configtab[] = {
   { CONFIG_TYPE_ENUM, "mode",
-    .enum_type = { .value = &wifi_config.mode, .values = wifi_mode_enum },
+    .enum_type = { .value = &wifi_config.mode, .values = wifi_mode_enum, .default_value = WIFI_CONFIG_MODE_DEFAULT },
   },
   { CONFIG_TYPE_ENUM, "auth_mode",
     .description = (
       "For STA mode: minimum threshold for AP provided auth level\n"
-      "For AP mode: provided auth level\n"
+      "For AP mode: provided auth level, assuming password is set\n"
     ),
-    .enum_type = { .value = &wifi_config.auth_mode, .values = wifi_auth_mode_enum },
+    .enum_type = { .value = &wifi_config.auth_mode, .values = wifi_auth_mode_enum, .default_value = WIFI_CONFIG_AUTHMODE_DEFAULT },
   },
   { CONFIG_TYPE_UINT16, "channel",
     .description = (

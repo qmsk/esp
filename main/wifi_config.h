@@ -3,8 +3,6 @@
 #include <esp_wifi_types.h>
 
 // defaults
-#define WIFI_CONFIG_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
-
 #define WIFI_AP_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
 #define WIFI_AP_MAX_CONNECTION_DEFAULT 10
 

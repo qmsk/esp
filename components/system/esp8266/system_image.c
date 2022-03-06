@@ -27,15 +27,19 @@ void system_image_info_get(struct system_image_info *info)
   info->dram_size = SIZE(_data_start, _bss_end);
 
   // no drom
+  info->drom_start = info->drom_end = 0;
+  info->drom_size = 0;
 
   for (unsigned i = 0; i < g_heap_region_num; i++) {
     heap_region_t *region = &g_heap_region[i];
 
     if (region->caps & MALLOC_CAP_EXEC) {
       info->iram_heap_start = (unsigned) region->start_addr;
+      info->iram_heap_end = (unsigned) region->start_addr + region->total_size;
       info->iram_heap_size = region->total_size;
     } else {
       info->dram_heap_start = (unsigned) region->start_addr;
+      info->dram_heap_end = (unsigned) region->start_addr + region->total_size;
       info->dram_heap_size = region->total_size;
     }
   }

@@ -68,12 +68,12 @@ static int system_image_cmd(int argc, char **argv, void *ctx)
   printf("DRAM  size %6uK image %6uK heap %6uK\n", image_info.dram_total_size / 1024, image_info.dram_size / 1024, image_info.dram_heap_size / 1024);
   printf("IRAM  size %6uK image %6uK heap %6uK\n", image_info.iram_total_size / 1024, image_info.iram_size / 1024, image_info.iram_heap_size / 1024);
   printf("\n");
-  printf("DROM  Image %#08x - %#08x = %6uK\n", image_info.drom_start, image_info.drom_end, image_info.drom_size / 1024);
-  printf("DRAM  Image %#08x - %#08x = %6uK\n", image_info.dram_start, image_info.dram_end, image_info.dram_size / 1024);
-  printf("DRAM  Heap  %#08x - %#08x = %6uK\n", image_info.dram_heap_start, image_info.dram_heap_end, image_info.dram_heap_size / 1024);
-  printf("IRAM  Image %#08x - %#08x = %6uK\n", image_info.iram_start, image_info.iram_end, image_info.iram_size / 1024);
-  printf("IRAM  Heap  %#08x - %#08x = %6uK\n", image_info.iram_heap_start, image_info.iram_heap_end, image_info.iram_heap_size / 1024);
-  printf("IROM  Image %#08x - %#08x = %6uK\n", image_info.irom_start, image_info.irom_end, image_info.irom_size / 1024);
+  printf("DROM  Image %#010x - %#010x = %6uK\n", image_info.drom_start, image_info.drom_end, image_info.drom_size / 1024);
+  printf("DRAM  Image %#010x - %#010x = %6uK\n", image_info.dram_start, image_info.dram_end, image_info.dram_size / 1024);
+  printf("DRAM  Heap  %#010x - %#010x = %6uK\n", image_info.dram_heap_start, image_info.dram_heap_end, image_info.dram_heap_size / 1024);
+  printf("IRAM  Image %#010x - %#010x = %6uK\n", image_info.iram_start, image_info.iram_end, image_info.iram_size / 1024);
+  printf("IRAM  Heap  %#010x - %#010x = %6uK\n", image_info.iram_heap_start, image_info.iram_heap_end, image_info.iram_heap_size / 1024);
+  printf("IROM  Image %#010x - %#010x = %6uK\n", image_info.irom_start, image_info.irom_end, image_info.irom_size / 1024);
 
   return 0;
 }

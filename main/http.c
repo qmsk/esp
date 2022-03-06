@@ -44,7 +44,6 @@ struct http_config {
 } http_config = {
   .enabled  = HTTP_CONFIG_ENABLED,
   .host     = HTTP_CONFIG_HOST,
-  .port     = HTTP_CONFIG_PORT,
 };
 
 const struct configtab http_configtab[] = {
@@ -55,7 +54,7 @@ const struct configtab http_configtab[] = {
     .string_type = { .value = http_config.host, .size = sizeof(http_config.host) },
   },
   { CONFIG_TYPE_UINT16, "port",
-    .uint16_type = { .value = &http_config.port },
+    .uint16_type = { .value = &http_config.port, .default_value = HTTP_CONFIG_PORT },
   },
   { CONFIG_TYPE_STRING, "username",
     .description = "Optional HTTP basic authentication username/password",

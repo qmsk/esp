@@ -1,6 +1,7 @@
 #include "console.h"
 #include "console_config.h"
 #include "console_state.h"
+#include "pin_mutex.h"
 #include "tasks.h"
 
 #include <logging.h>
@@ -100,10 +101,8 @@ int start_console_uart()
     .data_bits    = UART_DATA_8_BITS,
     .parity_bits  = UART_PARITY_DISABLE,
     .stop_bits    = UART_STOP_BITS_1,
-/* TODO
-    .dev_mutex    = dev_mutex[DEV_MUTEX_UART0],
+
     .pin_mutex    = pin_mutex[PIN_MUTEX_U0RXD],
-*/
   };
   int err;
 

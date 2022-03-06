@@ -1,6 +1,7 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "pin_mutex.h"
 
 #include <logging.h>
 
@@ -95,12 +96,16 @@
     }
 
     options->i2s_out = leds_i2s_out;
-  #if LEDS_I2S_GPIO_PIN_ENABLED
+  #if CONFIG_IDF_TARGET_ESP8266
+    options->i2s_pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
+  #elif LEDS_I2S_GPIO_PIN_ENABLED
     options->i2s_gpio_pin = config->i2s_gpio_pin;
+    // TODO: use i2s_pin_mutex for arbitrary gpio pins?
   #endif
 
-    LOG_INFO("leds%d: i2s port=%d: gpio_pin=%d", state->index + 1,
+    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p gpio_pin=%d", state->index + 1,
       i2s_config->port,
+      options->i2s_pin_mutex,
     #if LEDS_I2S_GPIO_PIN_ENABLED
       options->i2s_gpio_pin
     #else

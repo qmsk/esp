@@ -6,6 +6,7 @@
 #include "leds.h"
 #include "log.h"
 #include "http.h"
+#include "pin_mutex.h"
 #include "status_leds.h"
 #include "system.h"
 #include "user.h"
@@ -28,6 +29,12 @@ void app_main(void)
   }
 
   LOG_INFO("boot");
+
+  if ((err = init_pin_mutex())) {
+    LOG_ERROR("init_pin_mutex");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
 
   if ((err = init_status_leds())) {
     LOG_ERROR("init_status_leds");

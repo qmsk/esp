@@ -33,6 +33,7 @@ extern struct leds_state leds_states[LEDS_COUNT];
 
 #if CONFIG_LEDS_I2S_ENABLED
   int init_leds_i2s();
+  int check_leds_i2s(struct leds_state *state);
 #endif
 
 int update_leds(struct leds_state *state);

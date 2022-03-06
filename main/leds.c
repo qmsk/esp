@@ -113,6 +113,22 @@ int start_leds()
   return 0;
 }
 
+int check_leds_interface(struct leds_state *state)
+{
+  if (!state->leds) {
+    LOG_WARN("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
+
+  switch (leds_interface(state->leds)) {
+    case LEDS_INTERFACE_I2S:
+      return check_leds_i2s(state);
+
+    default:
+      return 0;
+  }
+}
+
 void update_leds_active(struct leds_state *state, bool force)
 {
   state->active = leds_active(state->leds);
@@ -129,9 +145,8 @@ int update_leds(struct leds_state *state)
 {
   int err;
 
-  if (!state->leds) {
-    LOG_WARN("leds%d: not initialized", state->index + 1);
-    return -1;
+  if ((err = check_leds_interface(state))) {
+    return err;
   }
 
   update_leds_active(state, false);
@@ -150,6 +165,10 @@ int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
   int err = 0;
 
   LOG_INFO("mode=%d", mode);
+
+  if ((err = check_leds_interface(state))) {
+    return err;
+  }
 
   update_leds_active(state, true);
   user_activity(USER_ACTIVITY_LEDS);

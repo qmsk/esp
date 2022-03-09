@@ -10,15 +10,18 @@ struct dmx_input_config dmx_input_config = {};
 struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {};
 
 const struct config_enum dmx_uart_enum[] = {
- { "",        -1      },
+  { "",        -1      },
 # if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
- { "UART0",   UART_0  },
+  { "UART0",      UART_0  },
+#endif
+# if defined(UART_0_SWAP) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+  { "UART0_SWAP", UART_0_SWAP  }, // ESP8266 specialty
 #endif
 # if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
- { "UART1",   UART_1  },
+  { "UART1",      UART_1  },
 #endif
 # if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
-  { "UART2",  UART_2  },
+  { "UART2",      UART_2  },
 # endif
  {}
 };

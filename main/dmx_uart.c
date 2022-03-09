@@ -44,13 +44,26 @@ int init_dmx_uart()
   }
 
   // setup
+  uart_port_t uart_port = uart_config->port;
   size_t rx_buffer_size = input_enabled ? DMX_UART_RX_BUFFER_SIZE : 0;
   size_t tx_buffer_size = outputs_enabled ? DMX_UART_TX_BUFFER_SIZE : 0;
 
-  LOG_INFO("dmx: uart%d configured with rx=%u tx=%u buffers", uart_config->port, rx_buffer_size, tx_buffer_size);
+  // TODO: fully configurable IO pins?
+#ifdef UART_TXONLY_BIT
+    if (!input_enabled) {
+      uart_port |= UART_TXONLY_BIT;
+    }
+#endif
+#ifdef UART_RXONLY_BIT
+  if (!outputs_enabled) {
+    uart_port |= UART_RXONLY_BIT;
+  }
+#endif
 
-  if ((err = uart_new(&dmx_uart, uart_config->port, rx_buffer_size, tx_buffer_size))) {
-    LOG_ERROR("uart_new(port=%d)", uart_config->port);
+  LOG_INFO("dmx: uart%d configured with port=%04x rx_buffer_size=%u tx_buffer_size=%u", uart_config->port, uart_port, rx_buffer_size, tx_buffer_size);
+
+  if ((err = uart_new(&dmx_uart, uart_port, rx_buffer_size, tx_buffer_size))) {
+    LOG_ERROR("uart_new(port=%d)", uart_port);
     return err;
   }
 

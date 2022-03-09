@@ -28,13 +28,23 @@
     {}
   };
 
+  #if SOC_SPI_PERIPH_NUM >= 3
+    #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI3_HOST
+  #elif SOC_SPI_PERIPH_NUM >= 2
+    #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI2_HOST
+  #elif SOC_SPI_PERIPH_NUM >= 1
+    #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI1_HOST
+  #else
+    #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE -1
+  #endif
+
 #endif
 
 const struct configtab leds_spi_configtab[] = {
 #if CONFIG_LEDS_SPI_ENABLED
   { CONFIG_TYPE_ENUM, "host",
     .description = "Select host peripherial for SPI interface.",
-    .enum_type = { .value = &leds_spi_config.host, .values = leds_spi_host_enum, .default_value = -1 },
+    .enum_type = { .value = &leds_spi_config.host, .values = leds_spi_host_enum, .default_value = LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE },
   },
 #endif
   {},

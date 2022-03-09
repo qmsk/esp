@@ -11,20 +11,32 @@ struct dmx_output_config dmx_output_configs[DMX_OUTPUT_COUNT] = {};
 
 const struct config_enum dmx_uart_enum[] = {
   { "",        -1      },
-# if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+#if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
   { "UART0",      UART_0  },
 #endif
-# if defined(UART_0_SWAP) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+#if defined(UART_0_SWAP) && CONFIG_ESP_CONSOLE_UART_NUM != 0
   { "UART0_SWAP", UART_0_SWAP  }, // ESP8266 specialty
 #endif
-# if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
+#if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
   { "UART1",      UART_1  },
 #endif
-# if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
+#if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
   { "UART2",      UART_2  },
-# endif
+#endif
  {}
 };
+
+#if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
+# define DMX_UART_CONFIG_PORT_DEFAULT_VALUE UART_2
+#elif defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
+# define DMX_UART_CONFIG_PORT_DEFAULT_VALUE UART_1
+#elif defined(UART_0_SWAP) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+# define DMX_UART_CONFIG_PORT_DEFAULT_VALUE UART_0_SWAP
+#elif defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+# define DMX_UART_CONFIG_PORT_DEFAULT_VALUE UART_0
+#else
+# define DMX_UART_CONFIG_PORT_DEFAULT_VALUE -1
+#endif
 
 const struct config_enum dmx_gpio_mode_enum[] = {
   { "",     DMX_GPIO_MODE_DISABLED  },
@@ -36,7 +48,7 @@ const struct config_enum dmx_gpio_mode_enum[] = {
 const struct configtab dmx_uart_configtab[] = {
   { CONFIG_TYPE_ENUM, "port",
     .description = "Select host peripherial for UART interface.",
-    .enum_type = { .value = &dmx_uart_config.port, .values = dmx_uart_enum, .default_value = -1 },
+    .enum_type = { .value = &dmx_uart_config.port, .values = dmx_uart_enum, .default_value = DMX_UART_CONFIG_PORT_DEFAULT_VALUE },
   },
   {}
 };

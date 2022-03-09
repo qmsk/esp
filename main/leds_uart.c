@@ -12,22 +12,32 @@
 
   const struct config_enum leds_uart_port_enum[] = {
     { "",              -1       },
-  # if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+  #if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
     { "UART0",         UART_0   },
-  # endif
-  # if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
+  #endif
+  #if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
     { "UART1",         UART_1   },
-  # endif
-  # if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
+  #endif
+  #if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
     { "UART2",         UART_2   },
-  # endif
+  #endif
     {},
   };
+
+  #if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
+    #define LEDS_UART_CONFIG_PORT_DEFAULT_VALUE UART_2
+  #elif defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
+    #define LEDS_UART_CONFIG_PORT_DEFAULT_VALUE UART_1
+  #elif defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
+    #define LEDS_UART_CONFIG_PORT_DEFAULT_VALUE UART_0
+  #else
+    #define LEDS_UART_CONFIG_PORT_DEFAULT_VALUE -1
+  #endif
 
   const struct configtab leds_uart_configtab[] = {
     { CONFIG_TYPE_ENUM, "port",
       .description = "Select host peripherial for UART interface.",
-      .enum_type = { .value = &leds_uart_config.port, .values = leds_uart_port_enum, .default_value = -1 },
+      .enum_type = { .value = &leds_uart_config.port, .values = leds_uart_port_enum, .default_value = LEDS_UART_CONFIG_PORT_DEFAULT_VALUE },
     },
     {},
   };

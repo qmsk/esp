@@ -17,19 +17,27 @@
 
   const struct config_enum leds_i2s_port_enum[] = {
     { "",              -1           },
-  # if defined(I2S_PORT_0)
+  #if defined(I2S_PORT_0)
     { "I2S0",         I2S_PORT_0    },
-  # endif
-  # if defined(I2S_PORT_1)
+  #endif
+  #if defined(I2S_PORT_1)
     { "I2S1",         I2S_PORT_1    },
-  # endif
+  #endif
     {},
   };
+
+  #if defined(I2S_PORT_1)
+    #define LEDS_I2S_PORT_DEFAULT_VALUE I2S_PORT_1
+  #elif defined(I2S_PORT_0)
+    #define LEDS_I2S_PORT_DEFAULT_VALUE I2S_PORT_0
+  #else
+    #define LEDS_I2S_PORT_DEFAULT_VALUE -1
+  #endif
 
   const struct configtab leds_i2s_configtab[] = {
     { CONFIG_TYPE_ENUM, "port",
       .description = "Select host peripherial for I2S interface.",
-      .enum_type = { .value = &leds_i2s_config.port, .values = leds_i2s_port_enum, .default_value = -1 },
+      .enum_type = { .value = &leds_i2s_config.port, .values = leds_i2s_port_enum, .default_value = LEDS_I2S_PORT_DEFAULT_VALUE },
     },
     {},
   };

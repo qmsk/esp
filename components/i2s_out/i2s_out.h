@@ -14,11 +14,13 @@ struct dma_desc;
 struct i2s_out {
   i2s_port_t port;
   SemaphoreHandle_t mutex;
-
 #if CONFIG_IDF_TARGET_ESP32
   portMUX_TYPE mux;
-    /* dev */
+#endif
+
+  /* dev */
   SemaphoreHandle_t dev_mutex;
+#if CONFIG_IDF_TARGET_ESP32
   i2s_dev_t *dev;
   intr_handle_t intr;
 #endif

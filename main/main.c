@@ -67,6 +67,11 @@ void app_main(void)
     abort();
   }
 
+  if ((err = start_console())) {
+    LOG_ERROR("start_console");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+
   LOG_INFO("config");
 
   if ((err = init_config()) < 0) {
@@ -110,11 +115,6 @@ void app_main(void)
   }
 
   LOG_INFO("start");
-
-  if ((err = start_console())) {
-    LOG_ERROR("start_console");
-    user_alert(USER_ALERT_ERROR_START);
-  }
 
   if ((err = start_wifi())) {
     LOG_ERROR("start_wifi");

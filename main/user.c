@@ -38,6 +38,7 @@ static const char *user_alert_str(enum user_alert alert)
     case USER_ALERT_ERROR_CONFIG:     return "ERROR_CONFIG";
     case USER_ALERT_ERROR_SETUP:      return "ERROR_SETUP";
     case USER_ALERT_ERROR_WIFI:       return "ERROR_WIFI";
+    case USER_ALERT_ERROR_START:      return "ERROR_START";
     case USER_ALERT_ERROR_DMX:        return "ERROR_DMX";
     default:                          return NULL;
   }
@@ -90,7 +91,9 @@ void user_config_disable()
 
 void user_config_mode()
 {
-  start_console();
+  if (start_console() < 0) {
+    user_alert(USER_ALERT_ERROR_START);
+  }
 }
 
 void user_config_reset()

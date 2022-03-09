@@ -1,6 +1,7 @@
 #include "dmx.h"
 #include "dmx_config.h"
 #include "dmx_state.h"
+#include "dev_mutex.h"
 
 #include <dmx_uart.h>
 #include <logging.h>
@@ -68,13 +69,27 @@ int start_dmx_uart()
     return 1;
   }
 
+  switch(dmx_uart_config.port & UART_PORT_MASK) {
+    case UART_0:
+      options.dev_mutex = dev_mutex[DEV_MUTEX_UART0];
+      break;
+  }
+
+  if (!options.dev_mutex) {
+    LOG_INFO("UART dev_mutex is not set, assume UART is available");
+  } else if (uxSemaphoreGetCount(options.dev_mutex) > 0) {
+    LOG_INFO("UART dev_mutex=%p is available", options.dev_mutex);
+  } else {
+    LOG_WARN("UART dev_mutex=%p will wait for UART to become available...", options.dev_mutex);
+  }
+
   if (dmx_input_config.enabled && dmx_input_config.mtbp_min) {
     LOG_INFO("dmx-input: use uart mtbp_min=%u", dmx_input_config.mtbp_min);
 
     options.mtbp_min = dmx_input_config.mtbp_min;
   }
 
-  LOG_INFO("setup mtbp_min=%d", options.mtbp_min);
+  LOG_INFO("setup mtbp_min=%d dev_mutex=%p", options.mtbp_min, options.dev_mutex);
 
   if ((err = dmx_uart_setup(dmx_uart, options))) {
     LOG_ERROR("dmx_uart_setup");

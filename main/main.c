@@ -2,6 +2,7 @@
 #include "atx_psu.h"
 #include "console.h"
 #include "config.h"
+#include "dev_mutex.h"
 #include "dmx.h"
 #include "leds.h"
 #include "log.h"
@@ -32,6 +33,12 @@ void app_main(void)
 
   if ((err = init_pin_mutex())) {
     LOG_ERROR("init_pin_mutex");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if ((err = init_dev_mutex())) {
+    LOG_ERROR("init_dev_mutex");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

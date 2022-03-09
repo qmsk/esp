@@ -66,7 +66,7 @@ int run_dmx_input(struct dmx_input_state *state)
   int read;
   int err;
 
-  LOG_INFO("open uart");
+  LOG_INFO("open uart...");
 
   if ((err = open_dmx_input_uart(state->dmx_input))) {
     LOG_ERROR("dmx-input: open_dmx_input_uart");

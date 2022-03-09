@@ -2,6 +2,7 @@
 #include "console_config.h"
 #include "console_state.h"
 #include "dev_mutex.h"
+#include "dmx.h"
 #include "pin_mutex.h"
 #include "tasks.h"
 
@@ -163,14 +164,11 @@ void console_cli_main(void *arg)
   // NOTE: this may block waiting for other UART users to release
   if ((err = start_console_uart())) {
     LOG_ERROR("start_console_uart");
-    // TODO: alert?
     goto exit;
   }
 
-  // NOTE: this may block waiting for other UART users to release
   if ((err = start_console_stdio())) {
     LOG_ERROR("start_console_stdio");
-    // TODO: alert?
     goto exit;
   }
 
@@ -189,6 +187,7 @@ void console_cli_main(void *arg)
   stop_console_uart();
 
 exit:
+  // TODO: alert?
   console_cli_task = NULL;
   vTaskDelete(NULL);
 }
@@ -220,6 +219,9 @@ int start_console()
   } else {
     LOG_INFO("task=%p", console_cli_task);
   }
+
+  // allow start_console_uart() to acquire UART from DMX
+  release_dmx_uart0();
 
   return 0;
 }

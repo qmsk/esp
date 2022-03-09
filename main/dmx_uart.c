@@ -72,6 +72,7 @@ int init_dmx_uart()
 
 int start_dmx_uart()
 {
+  const struct dmx_uart_config *uart_config = &dmx_uart_config;
   struct dmx_uart_options options = {
     .mtbp_min = DMX_UART_MTBP_MIN,
   };
@@ -82,7 +83,7 @@ int start_dmx_uart()
     return 1;
   }
 
-  switch(dmx_uart_config.port & UART_PORT_MASK) {
+  switch(uart_config->port & UART_PORT_MASK) {
     case UART_0:
       options.dev_mutex = dev_mutex[DEV_MUTEX_UART0];
       break;
@@ -130,4 +131,35 @@ int open_dmx_output_uart(struct dmx_output *output)
   }
 
   return dmx_output_open(output, dmx_uart);
+}
+
+bool query_dmx_uart0()
+{
+  const struct dmx_uart_config *uart_config = &dmx_uart_config;
+
+  if (!dmx_uart) {
+    return false;
+  }
+
+  switch(uart_config->port & UART_PORT_MASK) {
+    case UART_0:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+void stop_dmx_uart()
+{
+  if (!dmx_uart) {
+    LOG_WARN("disabled");
+    return;
+  }
+
+  if (uart_teardown(dmx_uart)) {
+    LOG_ERROR("uart_teardown");
+  } else {
+    LOG_INFO("DMX UART stopped");
+  };
 }

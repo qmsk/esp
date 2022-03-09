@@ -20,6 +20,10 @@ int start_dmx_uart();
 int open_dmx_input_uart(struct dmx_input *input);
 int open_dmx_output_uart(struct dmx_output *output);
 
+bool query_dmx_uart0();
+
+void stop_dmx_uart();
+
 /* dmx_gpio.c */
 int init_dmx_gpio();
 
@@ -38,6 +42,8 @@ extern struct dmx_input_state dmx_input_state;
 int init_dmx_input();
 
 int run_dmx_input(struct dmx_input_state *state);
+
+int stop_dmx_input(struct dmx_input_state *state);
 
 /* dmx_output.c */
 struct dmx_output_state {

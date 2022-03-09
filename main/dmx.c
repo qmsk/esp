@@ -6,6 +6,8 @@
 
 #include <logging.h>
 
+#define DMX_TASK_RESTART_DELAY (10)
+
 xTaskHandle dmx_task;
 
 unsigned count_dmx_artnet_inputs()
@@ -44,33 +46,38 @@ int init_dmx()
   return 0;
 }
 
-
 void dmx_main()
 {
   int err;
 
-  // use a separate task for UART setup, because it may block if the UART is busy
-  if ((err = start_dmx_uart())) {
-    LOG_ERROR("start_dmx_uart");
-    goto error;
-  }
-
-  // holds
-  if (!dmx_input_state.dmx_input) {
-    LOG_INFO("wait...");
-
-    if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
-      LOG_ERROR("ulTaskNotifyTake");
+  // delay uart setup on restart, we want to allow any other UART user to acquire the dev lock
+  // XXX: racy?
+  for (;; vTaskDelay(DMX_TASK_RESTART_DELAY)) {
+    // use a separate task for UART setup, because it may block if the UART is busy
+    if ((err = start_dmx_uart())) {
+      LOG_ERROR("start_dmx_uart");
       goto error;
     }
-  } else if ((err = run_dmx_input(&dmx_input_state))) {
-    LOG_ERROR("dmx-input: run_dmx_input");
-    goto error;
+
+    if (!dmx_input_state.dmx_input) {
+      LOG_INFO("wait for restart signal...");
+
+      // allow outputs to run until restarted
+      if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+        LOG_ERROR("ulTaskNotifyTake");
+        goto error;
+      }
+    } else if ((err = run_dmx_input(&dmx_input_state))) {
+      LOG_ERROR("dmx-input: run_dmx_input");
+      goto error;
+    }
+
+    LOG_INFO("stopping DMX UART...");
+
+    stop_dmx_uart();
   }
 
 error:
-  // TODO: stop uart
-
   user_alert(USER_ALERT_ERROR_DMX);
   LOG_ERROR("task=%p stopped", dmx_task);
   dmx_task = NULL;
@@ -124,4 +131,30 @@ int start_dmx()
   return 0;
 }
 
-// TODO: stop_dmx()
+void release_dmx_uart0()
+{
+  if (!dmx_task) {
+    LOG_DEBUG("uart task not running");
+    return;
+  }
+
+  if (!query_dmx_uart0()) {
+    LOG_DEBUG("uart0 not in use");
+    return;
+  }
+
+  LOG_WARN("interrupting DMX task to release UART0");
+
+  if (dmx_input_state.dmx_input) {
+    LOG_INFO("notify dmx_input to stop reading");
+
+    // XXX: race with any uart_setup() -> dmx_input_open()
+    if (stop_dmx_input(&dmx_input_state)) {
+      LOG_WARN("stop_dmx_input");
+    }
+  } else  {
+    LOG_INFO("notify task=%p to restart", dmx_task);
+
+    xTaskNotifyGive(dmx_task);
+  }
+}

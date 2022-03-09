@@ -13,3 +13,8 @@ extern const struct cmdtab dmx_cmdtab;
 
 int init_dmx();
 int start_dmx();
+
+/*
+ * Signal the DMX task to briefly release UART0, allowing it to be used by some other component.
+ */
+void release_dmx_uart0();

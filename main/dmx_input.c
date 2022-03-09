@@ -102,3 +102,18 @@ int run_dmx_input(struct dmx_input_state *state)
 
   return 0;
 }
+
+int stop_dmx_input(struct dmx_input_state *state)
+{
+  int err;
+
+  LOG_DEBUG("dmx_input=%p", state->dmx_input);
+
+  // stops the running run_dmx_input loop
+  if ((err = dmx_input_stop(state->dmx_input))) {
+    LOG_ERROR("dmx_input_stop");
+    return err;
+  }
+
+  return 0;
+}

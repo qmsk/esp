@@ -20,9 +20,13 @@
 # error console requires VFS_USE_STDIO enabled
 #endif
 
-// uart
-#define UART_PORT (CONFIG_ESP_CONSOLE_UART_NUM)
+// kconfig ESP_CONSOLE_UART_* determines the UART used for sdk/esp_log output
+// this is always hardcoded to use the same USB <-> UART0 used for bootloader flashing
+// stopping the console allows using the UART0 for IO
+#define UART_PORT (UART_0)
 #define UART_BAUD_RATE (CONFIG_ESP_CONSOLE_UART_BAUDRATE)
+
+// uart settings
 #define UART_RX_BUFFER_SIZE 256
 #define UART_TX_BUFFER_SIZE 1024
 
@@ -37,7 +41,7 @@ static xTaskHandle console_cli_task;
 
 int init_console_uart()
 {
-  uart_port_t port = CONFIG_ESP_CONSOLE_UART_NUM;
+  uart_port_t port = UART_PORT;
   int err;
 
   LOG_INFO("port=%d", port);

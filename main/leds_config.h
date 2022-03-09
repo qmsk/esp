@@ -21,6 +21,10 @@ struct leds_state *state;
 
   #define SPI_CLOCK_DEFAULT (SPI_CLOCK_1MHZ)
 
+  struct leds_spi_config {
+    int host;
+  };
+
 #elif CONFIG_LEDS_SPI_ENABLED
   #define SPI_CLOCK_20MHZ   (APB_CLK_FREQ / 4)
   #define SPI_CLOCK_10MHZ   (APB_CLK_FREQ / 8)

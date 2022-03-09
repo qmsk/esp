@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+// not configurable, this is the only supported SPI host
+#define SPI1_HOST 1
+
 enum spi_mode {
   SPI_MODE_CPOL_LOW     = 0x00,
   SPI_MODE_CPOL_HIGH    = 0x01,

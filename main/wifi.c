@@ -30,7 +30,7 @@ int init_wifi()
   }
 
   // add user handlers *after* esp_wifi_init() -> tcpip_adapter_set_default_wifi_handlers()
-  // we want our event handlers to run after the the tcpip_adapter has been started 
+  // we want our event handlers to run after the the tcpip_adapter has been started
   if ((err = init_wifi_events())) {
     LOG_ERROR("init_wifi_events");
     return err;
@@ -203,7 +203,7 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
   if (wifi_sta_started) {
     if ((err = esp_wifi_connect())) {
       LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
-      user_alert(USER_ALERT_ERROR_WIFI);
+      return -1;
     } else {
       user_state(USER_STATE_CONNECTING);
     }

@@ -14,6 +14,34 @@ bool wifi_sta_connect, wifi_sta_started, wifi_sta_connected;
 bool wifi_ap_listen, wifi_ap_started;
 unsigned wifi_ap_connected;
 
+int init_wifi()
+{
+  wifi_init_config_t wifi_ini_config = WIFI_INIT_CONFIG_DEFAULT();
+  esp_err_t err;
+
+  if ((err = init_wifi_events())) {
+    LOG_ERROR("init_wifi_events");
+    return err;
+  }
+
+  if ((err = esp_wifi_init(&wifi_ini_config))) {
+    LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
+    LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  if ((err = config_wifi(&wifi_config))) {
+    LOG_ERROR("config_wifi");
+    return err;
+  }
+
+  return 0;
+}
+
 /*
  * Switch from NULL -> AP/STA -> AP_STA mode as required.
  */
@@ -39,20 +67,6 @@ static int switch_wifi_mode(wifi_mode_t to_mode)
       LOG_ERROR("esp_wifi_set_mode %s: %s", wifi_mode_str(to_mode), esp_err_to_name(err));
       return -1;
     }
-  }
-
-  return 0;
-}
-
-int start_wifi()
-{
-  esp_err_t err;
-
-  LOG_INFO("starting...");
-
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-    return -1;
   }
 
   return 0;
@@ -148,11 +162,6 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
     // state
   wifi_ap_listen = true;
 
-  if ((err = esp_wifi_start())) {
-    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-    return -1;
-  }
-
   return 0;
 }
 
@@ -198,10 +207,6 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
     }
   } else {
     // start triggers WIFI_EVENT_STA_START -> esp_wifi_connect() -> USER_STATE_CONNECTING
-    if ((err = esp_wifi_start())) {
-      LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
-      return -1;
-    }
   }
 
   return 0;
@@ -252,6 +257,20 @@ int wifi_disconnect()
   return 0;
 }
 
+int start_wifi()
+{
+  esp_err_t err;
+
+  LOG_INFO("starting...");
+
+  if ((err = esp_wifi_start())) {
+    LOG_ERROR("esp_wifi_start: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 int stop_wifi()
 {
   esp_err_t err;
@@ -280,34 +299,6 @@ int disable_wifi()
   if ((err = esp_wifi_set_mode(WIFI_MODE_NULL))) {
     LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
     return -1;
-  }
-
-  return 0;
-}
-
-int init_wifi()
-{
-  wifi_init_config_t wifi_ini_config = WIFI_INIT_CONFIG_DEFAULT();
-  esp_err_t err;
-
-  if ((err = init_wifi_events())) {
-    LOG_ERROR("init_wifi_events");
-    return err;
-  }
-
-  if ((err = esp_wifi_init(&wifi_ini_config))) {
-    LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
-    LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  if ((err = config_wifi(&wifi_config))) {
-    LOG_ERROR("config_wifi");
-    return err;
   }
 
   return 0;

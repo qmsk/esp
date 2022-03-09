@@ -116,6 +116,11 @@ void app_main(void)
     user_alert(USER_ALERT_ERROR_START);
   }
 
+  if ((err = start_wifi())) {
+    LOG_ERROR("start_wifi");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+
   if ((err = start_http())) {
     LOG_ERROR("start_http");
     user_alert(USER_ALERT_ERROR_START);

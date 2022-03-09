@@ -123,37 +123,45 @@ static int set_wifi_password(void *buf, size_t size, const char *value, wifi_aut
   return 0;
 }
 
-static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_config *config)
+void get_wifi_hostname(wifi_interface_t interface, const struct wifi_config *config, char *buf, size_t size)
 {
   uint8_t mac[6];
-  char hostname[WIFI_HOSTNAME_MAX_SIZE];
-  bool use_hostname;
+  bool use_config_hostname;
   esp_err_t err;
 
-  if (strlen(config->hostname) >= WIFI_HOSTNAME_MAX_SIZE) {
-    LOG_WARN("Invalid hostname with len=%d > max=%d", strlen(config->hostname), WIFI_HOSTNAME_MAX_SIZE);
+  if (strlen(config->hostname) >= size) {
+    LOG_WARN("Invalid hostname with len=%d > max=%u", strlen(config->hostname), size);
 
-    use_hostname = false;
+    use_config_hostname = false;
   } else if (strlen(config->hostname) > 0) {
-    use_hostname = true;
+    use_config_hostname = true;
   } else {
-    use_hostname = false;
+    use_config_hostname = false;
   }
 
-  if (use_hostname) {
+  if (use_config_hostname) {
     LOG_INFO("Using config hostname: %s", config->hostname);
 
-    strlcpy(hostname, config->hostname, sizeof(hostname));
+    strlcpy(buf, config->hostname, size);
 
   } else if ((err = esp_wifi_get_mac(interface, mac))) {
     LOG_ERROR("esp_wifi_get_mac %s: %s", wifi_interface_str(interface), esp_err_to_name(err));
-    return -1;
+
+    snprintf(buf, size, WIFI_HOSTNAME_FMT, 0x00, 0x00, 0x00);
 
   } else {
     LOG_INFO("Using %s default hostname: " WIFI_HOSTNAME_FMT, wifi_interface_str(interface), mac[3], mac[4], mac[5]);
 
-    snprintf(hostname, sizeof(hostname), WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
+    snprintf(buf, size, WIFI_HOSTNAME_FMT, mac[3], mac[4], mac[5]);
   }
+}
+
+static int config_wifi_hostname(wifi_interface_t interface, const struct wifi_config *config)
+{
+  char hostname[WIFI_HOSTNAME_MAX_SIZE];
+  esp_err_t err;
+
+  get_wifi_hostname(interface, config, hostname, sizeof(hostname));
 
   if ((err = set_wifi_interface_hostname(interface, hostname))) {
     LOG_ERROR("set_wifi_interface_hostname");
@@ -214,13 +222,10 @@ static int config_wifi_sta(const struct wifi_config *config)
     return err;
   }
 
-#if !CONFIG_IDF_TARGET_ESP8266
-  // configure interface before listen, if possible
   if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
     LOG_ERROR("config_wifi_hostname");
     return err;
   }
-#endif
 
   if ((err = config_wifi_network(WIFI_IF_STA, config))) {
     LOG_ERROR("config_wifi_network");
@@ -237,14 +242,6 @@ static int config_wifi_sta(const struct wifi_config *config)
     LOG_ERROR("wifi_connect");
     return -1;
   }
-
-#if CONFIG_IDF_TARGET_ESP8266
-  // requires interface to be up
-  if ((err = config_wifi_hostname(WIFI_IF_STA, config))) {
-    LOG_ERROR("config_wifi_hostname");
-    return err;
-  }
-#endif
 
   return 0;
 }
@@ -268,13 +265,10 @@ static int config_wifi_ap(const struct wifi_config *config)
     return err;
   }
 
-#if !CONFIG_IDF_TARGET_ESP8266
-  // configure interface before listen, if possible
   if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_hostname");
     return err;
   }
-#endif
 
   if ((err = config_wifi_network(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_network");
@@ -291,14 +285,6 @@ static int config_wifi_ap(const struct wifi_config *config)
     LOG_ERROR("wifi_listen");
     return -1;
   }
-
-#if CONFIG_IDF_TARGET_ESP8266
-  // requires interface to be up
-  if ((err = config_wifi_hostname(WIFI_IF_AP, config))) {
-    LOG_ERROR("config_wifi_hostname");
-    return err;
-  }
-#endif
 
   return 0;
 }

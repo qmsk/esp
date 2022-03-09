@@ -1,5 +1,6 @@
 #include "../wifi.h"
 #include "../wifi_interface.h"
+#include "system_netif.h"
 
 #include <esp_err.h>
 #include <esp_netif.h>
@@ -123,4 +124,32 @@ int set_wifi_interface_ip(wifi_interface_t interface, const char *ip, const char
   }
 
   return 0;
+}
+
+void on_wifi_interface_up(wifi_interface_t interface, bool connected)
+{
+  esp_netif_t *netif;
+
+  if (!(netif = wifi_netif[interface])) {
+    LOG_ERROR("unknown netif for interface=%d", interface);
+    return;
+  }
+
+  system_netif_up(netif);
+
+  if (connected) {
+    system_netif_connected(netif);
+  }
+}
+
+void on_wifi_interface_down(wifi_interface_t interface)
+{
+  esp_netif_t *netif;
+
+  if (!(netif = wifi_netif[interface])) {
+    LOG_ERROR("unknown netif for interface=%d", interface);
+    return;
+  }
+
+  system_netif_down(netif);
 }

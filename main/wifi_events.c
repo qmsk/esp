@@ -1,5 +1,6 @@
 #include "wifi.h"
 #include "wifi_state.h"
+#include "wifi_interface.h"
 #include "user.h"
 
 #include <logging.h>
@@ -26,6 +27,8 @@ static void on_sta_start()
 
   wifi_sta_started = true;
 
+  on_wifi_interface_up(WIFI_IF_STA, false); // not yet connected
+
   if (wifi_sta_connect) {
     LOG_INFO("connect...");
 
@@ -44,6 +47,8 @@ static void on_sta_stop()
   LOG_INFO("connect=%d connected=%d", wifi_sta_connect, wifi_sta_connected);
 
   wifi_sta_started = false;
+
+  on_wifi_interface_down(WIFI_IF_STA);
 }
 
 static void on_sta_connected(wifi_event_sta_connected_t *event)
@@ -114,23 +119,7 @@ static void on_ap_start()
 
   wifi_ap_started = true;
 
-/* TODO
-  tcpip_adapter_ip_info_t ip_info = {};
-  esp_err_t err;
-
-  if ((err = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info))) {
-    LOG_WARN("tcpip_adapter_get_ip_info TCPIP_ADAPTER_IF_AP: %s", esp_err_to_name(err));
-  }
-
-  LOG_INFO("ip=%d.%d.%d.%d",
-    ip4_addr1_val(ip_info.ip),
-    ip4_addr2_val(ip_info.ip),
-    ip4_addr3_val(ip_info.ip),
-    ip4_addr4_val(ip_info.ip)
-  );
-
-  update_user_ipv4_address(ip_info.ip);
-*/
+  on_wifi_interface_up(WIFI_IF_AP, true);
 }
 
 static void on_ap_stop()
@@ -142,11 +131,12 @@ static void on_ap_stop()
 
   wifi_ap_started = false;
   wifi_ap_connected = 0;
+
+  on_wifi_interface_down(WIFI_IF_AP);
 }
 
 static void on_ap_sta_connected(wifi_event_ap_staconnected_t *event)
 {
-
   LOG_INFO("aid=%d mac=%02x:%02x:%02x:%02x:%02x:%02x",
     event->aid,
     event->mac[0], event->mac[1], event->mac[2], event->mac[3], event->mac[4], event->mac[5]

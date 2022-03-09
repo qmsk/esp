@@ -24,4 +24,6 @@ struct wifi_config {
 // globals
 extern struct wifi_config wifi_config;
 
+void get_wifi_hostname(wifi_interface_t interface, const struct wifi_config *config, char *buf, size_t size);
+
 int config_wifi(const struct wifi_config *config);

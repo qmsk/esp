@@ -19,11 +19,6 @@ int init_wifi()
   wifi_init_config_t wifi_ini_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_err_t err;
 
-  if ((err = init_wifi_events())) {
-    LOG_ERROR("init_wifi_events");
-    return err;
-  }
-
   if ((err = esp_wifi_init(&wifi_ini_config))) {
     LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
     return -1;
@@ -32,6 +27,13 @@ int init_wifi()
   if ((err = esp_wifi_set_storage(WIFI_STORAGE_RAM))) {
     LOG_ERROR("esp_wifi_set_storage: %s", esp_err_to_name(err));
     return -1;
+  }
+
+  // add user handlers *after* esp_wifi_init() -> tcpip_adapter_set_default_wifi_handlers()
+  // we want our event handlers to run after the the tcpip_adapter has been started 
+  if ((err = init_wifi_events())) {
+    LOG_ERROR("init_wifi_events");
+    return err;
   }
 
   if ((err = config_wifi(&wifi_config))) {

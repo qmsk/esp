@@ -1,8 +1,11 @@
 #include "../wifi.h"
 #include "../wifi_interface.h"
+#include "../wifi_config.h"
+#include "system_tcpip_adapter.h"
 
 #include <logging.h>
 #include <system_interfaces.h>
+#include <system_wifi.h>
 
 #include <esp_err.h>
 #include <esp_wifi.h>
@@ -35,11 +38,6 @@ int set_wifi_interface_hostname(wifi_interface_t interface, const char *hostname
 
   if ((tcpip_if = tcpip_if_for_wifi_interface(interface)) >= TCPIP_ADAPTER_IF_MAX) {
     LOG_ERROR("invalid interface=%d", interface);
-    return -1;
-  }
-
-  if ((err = tcpip_adapter_set_hostname(tcpip_if, hostname))) {
-    LOG_ERROR("tcpip_adapter_set_hostname %s: %s", tcpip_adapter_if_str(tcpip_if), esp_err_to_name(err));
     return -1;
   }
 
@@ -85,4 +83,43 @@ int set_wifi_interface_ip(wifi_interface_t interface, const char *ip, const char
   }
 
   return 0;
+}
+
+void on_wifi_interface_up(wifi_interface_t interface, bool connected)
+{
+  char hostname[TCPIP_HOSTNAME_MAX_SIZE];
+  tcpip_adapter_if_t tcpip_if;
+  esp_err_t err;
+
+  if ((tcpip_if = tcpip_if_for_wifi_interface(interface)) >= TCPIP_ADAPTER_IF_MAX) {
+    LOG_ERROR("invalid interface=%d", interface);
+    return;
+  }
+
+  // can only set hostname once tcpip_adapter is ready
+  get_wifi_hostname(interface, &wifi_config, hostname, sizeof(hostname));
+
+  LOG_INFO("set wifi_interface=%s -> tcpip_adapter=%s hostname=%s",
+    wifi_interface_str(interface),
+    tcpip_adapter_if_str(tcpip_if),
+    hostname
+  );
+
+  if ((err = tcpip_adapter_set_hostname(tcpip_if, hostname))) {
+    LOG_ERROR("tcpip_adapter_set_hostname %s: %s", tcpip_adapter_if_str(tcpip_if), esp_err_to_name(err));
+  }
+
+  system_tcpip_adapter_up(tcpip_if);
+}
+
+void on_wifi_interface_down(wifi_interface_t interface)
+{
+  tcpip_adapter_if_t tcpip_if;
+
+  if ((tcpip_if = tcpip_if_for_wifi_interface(interface)) >= TCPIP_ADAPTER_IF_MAX) {
+    LOG_ERROR("invalid interface=%d", interface);
+    return;
+  }
+
+  system_tcpip_adapter_down(tcpip_if);
 }

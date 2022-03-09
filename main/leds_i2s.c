@@ -131,9 +131,9 @@
 
   int check_leds_i2s(struct leds_state *state)
   {
+  #if CONFIG_IDF_TARGET_ESP8266
     const struct leds_options *options = leds_options(state->leds);
 
-  #if CONFIG_IDF_TARGET_ESP8266
     if (options->i2s_pin_mutex && !uxSemaphoreGetCount(options->i2s_pin_mutex)) {
       LOG_WARN("I2S data pin busy, console running on UART0?");
       return 1;

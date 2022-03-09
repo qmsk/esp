@@ -1,12 +1,13 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "console.h"
 #include "pin_mutex.h"
 
 #include <logging.h>
 
 // do not block if pin in use, timeout immediately
-#define LEDS_I2S_PIN_TIMEOUT 0
+#define LEDS_I2S_PIN_TIMEOUT portMAX_DELAY
 
 #if CONFIG_LEDS_I2S_ENABLED
 
@@ -134,9 +135,11 @@
   #if CONFIG_IDF_TARGET_ESP8266
     const struct leds_options *options = leds_options(state->leds);
 
-    if (options->i2s_pin_mutex && !uxSemaphoreGetCount(options->i2s_pin_mutex)) {
-      LOG_WARN("I2S data pin busy, console running on UART0?");
-      return 1;
+    if (is_console_running()) {
+      if (options->i2s_pin_mutex && !uxSemaphoreGetCount(options->i2s_pin_mutex)) {
+        LOG_WARN("I2S data pin busy, console running on UART0");
+        return 1;
+      }
     }
   #endif
 

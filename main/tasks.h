@@ -34,7 +34,7 @@ int start_taskf(struct task_options options, ...);
 #define LEDS_ARTNET_TASK_AFFINITY TASKS_CPU_APP
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define LEDS_ARTNET_TASK_STACK 1024
+# define LEDS_ARTNET_TASK_STACK 2048
 #elif CONFIG_IDF_TARGET_ESP32
 # define LEDS_ARTNET_TASK_STACK 2048
 #endif
@@ -45,7 +45,7 @@ int start_taskf(struct task_options options, ...);
 #define DMX_OUTPUT_TASK_AFFINITY TASKS_CPU_APP
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define DMX_OUTPUT_TASK_STACK 1024
+# define DMX_OUTPUT_TASK_STACK 2048
 #elif CONFIG_IDF_TARGET_ESP32
 # define DMX_OUTPUT_TASK_STACK 2048
 #endif

@@ -212,6 +212,11 @@ int dmx_input_read (struct dmx_input *in)
   uint8_t buf[64];
   int read = -1;
 
+  if (!in->uart) {
+    LOG_ERROR("no open uart");
+    return -1;
+  }
+
   if (in->stop) {
     return 0;
   }
@@ -244,6 +249,7 @@ int dmx_input_stop (struct dmx_input *in)
   int err;
 
   if (!in->uart) {
+    LOG_ERROR("no open uart");
     return -1;
   }
 
@@ -260,6 +266,11 @@ int dmx_input_stop (struct dmx_input *in)
 int dmx_input_close (struct dmx_input *in)
 {
   int err;
+
+  if (!in->uart) {
+    LOG_ERROR("no open uart");
+    return -1;
+  }
 
   LOG_DEBUG("dmx_input=%p uart=%p", in, in->uart);
 

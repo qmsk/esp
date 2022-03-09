@@ -5,6 +5,7 @@
 #include <esp_err.h>
 #include <esp_netif.h>
 #include <esp_wifi.h>
+#include <mdns.h>
 
 #include <logging.h>
 #include <system_wifi.h>
@@ -77,6 +78,12 @@ int set_wifi_interface_hostname(wifi_interface_t interface, const char *hostname
     return err;
   } else if ((err = esp_netif_set_hostname(netif, hostname))) {
     LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // TODO: multiple interfaces?
+  if ((err = mdns_hostname_set(hostname))) {
+    LOG_ERROR("mdns_hostname_set");
     return -1;
   }
 

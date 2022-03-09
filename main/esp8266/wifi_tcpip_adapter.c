@@ -9,6 +9,7 @@
 
 #include <esp_err.h>
 #include <esp_wifi.h>
+#include <mdns.h>
 #include <tcpip_adapter.h>
 
 int init_wifi_interface(wifi_interface_t interface)
@@ -38,6 +39,12 @@ int set_wifi_interface_hostname(wifi_interface_t interface, const char *hostname
 
   if ((tcpip_if = tcpip_if_for_wifi_interface(interface)) >= TCPIP_ADAPTER_IF_MAX) {
     LOG_ERROR("invalid interface=%d", interface);
+    return -1;
+  }
+
+  // TODO: multiple interfaces?
+  if ((err = mdns_hostname_set(hostname))) {
+    LOG_ERROR("mdns_hostname_set");
     return -1;
   }
 

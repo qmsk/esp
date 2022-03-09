@@ -4,6 +4,7 @@
 #include "console.h"
 #include "status_leds.h"
 #include "system.h"
+#include "wifi.h"
 
 #include <logging.h>
 
@@ -93,6 +94,10 @@ void user_config_mode()
 {
   if (start_console() < 0) {
     user_alert(USER_ALERT_ERROR_START);
+  }
+
+  if (start_wifi_config()) {
+    user_alert(USER_ALERT_ERROR_WIFI);
   }
 }
 

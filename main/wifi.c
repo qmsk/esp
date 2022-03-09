@@ -259,6 +259,16 @@ int wifi_disconnect()
   return 0;
 }
 
+int start_wifi_boot()
+{
+  if (wifi_config.config_only_mode) {
+    LOG_WARN("wifi disabled at boot, use config mode to start");
+    return 0;
+  }
+
+  return start_wifi();
+}
+
 int start_wifi()
 {
   esp_err_t err;
@@ -271,6 +281,16 @@ int start_wifi()
   }
 
   return 0;
+}
+
+int start_wifi_config()
+{
+  if (!wifi_config.config_only_mode) {
+    // ignore
+    return 0;
+  }
+
+  return start_wifi();
 }
 
 int stop_wifi()

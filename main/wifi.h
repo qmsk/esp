@@ -6,7 +6,9 @@
 int init_wifi();
 int init_wifi_events();
 
+int start_wifi_boot();
 int start_wifi();
+int start_wifi_config();
 int stop_wifi();
 int disable_wifi();
 

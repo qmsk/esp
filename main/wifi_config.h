@@ -10,6 +10,7 @@
 
 // config
 struct wifi_config {
+  bool config_only_mode;
   int mode; /* wifi_mode_t */
   int auth_mode; /* wifi_auth_mode_t */
   uint16_t channel;

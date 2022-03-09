@@ -46,6 +46,12 @@ const struct config_enum wifi_auth_mode_enum[] = {
 };
 
 const struct configtab wifi_configtab[] = {
+  { CONFIG_TYPE_BOOL, "config_only_mode",
+    .description = (
+      "Only start WiFi in config mode."
+    ),
+    .bool_type = { .value = &wifi_config.config_only_mode },
+  },
   { CONFIG_TYPE_ENUM, "mode",
     .enum_type = { .value = &wifi_config.mode, .values = wifi_mode_enum, .default_value = WIFI_CONFIG_MODE_DEFAULT },
   },

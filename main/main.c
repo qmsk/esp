@@ -116,8 +116,8 @@ void app_main(void)
 
   LOG_INFO("start");
 
-  if ((err = start_wifi())) {
-    LOG_ERROR("start_wifi");
+  if ((err = start_wifi_boot())) {
+    LOG_ERROR("start_wifi_boot");
     user_alert(USER_ALERT_ERROR_START);
   }
 

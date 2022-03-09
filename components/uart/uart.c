@@ -79,6 +79,11 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto tx_error;
   }
 
+  if (uart->dev) {
+    LOG_ERROR("dev already setup");
+    goto dev_error;
+  }
+
   if ((err = uart_dev_setup(uart, options))) {
     LOG_ERROR("uart_dev_setup");
     goto dev_error;

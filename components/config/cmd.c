@@ -4,6 +4,32 @@
 #include <logging.h>
 #include <stdio.h>
 
+#include <sdkconfig.h>
+
+#if CONFIG_LOG_COLORS
+  #define CLI_FMT_RESET "\033[0m"
+
+  #define CLI_FMT_COLOR(code)   "\033[0;" code "m"
+  #define CLI_FMT_COLOR_YELLOW  "33"
+  #define CLI_FMT_COLOR_BLUE    "34"
+  #define CLI_FMT_COLOR_MAGENTA "35"
+  #define CLI_FMT_COLOR_CYAN    "36"
+  #define CLI_FMT_COLOR_DEFAULT "39"
+
+  #define CLI_FMT_COMMENT   CLI_FMT_COLOR(CLI_FMT_COLOR_BLUE)
+  #define CLI_FMT_SECTION   CLI_FMT_COLOR(CLI_FMT_COLOR_MAGENTA)
+  #define CLI_FMT_NAME      CLI_FMT_COLOR(CLI_FMT_COLOR_CYAN)
+  #define CLI_FMT_SEP       CLI_FMT_COLOR(CLI_FMT_COLOR_YELLOW)
+  #define CLI_FMT_VALUE     CLI_FMT_COLOR(CLI_FMT_COLOR_DEFAULT)
+#else
+  #define CLI_FMT_RESET ""
+  #define CLI_FMT_COMMENT ""
+  #define CLI_FMT_SECTION ""
+  #define CLI_FMT_NAME ""
+  #define CLI_FMT_SEP ""
+  #define CLI_FMT_VALUE ""
+#endif
+
 static void print_comment(const char *comment)
 {
   bool start = true;
@@ -11,7 +37,7 @@ static void print_comment(const char *comment)
   // support linebreaks for multi-line output
   for (const char *c = comment; *c; c++) {
     if (start) {
-      printf("# ");
+      printf(CLI_FMT_COMMENT "#\t");
     }
 
     putchar(*c);
@@ -24,20 +50,7 @@ static void print_comment(const char *comment)
   }
 
   if (!start) {
-    printf("\n");
-  }
-}
-
-static void print_enum_comment(const struct configtab *tab)
-{
-  printf(" #");
-
-  for (const struct config_enum * e = tab->enum_type.values; e->name; e++) {
-    if (e->value == *tab->enum_type.value) {
-      printf(" [%s]", e->name);
-    } else {
-      printf(" %s", e->name);
-    }
+    printf(CLI_FMT_RESET "\n");
   }
 }
 
@@ -45,28 +58,56 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
 {
   unsigned count = config_count(mod, tab);
 
+  if (tab->count) {
+    printf(CLI_FMT_COMMENT "# %s[%u/%u] = ", tab->name, count, tab->size);
+  } else {
+    printf(CLI_FMT_COMMENT "# %s = ", tab->name);
+  }
+
+  switch(tab->type) {
+    case CONFIG_TYPE_UINT16:
+      printf("<UINT16>[0..%u]", tab->uint16_type.max ? tab->uint16_type.max : UINT16_MAX);
+      break;
+
+    case CONFIG_TYPE_STRING:
+      printf("<STRING>[%u]", tab->string_type.size);
+      break;
+
+    case CONFIG_TYPE_BOOL:
+      printf("true | false");
+      break;
+
+    case CONFIG_TYPE_ENUM:
+      for (const struct config_enum *e = tab->enum_type.values; e->name; e++) {
+        if (e == tab->enum_type.values) {
+          printf("%s", e->name);
+        } else {
+          printf(" | %s", e->name);
+        }
+      }
+      break;
+
+    default:
+      printf("???");
+      break;
+  }
+
+  printf(CLI_FMT_RESET "\n");
+
   if (tab->description) {
     print_comment(tab->description);
   }
 
   for (unsigned index = 0; index < count; index++) {
     if (tab->secret) {
-      printf("%s = ***\n", tab->name);
+      printf(CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE "***" CLI_FMT_RESET "\n", tab->name);
     } else {
-      printf("%s = ", tab->name);
+      printf(CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, tab->name);
 
       config_print(mod, tab, index, stdout);
 
-      if (tab->type == CONFIG_TYPE_ENUM) {
-        print_enum_comment(tab);
-      }
-
-      printf("\n");
+      printf(CLI_FMT_RESET "\n");
     }
-  }
-
-  if (!count) {
-    printf("#%s = \n", tab->name);
   }
 }
 
@@ -86,13 +127,13 @@ static void print_configmod(const struct configmod *mod, const struct configtab 
     }
 
     if (index >= 0) {
-      printf("[%s%d]\n", mod->name, index + 1);
+      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name, index + 1);
     } else {
-      printf("[%s???]\n", mod->name);
+      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s???" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
     }
 
   } else {
-    printf("[%s]\n", mod->name);
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
   }
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {

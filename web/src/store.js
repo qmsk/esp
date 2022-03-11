@@ -32,6 +32,11 @@ export default new Vuex.Store({
 
       commit('loadConfig', config);
     },
+    async postConfig({ state, dispatch }, formdata) {
+      await configService.post(state.config, formdata);
+
+      await dispatch('loadConfig');
+    },
     async uploadConfig({ dispatch }, file) {
       await configService.upload(file);
       await dispatch('loadConfig');

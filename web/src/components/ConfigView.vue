@@ -8,8 +8,8 @@
       <h1>Configuration</h1>
       <progress v-show="loading">Loading...</progress>
       <template v-if="config">
-        <form action="/api/config" method="post">
-          <fieldset v-for="mod in config.modules" :key="mod.name">
+        <form method="post" @submit.prevent="submit">
+          <fieldset v-for="mod in config.modules" :key="modName(mod)">
             <legend>{{ modName(mod) }}</legend>
             <div class="module-description" v-if="mod.description">
               <p v-for="line in splitlines(mod.description)">{{ line }}</p>
@@ -17,36 +17,40 @@
 
             <template v-for="tab in mod.table">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
-              <input v-if="tab.type == 'uint16'" type="number"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :value="tab.value.uint16" min="0" :max="tab.max ? tab.max : 65536"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'string' && !tab.secret" type="text"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :value="tab.value.string"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'string' && tab.secret" type="password"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :value="tab.value.string"
-                :readonly="tab.readonly">
-              <input v-if="tab.type == 'bool'" type="hidden"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :value="false"
-                >
-              <input v-if="tab.type == 'bool'" type="checkbox"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :value="true" :checked=tab.value.bool
-                :readonly="tab.readonly">
+              <div class="tab-values">
+                <template v-for="value in fieldValues(mod, tab)">
+                  <input v-if="tab.type == 'uint16'" type="number"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
+                    :readonly="tab.readonly">
+                    
+                  <input v-if="tab.type == 'string' && !tab.secret" type="text"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :value="value"
+                    :readonly="tab.readonly">
 
-              <select v-if="tab.type == 'enum'"
-                :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                :disabled="tab.readonly">
-                <option v-for="value in tab.enum_values" :value="value" :selected="tab.value.enum == value">{{ value }}</option>
-              </select>
+                  <input v-if="tab.type == 'string' && tab.secret" type="password"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :value="value"
+                    :readonly="tab.readonly">
+
+                  <input v-if="tab.type == 'bool'" type="checkbox"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :value="true" :checked=value
+                    :readonly="tab.readonly">
+
+                  <select v-if="tab.type == 'enum'"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :disabled="tab.readonly">
+                    <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
+                  </select>
+                </template>
+              </div>
             </template>
           </fieldset>
 
           <fieldset class="actions">
+            <progress class="form" v-show="applying">Applying...</progress>
             <button type="submit">Apply</button>
           </fieldset>
         </form>
@@ -79,6 +83,7 @@
 export default {
   data: () => ({
     loading: true,
+    applying: false,
 
     // restore
     uploading: false,
@@ -119,10 +124,34 @@ export default {
         return '[' + mod.name + ']' + tab.name;
       }
     },
+    fieldValues(mod, tab) {
+      if (tab.count !== undefined) {
+        return  [...Array(tab.size).keys()].map(i => {
+          return i < tab.count ? tab.values[tab.type][i] : null;
+        });
+      } else {
+        return [tab.value[tab.type]];
+      }
+    },
     restoreInvalid(event) {
       const input = event.target;
 
       this.restoreError = input.validity ? null : input.validationMessage;
+    },
+    async submit(event) {
+      const form = event.target;
+      const formdata = new FormData(form);
+
+      this.applying = true;
+
+      try {
+        await this.$store.dispatch('postConfig', formdata);
+      } catch (error) {
+        // XXX: UI?
+        alert(error.name + ": " + error.message);
+      } finally {
+        this.applying = false;
+      }
     },
     async restoreSubmit(event) {
       const form = event.target;

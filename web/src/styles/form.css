@@ -39,8 +39,8 @@ form fieldset label {
   grid-column: 1 / 2;
 }
 
-form fieldset div {
-  grid-column: 2 / 3;
+form fieldset div.module-description {
+  grid-column: 1 / 3;
 }
 
 form fieldset progress.input {
@@ -66,8 +66,15 @@ form label {
   margin-left: 1em;
   padding: 0.5em;
 
+  height: 1.2em;
+
   background-color: #444;
   color: #ccc;
+}
+
+form input, form select {
+  width: 100%;
+  height: 1.8em;
 }
 
 form input:invalid {

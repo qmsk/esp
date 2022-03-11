@@ -56,7 +56,7 @@ static void print_comment(const char *comment)
 
 static void print_configtab(const struct configmod *mod, const struct configtab *tab)
 {
-  unsigned count = config_count(mod, tab);
+  unsigned count = configtab_count(tab);
 
   if (tab->count) {
     printf(CLI_FMT_COMMENT "# %s[%u/%u] = ", tab->name, count, tab->size);
@@ -204,7 +204,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  for (unsigned count = config_count(mod, tab), index = 0; index < count; index++) {
+  for (unsigned count = configtab_count(tab), index = 0; index < count; index++) {
     if (config_get(mod, tab, index, value, sizeof(value))) {
       LOG_ERROR("Invalid config %s.%s[%u] value: %s", mod->name, tab->name, index, value);
       return -CMD_ERR;

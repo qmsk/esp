@@ -242,15 +242,6 @@ int config_init(struct config *config)
   return 0;
 }
 
-int config_count(const struct configmod *mod, const struct configtab *tab)
-{
-  if (tab->count) {
-    return *tab->count;
-  } else {
-    return 1;
-  }
-}
-
 int config_clear(const struct configmod *mod, const struct configtab *tab)
 {
   if (tab->readonly) {
@@ -383,8 +374,8 @@ int config_get_enum(const struct configmod *mod, const struct configtab *tab, un
 
 int config_get(const struct configmod *mod, const struct configtab *tab, unsigned index, char *buf, size_t size)
 {
-  if (index >= config_count(mod, tab)) {
-    LOG_ERROR("invalid index=%u for count=%u", index, config_count(mod, tab));
+  if (index >= configtab_count(tab)) {
+    LOG_ERROR("invalid index=%u for count=%u", index, configtab_count(tab));
   }
 
   LOG_DEBUG("type=%u name=%s index=%u", tab->type, tab->name, index);
@@ -445,8 +436,8 @@ static int config_print_enum(const struct configmod *mod, const struct configtab
 
 int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file)
 {
-  if (index >= config_count(mod, tab)) {
-    LOG_ERROR("invalid index=%u for count=%u", index, config_count(mod, tab));
+  if (index >= configtab_count(tab)) {
+    LOG_ERROR("invalid index=%u for count=%u", index, configtab_count(tab));
   }
 
   LOG_DEBUG("type=%u name=%s index=%u", tab->type, tab->name, index);

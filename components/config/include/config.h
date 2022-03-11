@@ -99,15 +99,22 @@ int configmod_lookup(const struct configmod *modules, const char *name, const st
 int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);
 int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp);
 
+/* Return count of values for use with index. This is typically typically 1, if not multi-valued */
+static inline int configtab_count(const struct configtab *tab)
+{
+  if (tab->count) {
+    return *tab->count;
+  } else {
+    return 1;
+  }
+}
+
 /*
  * Set default values.
  *
  * Multi-valued configtabs are cleared.
  */
 int config_init(struct config *config);
-
-/* Return count of values for use with index. This is typically typically 1, if not multi-valued */
-int config_count(const struct configmod *mod, const struct configtab *tab);
 
 /* Set empty value, or reset count to 0 if multi-valued */
 int config_clear(const struct configmod *mod, const struct configtab *tab);

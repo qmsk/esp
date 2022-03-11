@@ -5,7 +5,7 @@
 
 static int configtab_write(const struct configmod *mod, const struct configtab *tab, FILE *file)
 {
-  unsigned count = config_count(mod, tab);
+  unsigned count = configtab_count(tab);
 
   LOG_DEBUG("type=%u name=%s count=%u", tab->type, tab->name, count);
 

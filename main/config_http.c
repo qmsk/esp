@@ -118,29 +118,85 @@ int config_post_handler(struct http_request *request, struct http_response *resp
   }
 }
 
-static int config_api_write_configtab_uint16_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_enum_value(struct json_writer *w, const struct configtab *tab, unsigned index)
+{
+  const struct config_enum *e;
+
+  if (config_enum_find_by_value(tab->enum_type.values, tab->enum_type.value[index], &e)) {
+    LOG_ERROR("%s: unknown value: %#x", tab->name, tab->enum_type.value[index]);
+    return -1;
+  }
+
+  return json_write_string(w, e->name);
+}
+
+static int config_api_write_configtab_value(struct json_writer *w, const struct configtab *tab, unsigned index)
+{
+
+  switch(tab->type) {
+    case CONFIG_TYPE_UINT16:
+      return json_write_uint(w, tab->uint16_type.value[index]);
+
+    case CONFIG_TYPE_STRING:
+      return json_write_nstring(w, &tab->string_type.value[index * tab->string_type.size], tab->string_type.size);
+
+    case CONFIG_TYPE_BOOL:
+      return json_write_bool(w, tab->bool_type.value[index]);
+
+    case CONFIG_TYPE_ENUM:
+      return config_api_write_enum_value(w, tab, index);
+
+    default:
+      LOG_ERROR("unknown type=%d", tab->type);
+      return -1;
+  }
+
+  return 0;
+}
+
+static int config_api_write_configtab_values(struct json_writer *w, const struct configtab *tab)
+{
+  int err;
+
+  for (unsigned count = configtab_count(tab), index = 0; index < count; index++) {
+    if ((err = config_api_write_configtab_value(w, tab, index))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+static int config_api_write_configtab_type_members(struct json_writer *w, const struct configtab *tab, const char *type)
 {
   return (
-    JSON_WRITE_MEMBER_STRING(w, "type", "uint16") ||
-    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_UINT(w, "uint16", *tab->uint16_type.value)) ||
-    (tab->uint16_type.max ? JSON_WRITE_MEMBER_UINT(w, "max", tab->uint16_type.max) : 0)
+        JSON_WRITE_MEMBER_STRING(w, "type", type)
+    || (tab->count
+          ? JSON_WRITE_MEMBER_OBJECT(w, "values", JSON_WRITE_MEMBER_ARRAY(w, type, config_api_write_configtab_values(w, tab)))
+          : JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER(w, type, config_api_write_configtab_value(w, tab, 0)))
+       )
   );
 }
 
-static int config_api_write_configtab_string_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members_uint16(struct json_writer *w, const struct configtab *tab)
 {
   return (
-    JSON_WRITE_MEMBER_STRING(w, "type", "string") ||
-    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_STRING(w, "string", tab->string_type.value)) ||
-    JSON_WRITE_MEMBER_UINT(w, "size", tab->string_type.size)
+        config_api_write_configtab_type_members(w, tab, "uint16")
+    || (tab->uint16_type.max ? JSON_WRITE_MEMBER_UINT(w, "uint16_max", tab->uint16_type.max) : 0)
+  );
+}
+static int config_api_write_configtab_members_string(struct json_writer *w, const struct configtab *tab)
+{
+  return (
+        config_api_write_configtab_type_members(w, tab, "string")
+    ||  JSON_WRITE_MEMBER_UINT(w, "string_size", tab->string_type.size)
   );
 }
 
-static int config_api_write_configtab_bool_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members_bool(struct json_writer *w, const struct configtab *tab)
 {
   return (
-    JSON_WRITE_MEMBER_STRING(w, "type", "bool") ||
-    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_BOOL(w, "bool", *tab->bool_type.value))
+        config_api_write_configtab_type_members(w, tab, "bool")
   );
 }
 
@@ -157,33 +213,25 @@ static int config_api_write_configtab_enum_values(struct json_writer *w, const s
   return 0;
 }
 
-static int config_api_write_configtab_enum_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members_enum(struct json_writer *w, const struct configtab *tab)
 {
-  const struct config_enum *e;
-
-  if (config_enum_find_by_value(tab->enum_type.values, *tab->enum_type.value, &e)) {
-    LOG_ERROR("%s: unknown value: %#x", tab->name, *tab->enum_type.value);
-    return -1;
-  }
-
   return (
-    JSON_WRITE_MEMBER_STRING(w, "type", "enum") ||
-    JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER_STRING(w, "enum", e->name)) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "enum_values", config_api_write_configtab_enum_values(w, tab->enum_type.values))
+        config_api_write_configtab_type_members(w, tab, "enum")
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "enum_values", config_api_write_configtab_enum_values(w, tab->enum_type.values))
   );
 }
 
-static int config_api_write_configtab_value_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members(struct json_writer *w, const struct configtab *tab)
 {
   switch (tab->type) {
     case CONFIG_TYPE_UINT16:
-      return config_api_write_configtab_uint16_members(w, tab);
+      return config_api_write_configtab_members_uint16(w, tab);
     case CONFIG_TYPE_STRING:
-      return config_api_write_configtab_string_members(w, tab);
+      return config_api_write_configtab_members_string(w, tab);
     case CONFIG_TYPE_BOOL:
-      return config_api_write_configtab_bool_members(w, tab);
+      return config_api_write_configtab_members_bool(w, tab);
     case CONFIG_TYPE_ENUM:
-      return config_api_write_configtab_enum_members(w, tab);
+      return config_api_write_configtab_members_enum(w, tab);
     default:
       return 0;
   }
@@ -192,11 +240,13 @@ static int config_api_write_configtab_value_members(struct json_writer *w, const
 static int config_api_write_configtab(struct json_writer *w, const struct configtab *tab)
 {
   return JSON_WRITE_OBJECT(w,
-    JSON_WRITE_MEMBER_STRING(w, "name", tab->name) ||
-    (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0) ||
-    JSON_WRITE_MEMBER_BOOL(w, "readonly", tab->readonly) ||
-    JSON_WRITE_MEMBER_BOOL(w, "secret", tab->secret) ||
-    config_api_write_configtab_value_members(w, tab)
+        JSON_WRITE_MEMBER_STRING(w, "name", tab->name)
+    ||  (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0)
+    ||  JSON_WRITE_MEMBER_BOOL(w, "readonly", tab->readonly)
+    ||  JSON_WRITE_MEMBER_BOOL(w, "secret", tab->secret)
+    ||  (tab->count ? JSON_WRITE_MEMBER_UINT(w, "count", *tab->count) : 0)
+    ||  (tab->size ? JSON_WRITE_MEMBER_UINT(w, "size", tab->size) : 0)
+    ||  config_api_write_configtab_members(w, tab)
   );
 }
 

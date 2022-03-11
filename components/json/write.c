@@ -163,8 +163,10 @@ static int json_writev(struct json_writer *w, enum json_token token, const char 
   return 0;
 }
 
-static int json_writeq(struct json_writer *w,  enum json_token token, const char *string)
+static int json_writeq(struct json_writer *w,  enum json_token token, const char *string, int size)
 {
+  const char *end = (size >= 0) ? string + size : NULL;
+
   if (json_start_write(w, token)) {
     return -1;
   }
@@ -174,7 +176,7 @@ static int json_writeq(struct json_writer *w,  enum json_token token, const char
     return -1;
   }
 
-  for (const char *c = string; *c; c++) {
+  for (const char *c = string; (end ? c < end : true) && *c; c++) {
     switch(*c) {
       case '\b':
         fputs("\\b", w->file);
@@ -233,7 +235,16 @@ int json_write_raw(struct json_writer *w, const char *fmt, ...)
 int json_write_string(struct json_writer *w, const char *value)
 {
   if (value) {
-    return json_writeq(w, JSON_STRING, value);
+    return json_writeq(w, JSON_STRING, value, -1);
+  } else {
+    return json_writef(w, JSON_NULL, "null");
+  }
+}
+
+int json_write_nstring(struct json_writer *w, const char *value, size_t size)
+{
+  if (value) {
+    return json_writeq(w, JSON_STRING, value, size);
   } else {
     return json_writef(w, JSON_NULL, "null");
   }
@@ -270,7 +281,7 @@ int json_open_object(struct json_writer *w)
 
 int json_open_object_member(struct json_writer *w, const char *name)
 {
-  return json_writeq(w, JSON_OBJECT_MEMBER, name);
+  return json_writeq(w, JSON_OBJECT_MEMBER, name, -1);
 }
 
 int json_close_object(struct json_writer *w)

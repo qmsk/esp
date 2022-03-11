@@ -35,6 +35,7 @@ int json_writer_init(struct json_writer *w, FILE *f);
 
 int json_write_raw(struct json_writer *w, const char *fmt, ...);
 int json_write_string(struct json_writer *w, const char *value);
+int json_write_nstring(struct json_writer *w, const char *value, size_t size);
 int json_write_int(struct json_writer *w, int value);
 int json_write_uint(struct json_writer *w, unsigned value);
 int json_write_bool(struct json_writer *w, bool value);
@@ -50,6 +51,7 @@ int json_close_array(struct json_writer *w);
 #define JSON_WRITE_OBJECT(w, write_members) (json_open_object(w) || (write_members) || json_close_object(w))
 #define JSON_WRITE_ARRAY(w, write_members) (json_open_array(w) || (write_members) || json_close_array(w))
 
+#define JSON_WRITE_MEMBER(w, name, write_member) (json_open_object_member((w), (name)) || (write_member))
 #define JSON_WRITE_MEMBER_RAW(w, name, ...) (json_open_object_member((w), (name)) || json_write_raw((w), __VA_ARGS__))
 #define JSON_WRITE_MEMBER_STRING(w, name, value) (json_open_object_member((w), (name)) || json_write_string((w), (value)))
 #define JSON_WRITE_MEMBER_INT(w, name, value) (json_open_object_member((w), (name)) || json_write_int((w), (value)))

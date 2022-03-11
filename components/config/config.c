@@ -259,7 +259,7 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
         break;
 
       case CONFIG_TYPE_UINT16:
-        *tab->uint16_type.value = 0;
+        *tab->uint16_type.value = tab->enum_type.default_value;
         break;
 
       case CONFIG_TYPE_BOOL:
@@ -267,7 +267,7 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
         break;
 
       case CONFIG_TYPE_ENUM:
-        *tab->enum_type.value = 0;
+        *tab->enum_type.value = tab->enum_type.default_value;
         break;
 
       default:

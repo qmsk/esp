@@ -5,6 +5,7 @@
 #if CONFIG_LEDS_SPI_ENABLED
 // using esp-idf spi_master driver
 # include <driver/spi_master.h>
+# include <soc/spi_pins.h>
 #endif
 
 #include <logging.h>
@@ -30,10 +31,16 @@
 
   #if SOC_SPI_PERIPH_NUM >= 3
     #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI3_HOST
+    #define LEDS_SPI_CONFIG_CLOCK_PIN_DEFAULT_VALUE SPI3_IOMUX_PIN_NUM_CLK
+    #define LEDS_SPI_CONFIG_DATA_PIN_DEFAULT_VALUE SPI3_IOMUX_PIN_NUM_MOSI
   #elif SOC_SPI_PERIPH_NUM >= 2
     #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI2_HOST
+    #define LEDS_SPI_CONFIG_CLOCK_PIN_DEFAULT_VALUE SPI2_IOMUX_PIN_NUM_CLK
+    #define LEDS_SPI_CONFIG_DATA_PIN_DEFAULT_VALUE SPI2_IOMUX_PIN_NUM_MOSI
   #elif SOC_SPI_PERIPH_NUM >= 1
     #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE SPI1_HOST
+    #define LEDS_SPI_CONFIG_CLOCK_PIN_DEFAULT_VALUE SPI_IOMUX_PIN_NUM_CLK
+    #define LEDS_SPI_CONFIG_DATA_PIN_DEFAULT_VALUE SPI_IOMUX_PIN_NUM_MOSI
   #else
     #define LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE -1
   #endif
@@ -46,6 +53,14 @@ const struct configtab leds_spi_configtab[] = {
     .description = "Select host peripherial for SPI interface.",
     .enum_type = { .value = &leds_spi_config.host, .values = leds_spi_host_enum, .default_value = LEDS_SPI_CONFIG_HOST_DEFAULT_VALUE },
   },
+  { CONFIG_TYPE_UINT16, "clock_pin",
+    .description = "Output SPI Clock to GPIO pin.",
+    .uint16_type = { .value = &leds_spi_config.clock_pin, .max = (GPIO_NUM_MAX - 1), .default_value = LEDS_SPI_CONFIG_CLOCK_PIN_DEFAULT_VALUE },
+  },
+  { CONFIG_TYPE_UINT16, "data_pin",
+    .description = "Output SPI MOSI to GPIO pin.",
+    .uint16_type = { .value = &leds_spi_config.data_pin, .max = (GPIO_NUM_MAX - 1), .default_value = LEDS_SPI_CONFIG_DATA_PIN_DEFAULT_VALUE },
+  },
 #endif
   {},
 };
@@ -57,9 +72,9 @@ const struct configtab leds_spi_configtab[] = {
   {
     const struct leds_spi_config *spi_config = &leds_spi_config;
     spi_bus_config_t bus_config = {
-      .mosi_io_num = -1,
+      .mosi_io_num = spi_config->data_pin,
       .miso_io_num = -1,
-      .sclk_io_num = -1,
+      .sclk_io_num = spi_config->clock_pin,
       .quadwp_io_num = -1,
       .quadhd_io_num = -1,
     };
@@ -70,11 +85,6 @@ const struct configtab leds_spi_configtab[] = {
       LOG_INFO("leds: spi host disabled");
       return 0;
     }
-
-    // use IOMUX pins by default
-    // TODO: configurable via GPIO matrix
-    bus_config.mosi_io_num = spi_periph_signal[spi_config->host].spid_iomux_pin;
-    bus_config.sclk_io_num = spi_periph_signal[spi_config->host].spiclk_iomux_pin;
 
     for (int i = 0; i < LEDS_COUNT; i++)
     {

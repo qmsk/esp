@@ -50,6 +50,8 @@ struct leds_state *state;
 
   struct leds_spi_config {
     int host;
+    uint16_t clock_pin;
+    uint16_t data_pin;
   };
 
   extern struct leds_spi_config leds_spi_config;

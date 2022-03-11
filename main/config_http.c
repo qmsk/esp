@@ -367,11 +367,20 @@ static int config_api_set (struct config *config, char *key, char *value)
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
-  LOG_INFO("module=%s name=%s: value=%s", module, name, value);
+  if (value && *value) {
+    LOG_INFO("module=%s name=%s: set value=%s", module, name, value);
 
-  if ((err = config_set(mod, tab, value))) {
-    LOG_WARN("config_set: module=%s name=%s: value=%s", module, name, value);
-    return HTTP_UNPROCESSABLE_ENTITY;
+    if ((err = config_set(mod, tab, value))) {
+      LOG_WARN("config_set: module=%s name=%s: value=%s", module, name, value);
+      return HTTP_UNPROCESSABLE_ENTITY;
+    }
+  } else {
+    LOG_INFO("module=%s name=%s: clear", module, name);
+
+    if ((err = config_clear(mod, tab))) {
+      LOG_WARN("config_clear: module=%s name=%s", module, name);
+      return HTTP_UNPROCESSABLE_ENTITY;
+    }
   }
 
   return 0;

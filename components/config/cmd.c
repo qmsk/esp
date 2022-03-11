@@ -43,22 +43,30 @@ static void print_enum_comment(const struct configtab *tab)
 
 static void print_configtab(const struct configmod *mod, const struct configtab *tab)
 {
+  unsigned count = config_count(mod, tab);
+
   if (tab->description) {
     print_comment(tab->description);
   }
 
-  if (tab->secret) {
-    printf("%s = ***\n", tab->name);
-  } else {
-    printf("%s = ", tab->name);
+  for (unsigned index = 0; index < count; index++) {
+    if (tab->secret) {
+      printf("%s = ***\n", tab->name);
+    } else {
+      printf("%s = ", tab->name);
 
-    config_print(mod, tab, stdout);
+      config_print(mod, tab, index, stdout);
 
-    if (tab->type == CONFIG_TYPE_ENUM) {
-      print_enum_comment(tab);
+      if (tab->type == CONFIG_TYPE_ENUM) {
+        print_enum_comment(tab);
+      }
+
+      printf("\n");
     }
+  }
 
-    printf("\n");
+  if (!count) {
+    printf("#%s = \n", tab->name);
   }
 }
 
@@ -155,12 +163,14 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if (config_get(mod, tab, value, sizeof(value))) {
-    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
-    return -CMD_ERR;
-  }
+  for (unsigned count = config_count(mod, tab), index = 0; index < count; index++) {
+    if (config_get(mod, tab, index, value, sizeof(value))) {
+      LOG_ERROR("Invalid config %s.%s[%u] value: %s", mod->name, tab->name, index, value);
+      return -CMD_ERR;
+    }
 
-  printf("%s\n", value);
+    printf("%s\n", value);
+  }
 
   return 0;
 }

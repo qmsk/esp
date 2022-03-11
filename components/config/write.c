@@ -5,18 +5,22 @@
 
 static int configtab_write(const struct configmod *mod, const struct configtab *tab, FILE *file)
 {
-  LOG_DEBUG("type=%u name=%s", tab->type, tab->name);
+  unsigned count = config_count(mod, tab);
 
-  if (fprintf(file, "%s = ", tab->name) < 0) {
-    return -1;
-  }
+  LOG_DEBUG("type=%u name=%s count=%u", tab->type, tab->name, count);
 
-  if (config_print(mod, tab, file)) {
-    return -1;
-  }
+  for (unsigned index = 0; index < count; index++) {
+    if (fprintf(file, "%s = ", tab->name) < 0) {
+      return -1;
+    }
 
-  if (fprintf(file, "\n") < 0) {
-    return -1;
+    if (config_print(mod, tab, index, file)) {
+      return -1;
+    }
+
+    if (fprintf(file, "\n") < 0) {
+      return -1;
+    }
   }
 
   return 0;

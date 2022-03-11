@@ -190,18 +190,37 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   if ((err = cmd_arg_str(argc, argv, 2, &name))) {
     return err;
   }
-  if ((err = cmd_arg_str(argc, argv, 3, &value))) {
-    return err;
-  }
 
   if (config_lookup(config, section, name, &mod, &tab)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_set(mod, tab, value)) {
-    LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
-    return -CMD_ERR_ARGV;
+  if (tab->count) {
+    if (config_clear(mod, tab)) {
+      LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+      return -CMD_ERR_ARGV;
+    }
+
+    for (unsigned index = 0; 3 + index < argc; index++) {
+      if ((err = cmd_arg_str(argc, argv, 3 + index, &value))) {
+        return err;
+      }
+
+      if (config_set(mod, tab, value)) {
+        LOG_ERROR("Invalid config %s.%s value[%u]: %s", mod->name, tab->name, index, value);
+        return -CMD_ERR_ARGV;
+      }
+    }
+  } else {
+    if ((err = cmd_arg_str(argc, argv, 3, &value))) {
+      return err;
+    }
+
+    if (config_set(mod, tab, value)) {
+      LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
+      return -CMD_ERR_ARGV;
+    }
   }
 
   if (config_save(config)) {
@@ -259,10 +278,10 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
-  { "show",              config_cmd_show,   .usage = "[SECTION]",           .describe = "Show config settings"  },
-  { "get",               config_cmd_get,    .usage = "SECTION NAME",        .describe = "Get config setting"    },
-  { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE",  .describe = "Set and write config"  },
-  { "clear",             config_cmd_clear,  .usage = "SECTION NAME",        .describe = "Clear and write config"  },
-  { "reset",             config_cmd_reset,                                  .describe = "Remove stored config and reset to defaults" },
+  { "show",              config_cmd_show,   .usage = "[SECTION]",                       .describe = "Show config settings"  },
+  { "get",               config_cmd_get,    .usage = "SECTION NAME",                    .describe = "Get config setting"    },
+  { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set and write config"  },
+  { "clear",             config_cmd_clear,  .usage = "SECTION NAME",                    .describe = "Clear and write config"  },
+  { "reset",             config_cmd_reset,                                              .describe = "Remove stored config and reset to defaults" },
   {}
 };

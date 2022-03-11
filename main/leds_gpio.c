@@ -37,16 +37,18 @@
       enabled = true;
       interfaces_enabled[interface] = true;
 
-      LOG_INFO("leds%d: gpio[%s] mode=%s pin=%d", i + 1,
-        config_enum_to_string(leds_interface_enum, interface) ?: "?",
-        config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode) ?: "?",
-        config->gpio_pin
-      );
+      for (unsigned i = 0; i < config->gpio_count; i++) {
+        LOG_INFO("leds%d: gpio[%s] mode=%s pin[%u]=%d", i + 1,
+          config_enum_to_string(leds_interface_enum, interface) ?: "?",
+          config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode) ?: "?",
+          i, config->gpio_pin[i]
+        );
 
-      leds_gpio_out[interface].pins |= gpio_out_pin(config->gpio_pin);
+        leds_gpio_out[interface].pins |= gpio_out_pin(config->gpio_pin[i]);
 
-      if (config->gpio_mode == LEDS_GPIO_MODE_LOW) {
-        leds_gpio_out[interface].inverted |= gpio_out_pin(config->gpio_pin);
+        if (config->gpio_mode == LEDS_GPIO_MODE_LOW) {
+          leds_gpio_out[interface].inverted |= gpio_out_pin(config->gpio_pin[i]);
+        }
       }
     }
 
@@ -77,14 +79,18 @@
 
   int config_leds_gpio(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
   {
-    LOG_INFO("leds%d: gpio[%s] mode=%s pin=%d", state->index + 1,
-      config_enum_to_string(leds_interface_enum, options->interface),
-      config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode),
-      config->gpio_pin
-    );
-
     options->gpio_out = &leds_gpio_out[options->interface];
-    options->gpio_out_pins = gpio_out_pin(config->gpio_pin);
+    options->gpio_out_pins = 0;
+
+    for (unsigned i = 0; i < config->gpio_count; i++) {
+      LOG_INFO("leds%d: gpio[%s] mode=%s pin[%u]=%d", state->index + 1,
+        config_enum_to_string(leds_interface_enum, options->interface),
+        config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode),
+        i, config->gpio_pin[i]
+      );
+
+      options->gpio_out_pins |= gpio_out_pin(config->gpio_pin[i]);
+    }
 
     return 0;
   }

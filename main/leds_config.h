@@ -8,6 +8,8 @@
 struct leds_state *state;
 
 #if CONFIG_LEDS_GPIO_ENABLED
+  #define LEDS_GPIO_SIZE 4
+
   enum leds_gpio_mode {
     LEDS_GPIO_MODE_DISABLED = -1,
     LEDS_GPIO_MODE_LOW      = 0,
@@ -104,7 +106,8 @@ struct leds_config {
 
 #if CONFIG_LEDS_GPIO_ENABLED
   int gpio_mode;
-  uint16_t gpio_pin;
+  uint16_t gpio_pin[LEDS_GPIO_SIZE];
+  unsigned gpio_count;
 #endif
 
   bool test_enabled;

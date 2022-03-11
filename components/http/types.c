@@ -1,5 +1,6 @@
 #include "http/http_types.h"
 
+#include <string.h>
 #include <strings.h>
 
 const char *http_version_str (enum http_version version)
@@ -40,22 +41,31 @@ const char *http_status_str (enum http_status status)
     }
 }
 
-enum http_content_type http_content_type_parse (const char *value)
+static const struct http_content_types {
+  const char *name;
+  enum http_content_type value;
+} http_content_types[] = {
+  { "text/plain",                         HTTP_CONTENT_TYPE_TEXT_PLAIN                          },
+  { "text/html",                          HTTP_CONTENT_TYPE_TEXT_HTML                           },
+  { "application/x-www-form-urlencoded",  HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED   },
+  { "application/json",                   HTTP_CONTENT_TYPE_APPLICATION_JSON                    },
+  {}
+};
+
+enum http_content_type http_content_type_parse (const char *name)
 {
-  if (strcasecmp(value, "text/plain") == 0) {
-      return HTTP_CONTENT_TYPE_TEXT_PLAIN;
-  }
+  const char *sep = strchr(name, ';'); // ignore any `;charset=...` parameter
 
-  if (strcasecmp(value, "text/html") == 0) {
-      return HTTP_CONTENT_TYPE_TEXT_HTML;
-  }
-
-  if (strcasecmp(value, "application/x-www-form-urlencoded") == 0) {
-      return HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED;
-  }
-
-  if (strcasecmp(value, "application/json") == 0) {
-      return HTTP_CONTENT_TYPE_APPLICATION_JSON;
+  for (const struct http_content_types *ct = http_content_types; ct->name; ct++) {
+    if (sep) {
+      if (strncasecmp(name, ct->name, (sep - name)) == 0) {
+        return ct->value;
+      }
+    } else {
+      if (strcasecmp(name, ct->name) == 0) {
+        return ct->value;
+      }
+    }
   }
 
   return HTTP_CONTENT_TYPE_UNKNOWN;

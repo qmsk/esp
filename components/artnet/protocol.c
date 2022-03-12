@@ -103,7 +103,7 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
         LOG_WARN("skip output port=%d index=%u", output->options.port, output->options.index);
         continue;
       } else if (output->options.port >= num_ports) {
-        num_ports = output->options.port;
+        num_ports = output->options.port + 1;
       }
 
       reply->port_types[output->options.port] |= ARTNET_PORT_TYPE_OUTPUT;

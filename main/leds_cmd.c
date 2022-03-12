@@ -256,6 +256,8 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   print_stats_timer("artnet", "test",   &leds_stats_artnet_test);
   print_stats_timer("artnet", "set",    &leds_stats_artnet_set);
   print_stats_timer("artnet", "update", &leds_stats_artnet_update);
+  printf("\n");
+  print_stats_counter("artnet", "timeout", &leds_stats_artnet_timeout);
 
   return 0;
 }

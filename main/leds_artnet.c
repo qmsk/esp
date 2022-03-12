@@ -23,12 +23,9 @@ static bool leds_artnet_test_active(struct leds_artnet_test *test)
 }
 
 /* Return number of ticks to wait for next test frame, or portMAX_DELAY if not in test mode */
-static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test)
+static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test, const struct leds_config *config)
 {
-  if (!test->frame_tick) {
-    // not in test mode
-    return portMAX_DELAY;
-  } else {
+  if (test->frame_tick) {
     TickType_t tick = xTaskGetTickCount();
 
     if (test->frame_tick > tick) {
@@ -38,6 +35,12 @@ static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test)
       // catchup
       return 0;
     }
+  } else if (config->artnet_dmx_timeout) {
+    // use loss-of-signal timeout
+    return config->artnet_dmx_timeout / portTICK_PERIOD_MS;
+  } else {
+    // not in test mode
+    return portMAX_DELAY;
   }
 }
 
@@ -123,9 +126,18 @@ static void leds_artnet_set(struct leds_state *state, unsigned index, struct art
   leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
 }
 
+static void leds_artnet_clear(struct leds_state *state)
+{
+  struct leds_color color = {}; // all off
+
+  if (leds_set_all(state->leds, color)) {
+    LOG_WARN("leds_set_all");
+  }
+}
+
 static uint32_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
 {
-  TickType_t wait_ticks = leds_artnet_wait_ticks(test_state);
+  TickType_t wait_ticks = leds_artnet_wait_ticks(test_state, state->config);
 
   LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
 
@@ -149,7 +161,7 @@ static void leds_artnet_main(void *ctx)
     loop_sample = stats_timer_start(&leds_stats_artnet_loop);
 
     // start/stop test mode
-    bool unsync = false, sync = false, test = false;
+    bool unsync = false, sync = false, test = false, clear = false;
 
     if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
       sync = true;
@@ -169,6 +181,16 @@ static void leds_artnet_main(void *ctx)
       }
 
       test = true;
+    } else if (state->config->artnet_dmx_timeout && !notify_bits) {
+      LOG_DEBUG("leds%d: timeout", state->index + 1);
+
+      stats_counter_increment(&leds_stats_artnet_timeout);
+
+      WITH_STATS_TIMER(&leds_stats_artnet_set) {
+        leds_artnet_clear(state);
+      }
+
+      clear = true;
     }
 
     // set output from artnet universe
@@ -193,7 +215,7 @@ static void leds_artnet_main(void *ctx)
     }
 
     // tx output if required
-    if (unsync || sync || test) {
+    if (unsync || sync || test || clear) {
       WITH_STATS_TIMER(&leds_stats_artnet_update) {
         if (update_leds(state)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);

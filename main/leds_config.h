@@ -118,6 +118,7 @@ struct leds_config {
   uint16_t artnet_universe_step;
   uint16_t artnet_dmx_addr;
   uint16_t artnet_dmx_leds;
+  uint16_t artnet_dmx_timeout;
   int artnet_leds_format;
   uint16_t artnet_leds_segment;
 };

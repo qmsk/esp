@@ -111,7 +111,7 @@ int leds_protocol_apa102_tx(union leds_interface_state *interface, struct leds_p
   }
 }
 
-void leds_protocol_apa102_set_frame(struct leds_protocol_apa102 *protocol, unsigned index, struct spi_led_color color)
+void leds_protocol_apa102_set_frame(struct leds_protocol_apa102 *protocol, unsigned index, struct leds_color color)
 {
   protocol->packet->frames[index] = (struct apa102_frame) {
     .global = APA102_GLOBAL_BYTE(color.dimmer),
@@ -121,7 +121,7 @@ void leds_protocol_apa102_set_frame(struct leds_protocol_apa102 *protocol, unsig
   };
 }
 
-void leds_protocol_apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct spi_led_color color)
+void leds_protocol_apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct leds_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->packet->frames[index] = (struct apa102_frame) {

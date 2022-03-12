@@ -78,7 +78,7 @@ struct leds_api_req {
   struct leds_state *state;
 };
 
-int leds_api_color_parse(struct spi_led_color *color, enum leds_protocol protocol, const char *value)
+int leds_api_color_parse(struct leds_color *color, enum leds_protocol protocol, const char *value)
 {
   int rgb;
   int parameter = leds_default_color_parameter_for_protocol(protocol);
@@ -107,7 +107,7 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
 {
   struct leds *leds = NULL;
   enum leds_protocol protocol = 0;
-  struct spi_led_color color;
+  struct leds_color color;
   unsigned index;
   int ret;
 

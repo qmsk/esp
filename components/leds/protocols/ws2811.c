@@ -38,7 +38,7 @@ int leds_protocol_ws2811_tx(union leds_interface_state *interface, struct leds_p
   }
 }
 
-void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsigned index, struct spi_led_color color)
+void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color)
 {
   protocol->pixels[index] = (union ws2811_pixel) {
     .b = color.b,
@@ -47,7 +47,7 @@ void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsig
   };
 }
 
-void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsigned count, struct spi_led_color color)
+void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsigned count, struct leds_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->pixels[index] = (union ws2811_pixel) {

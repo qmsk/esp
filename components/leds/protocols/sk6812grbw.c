@@ -38,7 +38,7 @@ int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct le
   }
 }
 
-void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct spi_led_color color)
+void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color)
 {
   protocol->pixels[index] = (union sk6812grbw_pixel) {
     .w = color.white,
@@ -48,7 +48,7 @@ void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protoco
   };
 }
 
-void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned count, struct spi_led_color color)
+void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned count, struct leds_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->pixels[index] = (union sk6812grbw_pixel) {

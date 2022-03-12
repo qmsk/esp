@@ -33,7 +33,7 @@ struct leds_protocol_ws2811 {
 int leds_protocol_ws2811_init(union leds_interface_state *interface, struct leds_protocol_ws2811 *protocol, const struct leds_options *options);
 int leds_protocol_ws2811_tx(union leds_interface_state *interface, struct leds_protocol_ws2811 *protocol, const struct leds_options *options);
 
-void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsigned index, struct spi_led_color color);
-void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsigned count, struct spi_led_color color);
+void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color);
+void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsigned count, struct leds_color color);
 
 unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol, unsigned count);

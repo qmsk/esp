@@ -12,7 +12,7 @@
 #define TEST_MODE_COLOR_FRAMES 25
 #define TEST_MODE_CHASE_FRAMES 2
 
-int leds_test_chase_frame(struct leds *leds, unsigned frame, struct spi_led_color color)
+int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color color)
 {
   int err;
 
@@ -30,7 +30,7 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct spi_led_colo
   }
 
   // black
-  if ((err = leds_set_all(leds, (struct spi_led_color){ }))) {
+  if ((err = leds_set_all(leds, (struct leds_color){ }))) {
     return err;
   }
 
@@ -45,7 +45,7 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct spi_led_colo
   return TEST_FRAME_TICKS * TEST_MODE_CHASE_FRAMES;
 }
 
-int leds_test_color_frame(struct leds *leds, unsigned frame, struct spi_led_color color)
+int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color color)
 {
   int err;
 
@@ -78,7 +78,7 @@ int leds_test_black_frame(struct leds *leds, unsigned frame)
   int err;
 
   // black
-  if ((err = leds_set_all(leds, (struct spi_led_color){ }))) {
+  if ((err = leds_set_all(leds, (struct leds_color){ }))) {
     return err;
   }
 
@@ -95,55 +95,55 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
       return leds_test_black_frame(leds, frame);
 
     case TEST_MODE_CHASE:
-      return leds_test_chase_frame(leds, frame, (struct spi_led_color){
+      return leds_test_chase_frame(leds, frame, (struct leds_color){
         .r = 255,
         .g = 255,
         .b = 255,
       });
 
     case TEST_MODE_BLACK_RED:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = (255 * frame / TEST_MODE_COLOR_FRAMES),
       });
 
     case TEST_MODE_RED_YELLOW:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = 255,
         .g = (255 * frame / TEST_MODE_COLOR_FRAMES),
       });
 
     case TEST_MODE_YELLOW_GREEN:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
         .g = 255,
       });
 
     case TEST_MODE_GREEN_CYAN:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .g = 255,
         .b = (255 * frame / TEST_MODE_COLOR_FRAMES)
       });
 
     case TEST_MODE_CYAN_BLUE:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .g = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
         .b = 255,
       });
 
     case TEST_MODE_BLUE_MAGENTA:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .b = 255,
         .r = (255 * frame / TEST_MODE_COLOR_FRAMES),
       });
 
     case TEST_MODE_MAGENTA_RED:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = 255,
         .b = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
       });
 
     case TEST_MODE_RED_BLACK:
-      return leds_test_color_frame(leds, frame, (struct spi_led_color){
+      return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
       });
 

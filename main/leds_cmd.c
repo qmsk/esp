@@ -57,7 +57,7 @@ static int lookup_leds(unsigned index, const struct leds_config **configp, struc
 
 int leds_cmd_clear(int argc, char **argv, void *ctx)
 {
-  struct spi_led_color spi_led_color = { }; // off
+  struct leds_color leds_color = { }; // off
   int err;
 
   for (int i = 0; i < LEDS_COUNT; i++) {
@@ -68,7 +68,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       continue;
     }
 
-    if ((err = leds_set_all(state->leds, spi_led_color))) {
+    if ((err = leds_set_all(state->leds, leds_color))) {
       LOG_ERROR("leds_set_all");
       return err;
     }
@@ -94,7 +94,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
   if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
     return err;
 
-  struct spi_led_color spi_led_color = {
+  struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
     .b = (rgb >>  0) & 0xFF,
@@ -113,15 +113,15 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
         break;
 
       case LEDS_COLOR_DIMMER:
-        spi_led_color.dimmer = a;
+        leds_color.dimmer = a;
         break;
 
       case LEDS_COLOR_WHITE:
-        spi_led_color.white = w;
+        leds_color.white = w;
         break;
     }
 
-    if ((err = leds_set_all(state->leds, spi_led_color))) {
+    if ((err = leds_set_all(state->leds, leds_color))) {
       LOG_ERROR("leds_set_all");
       return err;
     }
@@ -158,7 +158,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  struct spi_led_color spi_led_color = {
+  struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
     .b = (rgb >>  0) & 0xFF,
@@ -169,15 +169,15 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
       break;
 
     case LEDS_COLOR_DIMMER:
-      spi_led_color.dimmer = a;
+      leds_color.dimmer = a;
       break;
 
     case LEDS_COLOR_WHITE:
-      spi_led_color.white = w;
+      leds_color.white = w;
       break;
   }
 
-  if ((err = leds_set(state->leds, index, spi_led_color))) {
+  if ((err = leds_set(state->leds, index, leds_color))) {
     LOG_ERROR("leds_set");
     return err;
   }

@@ -111,7 +111,7 @@ int leds_protocol_p9813_tx(union leds_interface_state *interface, struct leds_pr
   }
 }
 
-void leds_protocol_p9813_set_frame(struct leds_protocol_p9813 *protocol, unsigned index, struct spi_led_color color)
+void leds_protocol_p9813_set_frame(struct leds_protocol_p9813 *protocol, unsigned index, struct leds_color color)
 {
   protocol->packet->frames[index] = (struct p9813_frame) {
     .control = P9813_CONTROL_BYTE(color.b, color.g, color.r),
@@ -121,7 +121,7 @@ void leds_protocol_p9813_set_frame(struct leds_protocol_p9813 *protocol, unsigne
   };
 }
 
-void leds_protocol_p9813_set_frames(struct leds_protocol_p9813 *protocol, unsigned count, struct spi_led_color color)
+void leds_protocol_p9813_set_frames(struct leds_protocol_p9813 *protocol, unsigned count, struct leds_color color)
 {
   for (unsigned index = 0; index < count; index++) {
     protocol->packet->frames[index] = (struct p9813_frame) {

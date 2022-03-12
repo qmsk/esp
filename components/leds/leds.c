@@ -116,7 +116,7 @@ uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
   }
 }
 
-static inline bool spi_led_color_active (struct spi_led_color color)
+static inline bool leds_color_active (struct leds_color color)
 {
   return (color.r) || (color.g) || (color.b);
 }
@@ -228,7 +228,7 @@ unsigned leds_active(struct leds *leds)
   return active;
 }
 
-int leds_set(struct leds *leds, unsigned index, struct spi_led_color color)
+int leds_set(struct leds *leds, unsigned index, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", index, color.parameter, color.r, color.g, color.b);
 
@@ -237,7 +237,7 @@ int leds_set(struct leds *leds, unsigned index, struct spi_led_color color)
     return -1;
   }
 
-  if (spi_led_color_active(color)) {
+  if (leds_color_active(color)) {
     leds->active = true;
   }
 
@@ -268,11 +268,11 @@ int leds_set(struct leds *leds, unsigned index, struct spi_led_color color)
   }
 }
 
-int leds_set_all(struct leds *leds, struct spi_led_color color)
+int leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);
 
-  if (spi_led_color_active(color)) {
+  if (leds_color_active(color)) {
     leds->active = true;
   } else {
     leds->active = 0;

@@ -78,7 +78,7 @@ enum leds_protocol {
   LEDS_PROTOCOL_WS2811          = 5,
 };
 
-/* interpretation of spi_led_color.parameter by protocol */
+/* interpretation of leds_color.parameter by protocol */
 enum leds_color_parameter {
   LEDS_COLOR_NONE         = 0,
   LEDS_COLOR_DIMMER,
@@ -185,7 +185,7 @@ enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol p
  */
 uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol);
 
-struct spi_led_color {
+struct leds_color {
   uint8_t r, g, b;
 
   union {
@@ -230,13 +230,13 @@ unsigned leds_active(struct leds *leds);
  * @param global 5-bit global brightness 0-31
  * @param b, g, r 8-bit RGB value
  */
-int leds_set(struct leds *leds, unsigned index, struct spi_led_color color);
+int leds_set(struct leds *leds, unsigned index, struct leds_color color);
 
 /*
  * @param global 5-bit global brightness 0-31
  * @param b, g, r 8-bit RGB value
  */
-int leds_set_all(struct leds *leds, struct spi_led_color color);
+int leds_set_all(struct leds *leds, struct leds_color color);
 
 /*
  * Decode LED colors from binary data, using given format.

@@ -9,6 +9,7 @@ static void init_output_stats(struct artnet_output_stats *stats)
   stats_counter_init(&stats->dmx_sync);
   stats_counter_init(&stats->seq_skip);
   stats_counter_init(&stats->seq_drop);
+  stats_counter_init(&stats->seq_resync);
   stats_counter_init(&stats->queue_overwrite);
 }
 
@@ -126,6 +127,7 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
   stats->dmx_sync = stats_counter_copy(&output->stats.dmx_sync);
   stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
+  stats->seq_resync = stats_counter_copy(&output->stats.seq_resync);
   stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
 
   return 0;
@@ -152,6 +154,8 @@ static inline uint8_t artnet_seq_next(uint8_t seq)
 
 void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 {
+  TickType_t tick = xTaskGetTickCount();
+
   stats_counter_increment(&output->stats.dmx_recv);
 
   if (dmx->seq == 0 || output->state.seq == 0) {
@@ -164,11 +168,20 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
     // skipped
     stats_counter_increment(&output->stats.seq_skip);
 
+  } else if (output->state.tick < tick && (tick - output->state.tick) > ARTNET_SEQ_TICKS) {
+    LOG_WARN("resync address=%04x seq=%d < %d on timeout", output->options.address, dmx->seq, output->state.seq);
+
+    // timeout, resync to new seq
+    stats_counter_increment(&output->stats.seq_resync);
+
+    // updates new dmx->seq
+
   } else {
     LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, dmx->seq, output->state.seq);
 
     stats_counter_increment(&output->stats.seq_drop);
 
+    // do NOT update output->state.tick, in order to resync on timeout
     return;
   }
 
@@ -178,6 +191,8 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   } else {
     output->state.seq++;
   }
+
+  output->state.tick = tick;
 
   if (dmx->sync_mode) {
       stats_counter_increment(&output->stats.dmx_sync);

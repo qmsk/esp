@@ -101,6 +101,9 @@ struct artnet_input_state {
 };
 
 struct artnet_output_state {
+  /* Last received valid (seq match) packet */
+  TickType_t tick;
+
   /* Last received ArtDmx seq */
   uint8_t seq;
 };

@@ -69,17 +69,19 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   for (int i = 0; i < outputs_size && i < ARTNET_OUTPUT_COUNT; i++) {
     struct artnet_output_options *options = &artnet_output_options[i];
     struct artnet_output_state state;
+    TickType_t tick = xTaskGetTickCount();
 
     if ((err = artnet_get_output_state(artnet, i, &state))) {
       LOG_ERROR("artnet_get_output_state");
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16s[%3u]: seq %3u\n", i,
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16s[%3u]: seq %3u @ %d ticks\n", i,
       options->port, options->index,
       artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
       options->task ? pcTaskGetName(options->task) : "?", options->index,
-      state.seq
+      state.seq,
+      state.tick ? tick - state.tick : 0
     );
   }
 
@@ -150,6 +152,7 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
     print_stats_counter("Seq",    "skipped",    &output_stats.seq_skip);
     print_stats_counter("Seq",    "dropped",    &output_stats.seq_drop);
+    print_stats_counter("Seq",    "resynced",   &output_stats.seq_resync);
     print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);
 
     printf("\n");

@@ -8,6 +8,9 @@
 // 4s timeout for sync mode
 #define ARTNET_SYNC_TICKS (4000 / portTICK_PERIOD_MS)
 
+// 5s timeout for seq
+#define ARTNET_SEQ_TICKS (5000 / portTICK_PERIOD_MS)
+
 #include <artnet.h>
 #include <artnet_stats.h>
 #include "protocol.h"

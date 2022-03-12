@@ -58,7 +58,8 @@ static int artnet_api_write_output_object(struct json_writer *w, const struct ar
     ||  JSON_WRITE_MEMBER_UINT(w, "universe", artnet_address_universe(options->address))
     ||  (options->task ? JSON_WRITE_MEMBER_STRING(w, "task", pcTaskGetName(options->task)) : 0)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
-            JSON_WRITE_MEMBER_UINT(w, "seq", state->seq)
+              JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
+          ||  JSON_WRITE_MEMBER_UINT(w, "seq", state->seq)
         )
   );
 }

@@ -57,6 +57,9 @@ struct artnet_output_stats {
   /* Dropped ArtDMX packets with seq smaller than expected */
   struct stats_counter seq_drop;
 
+  /* Received ArtDMX packets with seq resynced after timeout */
+  struct stats_counter seq_resync;
+
   /* Output queue overflowed, previous packet overwritten */
   struct stats_counter queue_overwrite;
 };

@@ -126,15 +126,6 @@ static void leds_artnet_set(struct leds_state *state, unsigned index, struct art
   leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
 }
 
-static void leds_artnet_clear(struct leds_state *state)
-{
-  struct leds_color color = {}; // all off
-
-  if (leds_set_all(state->leds, color)) {
-    LOG_WARN("leds_set_all");
-  }
-}
-
 static uint32_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
 {
   TickType_t wait_ticks = leds_artnet_wait_ticks(test_state, state->config);
@@ -186,10 +177,6 @@ static void leds_artnet_main(void *ctx)
 
       stats_counter_increment(&leds_stats_artnet_timeout);
 
-      WITH_STATS_TIMER(&leds_stats_artnet_set) {
-        leds_artnet_clear(state);
-      }
-
       clear = true;
     }
 
@@ -215,10 +202,19 @@ static void leds_artnet_main(void *ctx)
     }
 
     // tx output if required
-    if (unsync || sync || test || clear) {
+    if (unsync || sync || test) {
       WITH_STATS_TIMER(&leds_stats_artnet_update) {
         if (update_leds(state)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);
+          continue;
+        }
+      }
+    }
+
+    if (clear) {
+      WITH_STATS_TIMER(&leds_stats_artnet_update) {
+        if (clear_leds(state)) {
+          LOG_WARN("leds%d: clear_leds", state->index + 1);
           continue;
         }
       }

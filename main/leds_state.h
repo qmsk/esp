@@ -38,5 +38,10 @@ extern struct leds_state leds_states[LEDS_COUNT];
 
 int update_leds(struct leds_state *state);
 
+/*
+ * Variant of update_leds() that turns off all LEDs, and does NOT flash the status leds.
+ */
+int clear_leds(struct leds_state *state);
+
 int test_leds_mode(struct leds_state *state, enum leds_test_mode mode);
 int test_leds(struct leds_state *state);

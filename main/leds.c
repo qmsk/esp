@@ -129,16 +129,31 @@ int check_leds_interface(struct leds_state *state)
   }
 }
 
-void update_leds_active(struct leds_state *state, bool force)
+void force_leds_active(struct leds_state *state)
+{
+  state->active = true;
+
+  // wait for power_good before sending first frame
+  wait_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index, LEDS_ATX_PSU_POWER_GOOD_TIMEOUT);
+}
+
+void update_leds_active(struct leds_state *state)
 {
   state->active = leds_active(state->leds);
 
-  if (state->active || force) {
+  if (state->active) {
     // wait for power_good before sending first frame
     wait_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index, LEDS_ATX_PSU_POWER_GOOD_TIMEOUT);
   } else {
     clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
   }
+}
+
+void clear_leds_active(struct leds_state *state)
+{
+  state->active = false;
+
+  clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
 }
 
 int update_leds(struct leds_state *state)
@@ -149,13 +164,37 @@ int update_leds(struct leds_state *state)
     return err;
   }
 
-  update_leds_active(state, false);
+  update_leds_active(state);
   user_activity(USER_ACTIVITY_LEDS);
 
   if ((err = leds_tx(state->leds))) {
     LOG_ERROR("leds_tx");
     return err;
   }
+
+  return 0;
+}
+
+int clear_leds(struct leds_state *state)
+{
+  struct leds_color color = {}; // all off
+  int err;
+
+  if ((err = check_leds_interface(state))) {
+    return err;
+  }
+
+  if ((err = leds_set_all(state->leds, color))) {
+    LOG_ERROR("leds_set_all");
+    return err;
+  }
+
+  if ((err = leds_tx(state->leds))) {
+    LOG_ERROR("leds_tx");
+    return err;
+  }
+
+  clear_leds_active(state);
 
   return 0;
 }
@@ -170,7 +209,7 @@ int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
     return err;
   }
 
-  update_leds_active(state, true);
+  force_leds_active(state);
   user_activity(USER_ACTIVITY_LEDS);
 
   // animate
@@ -196,7 +235,7 @@ int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
   }
 
 error:
-  update_leds_active(state, false);
+  update_leds_active(state);
 
   return err;
 }

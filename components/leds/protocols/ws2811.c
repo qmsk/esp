@@ -13,6 +13,8 @@ int leds_protocol_ws2811_init(union leds_interface_state *interface, struct leds
     return -1;
   }
 
+  protocol->count = options->count;
+
   return 0;
 }
 
@@ -24,12 +26,12 @@ int leds_protocol_ws2811_tx(union leds_interface_state *interface, struct leds_p
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      return leds_tx_uart_ws2811(options, protocol->pixels, options->count);
+      return leds_tx_uart_ws2811(options, protocol->pixels, protocol->count);
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_ws2811(options, protocol->pixels, options->count);
+      return leds_tx_i2s_ws2811(options, protocol->pixels, protocol->count);
   #endif
 
     default:
@@ -38,18 +40,9 @@ int leds_protocol_ws2811_tx(union leds_interface_state *interface, struct leds_p
   }
 }
 
-void leds_protocol_ws2811_set_frame(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color)
+void leds_protocol_ws2811_set(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color)
 {
-  protocol->pixels[index] = (union ws2811_pixel) {
-    .b = color.b,
-    .g = color.g,
-    .r = color.r,
-  };
-}
-
-void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsigned count, struct leds_color color)
-{
-  for (unsigned index = 0; index < count; index++) {
+  if (index < protocol->count) {
     protocol->pixels[index] = (union ws2811_pixel) {
       .b = color.b,
       .g = color.g,
@@ -58,11 +51,22 @@ void leds_protocol_ws2811_set_frames(struct leds_protocol_ws2811 *protocol, unsi
   }
 }
 
-unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol, unsigned count)
+void leds_protocol_ws2811_set_all(struct leds_protocol_ws2811 *protocol, struct leds_color color)
+{
+  for (unsigned index = 0; index < protocol->count; index++) {
+    protocol->pixels[index] = (union ws2811_pixel) {
+      .b = color.b,
+      .g = color.g,
+      .r = color.r,
+    };
+  }
+}
+
+unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol)
 {
   unsigned active = 0;
 
-  for (unsigned index = 0; index < count; index++) {
+  for (unsigned index = 0; index < protocol->count; index++) {
     if (ws2811_pixel_active(protocol->pixels[index])) {
       active++;
     }
@@ -71,11 +75,11 @@ unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol
   return active;
 }
 
-unsigned leds_protocol_ws2811_count_total(struct leds_protocol_ws2811 *protocol, unsigned count)
+unsigned leds_protocol_ws2811_count_total(struct leds_protocol_ws2811 *protocol)
 {
   unsigned total = 0;
 
-  for (unsigned index = 0; index < count; index++) {
+  for (unsigned index = 0; index < protocol->count; index++) {
     total += ws2811_pixel_total(protocol->pixels[index]);
   }
 

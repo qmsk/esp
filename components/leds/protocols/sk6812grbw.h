@@ -45,13 +45,14 @@ static inline union sk6812grbw_pixel sk6812grbw_pixel_limit(const union sk6812gr
 
 struct leds_protocol_sk6812grbw {
   union sk6812grbw_pixel *pixels;
+  unsigned count;
 };
 
 int leds_protocol_sk6812grbw_init(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options);
 int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options);
 
-void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color);
-void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned count, struct leds_color color);
+void leds_protocol_sk6812grbw_set(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color);
+void leds_protocol_sk6812grbw_set_all(struct leds_protocol_sk6812grbw *protocol, struct leds_color color);
 
-unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol, unsigned count);
-unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol, unsigned count);
+unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol);
+unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol);

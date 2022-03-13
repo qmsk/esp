@@ -13,6 +13,8 @@ int leds_protocol_sk6812grbw_init(union leds_interface_state *interface, struct 
     return -1;
   }
 
+  protocol->count = options->count;
+
   return 0;
 }
 
@@ -24,12 +26,12 @@ int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct le
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      return leds_tx_uart_sk6812grbw(options, protocol->pixels, options->count);
+      return leds_tx_uart_sk6812grbw(options, protocol->pixels, protocol->count);
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_sk6812grbw(options, protocol->pixels, options->count);
+      return leds_tx_i2s_sk6812grbw(options, protocol->pixels, protocol->count);
   #endif
 
     default:
@@ -38,19 +40,9 @@ int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct le
   }
 }
 
-void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color)
+void leds_protocol_sk6812grbw_set(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color)
 {
-  protocol->pixels[index] = (union sk6812grbw_pixel) {
-    .w = color.white,
-    .b = color.b,
-    .r = color.r,
-    .g = color.g,
-  };
-}
-
-void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned count, struct leds_color color)
-{
-  for (unsigned index = 0; index < count; index++) {
+  if (index < protocol->count) {
     protocol->pixels[index] = (union sk6812grbw_pixel) {
       .w = color.white,
       .b = color.b,
@@ -60,11 +52,23 @@ void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protoc
   }
 }
 
-unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol, unsigned count)
+void leds_protocol_sk6812grbw_set_all(struct leds_protocol_sk6812grbw *protocol, struct leds_color color)
+{
+  for (unsigned index = 0; index < protocol->count; index++) {
+    protocol->pixels[index] = (union sk6812grbw_pixel) {
+      .w = color.white,
+      .b = color.b,
+      .r = color.r,
+      .g = color.g,
+    };
+  }
+}
+
+unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol)
 {
   unsigned active = 0;
 
-  for (unsigned index = 0; index < count; index++) {
+  for (unsigned index = 0; index < protocol->count; index++) {
     if (sk6812grbw_pixel_active(protocol->pixels[index])) {
       active++;
     }
@@ -73,7 +77,7 @@ unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *
   return active;
 }
 
-unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol, unsigned count)
+unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol)
 {
   unsigned total = 0;
 

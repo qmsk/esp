@@ -196,23 +196,23 @@ unsigned leds_active(struct leds *leds)
   if (leds->active) {
     switch(leds->options.protocol) {
       case LEDS_PROTOCOL_APA102:
-        active = leds_protocol_apa102_count_active(&leds->state.apa102, leds->options.count);
+        active = leds_protocol_apa102_count_active(&leds->state.apa102);
         break;
 
       case LEDS_PROTOCOL_P9813:
-        active = leds_protocol_p9813_count_active(&leds->state.p9813, leds->options.count);
+        active = leds_protocol_p9813_count_active(&leds->state.p9813);
         break;
 
       case LEDS_PROTOCOL_WS2812B:
-        active = leds_protocol_ws2812b_count_active(&leds->state.ws2812b, leds->options.count);
+        active = leds_protocol_ws2812b_count_active(&leds->state.ws2812b);
         break;
 
       case LEDS_PROTOCOL_SK6812_GRBW:
-        active = leds_protocol_sk6812grbw_count_active(&leds->state.sk6812grbw, leds->options.count);
+        active = leds_protocol_sk6812grbw_count_active(&leds->state.sk6812grbw);
         break;
 
       case LEDS_PROTOCOL_WS2811:
-        active = leds_protocol_ws2811_count_active(&leds->state.ws2811, leds->options.count);
+        active = leds_protocol_ws2811_count_active(&leds->state.ws2811);
         break;
 
       default:
@@ -243,23 +243,23 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
 
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
-      leds_protocol_apa102_set_frame(&leds->state.apa102, index, color);
+      leds_protocol_apa102_set(&leds->state.apa102, index, color);
       return 0;
 
     case LEDS_PROTOCOL_P9813:
-      leds_protocol_p9813_set_frame(&leds->state.p9813, index, color);
+      leds_protocol_p9813_set(&leds->state.p9813, index, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:
-      leds_protocol_ws2812b_set_frame(&leds->state.ws2812b, index, color);
+      leds_protocol_ws2812b_set(&leds->state.ws2812b, index, color);
       return 0;
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      leds_protocol_sk6812grbw_set_frame(&leds->state.sk6812grbw, index, color);
+      leds_protocol_sk6812grbw_set(&leds->state.sk6812grbw, index, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2811:
-      leds_protocol_ws2811_set_frame(&leds->state.ws2811, index, color);
+      leds_protocol_ws2811_set(&leds->state.ws2811, index, color);
       return 0;
 
     default:
@@ -280,23 +280,23 @@ int leds_set_all(struct leds *leds, struct leds_color color)
 
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
-      leds_protocol_apa102_set_frames(&leds->state.apa102, leds->options.count, color);
+      leds_protocol_apa102_set_all(&leds->state.apa102, color);
       return 0;
 
     case LEDS_PROTOCOL_P9813:
-      leds_protocol_p9813_set_frames(&leds->state.p9813, leds->options.count, color);
+      leds_protocol_p9813_set_all(&leds->state.p9813, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2812B:
-      leds_protocol_ws2812b_set_frames(&leds->state.ws2812b, leds->options.count, color);
+      leds_protocol_ws2812b_set_all(&leds->state.ws2812b, color);
       return 0;
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      leds_protocol_sk6812grbw_set_frames(&leds->state.sk6812grbw, leds->options.count, color);
+      leds_protocol_sk6812grbw_set_all(&leds->state.sk6812grbw, color);
       return 0;
 
     case LEDS_PROTOCOL_WS2811:
-      leds_protocol_ws2811_set_frames(&leds->state.ws2811, leds->options.count, color);
+      leds_protocol_ws2811_set_all(&leds->state.ws2811, color);
       return 0;
 
     default:

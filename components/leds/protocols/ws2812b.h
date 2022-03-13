@@ -45,13 +45,14 @@ static inline union ws2812b_pixel ws2812b_pixel_limit(const union ws2812b_pixel 
 
 struct leds_protocol_ws2812b {
   union ws2812b_pixel *pixels;
+  unsigned count;
 };
 
 int leds_protocol_ws2812b_init(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options);
 int leds_protocol_ws2812b_tx(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options);
 
-void leds_protocol_ws2812b_set_frame(struct leds_protocol_ws2812b *protocol, unsigned index, struct leds_color color);
-void leds_protocol_ws2812b_set_frames(struct leds_protocol_ws2812b *protocol, unsigned count, struct leds_color color);
+void leds_protocol_ws2812b_set(struct leds_protocol_ws2812b *protocol, unsigned index, struct leds_color color);
+void leds_protocol_ws2812b_set_all(struct leds_protocol_ws2812b *protocol, struct leds_color color);
 
-unsigned leds_protocol_ws2812b_count_active(struct leds_protocol_ws2812b *protocol, unsigned count);
-unsigned leds_protocol_ws2812b_count_total(struct leds_protocol_ws2812b *protocol, unsigned count);
+unsigned leds_protocol_ws2812b_count_active(struct leds_protocol_ws2812b *protocol);
+unsigned leds_protocol_ws2812b_count_total(struct leds_protocol_ws2812b *protocol);

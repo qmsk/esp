@@ -107,8 +107,9 @@ int leds_protocol_apa102_init(union leds_interface_state *interface, struct leds
 
   protocol->packet = buf;
   protocol->packet_size = size;
+  protocol->count = options->count;
 
-  apa102_packet_init(protocol->packet, options->count);
+  apa102_packet_init(protocol->packet, protocol->count);
 
   return 0;
 }
@@ -130,19 +131,9 @@ int leds_protocol_apa102_tx(union leds_interface_state *interface, struct leds_p
   }
 }
 
-void leds_protocol_apa102_set_frame(struct leds_protocol_apa102 *protocol, unsigned index, struct leds_color color)
+void leds_protocol_apa102_set(struct leds_protocol_apa102 *protocol, unsigned index, struct leds_color color)
 {
-  protocol->packet->frames[index] = (struct apa102_frame) {
-    .global = APA102_GLOBAL_BYTE(color.dimmer),
-    .b = color.b,
-    .g = color.g,
-    .r = color.r,
-  };
-}
-
-void leds_protocol_apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct leds_color color)
-{
-  for (unsigned index = 0; index < count; index++) {
+  if (index < protocol->count) {
     protocol->packet->frames[index] = (struct apa102_frame) {
       .global = APA102_GLOBAL_BYTE(color.dimmer),
       .b = color.b,
@@ -152,11 +143,23 @@ void leds_protocol_apa102_set_frames(struct leds_protocol_apa102 *protocol, unsi
   }
 }
 
-unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol, unsigned count)
+void leds_protocol_apa102_set_all(struct leds_protocol_apa102 *protocol, struct leds_color color)
+{
+  for (unsigned index = 0; index < protocol->count; index++) {
+    protocol->packet->frames[index] = (struct apa102_frame) {
+      .global = APA102_GLOBAL_BYTE(color.dimmer),
+      .b = color.b,
+      .g = color.g,
+      .r = color.r,
+    };
+  }
+}
+
+unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol)
 {
   unsigned active = 0;
 
-  for (unsigned index = 0; index < count; index++) {
+  for (unsigned index = 0; index < protocol->count; index++) {
     if (apa102_frame_active(protocol->packet->frames[index])) {
       active++;
     }
@@ -165,11 +168,11 @@ unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol
   return active;
 }
 
-unsigned leds_protocol_apa102_count_total(struct leds_protocol_apa102 *protocol, unsigned count)
+unsigned leds_protocol_apa102_count_total(struct leds_protocol_apa102 *protocol)
 {
   unsigned total = 0;
 
-  for (unsigned index = 0; index < count; index++) {
+  for (unsigned index = 0; index < protocol->count; index++) {
     total += apa102_frame_total(protocol->packet->frames[index]);
   }
 

@@ -156,50 +156,52 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
     options.count
   );
 
-#if CONFIG_LEDS_GPIO_ENABLED
-  switch(config->gpio_mode) {
-    case LEDS_GPIO_MODE_DISABLED:
-      break;
-
-    case LEDS_GPIO_MODE_LOW:
-    case LEDS_GPIO_MODE_HIGH:
-      if ((err = config_leds_gpio(state, config, &options))) {
-        LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
-        return err;
-      }
-      break;
-
-  }
-#endif
-
   switch(options.interface) {
     case LEDS_INTERFACE_NONE:
       break;
 
   #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
-      if ((err = config_leds_spi(state, config, &options))) {
+      if ((err = config_leds_spi(state, config, &options.spi))) {
         LOG_ERROR("leds%d: config_leds_spi", state->index + 1);
         return err;
       }
+
+      if ((err = config_leds_gpio(state, config, LEDS_INTERFACE_SPI, &options.spi.gpio))) {
+        LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
+        return err;
+      }
+
       break;
   #endif
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      if ((err = config_leds_uart(state, config, &options))) {
+      if ((err = config_leds_uart(state, config, &options.uart))) {
         LOG_ERROR("leds%d: config_leds_uart", state->index + 1);
         return err;
       }
+
+      if ((err = config_leds_gpio(state, config, LEDS_INTERFACE_UART, &options.uart.gpio))) {
+        LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
+        return err;
+      }
+
       break;
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      if ((err = config_leds_i2s(state, config, &options))) {
+      if ((err = config_leds_i2s(state, config, &options.i2s))) {
         LOG_ERROR("leds%d: config_leds_i2s", state->index + 1);
         return err;
       }
+
+      if ((err = config_leds_gpio(state, config, LEDS_INTERFACE_I2S, &options.i2s.gpio))) {
+        LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
+        return err;
+      }
+
       break;
   #endif
 

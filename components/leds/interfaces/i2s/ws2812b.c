@@ -36,7 +36,7 @@ static const uint16_t ws2812b_lut[] = {
   [0b1111] = WS2812B_LUT(0b1111),
 };
 
-int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel *pixels, unsigned count)
+int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count)
 {
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit
@@ -50,10 +50,10 @@ int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel 
     .eof_count    = 8,
 
     // shared IO pins
-    .pin_mutex    = options->i2s_pin_mutex,
-    .pin_timeout  = options->i2s_pin_timeout,
+    .pin_mutex    = options->pin_mutex,
+    .pin_timeout  = options->pin_timeout,
 #if LEDS_I2S_GPIO_PIN_ENABLED
-    .data_gpio    = options->i2s_gpio_pin,
+    .data_gpio    = options->gpio_pin,
 #endif
   };
   uint16_t buf[6];
@@ -65,8 +65,8 @@ int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel 
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio_out) {
-    gpio_out_set(options->gpio_out, options->gpio_out_pins);
+  if (options->gpio.gpio_out) {
+    gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
   }
 #endif
 
@@ -93,8 +93,8 @@ int leds_tx_i2s_ws2812b(const struct leds_options *options, union ws2812b_pixel 
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio_out) {
-    gpio_out_clear(options->gpio_out);
+  if (options->gpio.gpio_out) {
+    gpio_out_clear(options->gpio.gpio_out);
   }
 #endif
 

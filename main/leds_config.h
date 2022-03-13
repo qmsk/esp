@@ -135,17 +135,17 @@ extern const struct config_enum leds_color_parameter_enum[];
 int config_leds(struct leds_state *state, const struct leds_config *config);
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  int config_leds_gpio(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+  int config_leds_gpio(struct leds_state *state, const struct leds_config *config, enum leds_interface interface, struct leds_interface_options_gpio *options);
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED
-  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_interface_spi_options *options);
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED
-  int config_leds_uart(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+  int config_leds_uart(struct leds_state *state, const struct leds_config *config, struct leds_interface_uart_options *options);
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
-  int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_options *options);
+  int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_interface_i2s_options *options);
 #endif

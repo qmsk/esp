@@ -28,5 +28,5 @@
 
 #endif
 
-int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_options *options, void **bufp, size_t buf_size, int spi_mode);
-int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_options *options, void *buf, size_t size);
+int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void **bufp, size_t buf_size, int spi_mode);
+int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void *buf, size_t size);

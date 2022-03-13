@@ -90,7 +90,7 @@ const struct configtab leds_spi_configtab[] = {
     return 0;
   }
 
-  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
+  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_interface_spi_options *options)
   {
     if (!leds_spi_master) {
       LOG_ERROR("leds%d: spi master not initialized", state->index + 1);
@@ -98,15 +98,15 @@ const struct configtab leds_spi_configtab[] = {
     }
 
     options->spi_master = leds_spi_master;
-    options->spi_clock = config->spi_clock;
+    options->clock = config->spi_clock;
 
     if (config->spi_delay) {
-      options->spi_mode_bits |= (config->spi_delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
+      options->mode_bits |= (config->spi_delay << SPI_MODE_MOSI_DELAY_SHIFT) & SPI_MODE_MOSI_DELAY_MASK;
     }
 
     LOG_INFO("leds%d: spi spi_mode_bits=%04x spi_clock=%u", state->index + 1,
-      options->spi_mode_bits,
-      options->spi_clock
+      options->mode_bits,
+      options->clock
     );
 
     return 0;

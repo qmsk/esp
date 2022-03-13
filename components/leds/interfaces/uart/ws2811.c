@@ -65,7 +65,7 @@ static const uint16_t ws2811_lut[] = {
   [0b1111] = WS2811_LUT(0b1111),
 };
 
-int leds_tx_uart_ws2811(const struct leds_options *options, union ws2811_pixel *pixels, unsigned count)
+int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union ws2811_pixel *pixels, unsigned count)
 {
   struct uart_options uart_options = {
     .baud_rate    = UART_BAUD_4000000,
@@ -75,7 +75,7 @@ int leds_tx_uart_ws2811(const struct leds_options *options, union ws2811_pixel *
 
     .tx_inverted  = true,
 
-    .pin_mutex    = options->uart_pin_mutex,
+    .pin_mutex    = options->pin_mutex,
   };
   UBaseType_t task_priority = uxTaskPriorityGet(NULL);
   uint16_t buf[6];
@@ -87,8 +87,8 @@ int leds_tx_uart_ws2811(const struct leds_options *options, union ws2811_pixel *
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio_out) {
-    gpio_out_set(options->gpio_out, options->gpio_out_pins);
+  if (options->gpio.gpio_out) {
+    gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
   }
 #endif
 
@@ -121,8 +121,8 @@ int leds_tx_uart_ws2811(const struct leds_options *options, union ws2811_pixel *
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio_out) {
-    gpio_out_clear(options->gpio_out);
+  if (options->gpio.gpio_out) {
+    gpio_out_clear(options->gpio.gpio_out);
   }
 #endif
 

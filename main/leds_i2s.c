@@ -99,7 +99,7 @@
     return 0;
   }
 
-  int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
+  int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_interface_i2s_options *options)
   {
     const struct leds_i2s_config *i2s_config = &leds_i2s_config;
 
@@ -110,18 +110,18 @@
 
     options->i2s_out = leds_i2s_out;
   #if CONFIG_IDF_TARGET_ESP8266
-    options->i2s_pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
-    options->i2s_pin_timeout = LEDS_I2S_PIN_TIMEOUT;
+    options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
+    options->pin_timeout = LEDS_I2S_PIN_TIMEOUT;
   #elif LEDS_I2S_GPIO_PIN_ENABLED
-    options->i2s_gpio_pin = config->i2s_gpio_pin;
+    options->gpio_pin = config->i2s_gpio_pin;
     // TODO: use i2s_pin_mutex for arbitrary gpio pins?
   #endif
 
     LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p gpio_pin=%d", state->index + 1,
       i2s_config->port,
-      options->i2s_pin_mutex,
+      options->pin_mutex,
     #if LEDS_I2S_GPIO_PIN_ENABLED
-      options->i2s_gpio_pin
+      options->gpio_pin
     #else
       -1
     #endif
@@ -136,7 +136,7 @@
     const struct leds_options *options = leds_options(state->leds);
 
     if (is_console_running()) {
-      if (options->i2s_pin_mutex && !uxSemaphoreGetCount(options->i2s_pin_mutex)) {
+      if (options->i2s.pin_mutex && !uxSemaphoreGetCount(options->i2s.pin_mutex)) {
         LOG_WARN("I2S data pin busy, console running on UART0");
         return 1;
       }

@@ -85,7 +85,7 @@
     return 0;
   }
 
-  int config_leds_uart(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
+  int config_leds_uart(struct leds_state *state, const struct leds_config *config, struct leds_interface_uart_options *options)
   {
     if (!leds_uart) {
       LOG_ERROR("leds%d: uart not initialized", state->index + 1);

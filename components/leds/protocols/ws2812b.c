@@ -27,12 +27,12 @@ int leds_protocol_ws2812b_tx(struct leds_protocol_ws2812b *protocol, union leds_
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      return leds_tx_uart_ws2812b(options, protocol->pixels, protocol->count);
+      return leds_tx_uart_ws2812b(&options->uart, protocol->pixels, protocol->count);
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_ws2812b(options, protocol->pixels, protocol->count);
+      return leds_tx_i2s_ws2812b(&options->i2s, protocol->pixels, protocol->count);
   #endif
 
     default:

@@ -113,7 +113,46 @@ struct leds_format_params {
  */
 enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
+#if CONFIG_LEDS_GPIO_ENABLED
+  struct leds_interface_options_gpio {
+    /**
+     * GPIO used for output multiplexing.
+     * The `gpio_out_pins` will be set before TX start, and cleared after TX end.
+     * Any other `gpio_out->pins` will be cleared.
+     */
+    struct gpio_out *gpio_out;
+
+    enum gpio_out_pins gpio_out_pins;
+  };
+#endif
+
 #if CONFIG_LEDS_SPI_ENABLED
+  struct leds_interface_spi_options {
+  #if CONFIG_LEDS_GPIO_ENABLED
+    struct leds_interface_options_gpio gpio;
+  #endif
+
+  #if CONFIG_IDF_TARGET_ESP8266
+    struct spi_master *spi_master;
+
+    /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
+    enum spi_mode mode_bits;
+
+    enum spi_clock clock;
+  #else
+    spi_host_device_t host;
+
+    /* Hz, divisible by APB_CLK_FREQ */
+    int clock;
+
+    /* GPIO pin */
+    int cs_io; // -1 if not used
+
+    /* GPIO high during TX, default low */
+    bool cs_high;
+  #endif
+  };
+
   /*
    * Returns total SPI data buffer sized required for protocol and count LEDs.
    *
@@ -122,7 +161,35 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
   size_t leds_spi_buffer_for_protocol(enum leds_protocol protocol, unsigned count);
 #endif
 
+#if CONFIG_LEDS_UART_ENABLED
+  struct leds_interface_uart_options {
+  #if CONFIG_LEDS_GPIO_ENABLED
+    struct leds_interface_options_gpio gpio;
+  #endif
+
+    struct uart *uart;
+
+    SemaphoreHandle_t pin_mutex;
+  };
+#endif
+
 #if CONFIG_LEDS_I2S_ENABLED
+  struct leds_interface_i2s_options {
+  #if CONFIG_LEDS_GPIO_ENABLED
+    struct leds_interface_options_gpio gpio;
+  #endif
+
+    struct i2s_out *i2s_out;
+
+    SemaphoreHandle_t pin_mutex;
+
+    TickType_t pin_timeout;
+
+  #if LEDS_I2S_GPIO_PIN_ENABLED
+    gpio_num_t gpio_pin;
+  #endif
+  };
+
   /*
    * Returns total TX buffer sized required for protocol and count LEDs.
    *
@@ -140,44 +207,18 @@ struct leds_options {
   /* Limit number of active LEDs by color. Going over the limit will scale down all LEDs */
   unsigned limit;
 
-#if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
-  /** LEDS_INTERFACE_SPI */
-  struct spi_master *spi_master;
-  enum spi_mode spi_mode_bits; /* Optional SPI mode bits to set in addition to protocol SPI_MODE_{0-4} */
-  enum spi_clock spi_clock;
-#elif CONFIG_LEDS_SPI_ENABLED
-  /** LEDS_INTERFACE_SPI */
-  spi_host_device_t spi_host;
-  int spi_clock; /* Hz, divisible by APB_CLK_FREQ */
-  int spi_cs_io; /* GPIO pin, -1 if not used */
-  bool spi_cs_high; /* GPIO high during TX, default low */
+  /* By interface */
+  union {
+#if CONFIG_LEDS_SPI_ENABLED
+    struct leds_interface_spi_options spi;
 #endif
-
 #if CONFIG_LEDS_UART_ENABLED
-  /** LEDS_INTERFACE_UART */
-  struct uart *uart;
-  SemaphoreHandle_t uart_pin_mutex;
+    struct leds_interface_uart_options uart;
 #endif
-
 #if CONFIG_LEDS_I2S_ENABLED
-  /** LEDS_INTERFACE_I2S */
-  struct i2s_out *i2s_out;
-  SemaphoreHandle_t i2s_pin_mutex;
-  TickType_t i2s_pin_timeout;
-# if LEDS_I2S_GPIO_PIN_ENABLED
-  gpio_num_t i2s_gpio_pin;
-# endif
+    struct leds_interface_i2s_options i2s;
 #endif
-
-#if CONFIG_LEDS_GPIO_ENABLED
-  /**
-   * GPIO used for output multiplexing.
-   * The `gpio_out_pins` will be set before TX start, and cleared after TX end.
-   * Any other `gpio_out->pins` will be cleared.
-   */
-  struct gpio_out *gpio_out;
-  enum gpio_out_pins gpio_out_pins;
-#endif
+  };
 };
 
 /*

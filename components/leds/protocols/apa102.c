@@ -92,7 +92,7 @@ int leds_protocol_apa102_init(struct leds_protocol_apa102 *protocol, union leds_
 
   #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
-      if ((err = leds_interface_spi_init(&interface->spi, options, &buf, size, APA102_SPI_MODE))) {
+      if ((err = leds_interface_spi_init(&interface->spi, &options->spi, &buf, size, APA102_SPI_MODE))) {
         LOG_ERROR("leds_interface_spi_init");
         return err;
       }
@@ -122,7 +122,7 @@ int leds_protocol_apa102_tx(struct leds_protocol_apa102 *protocol, union leds_in
 
   #if CONFIG_LEDS_SPI_ENABLED
     case LEDS_INTERFACE_SPI:
-      return leds_interface_spi_tx(&interface->spi, options, protocol->packet, protocol->packet_size);
+      return leds_interface_spi_tx(&interface->spi, &options->spi, protocol->packet, protocol->packet_size);
   #endif
 
     default:

@@ -77,14 +77,18 @@
     return 0;
   }
 
-  int config_leds_gpio(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
+  int config_leds_gpio(struct leds_state *state, const struct leds_config *config, enum leds_interface interface, struct leds_interface_options_gpio *options)
   {
-    options->gpio_out = &leds_gpio_out[options->interface];
+    if (config->gpio_mode == LEDS_GPIO_MODE_DISABLED) {
+      return 0;
+    }
+
+    options->gpio_out = &leds_gpio_out[interface];
     options->gpio_out_pins = 0;
 
     for (unsigned i = 0; i < config->gpio_count; i++) {
       LOG_INFO("leds%d: gpio[%s] mode=%s pin[%u]=%d", state->index + 1,
-        config_enum_to_string(leds_interface_enum, options->interface),
+        config_enum_to_string(leds_interface_enum, interface),
         config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode),
         i, config->gpio_pin[i]
       );

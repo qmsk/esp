@@ -131,38 +131,38 @@ const struct configtab leds_spi_configtab[] = {
     return 0;
   }
 
-  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_options *options)
+  int config_leds_spi(struct leds_state *state, const struct leds_config *config, struct leds_interface_spi_options *options)
   {
     if (leds_spi_host == -1) {
       LOG_ERROR("leds%d: spi host not initialized", state->index + 1);
       return -1;
     }
 
-    options->spi_host = leds_spi_host;
-    options->spi_clock = config->spi_clock;
+    options->host = leds_spi_host;
+    options->clock = config->spi_clock;
 
     switch ((enum leds_spi_cs_mode)(config->spi_cs_mode)) {
       case LEDS_SPI_CS_MODE_DISABLED:
-        options->spi_cs_io = -1; // disabled
-        options->spi_cs_high = false;
+        options->cs_io = -1; // disabled
+        options->cs_high = false;
         break;
 
       case LEDS_SPI_CS_MODE_LOW:
-        options->spi_cs_io = config->spi_cs_io;
-        options->spi_cs_high = false;
+        options->cs_io = config->spi_cs_io;
+        options->cs_high = false;
         break;
 
       case LEDS_SPI_CS_MODE_HIGH:
-        options->spi_cs_io = config->spi_cs_io;
-        options->spi_cs_high = true;
+        options->cs_io = config->spi_cs_io;
+        options->cs_high = true;
         break;
     }
 
     LOG_INFO("leds%d: spi host=%d clock=%d cs_io=%d cs_high=%d", state->index + 1,
-      options->spi_host,
-      options->spi_clock,
-      options->spi_cs_io,
-      options->spi_cs_high
+      options->host,
+      options->clock,
+      options->cs_io,
+      options->cs_high
     );
 
     return 0;

@@ -6,14 +6,14 @@
 #include <esp_err.h>
 
 #if CONFIG_IDF_TARGET_ESP8266
-  int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_options *options, void **bufp, size_t buf_size, int spi_mode)
+  int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void **bufp, size_t buf_size, int spi_mode)
   {
     void *buf;
 
     interface->spi_master = options->spi_master;
     interface->options = (struct spi_write_options) {
-      .mode   = options->spi_mode_bits | spi_mode | SPI_MODE_SET,
-      .clock  = options->spi_clock,
+      .mode   = options->mode_bits | spi_mode | SPI_MODE_SET,
+      .clock  = options->clock,
     };
 
     if (!(buf = malloc(buf_size))) {
@@ -26,7 +26,7 @@
     return 0;
   }
 
-  int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_options *options, void *buf, size_t size)
+  int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void *buf, size_t size)
   {
     uint8_t *ptr = buf;
     unsigned len = size;
@@ -38,8 +38,8 @@
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio_out) {
-      gpio_out_set(options->gpio_out, options->gpio_out_pins);
+    if (options->gpio.gpio_out) {
+      gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
     }
   #endif
 
@@ -64,8 +64,8 @@
 
   error:
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio_out) {
-      gpio_out_clear(options->gpio_out);
+    if (options->gpio.gpio_out) {
+      gpio_out_clear(options->gpio.gpio_out);
     }
   #endif
 
@@ -82,7 +82,7 @@
   #define SPI_DEVICE_CS_ENA_PRETRANS_DEFAULT 4
   #define SPI_DEVICE_CS_ENA_POSTTRANS_DEFAULT 2
 
-  int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_options *options, void **bufp, size_t buf_size, int spi_mode)
+  int leds_interface_spi_init(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void **bufp, size_t buf_size, int spi_mode)
   {
     spi_device_interface_config_t device_config = {
       .command_bits     = 0,
@@ -91,8 +91,8 @@
       .mode             = spi_mode,
       .cs_ena_pretrans  = SPI_DEVICE_CS_ENA_PRETRANS_DEFAULT,
       .cs_ena_posttrans = SPI_DEVICE_CS_ENA_POSTTRANS_DEFAULT,
-      .clock_speed_hz   = options->spi_clock,
-      .spics_io_num     = options->spi_cs_io,
+      .clock_speed_hz   = options->clock,
+      .spics_io_num     = options->cs_io,
       .flags            = (
         // required for cs_ena_pretrans, irrelevant as we skip the MISO phase
         SPI_DEVICE_HALFDUPLEX
@@ -102,11 +102,11 @@
     void *buf;
     esp_err_t err;
 
-    if (options->spi_cs_high) {
+    if (options->cs_high) {
       device_config.flags |= SPI_DEVICE_POSITIVE_CS;
     }
 
-    if ((err = spi_bus_add_device(options->spi_host, &device_config, &interface->device))) {
+    if ((err = spi_bus_add_device(options->host, &device_config, &interface->device))) {
       LOG_ERROR("spi_bus_add_device");
       return -1;
     }
@@ -122,7 +122,7 @@
     return 0;
   }
 
-  int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_options *options, void *buf, size_t size)
+  int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void *buf, size_t size)
   {
     spi_transaction_t transaction = {
       .length = size * 8, // transaction length is in bits
@@ -137,8 +137,8 @@
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio_out) {
-      gpio_out_set(options->gpio_out, options->gpio_out_pins);
+    if (options->gpio.gpio_out) {
+      gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
     }
   #endif
 
@@ -150,8 +150,8 @@
 
 error:
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio_out) {
-      gpio_out_clear(options->gpio_out);
+    if (options->gpio.gpio_out) {
+      gpio_out_clear(options->gpio.gpio_out);
     }
   #endif
 

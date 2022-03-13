@@ -142,7 +142,7 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
       .interface  = config->interface,
       .protocol   = config->protocol,
       .count      = config->count,
-
+      .limit      = config->limit,
   };
   int err;
 

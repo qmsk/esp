@@ -10,7 +10,15 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .enum_type = { .value = &LEDS_CONFIG.protocol, .values = leds_protocol_enum },
   },
   { CONFIG_TYPE_UINT16, "count",
-    .uint16_type = { .value = &LEDS_CONFIG.count },
+    .description = "Number of LED pixels",
+    .uint16_type = { .value = &LEDS_CONFIG.count, .max = LEDS_COUNT_MAX },
+  },
+  { CONFIG_TYPE_UINT16, "limit",
+    .description = (
+      "Software power limit for the maximum number of LED pixels at full brightness, pixels values over the limit are scaled down."
+      "Default 0 -> no limit"
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.limit, .max = LEDS_COUNT_MAX },
   },
 
 #if CONFIG_LEDS_SPI_ENABLED

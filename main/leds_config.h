@@ -89,6 +89,7 @@ struct leds_config {
   int interface;
   int protocol;
   uint16_t count;
+  uint16_t limit;
 
 #if CONFIG_LEDS_SPI_ENABLED
   int spi_clock;

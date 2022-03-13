@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+#define LEDS_COUNT_MAX 65535 // 16-bit
+
 struct leds;
 
 enum leds_interface {
@@ -134,6 +136,9 @@ struct leds_options {
   enum leds_protocol protocol;
 
   unsigned count;
+
+  /* Limit number of active LEDs by color. Going over the limit will scale down all LEDs */
+  unsigned limit;
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
   /** LEDS_INTERFACE_SPI */

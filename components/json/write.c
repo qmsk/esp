@@ -250,6 +250,11 @@ int json_write_nstring(struct json_writer *w, const char *value, size_t size)
   }
 }
 
+int json_write_float(struct json_writer *w, float value)
+{
+  return json_writef(w, JSON_NUMBER, "%f", value);
+}
+
 int json_write_int(struct json_writer *w, int value)
 {
   return json_writef(w, JSON_NUMBER, "%d", value);

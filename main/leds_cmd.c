@@ -26,8 +26,9 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %s\n", "Interface", config_enum_to_string(leds_interface_enum, options->interface));
     printf("\t%-20s: %s\n", "Protocol", config_enum_to_string(leds_protocol_enum, options->protocol));
     printf("\t%-20s: %s\n", "Color Parameter", config_enum_to_string(leds_color_parameter_enum, leds_color_parameter_for_protocol(options->protocol)));
-    printf("\t%-20s: %u\n", "Count", options->count);
-    printf("\t%-20s: %u\n", "Active", state->active);
+    printf("\t%-20s: %5u\n", "Count", options->count);
+    printf("\t%-20s: %5u\n", "Limit", options->limit);
+    printf("\t%-20s: %5u @ %5.1f%%\n", "Active", state->active, leds_tx_limit(state->leds) * 100.0);
     printf("\n");
   }
 

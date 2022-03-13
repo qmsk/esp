@@ -1,0 +1,32 @@
+diff --git a/components/lwip/apps/dhcpserver/dhcpserver.c b/components/lwip/apps/dhcpserver/dhcpserver.c
+index f23966688f..c27cd7e9ae 100644
+--- a/components/lwip/apps/dhcpserver/dhcpserver.c
++++ b/components/lwip/apps/dhcpserver/dhcpserver.c
+@@ -351,19 +351,15 @@ static u8_t *add_offer_options(u8_t *optptr)
+             *optptr++ = ip4_addr4(gw_ip);
+         }
+     }
+-
+-    *optptr++ = DHCP_OPTION_DNS_SERVER;
+-    *optptr++ = 4;
+     if (dhcps_dns_enabled(dhcps_dns)) {
+-        *optptr++ = ip4_addr1(&dns_server);
+-        *optptr++ = ip4_addr2(&dns_server);
+-        *optptr++ = ip4_addr3(&dns_server);
+-        *optptr++ = ip4_addr4(&dns_server);
+-    }else {
+-        *optptr++ = ip4_addr1(&ipadd);
+-        *optptr++ = ip4_addr2(&ipadd);
+-        *optptr++ = ip4_addr3(&ipadd);
+-        *optptr++ = ip4_addr4(&ipadd);
++        if (!ip4_addr_isany_val(dns_server)) {
++            *optptr++ = DHCP_OPTION_DNS_SERVER;
++            *optptr++ = 4;
++            *optptr++ = ip4_addr1(&dns_server);
++            *optptr++ = ip4_addr2(&dns_server);
++            *optptr++ = ip4_addr3(&dns_server);
++            *optptr++ = ip4_addr4(&dns_server);
++        }
+     }
+ 
+     ip4_addr_t broadcast_addr = { .addr = (ipadd.addr & s_dhcps_mask.addr) | ~s_dhcps_mask.addr };

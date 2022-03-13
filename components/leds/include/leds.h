@@ -313,3 +313,12 @@ unsigned leds_count_total(struct leds *leds);
 
 /* Output frames on interface */
 int leds_tx(struct leds *leds);
+
+/*
+ * Get power limit applied to last leds_tx() operation.
+ *
+ * This is applied using integer math internally, the floating point value is an approximation.
+ *
+ * @return 0.0 .. 1.0, with 1.0 meaning power is not being limited and numbers closer to 0 meaning more power limiting.
+ */
+float leds_tx_limit(struct leds *leds);

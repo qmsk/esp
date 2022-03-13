@@ -40,6 +40,10 @@ struct leds {
 
   // if false, all leds are inactive
   bool active;
+
+  // limit used for last leds_tx()
+  unsigned tx_total;
+  struct leds_limit tx_limit;
 };
 
 int leds_init(struct leds *leds, const struct leds_options *options);

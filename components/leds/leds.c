@@ -410,25 +410,16 @@ unsigned leds_count_total(struct leds *leds)
 
 int leds_tx(struct leds *leds)
 {
-  struct leds_limit limit;
-
   if (!leds->options.limit) {
-    limit = leds_limit_unity();
+    leds->tx_total = 0;
+    leds->tx_limit = leds_limit_unity();
 
     LOG_DEBUG("limit=%u: disabled", leds->options.limit);
   } else {
-    unsigned total = leds_count_total(leds);
+    leds->tx_total = leds_count_total(leds);
+    leds->tx_limit = leds_limit_total(leds->options.limit, leds->tx_total);
 
-    if (total < leds->options.limit) {
-      limit = leds_limit_unity();
-
-      LOG_DEBUG("limit=%u > total=%u: ok", leds->options.limit, total);
-
-    } else {
-      limit = leds_limit(leds->options.limit, total);
-
-      LOG_DEBUG("limit=%u < total=%u: limit multiplier=%u shift=%u", leds->options.limit, total, limit.multiplier, limit.shift);
-    }
+    LOG_DEBUG("limit=%u < total=%u: limit multiplier=%u shift=%u", leds->options.limit, leds->tx_total, leds->tx_limit.multiplier, leds->tx_limit.shift);
   }
 
   switch(leds->options.protocol) {
@@ -441,16 +432,23 @@ int leds_tx(struct leds *leds)
       return leds_protocol_p9813_tx(&leds->protocol.p9813, &leds->interface, &leds->options);
 
     case LEDS_PROTOCOL_WS2812B:
-      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options, limit);
+      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options, leds->tx_limit);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options, limit);
+      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options, leds->tx_limit);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, limit);
+      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, leds->tx_limit);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
       return -1;
   }
+}
+
+float leds_tx_limit(struct leds *leds)
+{
+  struct leds_limit limit = leds->tx_limit;
+
+  return (float)(limit.multiplier) / (float)(1 << limit.shift);
 }

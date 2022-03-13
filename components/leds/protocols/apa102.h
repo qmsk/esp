@@ -1,8 +1,7 @@
 #pragma once
 
 #include <leds.h>
-
-union leds_interface_state *interface;
+#include "../protocol.h"
 
 struct apa102_packet *packet;
 

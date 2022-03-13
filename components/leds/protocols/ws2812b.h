@@ -1,8 +1,7 @@
 #pragma once
 
 #include <leds.h>
-
-union leds_interface_state *interface;
+#include "../protocol.h"
 
 // 24 bits per pixel, 2 bits per I2S byte
 #define WS2812B_I2S_SIZE (3 * 4)

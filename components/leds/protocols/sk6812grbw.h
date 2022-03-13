@@ -1,8 +1,7 @@
 #pragma once
 
 #include <leds.h>
-
-union leds_interface_state *interface;
+#include "../protocol.h"
 
 // 32 bits per pixel, 2 bits per I2S byte
 #define SK6812_GRBW_I2S_SIZE (4 * 4)

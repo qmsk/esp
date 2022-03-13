@@ -49,8 +49,8 @@ struct leds_protocol_sk6812grbw {
   unsigned count;
 };
 
-int leds_protocol_sk6812grbw_init(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options);
-int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options);
+int leds_protocol_sk6812grbw_init(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options);
+int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options);
 
 void leds_protocol_sk6812grbw_set(struct leds_protocol_sk6812grbw *protocol, unsigned index, struct leds_color color);
 void leds_protocol_sk6812grbw_set_all(struct leds_protocol_sk6812grbw *protocol, struct leds_color color);

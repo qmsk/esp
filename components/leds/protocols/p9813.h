@@ -14,8 +14,8 @@ struct leds_protocol_p9813 {
 
 size_t leds_protocol_p9813_spi_buffer_size(unsigned count);
 
-int leds_protocol_p9813_init(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options);
-int leds_protocol_p9813_tx(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options);
+int leds_protocol_p9813_init(struct leds_protocol_p9813 *protocol, union leds_interface_state *interface, const struct leds_options *options);
+int leds_protocol_p9813_tx(struct leds_protocol_p9813 *protocol, union leds_interface_state *interface, const struct leds_options *options);
 
 void leds_protocol_p9813_set(struct leds_protocol_p9813 *protocol, unsigned index, struct leds_color color);
 void leds_protocol_p9813_set_all(struct leds_protocol_p9813 *protocol, struct leds_color color);

@@ -74,7 +74,7 @@ size_t leds_protocol_p9813_spi_buffer_size(unsigned count)
   return p9813_packet_size(count);
 }
 
-int leds_protocol_p9813_init(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options)
+int leds_protocol_p9813_init(struct leds_protocol_p9813 *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
   void *buf;
   size_t size = p9813_packet_size(options->count);
@@ -112,7 +112,7 @@ int leds_protocol_p9813_init(union leds_interface_state *interface, struct leds_
   return 0;
 }
 
-int leds_protocol_p9813_tx(union leds_interface_state *interface, struct leds_protocol_p9813 *protocol, const struct leds_options *options)
+int leds_protocol_p9813_tx(struct leds_protocol_p9813 *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:

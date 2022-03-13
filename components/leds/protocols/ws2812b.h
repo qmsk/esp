@@ -49,8 +49,8 @@ struct leds_protocol_ws2812b {
   unsigned count;
 };
 
-int leds_protocol_ws2812b_init(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options);
-int leds_protocol_ws2812b_tx(union leds_interface_state *interface, struct leds_protocol_ws2812b *protocol, const struct leds_options *options);
+int leds_protocol_ws2812b_init(struct leds_protocol_ws2812b *protocol, union leds_interface_state *interface, const struct leds_options *options);
+int leds_protocol_ws2812b_tx(struct leds_protocol_ws2812b *protocol, union leds_interface_state *interface, const struct leds_options *options);
 
 void leds_protocol_ws2812b_set(struct leds_protocol_ws2812b *protocol, unsigned index, struct leds_color color);
 void leds_protocol_ws2812b_set_all(struct leds_protocol_ws2812b *protocol, struct leds_color color);

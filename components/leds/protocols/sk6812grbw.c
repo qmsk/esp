@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 
-int leds_protocol_sk6812grbw_init(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options)
+int leds_protocol_sk6812grbw_init(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
   if (!(protocol->pixels = calloc(options->count, sizeof(*protocol->pixels)))) {
     LOG_ERROR("malloc");
@@ -18,7 +18,7 @@ int leds_protocol_sk6812grbw_init(union leds_interface_state *interface, struct 
   return 0;
 }
 
-int leds_protocol_sk6812grbw_tx(union leds_interface_state *interface, struct leds_protocol_sk6812grbw *protocol, const struct leds_options *options)
+int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:

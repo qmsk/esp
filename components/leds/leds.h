@@ -36,7 +36,7 @@ struct leds {
     struct leds_protocol_ws2812b ws2812b;
     struct leds_protocol_sk6812grbw sk6812grbw;
     struct leds_protocol_ws2811 ws2811;
-  } state;
+  } protocol;
 
   // if false, all leds are inactive
   bool active;

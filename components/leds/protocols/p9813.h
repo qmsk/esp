@@ -19,3 +19,4 @@ void leds_protocol_p9813_set_frame(struct leds_protocol_p9813 *protocol, unsigne
 void leds_protocol_p9813_set_frames(struct leds_protocol_p9813 *protocol, unsigned count, struct leds_color color);
 
 unsigned leds_protocol_p9813_count_active(struct leds_protocol_p9813 *protocol, unsigned count);
+unsigned leds_protocol_p9813_count_total(struct leds_protocol_p9813 *protocol, unsigned count);

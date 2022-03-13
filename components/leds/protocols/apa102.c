@@ -1,5 +1,6 @@
 #include "apa102.h"
 #include "../leds.h"
+#include "../limit.h"
 
 #include <logging.h>
 
@@ -23,6 +24,9 @@ struct __attribute__((packed)) apa102_packet {
 #define APA102_STOP_FRAME (struct apa102_frame){ 0x00, 0x00, 0x00, 0x00 }
 
 #define APA102_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
+#define APA102_BRIGHTNESS(global) ((global & 0x1F) << 3) // 0..255
+
+#define APA102_FRAME_TOTAL_DIVISOR (3 * 255 * 31) // one frame at full brightness
 
 static size_t apa102_packet_size(unsigned count)
 {
@@ -50,6 +54,21 @@ static void apa102_packet_init(struct apa102_packet *packet, unsigned count)
 static inline bool apa102_frame_active(const struct apa102_frame frame)
 {
   return (frame.b || frame.g || frame.r) && frame.global > APA102_GLOBAL_BYTE(0);
+}
+
+static inline unsigned apa102_frame_total(const struct apa102_frame frame)
+{
+  // scale 0..255 brightness to 0..31 to not overflow a 32-bit uint for a 16-bit LEDS_COUNT_MAX
+  return (frame.b + frame.r + frame.g) * (APA102_BRIGHTNESS(frame.global) >> 3);
+}
+
+static inline struct apa102_frame apa102_frame_limit(const struct apa102_frame frame, struct leds_limit limit)
+{
+  return (struct apa102_frame) {
+    .b  = leds_limit_uint8(limit, frame.b),
+    .g  = leds_limit_uint8(limit, frame.g),
+    .r  = leds_limit_uint8(limit, frame.r),
+  };
 }
 
 size_t leds_protocol_apa102_spi_buffer_size(unsigned count)
@@ -144,4 +163,15 @@ unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol
   }
 
   return active;
+}
+
+unsigned leds_protocol_apa102_count_total(struct leds_protocol_apa102 *protocol, unsigned count)
+{
+  unsigned total = 0;
+
+  for (unsigned index = 0; index < count; index++) {
+    total += apa102_frame_total(protocol->packet->frames[index]);
+  }
+
+  return total / APA102_FRAME_TOTAL_DIVISOR;
 }

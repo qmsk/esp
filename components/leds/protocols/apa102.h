@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../limit.h"
 
 struct apa102_packet *packet;
 
@@ -19,3 +20,4 @@ void leds_protocol_apa102_set_frame(struct leds_protocol_apa102 *protocol, unsig
 void leds_protocol_apa102_set_frames(struct leds_protocol_apa102 *protocol, unsigned count, struct leds_color color);
 
 unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol, unsigned count);
+unsigned leds_protocol_apa102_count_total(struct leds_protocol_apa102 *protocol, unsigned count);

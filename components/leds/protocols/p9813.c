@@ -1,5 +1,6 @@
 #include "p9813.h"
 #include "../leds.h"
+#include "../limit.h"
 
 #include <logging.h>
 
@@ -23,6 +24,8 @@ struct __attribute__((packed)) p9813_packet {
 #define P9813_STOP_FRAME (struct p9813_frame){ 0x00, 0x00, 0x00, 0x00 }
 
 #define P9813_CONTROL_BYTE(b, g, r) (0xC0 | ((~(b) & 0xC0) >> 2) | ((~(g) & 0xC0) >> 4) | ((~(r) & 0xC0) >> 6))
+
+#define P9813_FRAME_TOTAL_DIVISOR (3 * 255) // one frame at full brightness
 
 static size_t p9813_packet_size(unsigned count)
 {
@@ -50,6 +53,20 @@ static void p9813_packet_init(struct p9813_packet *packet, unsigned count)
 static inline bool p9813_frame_active(const struct p9813_frame frame)
 {
   return frame.b || frame.g || frame.r;
+}
+
+static inline unsigned p9813_frame_total(const struct p9813_frame frame)
+{
+  return frame.b + frame.r + frame.g;
+}
+
+static inline struct p9813_frame p9813_frame_limit(const struct p9813_frame frame, struct leds_limit limit)
+{
+  return (struct p9813_frame) {
+    .b  = leds_limit_uint8(limit, frame.b),
+    .g  = leds_limit_uint8(limit, frame.g),
+    .r  = leds_limit_uint8(limit, frame.r),
+  };
 }
 
 size_t leds_protocol_p9813_spi_buffer_size(unsigned count)
@@ -144,4 +161,15 @@ unsigned leds_protocol_p9813_count_active(struct leds_protocol_p9813 *protocol, 
   }
 
   return active;
+}
+
+unsigned leds_protocol_p9813_count_total(struct leds_protocol_p9813 *protocol, unsigned count)
+{
+  unsigned total = 0;
+
+  for (unsigned index = 0; index < count; index++) {
+    total += p9813_frame_total(protocol->packet->frames[index]);
+  }
+
+  return total / P9813_FRAME_TOTAL_DIVISOR;
 }

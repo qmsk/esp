@@ -2,9 +2,12 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../limit.h"
 
 // 32 bits per pixel, 2 bits per I2S byte
 #define SK6812_GRBW_I2S_SIZE (4 * 4)
+
+#define SK6812_GRBW_PIXEL_TOTAL_DIVISOR (4 * 255) // one pixel at full brightness
 
 static inline size_t leds_protocol_sk6812grbw_i2s_buffer_size(unsigned count)
 {
@@ -25,6 +28,21 @@ static inline bool sk6812grbw_pixel_active(const union sk6812grbw_pixel pixel)
   return pixel.w || pixel.b || pixel.r || pixel.g;
 }
 
+static inline unsigned sk6812grbw_pixel_total(const union sk6812grbw_pixel pixel)
+{
+  return pixel.w + pixel.b + pixel.r + pixel.g;
+}
+
+static inline union sk6812grbw_pixel sk6812grbw_pixel_limit(const union sk6812grbw_pixel pixel, struct leds_limit limit)
+{
+  return (union sk6812grbw_pixel) {
+    .w  = leds_limit_uint8(limit, pixel.w),
+    .b  = leds_limit_uint8(limit, pixel.b),
+    .r  = leds_limit_uint8(limit, pixel.r),
+    .g  = leds_limit_uint8(limit, pixel.g),
+  };
+}
+
 struct leds_protocol_sk6812grbw {
   union sk6812grbw_pixel *pixels;
 };
@@ -36,3 +54,4 @@ void leds_protocol_sk6812grbw_set_frame(struct leds_protocol_sk6812grbw *protoco
 void leds_protocol_sk6812grbw_set_frames(struct leds_protocol_sk6812grbw *protocol, unsigned count, struct leds_color color);
 
 unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *protocol, unsigned count);
+unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol, unsigned count);

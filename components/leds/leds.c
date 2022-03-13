@@ -190,43 +190,37 @@ unsigned leds_count(struct leds *leds)
   return leds->options.count;
 }
 
-unsigned leds_active(struct leds *leds)
+int leds_clear_all(struct leds *leds)
 {
-  unsigned active = 0;
+  struct leds_color color = {}; // all off
 
-  if (leds->active) {
-    switch(leds->options.protocol) {
-      case LEDS_PROTOCOL_APA102:
-        active = leds_protocol_apa102_count_active(&leds->protocol.apa102);
-        break;
+  leds->active = false;
 
-      case LEDS_PROTOCOL_P9813:
-        active = leds_protocol_p9813_count_active(&leds->protocol.p9813);
-        break;
+  switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_APA102:
+      leds_protocol_apa102_set_all(&leds->protocol.apa102, color);
+      return 0;
 
-      case LEDS_PROTOCOL_WS2812B:
-        active = leds_protocol_ws2812b_count_active(&leds->protocol.ws2812b);
-        break;
+    case LEDS_PROTOCOL_P9813:
+      leds_protocol_p9813_set_all(&leds->protocol.p9813, color);
+      return 0;
 
-      case LEDS_PROTOCOL_SK6812_GRBW:
-        active = leds_protocol_sk6812grbw_count_active(&leds->protocol.sk6812grbw);
-        break;
+    case LEDS_PROTOCOL_WS2812B:
+      leds_protocol_ws2812b_set_all(&leds->protocol.ws2812b, color);
+      return 0;
 
-      case LEDS_PROTOCOL_WS2811:
-        active = leds_protocol_ws2811_count_active(&leds->protocol.ws2811);
-        break;
+    case LEDS_PROTOCOL_SK6812_GRBW:
+      leds_protocol_sk6812grbw_set_all(&leds->protocol.sk6812grbw, color);
+      return 0;
 
-      default:
-        LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
-        abort();
-    }
+    case LEDS_PROTOCOL_WS2811:
+      leds_protocol_ws2811_set_all(&leds->protocol.ws2811, color);
+      return 0;
 
-    if (!active) {
-      leds->active = false;
-    }
+    default:
+      LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
+      return -1;
   }
-
-  return active;
 }
 
 int leds_set(struct leds *leds, unsigned index, struct leds_color color)
@@ -276,7 +270,7 @@ int leds_set_all(struct leds *leds, struct leds_color color)
   if (leds_color_active(color)) {
     leds->active = true;
   } else {
-    leds->active = 0;
+    leds->active = false;
   }
 
   switch(leds->options.protocol) {
@@ -351,7 +345,46 @@ int leds_set_format(struct leds *leds, enum leds_format format, void *data, size
   }
 }
 
-static unsigned leds_count_total(struct leds *leds)
+unsigned leds_count_active(struct leds *leds)
+{
+  unsigned active = 0;
+
+  if (leds->active) {
+    switch(leds->options.protocol) {
+      case LEDS_PROTOCOL_APA102:
+        active = leds_protocol_apa102_count_active(&leds->protocol.apa102);
+        break;
+
+      case LEDS_PROTOCOL_P9813:
+        active = leds_protocol_p9813_count_active(&leds->protocol.p9813);
+        break;
+
+      case LEDS_PROTOCOL_WS2812B:
+        active = leds_protocol_ws2812b_count_active(&leds->protocol.ws2812b);
+        break;
+
+      case LEDS_PROTOCOL_SK6812_GRBW:
+        active = leds_protocol_sk6812grbw_count_active(&leds->protocol.sk6812grbw);
+        break;
+
+      case LEDS_PROTOCOL_WS2811:
+        active = leds_protocol_ws2811_count_active(&leds->protocol.ws2811);
+        break;
+
+      default:
+        LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
+        abort();
+    }
+
+    if (!active) {
+      leds->active = false;
+    }
+  }
+
+  return active;
+}
+
+unsigned leds_count_total(struct leds *leds)
 {
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:

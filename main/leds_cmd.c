@@ -57,7 +57,6 @@ static int lookup_leds(unsigned index, const struct leds_config **configp, struc
 
 int leds_cmd_clear(int argc, char **argv, void *ctx)
 {
-  struct leds_color leds_color = { }; // off
   int err;
 
   for (int i = 0; i < LEDS_COUNT; i++) {
@@ -68,7 +67,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       continue;
     }
 
-    if ((err = leds_set_all(state->leds, leds_color))) {
+    if ((err = leds_clear_all(state->leds))) {
       LOG_ERROR("leds_set_all");
       return err;
     }

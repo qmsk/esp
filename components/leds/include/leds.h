@@ -268,8 +268,10 @@ enum leds_interface leds_interface(struct leds *leds);
 
 unsigned leds_count(struct leds *leds);
 
-/* Get active LED count */
-unsigned leds_active(struct leds *leds);
+/*
+ * Set all LEDs off.
+ */
+int leds_clear_all(struct leds *leds);
 
 /*
  * @param index 0-based index
@@ -298,6 +300,16 @@ int leds_set_format(struct leds *leds, enum leds_format format, void *data, size
  * Returns number of ticks to hold this frame, 0 for last frame, <0 on error.
  */
 int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame);
+
+/*
+ * Return number of active LEDs, with non-zero color.
+ */
+unsigned leds_count_active(struct leds *leds);
+
+/*
+ * Return total power for leds, ref options->limit.
+ */
+unsigned leds_count_total(struct leds *leds);
 
 /* Output frames on interface */
 int leds_tx(struct leds *leds);

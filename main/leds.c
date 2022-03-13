@@ -131,15 +131,13 @@ int check_leds_interface(struct leds_state *state)
 
 void force_leds_active(struct leds_state *state)
 {
-  state->active = true;
-
   // wait for power_good before sending first frame
   wait_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index, LEDS_ATX_PSU_POWER_GOOD_TIMEOUT);
 }
 
 void update_leds_active(struct leds_state *state)
 {
-  state->active = leds_active(state->leds);
+  state->active = leds_count_active(state->leds);
 
   if (state->active) {
     // wait for power_good before sending first frame
@@ -151,7 +149,7 @@ void update_leds_active(struct leds_state *state)
 
 void clear_leds_active(struct leds_state *state)
 {
-  state->active = false;
+  state->active = 0;
 
   clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
 }
@@ -177,14 +175,13 @@ int update_leds(struct leds_state *state)
 
 int clear_leds(struct leds_state *state)
 {
-  struct leds_color color = {}; // all off
   int err;
 
   if ((err = check_leds_interface(state))) {
     return err;
   }
 
-  if ((err = leds_set_all(state->leds, color))) {
+  if ((err = leds_clear_all(state->leds))) {
     LOG_ERROR("leds_set_all");
     return err;
   }

@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../interface.h"
 #include "../limit.h"
 
 // 24 bits per pixel, 2 bits per I2S byte

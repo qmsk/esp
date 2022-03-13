@@ -1,6 +1,7 @@
 #pragma once
 
 #include <leds.h>
+#include "../interface.h"
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
 // using custom spi_master driver

@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../interface.h"
 #include "../limit.h"
 
 struct apa102_packet *packet;

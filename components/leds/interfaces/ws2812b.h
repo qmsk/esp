@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../interface.h"
 #include "../protocols/ws2812b.h"
 
 #if CONFIG_LEDS_UART_ENABLED

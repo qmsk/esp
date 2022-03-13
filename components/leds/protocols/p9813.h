@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../interface.h"
 
 struct p9813_packet;
 

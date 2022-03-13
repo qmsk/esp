@@ -2,10 +2,12 @@
 
 #include <leds.h>
 
+#include "interface.h"
 #if CONFIG_LEDS_SPI_ENABLED
 # include "interfaces/spi.h"
 #endif
 
+#include "protocol.h"
 #include "protocols/apa102.h"
 #include "protocols/p9813.h"
 #include "protocols/sk6812grbw.h"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../interface.h"
 #include "../protocols/sk6812grbw.h"
 
 #if CONFIG_LEDS_UART_ENABLED

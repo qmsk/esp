@@ -133,6 +133,35 @@ int set_wifi_interface_ip(wifi_interface_t interface, const char *ip, const char
   return 0;
 }
 
+int set_wifi_interface_dhcps_options(wifi_interface_t interface)
+{
+  esp_netif_t *netif;
+  esp_err_t err;
+
+  if ((err = make_wifi_netif(&netif, interface))) {
+    LOG_ERROR("make_wifi_netif");
+    return err;
+  }
+
+  // disable OFFER_ROUTER
+  uint8_t dhcps_offer_router = 0;
+
+  if ((err = esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_ROUTER_SOLICITATION_ADDRESS, &dhcps_offer_router, sizeof(dhcps_offer_router)))) {
+    LOG_ERROR("esp_netif_dhcps_option ESP_NETIF_OP_SET ESP_NETIF_ROUTER_SOLICITATION_ADDRESS: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // disable OFFER_DNS
+  uint8_t dhcps_offer_dns = 0;
+
+  if ((err = esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_offer_dns, sizeof(dhcps_offer_dns)))) {
+    LOG_ERROR("esp_netif_dhcps_option ESP_NETIF_OP_SET ESP_NETIF_DOMAIN_NAME_SERVER: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 void on_wifi_interface_up(wifi_interface_t interface, bool connected)
 {
   esp_netif_t *netif;

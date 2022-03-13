@@ -92,6 +92,32 @@ int set_wifi_interface_ip(wifi_interface_t interface, const char *ip, const char
   return 0;
 }
 
+int set_wifi_interface_dhcps_options(wifi_interface_t interface)
+{
+  esp_err_t err;
+
+  // the DHCP Server options are global, not per interface
+  (void) interface;
+
+  // disable OFFER_ROUTER
+  uint8_t dhcps_offer_router = 0;
+
+  if ((err = tcpip_adapter_dhcps_option(TCPIP_ADAPTER_OP_SET, TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS, &dhcps_offer_router, sizeof(dhcps_offer_router)))) {
+    LOG_ERROR("tcpip_adapter_dhcps_option TCPIP_ADAPTER_OP_SET TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  // disable OFFER_DNS
+  uint8_t dhcps_offer_dns = 0;
+
+  if ((err = tcpip_adapter_dhcps_option(TCPIP_ADAPTER_OP_SET, TCPIP_ADAPTER_DOMAIN_NAME_SERVER, &dhcps_offer_dns, sizeof(dhcps_offer_dns)))) {
+    LOG_ERROR("tcpip_adapter_dhcps_option TCPIP_ADAPTER_OP_SET TCPIP_ADAPTER_DOMAIN_NAME_SERVER: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 void on_wifi_interface_up(wifi_interface_t interface, bool connected)
 {
   char hostname[TCPIP_HOSTNAME_MAX_SIZE];

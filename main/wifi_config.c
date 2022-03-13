@@ -196,6 +196,20 @@ static int config_wifi_network(wifi_interface_t interface, const struct wifi_con
   return 0;
 }
 
+static int config_wifi_dhcps(wifi_interface_t interface)
+{
+  int err;
+
+  LOG_INFO("Disabling IPv4 DHCP Server Router/DNS offer");
+
+  if ((err = set_wifi_interface_dhcps_options(interface))) {
+    LOG_ERROR("set_wifi_interface_dhcps_options");
+    return err;
+  }
+
+  return 0;
+}
+
 static int config_wifi_null(const struct wifi_config *config)
 {
   esp_err_t err;
@@ -278,6 +292,11 @@ static int config_wifi_ap(const struct wifi_config *config)
 
   if ((err = config_wifi_network(WIFI_IF_AP, config))) {
     LOG_ERROR("config_wifi_network");
+    return err;
+  }
+
+  if ((err = config_wifi_dhcps(WIFI_IF_AP))) {
+    LOG_ERROR("config_wifi_dhcps");
     return err;
   }
 

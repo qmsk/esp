@@ -14,8 +14,6 @@ tcpip_adapter_if_t configured_tcpip_adapter = TCPIP_ADAPTER_IF_MAX, connected_tc
 
 int init_system_network()
 {
-  esp_err_t err;
-
   LOG_INFO("init tcpip_adapter...");
 
   tcpip_adapter_init();

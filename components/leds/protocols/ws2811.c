@@ -18,7 +18,7 @@ int leds_protocol_ws2811_init(struct leds_protocol_ws2811 *protocol, union leds_
   return 0;
 }
 
-int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options)
+int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
@@ -26,12 +26,12 @@ int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_in
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      return leds_tx_uart_ws2811(&options->uart, protocol->pixels, protocol->count);
+      return leds_tx_uart_ws2811(&options->uart, protocol->pixels, protocol->count, limit);
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_ws2811(&options->i2s, protocol->pixels, protocol->count);
+      return leds_tx_i2s_ws2811(&options->i2s, protocol->pixels, protocol->count, limit);
   #endif
 
     default:

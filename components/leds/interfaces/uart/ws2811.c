@@ -65,7 +65,7 @@ static const uint16_t ws2811_lut[] = {
   [0b1111] = WS2811_LUT(0b1111),
 };
 
-int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union ws2811_pixel *pixels, unsigned count)
+int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union ws2811_pixel *pixels, unsigned count, struct leds_limit limit)
 {
   struct uart_options uart_options = {
     .baud_rate    = UART_BAUD_4000000,
@@ -96,7 +96,7 @@ int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union
   vTaskPrioritySet(NULL, WS2811_TX_TASK_PRIORITY);
 
   for (unsigned i = 0; i < count; i++) {
-    uint32_t rgb = pixels[i]._rgb;
+    uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
 
     buf[0]  = ws2811_lut[(rgb >> 20) & 0xf];
     buf[1]  = ws2811_lut[(rgb >> 16) & 0xf];

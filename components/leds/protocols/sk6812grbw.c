@@ -18,7 +18,7 @@ int leds_protocol_sk6812grbw_init(struct leds_protocol_sk6812grbw *protocol, uni
   return 0;
 }
 
-int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options)
+int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
@@ -26,12 +26,12 @@ int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union
 
   #if CONFIG_LEDS_UART_ENABLED
     case LEDS_INTERFACE_UART:
-      return leds_tx_uart_sk6812grbw(&options->uart, protocol->pixels, protocol->count);
+      return leds_tx_uart_sk6812grbw(&options->uart, protocol->pixels, protocol->count, limit);
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_sk6812grbw(&options->i2s, protocol->pixels, protocol->count);
+      return leds_tx_i2s_sk6812grbw(&options->i2s, protocol->pixels, protocol->count, limit);
   #endif
 
     default:

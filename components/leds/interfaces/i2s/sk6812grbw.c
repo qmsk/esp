@@ -36,7 +36,7 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, union sk6812grbw_pixel *pixels, unsigned count)
+int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, union sk6812grbw_pixel *pixels, unsigned count, struct leds_limit limit)
 {
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit
@@ -71,7 +71,7 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
 #endif
 
   for (unsigned i = 0; i < count; i++) {
-    uint32_t grbw = pixels[i].grbw;
+    uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], limit).grbw;
 
     buf[0] = sk6812_lut[(grbw >> 28) & 0xf];
     buf[1] = sk6812_lut[(grbw >> 24) & 0xf];

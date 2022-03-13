@@ -36,7 +36,7 @@ static const uint16_t ws2812b_lut[] = {
   [0b1111] = WS2812B_LUT(0b1111),
 };
 
-int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count)
+int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count, struct leds_limit limit)
 {
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit
@@ -71,7 +71,7 @@ int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union 
 #endif
 
   for (unsigned i = 0; i < count; i++) {
-    uint32_t grb = pixels[i]._grb;
+    uint32_t grb = ws2812b_pixel_limit(pixels[i], limit)._grb;
 
     buf[0] = ws2812b_lut[(grb >> 20) & 0xf];
     buf[1] = ws2812b_lut[(grb >> 16) & 0xf];

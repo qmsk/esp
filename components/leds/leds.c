@@ -1,5 +1,6 @@
 #include <leds.h>
 #include "leds.h"
+#include "limit.h"
 
 #include <logging.h>
 
@@ -350,23 +351,70 @@ int leds_set_format(struct leds *leds, enum leds_format format, void *data, size
   }
 }
 
-int leds_tx(struct leds *leds)
+static unsigned leds_count_total(struct leds *leds)
 {
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_APA102:
+      return leds_protocol_apa102_count_total(&leds->protocol.apa102);
+
+    case LEDS_PROTOCOL_P9813:
+      return leds_protocol_p9813_count_total(&leds->protocol.p9813);
+
+    case LEDS_PROTOCOL_WS2812B:
+      return leds_protocol_ws2812b_count_total(&leds->protocol.ws2812b);
+
+    case LEDS_PROTOCOL_SK6812_GRBW:
+      return leds_protocol_sk6812grbw_count_total(&leds->protocol.sk6812grbw);
+
+    case LEDS_PROTOCOL_WS2811:
+      return leds_protocol_ws2811_count_total(&leds->protocol.ws2811);
+
+    default:
+      LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
+      return -1;
+  }
+}
+
+int leds_tx(struct leds *leds)
+{
+  struct leds_limit limit;
+
+  if (!leds->options.limit) {
+    limit = leds_limit_unity();
+
+    LOG_DEBUG("limit=%u: disabled", leds->options.limit);
+  } else {
+    unsigned total = leds_count_total(leds);
+
+    if (total < leds->options.limit) {
+      limit = leds_limit_unity();
+
+      LOG_DEBUG("limit=%u > total=%u: ok", leds->options.limit, total);
+
+    } else {
+      limit = leds_limit(leds->options.limit, total);
+
+      LOG_DEBUG("limit=%u < total=%u: limit multiplier=%u shift=%u", leds->options.limit, total, limit.multiplier, limit.shift);
+    }
+  }
+
+  switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_APA102:
+      // TODO: limit
       return leds_protocol_apa102_tx(&leds->protocol.apa102, &leds->interface, &leds->options);
 
     case LEDS_PROTOCOL_P9813:
+      // TODO: limit
       return leds_protocol_p9813_tx(&leds->protocol.p9813, &leds->interface, &leds->options);
 
     case LEDS_PROTOCOL_WS2812B:
-      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options);
+      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options, limit);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options);
+      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options, limit);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options);
+      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, limit);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);

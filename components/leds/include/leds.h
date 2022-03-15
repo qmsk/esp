@@ -315,10 +315,19 @@ unsigned leds_count_total(struct leds *leds);
 int leds_tx(struct leds *leds);
 
 /*
+ * Get power limit utilization from last leds_tx() operation.
+ * *
+ * @return 0.0 .. 1.0 .. +inf
+ *         0.0 -> all LEDs are off, or no limit configured
+ *         1.0 -> at power limit
+ *        >1.0 -> power limiting active
+ */
+float leds_limit_utilization(struct leds *leds);
+/*
  * Get power limit applied to last leds_tx() operation.
  *
  * This is applied using integer math internally, the floating point value is an approximation.
  *
  * @return 0.0 .. 1.0, with 1.0 meaning power is not being limited and numbers closer to 0 meaning more power limiting.
  */
-float leds_tx_limit(struct leds *leds);
+float leds_limit_active(struct leds *leds);

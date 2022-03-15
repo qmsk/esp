@@ -20,8 +20,9 @@ static int leds_api_write_object_enabled(struct json_writer *w, int index, struc
     ||  JSON_WRITE_MEMBER_STRING(w, "color_parameter", config_enum_to_string(leds_color_parameter_enum, leds_color_parameter_for_protocol(options->protocol)))
     ||  JSON_WRITE_MEMBER_UINT(w, "count", options->count)
     ||  JSON_WRITE_MEMBER_UINT(w, "limit", options->limit)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "limit_utilization", leds_limit_utilization(state->leds))
     ||  JSON_WRITE_MEMBER_UINT(w, "active", state->active)
-    ||  JSON_WRITE_MEMBER_UINT(w, "active_limit", leds_tx_limit(state->leds) * 100.0)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "active_limit", leds_limit_active(state->leds))
   );
 }
 

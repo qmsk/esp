@@ -446,7 +446,16 @@ int leds_tx(struct leds *leds)
   }
 }
 
-float leds_tx_limit(struct leds *leds)
+float leds_limit_utilization(struct leds *leds)
+{
+  if (!leds->options.limit) {
+    return 0.0;
+  }
+
+  return (float)(leds->tx_total) / (float)(leds->options.limit);
+}
+
+float leds_limit_active(struct leds *leds)
 {
   struct leds_limit limit = leds->tx_limit;
 

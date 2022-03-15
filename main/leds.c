@@ -158,11 +158,12 @@ int update_leds(struct leds_state *state)
 {
   int err;
 
+  update_leds_active(state);
+
   if ((err = check_leds_interface(state))) {
     return err;
   }
 
-  update_leds_active(state);
   user_activity(USER_ACTIVITY_LEDS);
 
   if ((err = leds_tx(state->leds))) {

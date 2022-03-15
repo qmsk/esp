@@ -175,7 +175,7 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
     xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, &task_woken);
   }
   if (SLC0.int_st.rx_dscr_err) {
-    LOG_ISR_DEBUG("rx_dscr_err");
+    LOG_ISR_WARN("rx_dscr_err");
   }
 
   if (task_woken == pdTRUE) {
@@ -329,9 +329,11 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL();
 
+  slc_intr_clear(&SLC0);
   slc_intr_enable_rx(&SLC0);
-  slc_start_rx(&SLC0);
   slc_isr_unmask();
+
+  slc_start_rx(&SLC0);
 
   taskEXIT_CRITICAL();
 

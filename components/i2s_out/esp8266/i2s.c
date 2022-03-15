@@ -95,17 +95,23 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
 int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 {
-  // TODO: optimize to recognize if TX_REMPTY already happened?
-  taskENTER_CRITICAL();
+  EventBits_t bits;
 
-  i2s_intr_clear(&I2S0);
-  i2s_intr_enable_tx(&I2S0);
+  if ((bits = xEventGroupGetBits(i2s_out->event_group)) & I2S_OUT_EVENT_GROUP_BIT_I2S_EOF) {
+    // TX_REMPTY has already occured
+    LOG_DEBUG("skip event_group bits=%08x", bits);
+  } else {
+    taskENTER_CRITICAL();
 
-  taskEXIT_CRITICAL();
+    i2s_intr_clear(&I2S0);
+    i2s_intr_enable_tx(&I2S0);
 
-  LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+    taskEXIT_CRITICAL();
 
-  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
+    LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+
+    xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
+  }
 
   return 0;
 }

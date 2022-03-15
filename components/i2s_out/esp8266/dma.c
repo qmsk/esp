@@ -171,17 +171,8 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
     // NOTE: this is unlikely to stop DMA before this repeats at least once
     slc_stop(&SLC0);
 
-    // mark as done
-    i2s_out->dma_eof = true;
-
-    // notify flush() if waiting
-    if (i2s_out->dma_flush_task) {
-      LOG_ISR_DEBUG("rx_eof notify task=%p", i2s_out->dma_flush_task);
-
-      vTaskNotifyGiveFromISR(i2s_out->dma_flush_task, &task_woken);
-
-      i2s_out->dma_flush_task = NULL;
-    }
+    // unblock flush() task
+    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, &task_woken);
   }
   if (SLC0.int_st.rx_dscr_err) {
     LOG_ISR_DEBUG("rx_dscr_err");
@@ -216,8 +207,6 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   slc_intr_clear(&SLC0);
   slc_reset(&SLC0);
 
-  i2s_out->dma_eof = false; // flag set by ISR
-
   SLC0.conf0.txdscr_burst_en = 1;
   SLC0.conf0.txdata_burst_en = 0;
 
@@ -230,6 +219,9 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   SLC0.rx_link.addr = (uint32_t) i2s_out->dma_rx_desc;
 
   taskEXIT_CRITICAL();
+
+  // reset eof state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF);
 
   // reset write desc
   i2s_out->dma_start = false;
@@ -348,31 +340,11 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
 
 int i2s_out_dma_flush(struct i2s_out *i2s_out)
 {
-  int wait = 0;
+  LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_DMA_EOF);
 
-  taskENTER_CRITICAL();
+  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, false, false, portMAX_DELAY);
 
-  if (!i2s_out->dma_eof) {
-    wait = 1;
-
-    i2s_out->dma_flush_task = xTaskGetCurrentTaskHandle();
-  }
-
-  taskEXIT_CRITICAL();
-
-  if (!wait) {
-    LOG_DEBUG("done eof");
-
-    return 0;
-  }
-
-  LOG_DEBUG("wait eof, task=%p", i2s_out->dma_flush_task);
-
-  // wait for tx to complete and break to start
-  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
-    LOG_WARN("ulTaskNotifyTake: timeout");
-    return -1;
-  }
+  LOG_DEBUG("wait done");
 
   return 0;
 }

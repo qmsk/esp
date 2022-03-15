@@ -23,12 +23,8 @@ static void IRAM_ATTR i2s_isr(void *arg)
   }
 
   if (I2S0.int_st.tx_rempty) {
-    if (i2s_out->i2s_flush_task) {
-      // wakeup task in i2s_out_i2s_flush();
-      vTaskNotifyGiveFromISR(i2s_out->i2s_flush_task, &task_woken);
-
-      i2s_out->i2s_flush_task = NULL;
-    }
+    // unblock flush() task
+    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, &task_woken);
 
     // interrupt will fire until disabled
     I2S0.int_ena.tx_rempty = 0;
@@ -82,6 +78,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskEXIT_CRITICAL();
 
+  // reset eof state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+
   return 0;
 }
 
@@ -96,25 +95,17 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
 int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 {
-  LOG_DEBUG("set i2s_flush_task=%p", xTaskGetCurrentTaskHandle());
-
-  taskENTER_CRITICAL();
-
   // TODO: optimize to recognize if TX_REMPTY already happened?
-  i2s_out->i2s_flush_task = xTaskGetCurrentTaskHandle();
+  taskENTER_CRITICAL();
 
   i2s_intr_clear(&I2S0);
   i2s_intr_enable_tx(&I2S0);
 
   taskEXIT_CRITICAL();
 
-  LOG_DEBUG("wait i2s_flush_task=%p", i2s_out->i2s_flush_task);
+  LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 
-  // wait for tx to complete and break to start
-  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
-    LOG_WARN("ulTaskNotifyTake: timeout");
-    return -1;
-  }
+  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
 
   return 0;
 }

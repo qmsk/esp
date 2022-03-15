@@ -1,6 +1,7 @@
 #include <i2s_out.h>
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 
@@ -11,12 +12,16 @@
 
 struct dma_desc;
 
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF (1 << 0)
+#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF (1 << 1)
+
 struct i2s_out {
   i2s_port_t port;
   SemaphoreHandle_t mutex;
 #if CONFIG_IDF_TARGET_ESP32
   portMUX_TYPE mux;
 #endif
+  EventGroupHandle_t event_group;
 
   /* dev */
   SemaphoreHandle_t dev_mutex;
@@ -30,9 +35,6 @@ struct i2s_out {
 #if CONFIG_IDF_TARGET_ESP32
   gpio_num_t data_gpio;
 #endif
-  /* i2s */
-  // task waiting for tx_rempty notify
-  xTaskHandle i2s_flush_task;
 
   /* dma */
   uint8_t *dma_rx_buf, *dma_eof_buf;
@@ -45,14 +47,6 @@ struct i2s_out {
   struct dma_desc *dma_write_desc;
 
   bool dma_start; // set by i2s_out_dma_start
-  bool dma_eof; // set by interrupt
-
-  // task waiting for EOF notify
-#if CONFIG_IDF_TARGET_ESP8266
-  xTaskHandle dma_flush_task;
-#elif CONFIG_IDF_TARGET_ESP32
-  xTaskHandle dma_eof_task;
-#endif
 };
 
 /* dma.c */

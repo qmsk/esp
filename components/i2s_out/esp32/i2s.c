@@ -50,6 +50,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
+  // reset eof state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+
   return 0;
 }
 
@@ -66,24 +69,17 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
 int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 {
-  LOG_DEBUG("set i2s_flush_task=%p", xTaskGetCurrentTaskHandle());
-
+  // TODO: optimize to recognize if TX_REMPTY already happened?
   taskENTER_CRITICAL(&i2s_out->mux);
-
-  i2s_out->i2s_flush_task = xTaskGetCurrentTaskHandle();
 
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
-  LOG_DEBUG("wait i2s_flush_task=%p", i2s_out->i2s_flush_task);
+  LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 
-  // wait for tx to complete and break to start
-  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
-    LOG_WARN("ulTaskNotifyTake: timeout");
-    return -1;
-  }
+  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
 
   LOG_DEBUG("wait done");
 

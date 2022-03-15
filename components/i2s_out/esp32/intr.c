@@ -38,17 +38,8 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
   i2s_ll_tx_stop_link(i2s_out->dev);
   i2s_ll_rx_stop_link(i2s_out->dev);
 
-  // mark as done
-  i2s_out->dma_eof = true;
-
-  // notify flush() if waiting
-  if (i2s_out->dma_eof_task) {
-    LOG_ISR_DEBUG("notify task=%p", i2s_out->dma_eof_task);
-
-    vTaskNotifyGiveFromISR(i2s_out->dma_eof_task, task_wokenp);
-
-    i2s_out->dma_eof_task = NULL;
-  }
+  // unblock flush() task
+  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
 }
@@ -57,14 +48,8 @@ void IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *t
 {
   LOG_ISR_DEBUG("");
 
-  if (i2s_out->i2s_flush_task) {
-    LOG_ISR_DEBUG("notify task=%p", i2s_out->i2s_flush_task);
-
-    // wakeup task in i2s_out_i2s_flush();
-    vTaskNotifyGiveFromISR(i2s_out->i2s_flush_task, task_wokenp);
-
-    i2s_out->i2s_flush_task = NULL;
-  }
+  // unblock flush() task
+  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, task_wokenp);
 
   // interrupt will fire until disabled
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);

@@ -172,7 +172,7 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
     slc_stop(&SLC0);
 
     // mark as done
-    eof_desc->owner = 0;
+    i2s_out->dma_eof = true;
 
     // notify flush() if waiting
     if (i2s_out->dma_flush_task) {
@@ -216,6 +216,8 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   slc_intr_clear(&SLC0);
   slc_reset(&SLC0);
 
+  i2s_out->dma_eof = false; // flag set by ISR
+
   SLC0.conf0.txdscr_burst_en = 1;
   SLC0.conf0.txdata_burst_en = 0;
 
@@ -230,6 +232,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   taskEXIT_CRITICAL();
 
   // reset write desc
+  i2s_out->dma_start = false;
   i2s_out->dma_write_desc = i2s_out->dma_rx_desc;
 
   LOG_DEBUG("dma_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
@@ -291,7 +294,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
-  if (i2s_out->dma_write_desc->owner) {
+  if (i2s_out->dma_start) {
     // start() already haṕpened
     return 0;
   }
@@ -339,6 +342,8 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   slc_isr_unmask();
 
   taskEXIT_CRITICAL();
+
+  i2s_out->dma_start = true;
 }
 
 int i2s_out_dma_flush(struct i2s_out *i2s_out)
@@ -347,7 +352,7 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL();
 
-  if (i2s_out->dma_eof_desc->owner) {
+  if (!i2s_out->dma_eof) {
     wait = 1;
 
     i2s_out->dma_flush_task = xTaskGetCurrentTaskHandle();

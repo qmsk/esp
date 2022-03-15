@@ -44,16 +44,13 @@ struct i2s_out {
   // pointer to software-owned dma_rx_desc used for write()
   struct dma_desc *dma_write_desc;
 
-#if CONFIG_IDF_TARGET_ESP8266
+  bool dma_start; // set by i2s_out_dma_start
+  bool dma_eof; // set by interrupt
+
   // task waiting for EOF notify
+#if CONFIG_IDF_TARGET_ESP8266
   xTaskHandle dma_flush_task;
 #elif CONFIG_IDF_TARGET_ESP32
-  bool dma_start;
-
-  // set by interrupt
-  bool dma_eof;
-
-  // task waiting for EOF notify
   xTaskHandle dma_eof_task;
 #endif
 };

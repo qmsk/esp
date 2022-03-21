@@ -7,6 +7,7 @@
 
 #if CONFIG_ETH_ENABLED
   int init_eth();
+  int init_eth_netif();
   int init_eth_events();
 
   int start_eth();

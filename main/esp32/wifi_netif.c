@@ -77,7 +77,7 @@ int set_wifi_interface_hostname(wifi_interface_t interface, const char *hostname
     LOG_ERROR("make_wifi_netif");
     return err;
   } else if ((err = esp_netif_set_hostname(netif, hostname))) {
-    LOG_ERROR("esp_wifi_set_mode: %s", esp_err_to_name(err));
+    LOG_ERROR("esp_netif_set_hostname: %s", esp_err_to_name(err));
     return -1;
   }
 

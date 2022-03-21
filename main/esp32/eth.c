@@ -1,4 +1,5 @@
 #include "../eth.h"
+#include "../eth_config.h"
 #include "../eth_state.h"
 
 #include <esp_eth.h>
@@ -19,8 +20,6 @@
 static esp_eth_mac_t *eth_mac;
 static esp_eth_phy_t *eth_phy;
 static esp_eth_handle_t eth_handle;
-static esp_netif_t *eth_netif;
-static esp_eth_netif_glue_handle_t eth_netif_glue;
 
 esp_eth_handle_t get_eth_handle()
 {
@@ -85,32 +84,16 @@ static int init_eth_driver()
   return 0;
 }
 
-static int init_eth_netif()
-{
-  esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_ETH();
-  esp_err_t err;
-
-  if (!(eth_netif = esp_netif_new(&netif_config))) {
-    LOG_ERROR("esp_netif_new");
-    return -1;
-  }
-
-  if (!(eth_netif_glue = esp_eth_new_netif_glue(eth_handle))) {
-    LOG_ERROR("esp_eth_new_netif_glue");
-    return -1;
-  }
-
-  if ((err = esp_netif_attach(eth_netif, eth_netif_glue))) {
-    LOG_ERROR("esp_netif_attach: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
 int init_eth()
 {
   int err;
+
+  if (!is_eth_enabled()) {
+    LOG_INFO("disabled");
+    return 0;
+  }
+
+  LOG_INFO("");
 
   if ((err = init_eth_mac())) {
     LOG_ERROR("init_eth_mac");
@@ -137,6 +120,11 @@ int init_eth()
     return err;
   }
 
+  if ((err = config_eth())) {
+    LOG_ERROR("config_eth");
+    return err;
+  }
+
   return 0;
 }
 
@@ -144,9 +132,14 @@ int start_eth()
 {
   esp_err_t err;
 
-  if (!eth_handle) {
-    LOG_INFO("not initialized");
+  if (!is_eth_enabled()) {
+    LOG_INFO("disabled");
     return 0;
+  }
+
+  if (!eth_handle) {
+    LOG_ERROR("not initialized");
+    return -1;
   }
 
   LOG_INFO("");

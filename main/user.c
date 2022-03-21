@@ -16,6 +16,7 @@ static const char *user_state_str(enum user_state state)
     case USER_STATE_CONNECTED:        return "CONNECTED";
     case USER_STATE_DISCONNECTING:    return "DISCONNECTING";
     case USER_STATE_DISCONNECTED:     return "DISCONNECTED";
+    case USER_STATE_STOPPED:          return "STOPPED";
     case USER_STATE_RESET:            return "RESET";
     default:                          return NULL;
   }

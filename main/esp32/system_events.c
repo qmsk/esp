@@ -58,6 +58,8 @@ static void on_ip_eth_got_ip(ip_event_got_ip_t *event)
     event->ip_changed ? "true" : "false"
   );
 
+  user_state(USER_STATE_CONNECTED);
+
   system_netif_connected(event->esp_netif);
 }
 

@@ -32,6 +32,8 @@ static void on_sta_start()
   if (wifi_sta_connect) {
     LOG_INFO("connect...");
 
+    user_state(USER_STATE_CONNECTING);
+
     if ((err = esp_wifi_connect())) {
       LOG_ERROR("esp_wifi_connect: %s", esp_err_to_name(err));
       user_alert(USER_ALERT_ERROR_WIFI);
@@ -49,6 +51,8 @@ static void on_sta_stop()
   wifi_sta_started = false;
 
   on_wifi_interface_down(WIFI_IF_STA);
+
+  user_state(USER_STATE_STOPPED);
 }
 
 static void on_sta_connected(wifi_event_sta_connected_t *event)
@@ -126,8 +130,7 @@ static void on_ap_stop()
 {
   LOG_INFO("listen=%d started=%d connected=%d", wifi_ap_listen, wifi_ap_started, wifi_ap_connected);
 
-  // TODO: off?
-  user_state(USER_STATE_DISCONNECTED);
+  user_state(USER_STATE_STOPPED);
 
   wifi_ap_started = false;
   wifi_ap_connected = 0;

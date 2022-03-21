@@ -1,4 +1,5 @@
 #include "../eth.h"
+#include "../user.h"
 
 #include <esp_eth.h>
 #include <esp_event.h>
@@ -9,11 +10,15 @@
 static void on_eth_start(esp_eth_handle_t eth_handle)
 {
   LOG_INFO("");
+
+  user_state(USER_STATE_CONNECTING);
 }
 
 static void on_eth_stop(esp_eth_handle_t eth_handle)
 {
   LOG_INFO("");
+
+  user_state(USER_STATE_STOPPED);
 }
 
 static void on_eth_connected(esp_eth_handle_t eth_handle)
@@ -43,6 +48,8 @@ static void on_eth_connected(esp_eth_handle_t eth_handle)
     eth_speed_str(eth_speed),
     eth_duplex_str(eth_duplex)
   );
+
+  // wait for IP_EVENT_ETH_GOT_IP before USER_STATE_CONNECTED
 }
 
 static void on_eth_disconnected(esp_eth_handle_t eth_handle)
@@ -62,6 +69,8 @@ static void on_eth_disconnected(esp_eth_handle_t eth_handle)
     phy_addr,
     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
   );
+
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void eth_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)

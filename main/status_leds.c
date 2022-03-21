@@ -27,6 +27,7 @@ enum status_led_mode user_state_led_mode[USER_STATE_MAX] = {
   [USER_STATE_CONNECTED]        = STATUS_LED_ON,
   [USER_STATE_DISCONNECTING]    = STATUS_LED_FAST,
   [USER_STATE_DISCONNECTED]     = STATUS_LED_SLOW,
+  [USER_STATE_STOPPED]          = STATUS_LED_OFF,
   [USER_STATE_RESET]            = STATUS_LED_OFF,
 };
 

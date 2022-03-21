@@ -4,6 +4,7 @@
 #include "artnet.h"
 #include "config.h"
 #include "dmx.h"
+#include "eth.h"
 #include "leds.h"
 #include "log.h"
 #include "spiffs.h"
@@ -50,6 +51,11 @@ const struct cmd console_cli_commands[] = {
   { "wifi",         .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
   },
+#if CONFIG_ETH_ENABLED
+  { "eth",         .describe = "Ethernet",
+      .subcommands = &eth_cmdtab,
+  },
+#endif
   { "artnet",       .describe = "Art-NET",
       .subcommands = &artnet_cmdtab,
   },

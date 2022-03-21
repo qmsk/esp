@@ -4,6 +4,7 @@
 #include "config.h"
 #include "dev_mutex.h"
 #include "dmx.h"
+#include "eth.h"
 #include "leds.h"
 #include "log.h"
 #include "http.h"
@@ -89,6 +90,13 @@ void app_main(void)
     user_alert(USER_ALERT_ERROR_SETUP);
   }
 
+#if CONFIG_ETH_ENABLED
+  if ((err = init_eth())) {
+    LOG_ERROR("init_eth");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+#endif
+
   if ((err = init_http())) {
     LOG_ERROR("init_http");
     user_alert(USER_ALERT_ERROR_SETUP);
@@ -120,6 +128,13 @@ void app_main(void)
     LOG_ERROR("start_wifi_boot");
     user_alert(USER_ALERT_ERROR_START);
   }
+
+#if CONFIG_ETH_ENABLED
+  if ((err = start_eth())) {
+    LOG_ERROR("start_eth");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+#endif
 
   if ((err = start_http())) {
     LOG_ERROR("start_http");

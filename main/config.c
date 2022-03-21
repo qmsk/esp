@@ -3,6 +3,7 @@
 #include "atx_psu.h"
 #include "console.h"
 #include "dmx.h"
+#include "eth.h"
 #include "http.h"
 #include "leds.h"
 #include "wifi.h"
@@ -15,6 +16,7 @@
 #include <esp_spiffs.h>
 
 #include <errno.h>
+#include <sdkconfig.h>
 
 #define CONFIG_BASE_PATH "/config"
 #define CONFIG_FILE_NAME "boot.ini"
@@ -34,6 +36,14 @@ const struct configmod config_modules[] = {
     ),
     .table = wifi_configtab,
   },
+#if CONFIG_ETH_ENABLED
+  { "eth",
+    .description = (
+      "10/100BASE-TX Ethernet, using static/dynamic IPv4 addressing."
+    ),
+    .table = eth_configtab,
+  },
+#endif
   { "http",
     .description = "HTTP API + Web frontend with optional HTTP basic authentication.",
     .table = http_configtab,

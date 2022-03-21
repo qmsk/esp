@@ -214,3 +214,53 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_ALERT_GPIO_15_INVERTED
 
 endmenu
+
+menu "qmsk-esp-eth"
+  choice ETH_BOARD
+    prompt "Ethernet board type"
+    default ETH_BOARD_NONE
+
+    config ETH_BOARD_NONE
+      bool "None"
+
+    config ETH_BOARD_WT32_ETH01
+      bool "WT32-ETH01"
+
+  endchoice
+
+  config ETH_ENABLED
+      bool
+      
+      default n if ETH_BOARD_NONE
+      default y if ETH_BOARD_WT32_ETH01
+
+  config ETH_MAC_MDC_GPIO_NUM
+      int
+
+      default 23  if ETH_BOARD_WT32_ETH01
+      default 23
+
+  config ETH_MAC_MDIO_GPIO_NUM
+      int
+
+      default 18  if ETH_BOARD_WT32_ETH01
+      default 18
+
+  config ETH_PHY_LAN87XX
+      bool
+
+      default y if ETH_BOARD_WT32_ETH01
+      default n
+
+  config ETH_PHY_ADDR
+      int
+
+      default  1  if ETH_BOARD_WT32_ETH01
+      default -1
+
+  config ETH_PHY_RESET_GPIO_NUM
+      int
+
+      default  16 if ETH_BOARD_WT32_ETH01
+      default -1
+endmenu

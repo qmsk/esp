@@ -1,5 +1,13 @@
 #include <system_eth.h>
 
+const char *eth_link_str(eth_link_t link)
+{
+  switch (link) {
+    case ETH_LINK_UP:     return "UP";
+    case ETH_LINK_DOWN:   return "DOWN";
+    default:              return "?";
+  }
+}
 const char *eth_speed_str(eth_speed_t speed)
 {
   switch (speed) {

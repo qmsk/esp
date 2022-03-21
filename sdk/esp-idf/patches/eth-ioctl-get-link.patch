@@ -1,0 +1,27 @@
+diff --git a/components/esp_eth/include/esp_eth_com.h b/components/esp_eth/include/esp_eth_com.h
+index 7ce0538fbe..b309e17b78 100644
+--- a/components/esp_eth/include/esp_eth_com.h
++++ b/components/esp_eth/include/esp_eth_com.h
+@@ -81,6 +81,7 @@ typedef enum {
+ *
+ */
+ typedef enum {
++    ETH_CMD_G_LINK,        /*!< Get Link state */
+     ETH_CMD_G_MAC_ADDR,    /*!< Get MAC address */
+     ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
+     ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
+diff --git a/components/esp_eth/src/esp_eth.c b/components/esp_eth/src/esp_eth.c
+index 868dddad3f..c0783860c9 100644
+--- a/components/esp_eth/src/esp_eth.c
++++ b/components/esp_eth/src/esp_eth.c
+@@ -359,6 +359,10 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
+     esp_eth_mac_t *mac = eth_driver->mac;
+     esp_eth_phy_t *phy = eth_driver->phy;
+     switch (cmd) {
++    case ETH_CMD_G_LINK:
++        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store link value");
++        *(eth_link_t *)data = eth_driver->link;
++        break;
+     case ETH_CMD_S_MAC_ADDR:
+         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
+         ESP_GOTO_ON_ERROR(mac->set_addr(mac, (uint8_t *)data), err, TAG, "set mac address failed");

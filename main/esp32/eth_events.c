@@ -25,16 +25,16 @@ static void on_eth_connected(esp_eth_handle_t eth_handle)
   esp_err_t err;
 
   if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr))) {
-    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_MAC_ADDR: %s", esp_err_to_name(err));
+    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_PHY_ADDR: %s", esp_err_to_name(err));
   }
   if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac))) {
     LOG_ERROR("esp_eth_ioctl ETH_CMD_G_MAC_ADDR: %s", esp_err_to_name(err));
   }
   if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &eth_speed))) {
-    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_MAC_ADDR: %s", esp_err_to_name(err));
+    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_SPEED: %s", esp_err_to_name(err));
   }
   if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &eth_duplex))) {
-    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_MAC_ADDR: %s", esp_err_to_name(err));
+    LOG_ERROR("esp_eth_ioctl ETH_CMD_G_DUPLEX_MODE: %s", esp_err_to_name(err));
   }
 
   LOG_INFO("link up: phy=%u mac=%02x:%02x:%02x:%02x:%02x:%02x speed=%s duplex=%s",

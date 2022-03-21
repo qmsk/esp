@@ -1,4 +1,5 @@
 #include "../eth.h"
+#include "../eth_state.h"
 
 #include <esp_eth.h>
 #include <esp_err.h>
@@ -20,6 +21,11 @@ static esp_eth_phy_t *eth_phy;
 static esp_eth_handle_t eth_handle;
 static esp_netif_t *eth_netif;
 static esp_eth_netif_glue_handle_t eth_netif_glue;
+
+esp_eth_handle_t get_eth_handle()
+{
+  return eth_handle;
+}
 
 static int init_eth_mac()
 {

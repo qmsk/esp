@@ -1,4 +1,5 @@
 #include "../eth.h"
+#include "../eth_netif.h"
 #include "../user.h"
 
 #include <esp_eth.h>
@@ -11,7 +12,7 @@ static void on_eth_start(esp_eth_handle_t eth_handle)
 {
   LOG_INFO("");
 
-  user_state(USER_STATE_CONNECTING);
+  user_state(USER_STATE_DISCONNECTED);
 }
 
 static void on_eth_stop(esp_eth_handle_t eth_handle)
@@ -49,7 +50,12 @@ static void on_eth_connected(esp_eth_handle_t eth_handle)
     eth_duplex_str(eth_duplex)
   );
 
-  // wait for IP_EVENT_ETH_GOT_IP before USER_STATE_CONNECTED
+  if (is_eth_netif_dhcpc() > 0) {
+    // wait for IP_EVENT_ETH_GOT_IP before USER_STATE_CONNECTED
+    user_state(USER_STATE_CONNECTING);
+  } else {
+    user_state(USER_STATE_CONNECTED);
+  }
 }
 
 static void on_eth_disconnected(esp_eth_handle_t eth_handle)

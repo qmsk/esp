@@ -196,13 +196,19 @@
       return err;
     }
 
-    if ((err = set_eth_netif_dhcps())) {
-      LOG_ERROR("set_eth_netif_dhcps");
+    // must be ESP_NETIF_DHCP_STOPPED to set static IP, ESP_NETIF_DHCP_INIT is not enough
+    if ((err = set_eth_netif_static())) {
+      LOG_ERROR("set_eth_netif_static");
       return err;
     }
 
     if ((err = config_eth_ip(config))) {
       LOG_ERROR("config_eth_ip");
+      return err;
+    }
+
+    if ((err = set_eth_netif_dhcps())) {
+      LOG_ERROR("set_eth_netif_dhcps");
       return err;
     }
 

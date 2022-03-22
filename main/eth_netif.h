@@ -9,4 +9,6 @@
   int set_eth_netif_static();
   int set_eth_netif_dhcpc();
   int set_eth_netif_dhcps();
+
+  int is_eth_netif_dhcpc();
 #endif

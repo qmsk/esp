@@ -28,9 +28,10 @@ int init_eth_netif()
     netif_config_base.flags &= ~ESP_NETIF_DHCP_SERVER;
   } else if (is_eth_dhcp_server()) {
     netif_config_base.flags |= ESP_NETIF_DHCP_SERVER;
+    netif_config_base.flags |= ESP_NETIF_FLAG_AUTOUP; // required for ETHERNET_EVENT_START -> esp_netif_start() to actually start dhcps
     netif_config_base.flags &= ~ESP_NETIF_DHCP_CLIENT;
   } else {
-    netif_config_base.flags |= ESP_NETIF_DHCP_CLIENT; // required for static address -> ESP_NETIF_IP_EVENT_GOT_IP
+    netif_config_base.flags |= ESP_NETIF_DHCP_CLIENT; // required for ETHERNET_EVENT_CONNECTED -> ESP_NETIF_IP_EVENT_GOT_IP event
     netif_config_base.flags &= ~ESP_NETIF_DHCP_SERVER;
   }
 
@@ -148,7 +149,7 @@ int set_eth_netif_dhcps()
     return -1;
   }
 
-  if ((err = esp_netif_dhcps_start(eth_netif)) && (err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED)) {
+  if ((err = esp_netif_dhcps_start(eth_netif)) && (err != ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED)) {
     LOG_ERROR("esp_netif_dhcps_start: %s", esp_err_to_name(err));
     return -1;
   }
@@ -170,4 +171,27 @@ int set_eth_netif_dhcps()
   }
 
   return 0;
+}
+
+int is_eth_netif_dhcpc()
+{
+  esp_netif_dhcp_status_t status;
+  esp_err_t err;
+
+  if (!(err = esp_netif_dhcpc_get_status(eth_netif, &status))) {
+
+  } else if (err == ESP_ERR_INVALID_ARG && is_eth_dhcp_server()) {
+    return 0;
+  } else {
+    LOG_ERROR("esp_netif_dhcpc_get_status: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  switch (status) {
+    case ESP_NETIF_DHCP_STARTED:
+      return 1;
+
+    default:
+      return 0;
+  }
 }

@@ -4,6 +4,9 @@
 #include <hal/gpio_ll.h>
 #include <soc/gpio_periph.h>
 
+#define GPIO_PINS_LOW(x)  ((x) & 0xffffffff)
+#define GPIO_PINS_HIGH(x) ((x) >> 32)
+
 static void gpio_pins_init(gpio_num_t gpio, bool inverted)
 {
   // clear
@@ -26,8 +29,9 @@ static void gpio_pins_init(gpio_num_t gpio, bool inverted)
 
 static inline void gpio_pins_out(uint64_t pins, uint64_t levels)
 {
-  GPIO.out_w1ts       = (uint32_t)((pins & levels) & 0xffffffff);
-  GPIO.out1_w1ts.val  = (uint32_t)(((pins >> 32) & (levels >> 32)) & 0xffffffff);
-  GPIO.out_w1tc       = (uint32_t)((pins & ~levels) & 0xffffffff);
-  GPIO.out1_w1tc.val  = (uint32_t)(((pins >> 32) & ~(levels >> 32)) & 0xffffffff);
+  GPIO.out_w1ts       = (uint32_t)(GPIO_PINS_LOW(pins)  &  GPIO_PINS_LOW(levels));
+  GPIO.out1_w1ts.val  = (uint32_t)(GPIO_PINS_HIGH(pins) &  GPIO_PINS_HIGH(levels));
+
+  GPIO.out_w1tc       = (uint32_t)(GPIO_PINS_LOW(pins)  & ~GPIO_PINS_LOW(levels));
+  GPIO.out1_w1tc.val  = (uint32_t)(GPIO_PINS_HIGH(pins) & ~GPIO_PINS_HIGH(levels));
 }

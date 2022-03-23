@@ -8,7 +8,7 @@ struct dmx_output;
 struct dmx_output_options {
   /* Optional */
   struct gpio_out *gpio_out;
-  enum gpio_out_pins gpio_out_pins;
+  gpio_out_pins_t gpio_out_pins;
 };
 
 int dmx_output_new (struct dmx_output **outp, struct dmx_output_options options);

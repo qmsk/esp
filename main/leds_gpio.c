@@ -62,7 +62,7 @@
         continue;
       }
 
-      LOG_INFO("leds: gpio[%s] -> pins=%08x inverted=%08x",
+      LOG_INFO("leds: gpio[%s] -> pins=" GPIO_OUT_PINS_FMT " inverted=" GPIO_OUT_PINS_FMT,
         config_enum_to_string(leds_interface_enum, interface),
         leds_gpio_out[interface].pins,
         leds_gpio_out[interface].inverted

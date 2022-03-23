@@ -122,7 +122,7 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
      */
     struct gpio_out *gpio_out;
 
-    enum gpio_out_pins gpio_out_pins;
+    gpio_out_pins_t gpio_out_pins;
   };
 #endif
 

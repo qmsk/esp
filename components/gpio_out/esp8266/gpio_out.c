@@ -12,7 +12,7 @@ void gpio_out_clear(struct gpio_out *out)
   gpio_pins_out(out->pins, GPIO_OUT_PINS_NONE ^ out->inverted);
 }
 
-void gpio_out_set(struct gpio_out *out, enum gpio_out_pins pins)
+void gpio_out_set(struct gpio_out *out, gpio_out_pins_t pins)
 {
   gpio_pins_out(out->pins, pins ^ out->inverted);
 }

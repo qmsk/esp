@@ -24,8 +24,10 @@ static void gpio_pins_init(gpio_num_t gpio, bool inverted)
   gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
 }
 
-static inline void gpio_pins_out(enum gpio_out_pins pins, enum gpio_out_pins levels)
+static inline void gpio_pins_out(uint64_t pins, uint64_t levels)
 {
-  GPIO.out_w1ts = (pins & levels);
-  GPIO.out_w1tc = (pins & ~levels);
+  GPIO.out_w1ts       = (uint32_t)((pins & levels) & 0xffffffff);
+  GPIO.out1_w1ts.val  = (uint32_t)(((pins >> 32) & (levels >> 32)) & 0xffffffff);
+  GPIO.out_w1tc       = (uint32_t)((pins & ~levels) & 0xffffffff);
+  GPIO.out1_w1tc.val  = (uint32_t)(((pins >> 32) & ~(levels >> 32)) & 0xffffffff);
 }

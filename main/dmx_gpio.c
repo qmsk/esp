@@ -52,7 +52,7 @@ int init_dmx_gpio()
     return 0;
   }
 
-  LOG_INFO("dmx: gpio -> pins=%08x inverted=%08x",
+  LOG_INFO("dmx: gpio -> pins=" GPIO_OUT_PINS_FMT " inverted=" GPIO_OUT_PINS_FMT,
     dmx_gpio_out.pins,
     dmx_gpio_out.inverted
   );

@@ -18,6 +18,11 @@
     eth_duplex_t duplex;
     esp_err_t err;
 
+    if (!eth_handle) {
+      LOG_ERROR("eth disabled");
+      return -1;
+    }
+
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_LINK, &link))) {
       LOG_ERROR("esp_eth_ioctl ETH_CMD_G_LINK: %s", esp_err_to_name(err));
     }

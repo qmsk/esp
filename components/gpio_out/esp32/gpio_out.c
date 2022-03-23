@@ -22,9 +22,10 @@ void gpio_out_all(struct gpio_out *out)
 
 int gpio_out_setup(struct gpio_out *gpio_out)
 {
-  for (gpio_num_t gpio = 0; gpio < GPIO_OUT_PIN_COUNT; gpio++) {
+  for (gpio_out_pin_t gpio = 0; gpio < GPIO_OUT_PIN_COUNT; gpio++) {
     if (gpio_out->pins & gpio_out_pin(gpio)) {
       bool inverted = gpio_out->inverted & gpio_out_pin(gpio);
+
       gpio_pins_init(gpio, inverted);
     }
   }

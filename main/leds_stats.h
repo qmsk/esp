@@ -10,3 +10,4 @@ extern struct stats_timer leds_stats_artnet_update;
 extern struct stats_counter leds_stats_artnet_timeout;
 
 void leds_stats_init();
+void leds_stats_reset();

@@ -16,3 +16,9 @@ void leds_stats_init()
 
   stats_counter_init(&leds_stats_artnet_timeout);
 }
+
+void leds_stats_reset()
+{
+  // same same
+  leds_stats_init();
+}

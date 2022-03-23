@@ -7,6 +7,8 @@
 #include <leds.h>
 #include <stats_print.h>
 
+#include <string.h>
+
 int leds_cmd_info(int argc, char **argv, void *ctx)
 {
   for (int i = 0; i < LEDS_COUNT; i++) {
@@ -252,6 +254,12 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
 
 int leds_cmd_stats(int argc, char **argv, void *ctx)
 {
+  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
+    LOG_INFO("reset leds stats");
+
+    leds_stats_reset();
+  }
+
   print_stats_timer("artnet", "loop",   &leds_stats_artnet_loop);
   print_stats_timer("artnet", "test",   &leds_stats_artnet_test);
   print_stats_timer("artnet", "set",    &leds_stats_artnet_set);
@@ -269,7 +277,7 @@ const struct cmd leds_commands[] = {
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
   { "test",     leds_cmd_test,    .usage = "LEDS-ID",                   .describe = "Output test patterns" },
-  { "stats",    leds_cmd_stats,                                         .describe = "Show LED stats" },
+  { "stats",    leds_cmd_stats,   .usage = "[reset]",                   .describe = "Show/reset LED stats" },
   { }
 };
 

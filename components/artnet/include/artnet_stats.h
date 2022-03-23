@@ -65,9 +65,14 @@ struct artnet_output_stats {
 };
 
 /*
+ * Reset all artnet stats
+ */
+void artnet_reset_stats(struct artnet *artnet);
+
+/*
  * Copy stats for artnet.
  */
- void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats);
+void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats);
 
 /*
  * Copy stats for input.

@@ -6,6 +6,8 @@
 #include <logging.h>
 #include <stats_print.h>
 
+#include <string.h>
+
 #define ARTNET_INPUT_COUNT 4
 #define ARTNET_OUTPUT_COUNT 16
 
@@ -95,6 +97,12 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
     return 1;
   }
 
+  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
+    LOG_INFO("reset artnet stats");
+
+    artnet_reset_stats(artnet);
+  }
+
   // network stats
   struct artnet_stats stats;
 
@@ -180,7 +188,7 @@ int artnet_cmd_test(int argc, char **argv, void *ctx)
 
 const struct cmd artnet_commands[] = {
   { "info",      artnet_cmd_info,     .usage = "",                      .describe = "Show configuration" },
-  { "stats",     artnet_cmd_stats,    .usage = "",                      .describe = "Show receiver and output stats" },
+  { "stats",     artnet_cmd_stats,    .usage = "[reset]",               .describe = "Show/reset receiver and output stats" },
   { "test",      artnet_cmd_test,     .usage = "",                      .describe = "Trigger output test mode" },
   { }
 };

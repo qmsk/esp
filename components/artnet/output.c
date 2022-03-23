@@ -114,6 +114,15 @@ int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_outp
   return 0;
 }
 
+void artnet_reset_outputs_stats(struct artnet *artnet)
+{
+  for (unsigned i = 0; i < artnet->output_count; i++) {
+    struct artnet_output *output = &artnet->output_ports[i];
+
+    init_output_stats(&output->stats);
+  }
+}
+
 int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_output_stats *stats)
 {
   if (index >= artnet->output_count) {

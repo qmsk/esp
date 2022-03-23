@@ -47,6 +47,8 @@ struct artnet_input {
   struct artnet_input_stats stats;
 };
 
+void artnet_reset_inputs_stats(struct artnet *artnet);
+
 /* output.c */
 struct artnet_output {
   enum artnet_port_type type;
@@ -61,6 +63,7 @@ struct artnet_output {
 int artnet_find_output(struct artnet *artnet, uint16_t address, struct artnet_output **outputp);
 int artnet_outputs_dmx(struct artnet *artnet, uint16_t address, struct artnet_dmx *dmx);
 int artnet_outputs_sync(struct artnet *artnet);
+void artnet_reset_outputs_stats(struct artnet *artnet);
 
 /* protocol.c */
 int artnet_sendrecv(struct artnet *artnet, struct artnet_sendrecv *sendrecv);

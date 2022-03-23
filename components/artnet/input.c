@@ -142,6 +142,17 @@ int artnet_get_input_state(struct artnet *artnet, int index, struct artnet_input
   return 0;
 }
 
+void artnet_reset_inputs_stats(struct artnet *artnet)
+{
+  // XXX: locking for concurrent stats updates?
+
+  for (unsigned i = 0; i < artnet->input_count; i++) {
+    struct artnet_input *input = &artnet->input_ports[i];
+
+    init_input_stats(&input->stats);
+  }
+}
+
 int artnet_get_input_stats(struct artnet *artnet, int index, struct artnet_input_stats *stats)
 {
   if (index >= artnet->input_count) {

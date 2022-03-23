@@ -23,6 +23,20 @@ uint16_t artnet_address_universe(uint16_t address)
   return (address & 0x000F);
 }
 
+void artnet_init_stats(struct artnet *artnet)
+{
+  stats_timer_init(&artnet->stats.recv);
+
+  stats_counter_init(&artnet->stats.recv_error);
+  stats_counter_init(&artnet->stats.recv_poll);
+  stats_counter_init(&artnet->stats.recv_dmx);
+  stats_counter_init(&artnet->stats.recv_sync);
+  stats_counter_init(&artnet->stats.recv_unknown);
+  stats_counter_init(&artnet->stats.recv_invalid);
+  stats_counter_init(&artnet->stats.errors);
+  stats_counter_init(&artnet->stats.dmx_discard);
+}
+
 int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
@@ -39,16 +53,7 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 
   artnet->options = options;
 
-  stats_timer_init(&artnet->stats.recv);
-
-  stats_counter_init(&artnet->stats.recv_error);
-  stats_counter_init(&artnet->stats.recv_poll);
-  stats_counter_init(&artnet->stats.recv_dmx);
-  stats_counter_init(&artnet->stats.recv_sync);
-  stats_counter_init(&artnet->stats.recv_unknown);
-  stats_counter_init(&artnet->stats.recv_invalid);
-  stats_counter_init(&artnet->stats.errors);
-  stats_counter_init(&artnet->stats.dmx_discard);
+  artnet_init_stats(artnet);
 
   if ((err = artnet_listen(&artnet->socket, options.port))) {
     LOG_ERROR("artnet_listen port=%u", options.port);
@@ -139,6 +144,13 @@ int artnet_listen_main(struct artnet *artnet)
       }
     }
   }
+}
+
+void artnet_reset_stats(struct artnet *artnet)
+{
+  artnet_init_stats(artnet);
+  artnet_reset_inputs_stats(artnet);
+  artnet_reset_outputs_stats(artnet);
 }
 
 void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)

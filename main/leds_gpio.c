@@ -64,8 +64,8 @@
 
       LOG_INFO("leds: gpio[%s] -> pins=" GPIO_OUT_PINS_FMT " inverted=" GPIO_OUT_PINS_FMT,
         config_enum_to_string(leds_interface_enum, interface),
-        leds_gpio_out[interface].pins,
-        leds_gpio_out[interface].inverted
+        GPIO_OUT_PINS_ARGS(leds_gpio_out[interface].pins),
+        GPIO_OUT_PINS_ARGS(leds_gpio_out[interface].inverted)
       );
 
       if ((err = gpio_out_setup(&leds_gpio_out[interface]))) {

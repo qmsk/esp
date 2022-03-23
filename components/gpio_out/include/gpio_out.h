@@ -14,6 +14,7 @@
   #define GPIO_OUT_PIN(x) ((gpio_out_pin_t)(x))
 
   #define GPIO_OUT_PINS_FMT "%08x"
+  #define GPIO_OUT_PINS_ARGS(x) x
   #define GPIO_OUT_PINS_NONE 0
   #define GPIO_OUT_PINS_ALL 0xffff
   #define GPIO_OUT_PINS(x) ((gpio_out_pins_t)(1 << x))
@@ -45,9 +46,12 @@
   #define GPIO_OUT_PIN_COUNT 34
   #define GPIO_OUT_PIN(x) ((gpio_out_pin_t)(x))
 
-  #define GPIO_OUT_PINS_FMT "%010llx"
+  // newlib-nano printf does not support 64-bit formatting
+  #define GPIO_OUT_PINS_FMT "%02x%08x"
+  #define GPIO_OUT_PINS_ARGS(x) (uint32_t)(x >> 32), (uint32_t)(x & 0xffffffff)
+
   #define GPIO_OUT_PINS_NONE 0
-  #define GPIO_OUT_PINS_ALL 0x3ffffffff
+  #define GPIO_OUT_PINS_ALL 0x00000003ffffffff
   #define GPIO_OUT_PINS(x) ((gpio_out_pins_t)(1 << x))
 
   #define GPIO_OUT_PINS_GPIO0  GPIO_OUT_PINS(0)

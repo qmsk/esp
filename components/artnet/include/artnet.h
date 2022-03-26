@@ -68,6 +68,7 @@ enum artnet_port {
   ARTNET_PORT_2,
   ARTNET_PORT_3,
   ARTNET_PORT_4,
+  ARTNET_PORT_COUNT
 };
 
 struct artnet_input_options {

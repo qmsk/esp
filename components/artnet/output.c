@@ -230,21 +230,24 @@ int artnet_outputs_dmx(struct artnet *artnet, uint16_t address, struct artnet_dm
   return 0;
 }
 
-void artnet_output_sync(struct artnet_output *output)
-{
-  stats_counter_increment(&output->stats.sync_recv);
-
-  if (output->options.event_group) {
-    xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_SYNC_BIT);
-  }
-}
-
 int artnet_sync_outputs(struct artnet *artnet)
 {
+  EventGroupHandle_t port_event_groups[ARTNET_PORT_COUNT] = {};
+
   for (unsigned i = 0; i < artnet->output_count; i++) {
     struct artnet_output *output = &artnet->output_ports[i];
 
-    artnet_output_sync(output);
+    stats_counter_increment(&output->stats.sync_recv);
+
+    if (!output->options.event_group) {
+      // sync not supported
+    } else if (output->options.event_group == port_event_groups[output->options.port]) {
+      // only notify each event_group once
+    } else {
+      port_event_groups[output->options.port] = output->options.event_group;
+
+      xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_SYNC_BIT);
+    }
   }
 
   return 0;

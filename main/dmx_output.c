@@ -105,26 +105,15 @@ void dmx_output_main(void *ctx)
   int err;
 
   for (;;) {
-    // wait for output/sync
-    uint32_t notify_bits = artnet_output_wait(portMAX_DELAY);
+    // blocking read
+    if (!artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
+      LOG_WARN("dmx-output%d: artnet_output empty", state->index + 1);
+      continue;
+    }
 
-    LOG_DEBUG("notify index=%04x: sync=%d test=%d",
-      (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
-      !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT),
-      !!(notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT)
-    );
-
-    // only one index=0 output
-    if (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) {
-      if (!artnet_output_read(state->artnet_output, state->artnet_dmx, 0)) {
-        LOG_WARN("dmx-output%d: artnet_output empty", state->index + 1);
-        continue;
-      }
-
-      if ((err = output_dmx(state, state->artnet_dmx->data, state->artnet_dmx->len))) {
-        LOG_WARN("dmx-output%d: output_dmx", state->index + 1);
-        continue;
-      }
+    if ((err = output_dmx(state, state->artnet_dmx->data, state->artnet_dmx->len))) {
+      LOG_WARN("dmx-output%d: output_dmx", state->index + 1);
+      continue;
     }
   }
 }
@@ -152,8 +141,6 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
     return -1;
   } else {
     LOG_DEBUG("task=%p", state->artnet_task);
-
-    options.task = state->artnet_task;
   }
 
   if ((err = add_artnet_output(&state->artnet_output, options))) {

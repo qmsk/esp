@@ -2,6 +2,7 @@
 #define __ARTNET_H__
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
@@ -13,14 +14,14 @@
 #define ARTNET_UNIVERSE_MAX 15
 
 // up to 16 task notification bits for indexed outputs
-#define ARTNET_OUTPUT_TASK_INDEX_BITS 0xffff
-#define ARTNET_OUTPUT_TASK_FLAG_BITS 0xffff0000
+#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0xffff
+#define ARTNET_OUTPUT_EVENT_FLAG_BITS 0x00ff0000
 
 // flag bit for output sync
-#define ARTNET_OUTPUT_TASK_SYNC_BIT 0x10000
+#define ARTNET_OUTPUT_EVENT_SYNC_BIT 0x10000
 
 // flag bit for output test
-#define ARTNET_OUTPUT_TASK_TEST_BIT 0x20000
+#define ARTNET_OUTPUT_EVENT_TEST_BIT 0x20000
 
 struct artnet;
 struct artnet_input;
@@ -89,7 +90,7 @@ struct artnet_output_options {
   uint16_t address;
 
   /* Task associated with output, will receive task notifications on updates */
-  xTaskHandle task;
+  EventGroupHandle_t event_group;
 };
 
 struct artnet_input_state {
@@ -151,30 +152,23 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  * Up to 16 total output ports are supported, indexed across four physical ports.
  * All output port addresses must use an output universe matching the artnet_options.universe subnet, i.e. only the lower 4 bits can vary across ports.
  *
- * With multiple outputs, a direct-to-task notification with a bit matching the output index will be sent for each queue write.
+ * For demultiplexing multiple artnet output universes, the `event_group` `index` bit will be set when the output is ready for `artnet_output_read()`.
+ * Use `xEventGroupWaitBits(event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS)` -> `artnet_output_read()`.
  *
  * @param artnet
+ * @param outputp out
  * @param options Art-Net universe address, upper bits must match artnet_options.universe & 0xfff0
- * @param index differentiate between multiple outputs for a task. Also used as ArtPollReply bind index
- * @param task send direct-to-task notification for updates
  *
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options);
 
 /*
- * The artnet_output_options->task can wait for output updates.
- *
- * @param ticks wait up to ticks
- *
- * Returns bitmask of ARTNET_OUTPUT_TASK_INDEX_BITS + ARTNET_OUTPUT_TASK_FLAG_BITS, or 0 on timeout.
- */
-uint32_t artnet_output_wait(TickType_t ticks);
-
-/*
  * Read updated `struct artnet_dmx` from output. Call when artnet_output_wait() indicates that a new packet is available.
-
- ** @param ticks wait up to ticks, 0 -> immediate
+ *
+ * @param output read from output queue
+ * @param dmx out
+ * @param ticks wait up to ticks, 0 -> immediate
  *
  * @return <0 on error, 0 on *dmx updated, >0 if no update.
  */

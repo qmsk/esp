@@ -126,13 +126,15 @@ static void leds_artnet_set(struct leds_state *state, unsigned index, struct art
   leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
 }
 
-static uint32_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
+static EventBits_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
 {
   TickType_t wait_ticks = leds_artnet_wait_ticks(test_state, state->config);
+  const bool clear_on_exit = true;
+  const bool wait_for_all_bits = false;
 
   LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
 
-  return artnet_output_wait(wait_ticks);
+  return xEventGroupWaitBits(state->artnet.event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 }
 
 static void leds_artnet_main(void *ctx)
@@ -141,12 +143,12 @@ static void leds_artnet_main(void *ctx)
   struct leds_artnet_test test_state = {};
 
   for(struct stats_timer_sample loop_sample;; stats_timer_stop(&leds_stats_artnet_loop, &loop_sample)) {
-    uint32_t notify_bits = leds_artnet_wait(state, &test_state);
+    EventBits_t event_bits = leds_artnet_wait(state, &test_state);
 
     LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
-      (notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS),
-      !!(notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT),
-      !!(notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT)
+      (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS),
+      !!(event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT),
+      !!(event_bits & ARTNET_OUTPUT_EVENT_TEST_BIT)
     );
 
     loop_sample = stats_timer_start(&leds_stats_artnet_loop);
@@ -154,15 +156,15 @@ static void leds_artnet_main(void *ctx)
     // start/stop test mode
     bool unsync = false, sync = false, test = false, clear = false;
 
-    if (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT) {
+    if (event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT) {
       sync = true;
     }
-    if (notify_bits & ARTNET_OUTPUT_TASK_TEST_BIT) {
+    if (event_bits & ARTNET_OUTPUT_EVENT_TEST_BIT) {
       leds_artnet_test_start(&test_state);
     }
 
     if (leds_artnet_test_active(&test_state)) {
-      if ((notify_bits & ARTNET_OUTPUT_TASK_INDEX_BITS) || (notify_bits & ARTNET_OUTPUT_TASK_SYNC_BIT)) {
+      if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS) || (event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
         // have output data, end test
         leds_artnet_test_end(&test_state);
       }
@@ -172,7 +174,7 @@ static void leds_artnet_main(void *ctx)
       }
 
       test = true;
-    } else if (state->config->artnet_dmx_timeout && !notify_bits) {
+    } else if (state->config->artnet_dmx_timeout && !event_bits) {
       LOG_DEBUG("leds%d: timeout", state->index + 1);
 
       stats_counter_increment(&leds_stats_artnet_timeout);
@@ -182,7 +184,7 @@ static void leds_artnet_main(void *ctx)
 
     // set output from artnet universe
     for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
-      if (!(notify_bits & (1 << index))) {
+      if (!(event_bits & (1 << index))) {
         continue;
       }
 
@@ -250,6 +252,11 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
+  if (!(state->artnet.event_group = xEventGroupCreate())) {
+    LOG_ERROR("xEventGroupCreate");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -277,7 +284,7 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
       .port = (enum artnet_port) (state->index), // use ledsX index as output port
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
-      .task = state->artnet.task,
+      .event_group = state->artnet.event_group,
     };
 
     LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", state->index + 1, options.port, options.address, options.index);

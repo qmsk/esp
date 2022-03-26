@@ -47,18 +47,6 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
   return 0;
 }
 
-uint32_t artnet_output_wait(TickType_t ticks)
-{
-  uint32_t notify_bits = 0;
-
-  // wait for output/sync, or next test frame
-  if (xTaskNotifyWait(0, ARTNET_OUTPUT_TASK_INDEX_BITS | ARTNET_OUTPUT_TASK_FLAG_BITS, &notify_bits, ticks)) {
-    return notify_bits;
-  } else {
-    return 0;
-  }
-}
-
 int artnet_output_read(struct artnet_output *output, struct artnet_dmx *dmx, TickType_t ticks)
 {
   if (!xQueueReceive(output->queue, dmx, ticks)) {
@@ -214,8 +202,8 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
     xQueueOverwrite(output->queue, dmx);
   }
 
-  if (output->options.task) {
-    xTaskNotify(output->options.task, (1 << output->options.index) & ARTNET_OUTPUT_TASK_INDEX_BITS, eSetBits);
+  if (output->options.event_group) {
+    xEventGroupSetBits(output->options.event_group, (1 << output->options.index) & ARTNET_OUTPUT_EVENT_INDEX_BITS);
   }
 }
 
@@ -246,8 +234,8 @@ void artnet_output_sync(struct artnet_output *output)
 {
   stats_counter_increment(&output->stats.sync_recv);
 
-  if (output->options.task) {
-    xTaskNotify(output->options.task, ARTNET_OUTPUT_TASK_SYNC_BIT, eSetBits);
+  if (output->options.event_group) {
+    xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_SYNC_BIT);
   }
 }
 
@@ -264,8 +252,8 @@ int artnet_sync_outputs(struct artnet *artnet)
 
 void artnet_output_test(struct artnet_output *output)
 {
-  if (output->options.task) {
-    xTaskNotify(output->options.task, ARTNET_OUTPUT_TASK_TEST_BIT, eSetBits);
+  if (output->options.event_group) {
+    xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_TEST_BIT);
   }
 }
 

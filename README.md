@@ -7,6 +7,7 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 * USB Console CLI and HTTP Web UI for configuration and advanced diagnostics (WiP)
 * Fully configurable via the USB Console CLI or HTTP Web UI
 * WiFi STA/AP support with DHCP or static addressing
+* Ethernet support with DHCP client/server or static addressing
 * Support for WS2811/WS2812B, SK6812, APA102/SK9822 and P9813 LED driver protocols
 * Up to four separate SPI, UART and I2S outputs with optional GPIO output-enable multiplexing
 * Multiple Art-NET universes per output for >170 LEDs
@@ -437,17 +438,32 @@ aa:bb:cc:dd:ee:ff	qmsk-guest                      	11:0 	-61 	WPA/2-PSK 	TKIP-CC
 aa:bb:cc:dd:ee:ff	qmsk-iot                        	11:0 	-61 	WPA2-PSK  	CCMP      /CCMP      bgn  
 ```
 
-### `atx_psu`
+## `eth`
+
+Ethernet support using an external PHY.
+
+Use `idf.py menuconfig` -> Component config -> qmsk-esp-eth -> Ethernet board type to select a supported board type:
+
+* WT32-ETH01 (v1.2)
+
+The `eth` interface can be configured in three modes:
+
+* `NONE` - no IPv4 addressing, the `ip` / `netmask` / `gw` settings are ignored
+* `DHCP_CLIENT` - start DHCP client, the `ip` / `netmask` / `gw` settings are ignored
+* `DHCP_SERVER` - start DHCP server, requires the `ip` / `netmask` / `gw` to be configured
+* `STATIC` - use static IPv4 address, requires the `ip` / `netmask` / `gw` to be configured
+
+## `atx_psu`
 
 Control an ATX PSU `#PS_EN` via GPIO. Powers on the PSU whenever SPI-LED output is active, with a configurable shutdown timeout.
 
-### `artnet`
+## `artnet`
 
 Art-NET UDP receiver.
 
 Supports up to four Art-NET outputs on the [Art-Net Sub-Net](https://art-net.org.uk/how-it-works/universe-addressing/) matching the higher bits of the configured `universe`. With e.g. `universe = 0`, artnet outputs can use universes 0-15. To use an artnet output universe 16, the `[artnet] universe` must be configured to `16`, and then output universes 16-31 can be used.
 
-### `dmx-input`
+## `dmx-input`
 
 Art-NET DMX input via UART2 RX (using UART0 alternate RTS/CTS pins).
 
@@ -455,7 +471,7 @@ The FLASH LED will blink on DMX updates.
 
 Can be used to control local Art-NET outputs using a configured Art-NET universe.
 
-### `dmx-output`
+## `dmx-output`
 
 Art-NET DMX output via UART1 TX.
 
@@ -463,7 +479,7 @@ Supports up to two multiplexed outputs using active-high/low GPIOs.
 
 The FLASH LED will blink on DMX updates.
 
-### `spi-leds`
+## `spi-leds`
 
 Art-NET DMX controller for RGB LEDs.
 

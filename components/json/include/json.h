@@ -55,6 +55,7 @@ int json_close_array(struct json_writer *w);
 #define JSON_WRITE_MEMBER(w, name, write_member) (json_open_object_member((w), (name)) || (write_member))
 #define JSON_WRITE_MEMBER_RAW(w, name, ...) (json_open_object_member((w), (name)) || json_write_raw((w), __VA_ARGS__))
 #define JSON_WRITE_MEMBER_STRING(w, name, value) (json_open_object_member((w), (name)) || json_write_string((w), (value)))
+#define JSON_WRITE_MEMBER_NSTRING(w, name, value) (json_open_object_member((w), (name)) || json_write_nstring((w), (value), sizeof(value)))
 #define JSON_WRITE_MEMBER_FLOAT(w, name, value) (json_open_object_member((w), (name)) || json_write_float((w), (value)))
 #define JSON_WRITE_MEMBER_INT(w, name, value) (json_open_object_member((w), (name)) || json_write_int((w), (value)))
 #define JSON_WRITE_MEMBER_UINT(w, name, value) (json_open_object_member((w), (name)) || json_write_uint((w), (value)))

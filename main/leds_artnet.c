@@ -287,7 +287,7 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
       .event_group = state->artnet.event_group,
     };
 
-    LOG_INFO("leds%u: artnet output port=%d address=%04x index=%u", state->index + 1, options.port, options.address, options.index);
+    snprintf(options.name, sizeof(options.name), "leds%u", state->index + 1);
 
     if (add_artnet_output(&state->artnet.outputs[i], options)) {
       LOG_ERROR("add_artnet_output");

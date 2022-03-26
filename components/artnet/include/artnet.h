@@ -13,6 +13,8 @@
 #define ARTNET_SUBNET_MAX 15
 #define ARTNET_UNIVERSE_MAX 15
 
+#define ARTNET_OUTPUT_NAME_MAX 16
+
 // up to 16 task notification bits for indexed outputs
 #define ARTNET_OUTPUT_EVENT_INDEX_BITS 0xffff
 #define ARTNET_OUTPUT_EVENT_FLAG_BITS 0x00ff0000
@@ -85,6 +87,9 @@ struct artnet_output_options {
 
   /* Output index, used for discovery bind index and task notification bits */
   uint8_t index;
+
+  /* Human-friendly name */
+  char name[ARTNET_OUTPUT_NAME_MAX];
 
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;

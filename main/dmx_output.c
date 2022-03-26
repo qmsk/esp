@@ -136,6 +136,9 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
   };
   int err;
 
+
+  snprintf(options.name, sizeof(options.name), "dmx-output%u", state->index + 1);
+
   if (start_taskf(task_options, state->index + 1)) {
     LOG_ERROR("start_taskf");
     return -1;

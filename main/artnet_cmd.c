@@ -78,10 +78,13 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16s[%3u]: seq %3u @ %d ticks\n", i,
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16.16s[%3u]: seq %3u @ %d ticks\n", i,
       options->port, options->index,
-      artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
-      options->task ? pcTaskGetName(options->task) : "?", options->index,
+      artnet_address_net(options->address),
+      artnet_address_subnet(options->address),
+      artnet_address_universe(options->address),
+      options->name,
+      options->index,
       state.seq,
       state.tick ? tick - state.tick : 0
     );

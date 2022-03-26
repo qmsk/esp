@@ -129,6 +129,9 @@ int add_artnet_output(struct artnet_output **outputp, struct artnet_output_optio
 
   options.address = artnet_address(config->net, config->subnet, options.address);
 
+
+  LOG_INFO("port=%d name=%s index=%u address=%04x", options.port, options.name, options.index, options.address);
+
   return artnet_add_output(artnet, outputp, options);
 }
 

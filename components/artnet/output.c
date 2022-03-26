@@ -246,26 +246,8 @@ int artnet_sync_outputs(struct artnet *artnet)
     } else {
       port_event_groups[output->options.port] = output->options.event_group;
 
-      xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_SYNC_BIT);
+      xEventGroupSetBits(output->options.event_group, (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT));
     }
-  }
-
-  return 0;
-}
-
-void artnet_output_test(struct artnet_output *output)
-{
-  if (output->options.event_group) {
-    xEventGroupSetBits(output->options.event_group, ARTNET_OUTPUT_EVENT_TEST_BIT);
-  }
-}
-
-int artnet_test_outputs(struct artnet *artnet)
-{
-  for (unsigned i = 0; i < artnet->output_count; i++) {
-    struct artnet_output *output = &artnet->output_ports[i];
-
-    artnet_output_test(output);
   }
 
   return 0;

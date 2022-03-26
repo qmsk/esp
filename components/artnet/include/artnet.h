@@ -19,11 +19,8 @@
 #define ARTNET_OUTPUT_EVENT_INDEX_BITS 0xffff
 #define ARTNET_OUTPUT_EVENT_FLAG_BITS 0x00ff0000
 
-// flag bit for output sync
-#define ARTNET_OUTPUT_EVENT_SYNC_BIT 0x10000
-
-// flag bit for output test
-#define ARTNET_OUTPUT_EVENT_TEST_BIT 0x20000
+// flag bit to force output sync
+#define ARTNET_OUTPUT_EVENT_SYNC_BIT 16
 
 struct artnet;
 struct artnet_input;
@@ -160,6 +157,7 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  *
  * For demultiplexing multiple artnet output universes, the `event_group` `index` bit will be set when the output is ready for `artnet_output_read()`.
  * Use `xEventGroupWaitBits(event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS)` -> `artnet_output_read()`.
+ * Use `struct artnet_dmx` -> `sync_mode` and `(1 << LEDS_ARTNET_EVENT_SYNC_BIT)` to implement multi-universe sync.
  *
  * @param artnet
  * @param outputp out
@@ -262,17 +260,9 @@ int artnet_get_input_state(struct artnet *artnet, int index, struct artnet_input
 int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state);
 
 /**
- * Set all artnet outputs into test mode. The outputs will return into normal operating mode as soon
- * as they receive any real data.
+ * Sync all artnet outputs.
  *
- * This only works for outputs with an associated (struct artnet_output_options *)->task.
- */
-int artnet_test_outputs(struct artnet *artnet);
-
-/**
- * Sync all artnet outputs. This can be used to cacnel output test mode.
- *
- * This only works for outputs with an associated (struct artnet_output_options *)->task.
+ * This only applies to outputs with an associated `struct artnet_output_options` `event_group`.
  */
 int artnet_sync_outputs(struct artnet *artnet);
 

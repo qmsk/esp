@@ -147,8 +147,8 @@ static void leds_artnet_main(void *ctx)
 
     LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
       (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS),
-      !!(event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT),
-      !!(event_bits & ARTNET_OUTPUT_EVENT_TEST_BIT)
+      !!(event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)),
+      !!(event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT))
     );
 
     loop_sample = stats_timer_start(&leds_stats_artnet_loop);
@@ -156,15 +156,15 @@ static void leds_artnet_main(void *ctx)
     // start/stop test mode
     bool unsync = false, sync = false, test = false, clear = false;
 
-    if (event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT) {
+    if (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
       sync = true;
     }
-    if (event_bits & ARTNET_OUTPUT_EVENT_TEST_BIT) {
+    if (event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT)) {
       leds_artnet_test_start(&test_state);
     }
 
     if (leds_artnet_test_active(&test_state)) {
-      if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS) || (event_bits & ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
+      if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS) || (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT))) {
         // have output data, end test
         leds_artnet_test_end(&test_state);
       }

@@ -72,7 +72,7 @@ int init_artnet()
 {
   const struct artnet_config *config = &artnet_config;
   struct artnet_options options = {
-    .port     = ARTNET_PORT,
+    .port     = ARTNET_UDP_PORT,
     .address  = artnet_address(config->net, config->subnet, 0),
     .inputs   = count_artnet_inputs(),
   };

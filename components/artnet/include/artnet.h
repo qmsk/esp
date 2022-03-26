@@ -6,7 +6,7 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
-#define ARTNET_PORT 6454
+#define ARTNET_UDP_PORT 6454
 #define ARTNET_DMX_SIZE 512
 
 #define ARTNET_NET_MAX 127

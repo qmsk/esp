@@ -56,6 +56,7 @@ struct configtab {
 
     struct {
       bool *value;
+      bool default_value;
     } bool_type;
 
     struct {

@@ -190,6 +190,7 @@ int configtab_init(const struct configtab *tab)
       break;
 
     case CONFIG_TYPE_BOOL:
+      *tab->bool_type.value = tab->bool_type.default_value;
       break;
 
     case CONFIG_TYPE_ENUM:

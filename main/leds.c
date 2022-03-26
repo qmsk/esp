@@ -19,7 +19,7 @@ int init_leds()
 {
   int err;
 
-  leds_stats_init();
+  init_leds_stats();
 
 #if CONFIG_LEDS_GPIO_ENABLED
   if ((err = init_leds_gpio())) {

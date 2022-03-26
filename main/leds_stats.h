@@ -1,13 +1,17 @@
 #pragma once
 
+#include "leds.h"
+
 #include <stats.h>
 
-extern struct stats_timer leds_stats_artnet_loop;
-extern struct stats_timer leds_stats_artnet_test;
-extern struct stats_timer leds_stats_artnet_set;
-extern struct stats_timer leds_stats_artnet_update;
+struct leds_artnet_stats {
+  struct stats_timer loop;
+  struct stats_timer test;
+  struct stats_timer set;
+  struct stats_timer update;
 
-extern struct stats_counter leds_stats_artnet_timeout;
+  struct stats_counter timeout;
+} leds_artnet_stats[LEDS_COUNT];
 
-void leds_stats_init();
-void leds_stats_reset();
+void init_leds_artnet_stats(struct leds_artnet_stats *stats);
+void init_leds_stats();

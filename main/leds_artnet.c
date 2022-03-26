@@ -141,8 +141,9 @@ static void leds_artnet_main(void *ctx)
 {
   struct leds_state *state = ctx;
   struct leds_artnet_test test_state = {};
+  struct leds_artnet_stats *stats = &leds_artnet_stats[state->index];
 
-  for(struct stats_timer_sample loop_sample;; stats_timer_stop(&leds_stats_artnet_loop, &loop_sample)) {
+  for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
     EventBits_t event_bits = leds_artnet_wait(state, &test_state);
 
     LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
@@ -151,7 +152,7 @@ static void leds_artnet_main(void *ctx)
       !!(event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT))
     );
 
-    loop_sample = stats_timer_start(&leds_stats_artnet_loop);
+    loop_sample = stats_timer_start(&stats->loop);
 
     // start/stop test mode
     bool unsync = false, sync = false, test = false, clear = false;
@@ -169,7 +170,7 @@ static void leds_artnet_main(void *ctx)
         leds_artnet_test_end(&test_state);
       }
 
-      WITH_STATS_TIMER(&leds_stats_artnet_test) {
+      WITH_STATS_TIMER(&stats->test) {
         leds_artnet_test_frame(state, &test_state);
       }
 
@@ -177,7 +178,7 @@ static void leds_artnet_main(void *ctx)
     } else if (state->config->artnet_dmx_timeout && !event_bits) {
       LOG_DEBUG("leds%d: timeout", state->index + 1);
 
-      stats_counter_increment(&leds_stats_artnet_timeout);
+      stats_counter_increment(&stats->timeout);
 
       clear = true;
     }
@@ -193,7 +194,7 @@ static void leds_artnet_main(void *ctx)
         continue;
       }
 
-      WITH_STATS_TIMER(&leds_stats_artnet_set) {
+      WITH_STATS_TIMER(&stats->set) {
         leds_artnet_set(state, index, state->artnet.dmx);
       }
 
@@ -205,7 +206,7 @@ static void leds_artnet_main(void *ctx)
 
     // tx output if required
     if (unsync || sync || test) {
-      WITH_STATS_TIMER(&leds_stats_artnet_update) {
+      WITH_STATS_TIMER(&stats->update) {
         if (update_leds(state)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);
           continue;
@@ -214,7 +215,7 @@ static void leds_artnet_main(void *ctx)
     }
 
     if (clear) {
-      WITH_STATS_TIMER(&leds_stats_artnet_update) {
+      WITH_STATS_TIMER(&stats->update) {
         if (clear_leds(state)) {
           LOG_WARN("leds%d: clear_leds", state->index + 1);
           continue;

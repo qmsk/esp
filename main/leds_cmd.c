@@ -254,18 +254,24 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
 
 int leds_cmd_stats(int argc, char **argv, void *ctx)
 {
+  for (unsigned i = 0; i < LEDS_COUNT; i++) {
+    const struct leds_artnet_stats *stats = &leds_artnet_stats[i];
+
+    printf("leds%u:\n", i + 1);
+
+    print_stats_timer("artnet", "loop",   &stats->loop);
+    print_stats_timer("artnet", "test",   &stats->test);
+    print_stats_timer("artnet", "set",    &stats->set);
+    print_stats_timer("artnet", "update", &stats->update);
+    printf("\n");
+    print_stats_counter("artnet", "timeout", &stats->timeout);
+  }
+
   if (argc > 1 && strcmp(argv[1], "reset") == 0) {
     LOG_INFO("reset leds stats");
 
-    leds_stats_reset();
+    init_leds_stats();
   }
-
-  print_stats_timer("artnet", "loop",   &leds_stats_artnet_loop);
-  print_stats_timer("artnet", "test",   &leds_stats_artnet_test);
-  print_stats_timer("artnet", "set",    &leds_stats_artnet_set);
-  print_stats_timer("artnet", "update", &leds_stats_artnet_update);
-  printf("\n");
-  print_stats_counter("artnet", "timeout", &leds_stats_artnet_timeout);
 
   return 0;
 }

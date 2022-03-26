@@ -15,6 +15,7 @@
 #define WIFI_CONFIG_CHANNEL_MAX 13
 #define WIFI_HOSTNAME_MAX_SIZE 32
 
+#define WIFI_CONFIG_ENABLED_DEFAULT true
 #define WIFI_CONFIG_MODE_DEFAULT WIFI_MODE_AP
 #define WIFI_CONFIG_AUTHMODE_DEFAULT WIFI_AUTH_WPA2_PSK
 
@@ -46,6 +47,12 @@ const struct config_enum wifi_auth_mode_enum[] = {
 };
 
 const struct configtab wifi_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .description = (
+      "Only start WiFi in config mode."
+    ),
+    .bool_type = { .value = &wifi_config.enabled, .default_value = WIFI_CONFIG_ENABLED_DEFAULT },
+  },
   { CONFIG_TYPE_BOOL, "config_only_mode",
     .description = (
       "Only start WiFi in config mode."

@@ -19,6 +19,11 @@ int init_wifi()
   wifi_init_config_t wifi_ini_config = WIFI_INIT_CONFIG_DEFAULT();
   esp_err_t err;
 
+  if (!wifi_config.enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
+
   if ((err = esp_wifi_init(&wifi_ini_config))) {
     LOG_ERROR("esp_wifi_init: %s", esp_err_to_name(err));
     return -1;
@@ -272,6 +277,11 @@ int start_wifi_boot()
 int start_wifi()
 {
   esp_err_t err;
+
+  if (!wifi_config.enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
 
   LOG_INFO("starting...");
 

@@ -5,6 +5,7 @@
 
 #include <logging.h>
 #include <leds.h>
+#include <leds_stats.h>
 #include <stats_print.h>
 
 #include <string.h>
@@ -254,6 +255,31 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
 
 int leds_cmd_stats(int argc, char **argv, void *ctx)
 {
+  // interface
+  {
+    struct leds_interface_stats stats;
+
+    leds_get_interface_stats(&stats);
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    print_stats_timer("spi", "open",   &stats.spi.open);
+    print_stats_timer("spi", "tx",     &stats.spi.tx);
+    printf("\n");
+  #endif
+
+  #if CONFIG_LEDS_UART_ENABLED
+    print_stats_timer("uart", "open",   &stats.uart.open);
+    print_stats_timer("uart", "tx",     &stats.uart.tx);
+    printf("\n");
+  #endif
+
+  #if CONFIG_LEDS_I2S_ENABLED
+    print_stats_timer("i2s", "open",   &stats.i2s.open);
+    print_stats_timer("i2s", "tx",     &stats.i2s.tx);
+    printf("\n");
+  #endif
+  }
+
   for (unsigned i = 0; i < LEDS_COUNT; i++) {
     const struct leds_artnet_stats *stats = &leds_artnet_stats[i];
 
@@ -265,12 +291,14 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("artnet", "update", &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->timeout);
+    printf("\n");
   }
 
   if (argc > 1 && strcmp(argv[1], "reset") == 0) {
     LOG_INFO("reset leds stats");
 
     init_leds_stats();
+    leds_reset_interface_stats();
   }
 
   return 0;

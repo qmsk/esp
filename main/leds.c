@@ -7,6 +7,7 @@
 #include "user.h"
 
 #include <leds.h>
+#include <leds_stats.h>
 
 #include <logging.h>
 
@@ -20,6 +21,7 @@ int init_leds()
   int err;
 
   init_leds_stats();
+  leds_reset_interface_stats();
 
 #if CONFIG_LEDS_GPIO_ENABLED
   if ((err = init_leds_gpio())) {

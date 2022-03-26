@@ -1,5 +1,6 @@
 #include "../ws2811.h"
 #include "../../leds.h"
+#include "../../stats.h"
 
 #include <logging.h>
 
@@ -67,6 +68,7 @@ static const uint16_t ws2811_lut[] = {
 
 int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union ws2811_pixel *pixels, unsigned count, struct leds_limit limit)
 {
+  struct leds_interface_uart_stats *stats = &leds_interface_stats.uart;
   struct uart_options uart_options = {
     .baud_rate    = UART_BAUD_4000000,
     .data_bits    = UART_DATA_8_BITS,
@@ -81,9 +83,11 @@ int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union
   uint16_t buf[6];
   int err;
 
-  if ((err = uart_open(options->uart, uart_options))) {
-    LOG_ERROR("uart_open");
-    return err;
+  WITH_STATS_TIMER(&stats->open) {
+    if ((err = uart_open(options->uart, uart_options))) {
+      LOG_ERROR("uart_open");
+      return err;
+    }
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
@@ -92,31 +96,33 @@ int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union
   }
 #endif
 
-  // temporarily raise task priority to ensure uart TX buffer does not starve
-  vTaskPrioritySet(NULL, WS2811_TX_TASK_PRIORITY);
+  WITH_STATS_TIMER(&stats->tx) {
+    // temporarily raise task priority to ensure uart TX buffer does not starve
+    vTaskPrioritySet(NULL, WS2811_TX_TASK_PRIORITY);
 
-  for (unsigned i = 0; i < count; i++) {
-    uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
+    for (unsigned i = 0; i < count; i++) {
+      uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
 
-    buf[0]  = ws2811_lut[(rgb >> 20) & 0xf];
-    buf[1]  = ws2811_lut[(rgb >> 16) & 0xf];
-    buf[2]  = ws2811_lut[(rgb >> 12) & 0xf];
-    buf[3]  = ws2811_lut[(rgb >>  8) & 0xf];
-    buf[4]  = ws2811_lut[(rgb >>  4) & 0xf];
-    buf[5]  = ws2811_lut[(rgb >>  0) & 0xf];
+      buf[0]  = ws2811_lut[(rgb >> 20) & 0xf];
+      buf[1]  = ws2811_lut[(rgb >> 16) & 0xf];
+      buf[2]  = ws2811_lut[(rgb >> 12) & 0xf];
+      buf[3]  = ws2811_lut[(rgb >>  8) & 0xf];
+      buf[4]  = ws2811_lut[(rgb >>  4) & 0xf];
+      buf[5]  = ws2811_lut[(rgb >>  0) & 0xf];
 
-    if ((err = uart_write_all(options->uart, buf, sizeof(buf)))) {
-      LOG_ERROR("uart_write_all");
+      if ((err = uart_write_all(options->uart, buf, sizeof(buf)))) {
+        LOG_ERROR("uart_write_all");
+        goto error;
+      }
+    }
+
+    // restore previous task priority
+    vTaskPrioritySet(NULL, task_priority);
+
+    if ((err = uart_mark(options->uart, WS2811_RESET_US))) {
+      LOG_ERROR("uart_mark");
       goto error;
     }
-  }
-
-  // restore previous task priority
-  vTaskPrioritySet(NULL, task_priority);
-
-  if ((err = uart_mark(options->uart, WS2811_RESET_US))) {
-    LOG_ERROR("uart_mark");
-    goto error;
   }
 
 error:

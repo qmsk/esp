@@ -1,5 +1,6 @@
 #include "../ws2811.h"
 #include "../../leds.h"
+#include "../../stats.h"
 
 #include <logging.h>
 
@@ -38,6 +39,7 @@ static const uint16_t ws2811_lut[] = {
 
 int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union ws2811_pixel *pixels, unsigned count, struct leds_limit limit)
 {
+  struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   struct i2s_out_options i2s_out_options = {
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us WS2811 bit
@@ -59,9 +61,11 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
   uint16_t buf[6];
   int err;
 
-  if ((err = i2s_out_open(options->i2s_out, i2s_out_options))) {
-    LOG_ERROR("i2s_out_open");
-    return err;
+  WITH_STATS_TIMER(&stats->open) {
+    if ((err = i2s_out_open(options->i2s_out, i2s_out_options))) {
+      LOG_ERROR("i2s_out_open");
+      return err;
+    }
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
@@ -70,25 +74,27 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
   }
 #endif
 
-  for (unsigned i = 0; i < count; i++) {
-    uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
+  WITH_STATS_TIMER(&stats->tx) {
+    for (unsigned i = 0; i < count; i++) {
+      uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
 
-    buf[0] = ws2811_lut[(rgb >> 20) & 0xf];
-    buf[1] = ws2811_lut[(rgb >> 16) & 0xf];
-    buf[2] = ws2811_lut[(rgb >> 12) & 0xf];
-    buf[3] = ws2811_lut[(rgb >>  8) & 0xf];
-    buf[4] = ws2811_lut[(rgb >>  4) & 0xf];
-    buf[5] = ws2811_lut[(rgb >>  0) & 0xf];
+      buf[0] = ws2811_lut[(rgb >> 20) & 0xf];
+      buf[1] = ws2811_lut[(rgb >> 16) & 0xf];
+      buf[2] = ws2811_lut[(rgb >> 12) & 0xf];
+      buf[3] = ws2811_lut[(rgb >>  8) & 0xf];
+      buf[4] = ws2811_lut[(rgb >>  4) & 0xf];
+      buf[5] = ws2811_lut[(rgb >>  0) & 0xf];
 
-    if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
-      LOG_ERROR("i2s_out_write_all");
+      if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
+        LOG_ERROR("i2s_out_write_all");
+        goto error;
+      }
+    }
+
+    if ((err = i2s_out_flush(options->i2s_out))) {
+      LOG_ERROR("i2s_out_flush");
       goto error;
     }
-  }
-
-  if ((err = i2s_out_flush(options->i2s_out))) {
-    LOG_ERROR("i2s_out_flush");
-    goto error;
   }
 
 error:

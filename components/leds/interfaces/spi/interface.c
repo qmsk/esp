@@ -1,5 +1,6 @@
 #include "../spi.h"
 #include "../../leds.h"
+#include "../../stats.h"
 
 #include <logging.h>
 
@@ -28,13 +29,16 @@
 
   int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void *buf, size_t size)
   {
+    struct leds_interface_spi_stats *stats = &leds_interface_stats.spi;
     uint8_t *ptr = buf;
     unsigned len = size;
     int ret, err;
 
-    if ((err = spi_master_open(interface->spi_master, interface->options))) {
-      LOG_ERROR("spi_master_open");
-      return err;
+    WITH_STATS_TIMER(&stats->open) {
+      if ((err = spi_master_open(interface->spi_master, interface->options))) {
+        LOG_ERROR("spi_master_open");
+        return err;
+      }
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED
@@ -43,23 +47,25 @@
     }
   #endif
 
-    while (len) {
-      if ((ret = spi_master_write(interface->spi_master, ptr, len)) < 0) {
-        LOG_ERROR("spi_master_write");
-        err = ret;
-        goto error;
+    WITH_STATS_TIMER(&stats->tx) {
+      while (len) {
+        if ((ret = spi_master_write(interface->spi_master, ptr, len)) < 0) {
+          LOG_ERROR("spi_master_write");
+          err = ret;
+          goto error;
+        }
+
+        LOG_DEBUG("spi_master=%p write %p @ %u -> %d", interface->spi_master, ptr, len, ret);
+
+        ptr += ret;
+        len -= ret;
       }
 
-      LOG_DEBUG("spi_master=%p write %p @ %u -> %d", interface->spi_master, ptr, len, ret);
-
-      ptr += ret;
-      len -= ret;
-    }
-
-    // wait for write TX to complete before clearing gpio to release bus
-    if ((err = spi_master_flush(interface->spi_master)) < 0) {
-      LOG_ERROR("spi_master_flush");
-      goto error;
+      // wait for write TX to complete before clearing gpio to release bus
+      if ((err = spi_master_flush(interface->spi_master)) < 0) {
+        LOG_ERROR("spi_master_flush");
+        goto error;
+      }
     }
 
   error:
@@ -124,6 +130,7 @@
 
   int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, void *buf, size_t size)
   {
+    struct leds_interface_spi_stats *stats = &leds_interface_stats.spi;
     spi_transaction_t transaction = {
       .length = size * 8, // transaction length is in bits
       .tx_buffer = buf,
@@ -131,9 +138,11 @@
     int ret;
     esp_err_t err;
 
-    if ((err = spi_device_acquire_bus(interface->device, portMAX_DELAY))) {
-      LOG_ERROR("spi_device_acquire_bus: %s", esp_err_to_name(err));
-      return -1;
+    WITH_STATS_TIMER(&stats->open) {
+      if ((err = spi_device_acquire_bus(interface->device, portMAX_DELAY))) {
+        LOG_ERROR("spi_device_acquire_bus: %s", esp_err_to_name(err));
+        return -1;
+      }
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED

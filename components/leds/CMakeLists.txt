@@ -15,6 +15,6 @@ endif()
 idf_component_register(
   SRC_DIRS "${src_dirs}"
   INCLUDE_DIRS "include"
-  REQUIRES driver gpio_out i2s_out uart
+  REQUIRES driver gpio_out i2s_out stats uart
   PRIV_REQUIRES logging
 )

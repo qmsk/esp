@@ -1,5 +1,6 @@
 #include "../sk6812grbw.h"
 #include "../../leds.h"
+#include "../../stats.h"
 
 #include <logging.h>
 
@@ -72,6 +73,7 @@ static const uint16_t sk6812_lut[] = {
 
 int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, union sk6812grbw_pixel *pixels, unsigned count, struct leds_limit limit)
 {
+  struct leds_interface_uart_stats *stats = &leds_interface_stats.uart;
   struct uart_options uart_options = {
     .baud_rate    = UART_BAUD_3333333,
     .data_bits    = UART_DATA_6_BITS,
@@ -86,9 +88,11 @@ int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, u
   uint16_t buf[8];
   int err;
 
-  if ((err = uart_open(options->uart, uart_options))) {
-    LOG_ERROR("uart_open");
-    return err;
+  WITH_STATS_TIMER(&stats->open) {
+    if ((err = uart_open(options->uart, uart_options))) {
+      LOG_ERROR("uart_open");
+      return err;
+    }
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
@@ -97,33 +101,35 @@ int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, u
   }
 #endif
 
-  // temporarily raise task priority to ensure uart TX buffer does not starve
-  vTaskPrioritySet(NULL, SK6812_TX_TASK_PRIORITY);
+  WITH_STATS_TIMER(&stats->tx) {
+    // temporarily raise task priority to ensure uart TX buffer does not starve
+    vTaskPrioritySet(NULL, SK6812_TX_TASK_PRIORITY);
 
-  for (unsigned i = 0; i < count; i++) {
-    uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], limit).grbw;
+    for (unsigned i = 0; i < count; i++) {
+      uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], limit).grbw;
 
-    buf[0]  = sk6812_lut[(grbw >> 28) & 0xf];
-    buf[1]  = sk6812_lut[(grbw >> 24) & 0xf];
-    buf[2]  = sk6812_lut[(grbw >> 20) & 0xf];
-    buf[3]  = sk6812_lut[(grbw >> 16) & 0xf];
-    buf[4]  = sk6812_lut[(grbw >> 12) & 0xf];
-    buf[5]  = sk6812_lut[(grbw >>  8) & 0xf];
-    buf[6]  = sk6812_lut[(grbw >>  4) & 0xf];
-    buf[7]  = sk6812_lut[(grbw >>  0) & 0xf];
+      buf[0]  = sk6812_lut[(grbw >> 28) & 0xf];
+      buf[1]  = sk6812_lut[(grbw >> 24) & 0xf];
+      buf[2]  = sk6812_lut[(grbw >> 20) & 0xf];
+      buf[3]  = sk6812_lut[(grbw >> 16) & 0xf];
+      buf[4]  = sk6812_lut[(grbw >> 12) & 0xf];
+      buf[5]  = sk6812_lut[(grbw >>  8) & 0xf];
+      buf[6]  = sk6812_lut[(grbw >>  4) & 0xf];
+      buf[7]  = sk6812_lut[(grbw >>  0) & 0xf];
 
-    if ((err = uart_write_all(options->uart, buf, sizeof(buf)))) {
-      LOG_ERROR("uart_write_all");
+      if ((err = uart_write_all(options->uart, buf, sizeof(buf)))) {
+        LOG_ERROR("uart_write_all");
+        goto error;
+      }
+    }
+
+    // restore previous task priority
+    vTaskPrioritySet(NULL, task_priority);
+
+    if ((err = uart_mark(options->uart, SK6812_RESET_US))) {
+      LOG_ERROR("uart_mark");
       goto error;
     }
-  }
-
-  // restore previous task priority
-  vTaskPrioritySet(NULL, task_priority);
-
-  if ((err = uart_mark(options->uart, SK6812_RESET_US))) {
-    LOG_ERROR("uart_mark");
-    goto error;
   }
 
 error:

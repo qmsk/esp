@@ -1,6 +1,8 @@
 #include "status_leds.h"
 #include "status_leds_set.h"
 
+#include <logging.h>
+
 #include <string.h>
 
 #include <sdkconfig.h>
@@ -39,7 +41,10 @@ int status_leds_user_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  set_user_led(mode);
+  if ((err = set_user_led(mode, portMAX_DELAY))) {
+    LOG_ERROR("set_user_led");
+    return err;
+  }
 
   return 0;
 }
@@ -60,7 +65,10 @@ int status_leds_flash_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  set_flash_led(mode);
+  if ((err = set_flash_led(mode, portMAX_DELAY))) {
+    LOG_ERROR("set_flash_led");
+    return err;
+  }
 
   return 0;
 }
@@ -81,7 +89,10 @@ int status_leds_alert_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  set_alert_led(mode);
+  if ((err = set_alert_led(mode, portMAX_DELAY))) {
+    LOG_ERROR("set_alert_led");
+    return err;
+  }
 
   return 0;
 }

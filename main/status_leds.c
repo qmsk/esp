@@ -82,15 +82,13 @@ static int start_user_led()
   return 0;
 }
 
-void set_user_led(enum status_led_mode mode)
+int set_user_led(enum status_led_mode mode, TickType_t timeout)
 {
   if (!user_led) {
-    return;
+    return 0;
   }
 
-  if (status_led_set(user_led, mode)) {
-    LOG_WARN("status_led_set");
-  }
+  return status_led_set(user_led, mode, timeout);
 }
 #endif
 
@@ -139,15 +137,13 @@ static int start_flash_led()
   return 0;
 }
 
-void set_flash_led(enum status_led_mode mode)
+int set_flash_led(enum status_led_mode mode, TickType_t timeout)
 {
   if (!flash_led) {
-    return;
+    return 0;
   }
 
-  if (status_led_set(flash_led, mode)) {
-    LOG_WARN("status_led_set");
-  }
+  return status_led_set(flash_led, mode, timeout);
 }
 
 #endif
@@ -197,16 +193,14 @@ static int start_alert_led()
   return 0;
 }
 
-void set_alert_led(enum status_led_mode mode)
+int set_alert_led(enum status_led_mode mode, TickType_t timeout)
 {
   // TODO: early gpio alert output before init_status_leds()?
   if (!alert_led) {
-    return;
+    return 0;
   }
 
-  if (status_led_set(alert_led, mode)) {
-    LOG_WARN("status_led_set");
-  }
+  return status_led_set(alert_led, mode, timeout);
 }
 #endif
 
@@ -399,14 +393,21 @@ void status_leds_state(enum user_state state)
   enum status_led_mode mode = state < USER_STATE_MAX ? user_state_led_mode[state] : STATUS_LED_ON;
 
 #if CONFIG_STATUS_LEDS_USER_MODE || CONFIG_STATUS_LEDS_USER_MODE_TEST
-  set_user_led(mode);
+  // blocking
+  if (set_user_led(mode, portMAX_DELAY)) {
+    LOG_WARN("set_user_led");
+  }
 #endif
 }
 
 void status_leds_activity(enum user_activity activity)
 {
 #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
-  set_flash_led(STATUS_LED_FLASH);
+  // this happens in the leds/dmx fastpath, do not block on the status_led mutex during each 1s interval 10ms status_led_read()
+  if (set_flash_led(STATUS_LED_FLASH, 0)) {
+    // just skip this FLASH activity
+    LOG_DEBUG("set_flash_led");
+  }
 #endif
 }
 
@@ -417,9 +418,15 @@ void status_leds_alert(enum user_alert alert)
   (void) mode;
 
 #if CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
-  set_flash_led(mode);
+  // blocking
+  if (set_flash_led(mode, portMAX_DELAY)) {
+    LOG_WARN("set_flash_led");
+  }
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_MODE || CONFIG_STATUS_LEDS_ALERT_MODE_TEST
-  set_alert_led(mode);
+  // blocking
+  if (set_alert_led(mode, portMAX_DELAY)) {
+    LOG_WARN("set_alert_led");
+  }
 #endif
 }

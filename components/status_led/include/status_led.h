@@ -1,6 +1,8 @@
 #ifndef __STATUS_LED_H__
 #define __STATUS_LED_H__
 
+#include <freertos/FreeRTOS.h>
+
 #include <driver/gpio.h>
 #include <stdbool.h>
 
@@ -34,8 +36,10 @@ void status_led_main(void *arg);
 
 /*
  * Set output mode. Newest update wins.
+ *
+ * @return <0 on error, 0 on success, 1 on timeout
  */
-int status_led_set(struct status_led *led, enum status_led_mode mode);
+int status_led_set(struct status_led *led, enum status_led_mode mode, TickType_t timeout);
 
 /*
  * Override output mode. Supresses status_led_set() until reverted.

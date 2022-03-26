@@ -313,14 +313,14 @@ error:
   return err;
 }
 
-int status_led_set(struct status_led *led, enum status_led_mode mode)
+int status_led_set(struct status_led *led, enum status_led_mode mode, TickType_t timeout)
 {
   struct status_led_event event = { STATUS_LED_SET, mode };
   int err = 0;
 
-  if (!xSemaphoreTake(led->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTake");
-    return -1;
+  if (!xSemaphoreTake(led->mutex, timeout)) {
+    LOG_DEBUG("xSemaphoreTake: timeout");
+    return 1;
   }
 
   LOG_DEBUG("gpio=%d: mode=%d", led->options.gpio, mode);

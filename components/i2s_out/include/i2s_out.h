@@ -9,10 +9,14 @@
 typedef int i2s_port_t;
 
 #if CONFIG_IDF_TARGET_ESP8266
+  #include <esp8266/eagle_soc.h>
+
   #define I2S_PORT_0      0
   #define I2S_PORT_MAX    1
 
   #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 0
+
+  #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
 #elif CONFIG_IDF_TARGET_ESP32
   #include <hal/gpio_types.h>
@@ -24,17 +28,30 @@ typedef int i2s_port_t;
 
   #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 1
 
+  #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 #endif
 
 struct i2s_out;
 
 struct i2s_out_clock_options {
-  // using the default 160MHz clock
+  // using the default non-APLL 160MHz clock
   uint32_t clkm_div   : 6; // master clock divider
   uint32_t bck_div    : 6; // bit clock divider
 };
 
 static const struct i2s_out_clock_options I2S_DMA_CLOCK_3M2 = { .clkm_div = 5, .bck_div = 10 };
+
+/* Calculate approximate clkm/bck_div for given clock rate */
+static inline struct i2s_out_clock_options i2s_out_clock(int rate)
+{
+  int div = I2S_OUT_BASE_CLOCK / rate;
+  int mdiv = div % (1 << 6);
+
+  return (struct i2s_out_clock_options) {
+    .clkm_div   = mdiv,
+    .bck_div    = div / mdiv,
+  };
+}
 
 struct i2s_out_options {
   struct i2s_out_clock_options clock;

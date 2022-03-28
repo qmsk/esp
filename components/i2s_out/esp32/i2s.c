@@ -17,7 +17,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_ll_tx_stop(i2s_out->dev);
+
   i2s_ll_tx_reset(i2s_out->dev);
+  i2s_ll_tx_reset_fifo(i2s_out->dev);
 
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);

@@ -13,6 +13,7 @@
 #include "protocols/sk6812grbw.h"
 #include "protocols/ws2811.h"
 #include "protocols/ws2812b.h"
+#include "protocols/sk9822.h"
 
 union leds_interface_state {
   #if CONFIG_LEDS_SPI_ENABLED
@@ -36,6 +37,7 @@ struct leds {
     struct leds_protocol_ws2812b ws2812b;
     struct leds_protocol_sk6812grbw sk6812grbw;
     struct leds_protocol_ws2811 ws2811;
+    struct leds_protocol_sk9822 sk9822;
   } protocol;
 
   // if false, all leds are inactive

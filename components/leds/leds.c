@@ -31,6 +31,9 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
       return LEDS_INTERFACE_NONE;
     #endif
 
+    case LEDS_PROTOCOL_SK9822:
+      return LEDS_INTERFACE_I2S;
+
     default:
       // unknown
       return 0;
@@ -57,6 +60,9 @@ enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol p
 
     case LEDS_PROTOCOL_WS2811:
       return LEDS_COLOR_NONE;
+
+    case LEDS_PROTOCOL_SK9822:
+      return LEDS_COLOR_DIMMER;
 
     default:
       // unknown
@@ -93,6 +99,9 @@ size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
     case LEDS_PROTOCOL_SK6812_GRBW:
       return leds_protocol_sk6812grbw_i2s_buffer_size(count);
 
+    case LEDS_PROTOCOL_SK9822:
+      return leds_protocol_sk9822_i2s_buffer_size(count);
+
     default:
       // unknown
       return 0;
@@ -119,6 +128,9 @@ uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
 
     case LEDS_PROTOCOL_WS2811:
       return 0;
+
+    case LEDS_PROTOCOL_SK9822:
+      return 255;
 
     default:
       // unknown
@@ -154,6 +166,9 @@ int leds_init(struct leds *leds, const struct leds_options *options)
 
     case LEDS_PROTOCOL_WS2811:
       return leds_protocol_ws2811_init(&leds->protocol.ws2811, &leds->interface, options);
+
+    case LEDS_PROTOCOL_SK9822:
+      return leds_protocol_sk9822_init(&leds->protocol.sk9822, &leds->interface, options);
 
     default:
       LOG_ERROR("unknown protocol=%#x", options->protocol);
@@ -232,6 +247,10 @@ int leds_clear_all(struct leds *leds)
       leds_protocol_ws2811_set_all(&leds->protocol.ws2811, color);
       return 0;
 
+    case LEDS_PROTOCOL_SK9822:
+      leds_protocol_sk9822_set_all(&leds->protocol.sk9822, color);
+      return 0;
+
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
       return -1;
@@ -275,6 +294,10 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
       leds_protocol_ws2811_set(&leds->protocol.ws2811, index, color);
       return 0;
 
+    case LEDS_PROTOCOL_SK9822:
+      leds_protocol_sk9822_set(&leds->protocol.sk9822, index, color);
+      return 0;
+
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
       return -1;
@@ -313,6 +336,10 @@ int leds_set_all(struct leds *leds, struct leds_color color)
 
     case LEDS_PROTOCOL_WS2811:
       leds_protocol_ws2811_set_all(&leds->protocol.ws2811, color);
+      return 0;
+
+    case LEDS_PROTOCOL_SK9822:
+      leds_protocol_sk9822_set_all(&leds->protocol.sk9822, color);
       return 0;
 
     default:
@@ -396,6 +423,10 @@ unsigned leds_count_active(struct leds *leds)
         active = leds_protocol_ws2811_count_active(&leds->protocol.ws2811);
         break;
 
+      case LEDS_PROTOCOL_SK9822:
+        active = leds_protocol_sk9822_count_active(&leds->protocol.sk9822);
+        break;
+
       default:
         LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
         abort();
@@ -429,6 +460,9 @@ unsigned leds_count_total(struct leds *leds)
 
     case LEDS_PROTOCOL_WS2811:
       return leds_protocol_ws2811_count_total(&leds->protocol.ws2811);
+
+    case LEDS_PROTOCOL_SK9822:
+      return leds_protocol_sk9822_count_total(&leds->protocol.sk9822);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
@@ -470,6 +504,9 @@ int leds_tx(struct leds *leds)
 
     case LEDS_PROTOCOL_WS2811:
       return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, leds->tx_limit);
+
+    case LEDS_PROTOCOL_SK9822:
+      return leds_protocol_sk9822_tx(&leds->protocol.sk9822, &leds->interface, &leds->options, leds->tx_limit);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);

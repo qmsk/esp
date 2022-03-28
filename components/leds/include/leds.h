@@ -60,6 +60,7 @@ enum leds_interface {
    *  - LEDS_PROTOCOL_WS2812B
    *  - LEDS_PROTOCOL_WS2811
    *  - LEDS_PROTOCOL_SK6812_GRBW
+   *  - LEDS_PROTOCOL_SK9822
    */
   LEDS_INTERFACE_I2S           = 3,
 #endif
@@ -77,9 +78,11 @@ enum leds_protocol {
 
   LEDS_PROTOCOL_APA102,
   LEDS_PROTOCOL_P9813,
+
   LEDS_PROTOCOL_WS2812B,
   LEDS_PROTOCOL_SK6812_GRBW,
   LEDS_PROTOCOL_WS2811,
+  LEDS_PROTOCOL_SK9822,
 };
 
 /* interpretation of leds_color.parameter by protocol */
@@ -189,6 +192,12 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
   #if LEDS_I2S_GPIO_PINS_ENABLED
     gpio_num_t gpio_pin;
+  #endif
+
+    // only used for protocols with separate clock/data lines
+    int clock_rate;
+  #if LEDS_I2S_GPIO_PINS_ENABLED
+    gpio_num_t clock_pin;
   #endif
   };
 

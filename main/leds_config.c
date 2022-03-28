@@ -35,6 +35,7 @@ const struct config_enum leds_protocol_enum[] = {
   { "WS2812B",      LEDS_PROTOCOL_WS2812B     },
   { "SK6812_GRBW",  LEDS_PROTOCOL_SK6812_GRBW },
   { "WS2811",       LEDS_PROTOCOL_WS2811      },
+  { "SK9822",       LEDS_PROTOCOL_SK9822      },
   {}
 };
 

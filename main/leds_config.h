@@ -101,8 +101,12 @@ struct leds_config {
 # endif
 #endif
 
-#if CONFIG_LEDS_I2S_ENABLED && LEDS_I2S_GPIO_PIN_ENABLED
+#if CONFIG_LEDS_I2S_ENABLED
+  int i2s_clock;
+# if LEDS_I2S_GPIO_PINS_ENABLED
+  uint16_t i2s_clock_pin;
   uint16_t i2s_gpio_pin;
+# endif
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED

@@ -46,9 +46,18 @@ const struct configtab LEDS_CONFIGTAB[] = {
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
-# if LEDS_I2S_GPIO_PIN_ENABLED
+  { CONFIG_TYPE_ENUM, "i2s_clock",
+    .alias = "i2s_clock",
+    .description = "Output I2S bit rate. Only used for protocols with a separate clock/data.",
+    .enum_type = { .value = &LEDS_CONFIG.i2s_clock, .values = leds_spi_clock_enum, .default_value = SPI_CLOCK_DEFAULT },
+  },
+# if LEDS_I2S_GPIO_PINS_ENABLED
+  { CONFIG_TYPE_UINT16, "i2s_clock_pin",
+    .description = "Output I2S bit clock to GPIO pin. Only used for protocols with a separate clock/data.",
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_clock_pin, .max = (GPIO_NUM_MAX - 1) },
+  },
   { CONFIG_TYPE_UINT16, "i2s_gpio_pin",
-    .description = "Output I2S Data to GPIO pin.",
+    .description = "Output I2S data to GPIO pin.",
     .uint16_type = { .value = &LEDS_CONFIG.i2s_gpio_pin, .max = (GPIO_NUM_MAX - 1) },
   },
 # endif

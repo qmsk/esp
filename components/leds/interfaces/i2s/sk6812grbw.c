@@ -44,7 +44,7 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us SK6812 bit
     // two SK6812 bits per I2S byte
-    .clock        = I2S_DMA_CLOCK_3M2,
+    .clock        = I2S_OUT_CLOCK_3M2,
 
     // four bytes per I2S sample, 10us per 32-bit I2S sample
     // hold low for 8 x 10us

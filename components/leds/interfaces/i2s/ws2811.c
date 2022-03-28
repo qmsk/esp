@@ -44,7 +44,7 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us WS2811 bit
     // two WS2811 bits per I2S byte
-    .clock        = I2S_DMA_CLOCK_3M2,
+    .clock        = I2S_OUT_CLOCK_3M2,
 
     // four bytes per I2S sample, 10us per 32-bit I2S sample
     // hold low for 8 x 10us

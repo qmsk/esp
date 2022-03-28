@@ -39,7 +39,7 @@ struct i2s_out_clock_options {
   uint32_t bck_div    : 6; // bit clock divider
 };
 
-static const struct i2s_out_clock_options I2S_DMA_CLOCK_3M2 = { .clkm_div = 5, .bck_div = 10 };
+static const struct i2s_out_clock_options I2S_OUT_CLOCK_3M2 = { .clkm_div = 5, .bck_div = 10 };
 
 /* Calculate approximate clkm/bck_div for given clock rate */
 static inline struct i2s_out_clock_options i2s_out_clock(int rate)

@@ -73,11 +73,13 @@ enum leds_interface {
 #endif
 
 enum leds_protocol {
-  LEDS_PROTOCOL_APA102          = 1,
-  LEDS_PROTOCOL_P9813           = 2,
-  LEDS_PROTOCOL_WS2812B         = 3,
-  LEDS_PROTOCOL_SK6812_GRBW     = 4,
-  LEDS_PROTOCOL_WS2811          = 5,
+  LEDS_PROTOCOL_NONE,
+
+  LEDS_PROTOCOL_APA102,
+  LEDS_PROTOCOL_P9813,
+  LEDS_PROTOCOL_WS2812B,
+  LEDS_PROTOCOL_SK6812_GRBW,
+  LEDS_PROTOCOL_WS2811,
 };
 
 /* interpretation of leds_color.parameter by protocol */

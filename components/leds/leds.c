@@ -11,6 +11,9 @@
 enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
 {
   switch (protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return LEDS_INTERFACE_NONE;
+
     case LEDS_PROTOCOL_APA102:
     case LEDS_PROTOCOL_P9813:
     #if LEDS_SPI_ENABLED
@@ -37,6 +40,9 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
 enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol protocol)
 {
   switch (protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return LEDS_COLOR_NONE;
+
     case LEDS_PROTOCOL_APA102:
       return LEDS_COLOR_DIMMER;
 
@@ -96,6 +102,9 @@ size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
 uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
 {
   switch (protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       return 255;
 
@@ -128,6 +137,9 @@ int leds_init(struct leds *leds, const struct leds_options *options)
   leds->active = 0;
 
   switch(options->protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       return leds_protocol_apa102_init(&leds->protocol.apa102, &leds->interface, options);
 
@@ -197,6 +209,9 @@ int leds_clear_all(struct leds *leds)
   leds->active = false;
 
   switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       leds_protocol_apa102_set_all(&leds->protocol.apa102, color);
       return 0;
@@ -237,6 +252,9 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
   }
 
   switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       leds_protocol_apa102_set(&leds->protocol.apa102, index, color);
       return 0;
@@ -274,6 +292,9 @@ int leds_set_all(struct leds *leds, struct leds_color color)
   }
 
   switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       leds_protocol_apa102_set_all(&leds->protocol.apa102, color);
       return 0;
@@ -351,6 +372,10 @@ unsigned leds_count_active(struct leds *leds)
 
   if (leds->active) {
     switch(leds->options.protocol) {
+      case LEDS_PROTOCOL_NONE:
+        active = 0;
+        break;
+
       case LEDS_PROTOCOL_APA102:
         active = leds_protocol_apa102_count_active(&leds->protocol.apa102);
         break;
@@ -387,6 +412,9 @@ unsigned leds_count_active(struct leds *leds)
 unsigned leds_count_total(struct leds *leds)
 {
   switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       return leds_protocol_apa102_count_total(&leds->protocol.apa102);
 
@@ -423,6 +451,9 @@ int leds_tx(struct leds *leds)
   }
 
   switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
     case LEDS_PROTOCOL_APA102:
       // TODO: limit
       return leds_protocol_apa102_tx(&leds->protocol.apa102, &leds->interface, &leds->options);

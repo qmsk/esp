@@ -29,7 +29,7 @@ const struct config_enum leds_interface_enum[] = {
 };
 
 const struct config_enum leds_protocol_enum[] = {
-  { "NONE",         0                         },
+  { "NONE",         LEDS_PROTOCOL_NONE        },
   { "APA102",       LEDS_PROTOCOL_APA102      },
   { "P9813",        LEDS_PROTOCOL_P9813       },
   { "WS2812B",      LEDS_PROTOCOL_WS2812B     },

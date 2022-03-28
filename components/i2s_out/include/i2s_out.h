@@ -9,19 +9,20 @@
 typedef int i2s_port_t;
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define I2S_PORT_0      0
-# define I2S_PORT_MAX    1
+  #define I2S_PORT_0      0
+  #define I2S_PORT_MAX    1
 
-# define I2S_OUT_OPTIONS_DATA_GPIO_ENABLED 0
+  #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 0
 
 #elif CONFIG_IDF_TARGET_ESP32
-#include <hal/gpio_types.h>
+  #include <hal/gpio_types.h>
+  #include <soc/soc.h>
 
-# define I2S_PORT_0      0
-# define I2S_PORT_1      1
-# define I2S_PORT_MAX    2
+  #define I2S_PORT_0      0
+  #define I2S_PORT_1      1
+  #define I2S_PORT_MAX    2
 
-# define I2S_OUT_OPTIONS_DATA_GPIO_ENABLED 1
+  #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 1
 
 #endif
 
@@ -53,9 +54,13 @@ struct i2s_out_options {
   // Timeout for acquiring pin mutex, default 0 -> immediate error if pin in use
   TickType_t pin_timeout;
 
-#if I2S_OUT_OPTIONS_DATA_GPIO_ENABLED
+#if I2S_OUT_OPTIONS_GPIO_PINS_ENABLED
+  // Use GPIO pin for bit clock out signal
+  gpio_num_t bck_gpio; // -1 to disable
+  bool bck_inv;
+
   // Use GPIO pin for data out signal
-  gpio_num_t data_gpio;
+  gpio_num_t data_gpio; // -1 to disable
 #endif
 };
 

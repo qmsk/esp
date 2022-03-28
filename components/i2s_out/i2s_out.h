@@ -33,6 +33,7 @@ struct i2s_out {
   /* pin */
   SemaphoreHandle_t pin_mutex;
 #if CONFIG_IDF_TARGET_ESP32
+  gpio_num_t bck_gpio;
   gpio_num_t data_gpio;
 #endif
 

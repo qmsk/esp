@@ -8,7 +8,7 @@
 
 #if CONFIG_LEDS_I2S_ENABLED
 # include <i2s_out.h>
-# define LEDS_I2S_GPIO_PIN_ENABLED I2S_OUT_OPTIONS_DATA_GPIO_ENABLED
+# define LEDS_I2S_GPIO_PINS_ENABLED I2S_OUT_OPTIONS_GPIO_PINS_ENABLED
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
@@ -187,7 +187,7 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
     TickType_t pin_timeout;
 
-  #if LEDS_I2S_GPIO_PIN_ENABLED
+  #if LEDS_I2S_GPIO_PINS_ENABLED
     gpio_num_t gpio_pin;
   #endif
   };

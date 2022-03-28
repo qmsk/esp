@@ -6,6 +6,11 @@
 
 #include <logging.h>
 
+static const uint8_t i2s_bck_out_sig[I2S_PORT_MAX] = {
+  [I2S_PORT_0]  = I2S0O_BCK_OUT_IDX,
+  [I2S_PORT_1]  = I2S1O_BCK_OUT_IDX,
+};
+
 static const uint8_t i2s_data_out_sig[I2S_PORT_MAX] = {
   [I2S_PORT_0]  = I2S0O_DATA_OUT23_IDX,
   [I2S_PORT_1]  = I2S1O_DATA_OUT23_IDX,
@@ -13,6 +18,7 @@ static const uint8_t i2s_data_out_sig[I2S_PORT_MAX] = {
 
 int i2s_out_pin_init(struct i2s_out *i2s_out)
 {
+  i2s_out->bck_gpio = -1;
   i2s_out->data_gpio = -1;
 
   return 0;
@@ -29,17 +35,29 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     }
   }
 
-  i2s_out->data_gpio = options.data_gpio;
-
-  LOG_DEBUG("data_gpio=%d", i2s_out->data_gpio);
+  LOG_DEBUG("bck_gpio=%d data_gpio=%d", i2s_out->bck_gpio, i2s_out->data_gpio);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->data_gpio], PIN_FUNC_GPIO);
-  gpio_ll_input_disable(&GPIO, i2s_out->data_gpio);
-  gpio_ll_output_enable(&GPIO, i2s_out->data_gpio);
+  if (options.bck_gpio > 0) {
+    i2s_out->bck_gpio = options.bck_gpio;
 
-  esp_rom_gpio_connect_out_signal(i2s_out->data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->bck_gpio], PIN_FUNC_GPIO);
+    gpio_ll_input_disable(&GPIO, i2s_out->bck_gpio);
+    gpio_ll_output_enable(&GPIO, i2s_out->bck_gpio);
+
+    esp_rom_gpio_connect_out_signal(i2s_out->bck_gpio, i2s_bck_out_sig[i2s_out->port], options.bck_inv, false);
+  }
+
+  if (options.data_gpio > 0) {
+    i2s_out->data_gpio = options.data_gpio;
+
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->data_gpio], PIN_FUNC_GPIO);
+    gpio_ll_input_disable(&GPIO, i2s_out->data_gpio);
+    gpio_ll_output_enable(&GPIO, i2s_out->data_gpio);
+
+    esp_rom_gpio_connect_out_signal(i2s_out->data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
+  }
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
@@ -53,6 +71,12 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
   taskENTER_CRITICAL(&i2s_out->mux);
 
   // place output into a safe state
+  if (i2s_out->bck_gpio >= 0) {
+    gpio_ll_output_disable(&GPIO, i2s_out->bck_gpio);
+
+    i2s_out->bck_gpio = -1;
+  }
+
   if (i2s_out->data_gpio >= 0) {
     gpio_ll_output_disable(&GPIO, i2s_out->data_gpio);
 

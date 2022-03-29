@@ -59,7 +59,6 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
     .data_gpio    = options->gpio_pin,
 #endif
   };
-  uint16_t buf[8];
   int err;
 
   WITH_STATS_TIMER(&stats->open) {
@@ -77,16 +76,13 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
 
   WITH_STATS_TIMER(&stats->tx) {
     for (unsigned i = 0; i < count; i++) {
+      uint32_t buf[4];
       uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], limit).grbw;
 
-      buf[0] = sk6812_lut[(grbw >> 28) & 0xf];
-      buf[1] = sk6812_lut[(grbw >> 24) & 0xf];
-      buf[2] = sk6812_lut[(grbw >> 20) & 0xf];
-      buf[3] = sk6812_lut[(grbw >> 16) & 0xf];
-      buf[4] = sk6812_lut[(grbw >> 12) & 0xf];
-      buf[5] = sk6812_lut[(grbw >>  8) & 0xf];
-      buf[6] = sk6812_lut[(grbw >>  4) & 0xf];
-      buf[7] = sk6812_lut[(grbw >>  0) & 0xf];
+      buf[0] = (sk6812_lut[(grbw >> 28) & 0xf] << 16) | (sk6812_lut[(grbw >> 24) & 0xf]);
+      buf[1] = (sk6812_lut[(grbw >> 20) & 0xf] << 16) | (sk6812_lut[(grbw >> 16) & 0xf]);
+      buf[2] = (sk6812_lut[(grbw >> 12) & 0xf] << 16) | (sk6812_lut[(grbw >>  8) & 0xf]);
+      buf[3] = (sk6812_lut[(grbw >>  4) & 0xf] << 16) | (sk6812_lut[(grbw >>  0) & 0xf]);
 
       if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
         LOG_ERROR("i2s_out_write_all");

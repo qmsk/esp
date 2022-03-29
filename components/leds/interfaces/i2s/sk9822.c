@@ -48,7 +48,7 @@ int leds_tx_i2s_sk9822(const struct leds_interface_i2s_options *options, union s
 
     // pixel frames
     for (unsigned i = 0; i < count; i++) {
-      // transmit in little-endian LSB order
+      // transmit in 32-bit little-endian order
       uint32_t xbgr = sk9822_pixel_limit(pixels[i], limit).xbgr;
 
       if ((err = i2s_out_write_all(options->i2s_out, &xbgr, sizeof(xbgr)))) {

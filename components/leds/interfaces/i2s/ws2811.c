@@ -59,7 +59,6 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
     .data_gpio    = options->gpio_pin,
 #endif
   };
-  uint16_t buf[6];
   int err;
 
   WITH_STATS_TIMER(&stats->open) {
@@ -77,14 +76,13 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
 
   WITH_STATS_TIMER(&stats->tx) {
     for (unsigned i = 0; i < count; i++) {
+      uint32_t buf[3];
       uint32_t rgb = ws2811_pixel_limit(pixels[i], limit)._rgb;
 
-      buf[0] = ws2811_lut[(rgb >> 20) & 0xf];
-      buf[1] = ws2811_lut[(rgb >> 16) & 0xf];
-      buf[2] = ws2811_lut[(rgb >> 12) & 0xf];
-      buf[3] = ws2811_lut[(rgb >>  8) & 0xf];
-      buf[4] = ws2811_lut[(rgb >>  4) & 0xf];
-      buf[5] = ws2811_lut[(rgb >>  0) & 0xf];
+      // 32-bit little-endian
+      buf[0] = (ws2811_lut[(rgb >> 20) & 0xf] << 16) | (ws2811_lut[(rgb >> 16) & 0xf]);
+      buf[1] = (ws2811_lut[(rgb >> 12) & 0xf] << 16) | (ws2811_lut[(rgb >>  8) & 0xf]);
+      buf[2] = (ws2811_lut[(rgb >>  4) & 0xf] << 16) | (ws2811_lut[(rgb >>  0) & 0xf]);
 
       if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
         LOG_ERROR("i2s_out_write_all");

@@ -41,6 +41,12 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_ll_tx_enable_msb_shift(i2s_out->dev, false);
   i2s_ll_tx_set_ws_width(i2s_out->dev, 16);
 
+  // likely to trigger in between DMA transfers, and stop the packet short?
+  i2s_ll_tx_stop_on_fifo_empty(i2s_out->dev, false);
+
+  // do not compress data
+  i2s_ll_tx_bypass_pcm(i2s_out->dev, true);
+
   // using 160MHz I2S_CLK_D2CLK
   i2s_ll_mclk_div_t mclk_set = { .mclk_div = options.clock.clkm_div, .b = 0, .a = 1 };
 

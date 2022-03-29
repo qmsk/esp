@@ -290,9 +290,9 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  i2s_ll_tx_reset(i2s_out->dev);
   i2s_ll_tx_reset_dma(i2s_out->dev);
   i2s_ll_tx_reset_fifo(i2s_out->dev);
+  i2s_ll_tx_reset(i2s_out->dev);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR | I2S_OUT_DSCR_ERR_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_OUT_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA);

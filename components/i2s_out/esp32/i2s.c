@@ -78,6 +78,10 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
+  // NOTE: there seems to always be three extra BCK cycles at the start of TX
+  // XXX: occasionally, some trailing bits of the last TX will get transmitted first...
+  //      possibly if DMA is slow, and the FIFO does not yet contain the new data?
+  //      let's hope that the EOF frame is always zeroes, and zero bytes at the start are harmless...
   i2s_ll_tx_start(i2s_out->dev);
 
   taskEXIT_CRITICAL(&i2s_out->mux);

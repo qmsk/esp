@@ -74,6 +74,19 @@ struct leds_state *state;
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
+  #define I2S_CLOCK_20MHZ   (I2S_OUT_BASE_CLOCK / 8)
+  #define I2S_CLOCK_10MHZ   (I2S_OUT_BASE_CLOCK / 16)
+  #define I2S_CLOCK_5MHZ    (I2S_OUT_BASE_CLOCK / 32)
+  #define I2S_CLOCK_4MHZ    (I2S_OUT_BASE_CLOCK / 40)
+  #define I2S_CLOCK_2MHZ    (I2S_OUT_BASE_CLOCK / 80)
+  #define I2S_CLOCK_1MHZ    (I2S_OUT_BASE_CLOCK / 160)
+  #define I2S_CLOCK_500KHZ  (I2S_OUT_BASE_CLOCK / 320)
+  #define I2S_CLOCK_200KHZ  (I2S_OUT_BASE_CLOCK / 800)
+  #define I2S_CLOCK_100KHZ  (I2S_OUT_BASE_CLOCK / 1600)
+  #define I2S_CLOCK_50KHZ   (I2S_OUT_BASE_CLOCK / 3200)
+
+  #define I2S_CLOCK_DEFAULT (I2S_CLOCK_1MHZ)
+
   struct leds_i2s_config {
     int port;
   };
@@ -81,6 +94,7 @@ struct leds_state *state;
   extern struct leds_i2s_config leds_i2s_config;
 
   extern const struct config_enum leds_i2s_port_enum[];
+  extern const struct config_enum leds_i2s_clock_enum[];
 #endif
 
 struct leds_config {

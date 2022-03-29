@@ -66,6 +66,21 @@ const struct config_enum leds_spi_clock_enum[] = {
 };
 #endif
 
+#if CONFIG_LEDS_I2S_ENABLED
+const struct config_enum leds_i2s_clock_enum[] = {
+  { "20M",  I2S_CLOCK_20MHZ   },
+  { "10M",  I2S_CLOCK_10MHZ   },
+  { "5M",   I2S_CLOCK_5MHZ    },
+  { "2M",   I2S_CLOCK_2MHZ    },
+  { "1M",   I2S_CLOCK_1MHZ    },
+  { "500K", I2S_CLOCK_500KHZ  },
+  { "200K", I2S_CLOCK_200KHZ  },
+  { "100K", I2S_CLOCK_100KHZ  },
+  { "50K",  I2S_CLOCK_50KHZ   },
+  {}
+};
+#endif
+
 #if CONFIG_LEDS_GPIO_ENABLED
 const struct config_enum leds_gpio_mode_enum[] = {
   { "",     LEDS_GPIO_MODE_DISABLED   },

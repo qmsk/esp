@@ -56,6 +56,16 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
+  LOG_DEBUG("conf=%08x fifo_conf=%08x conf_chan=%08x conf1=%08x conf2=%08x clkm_conf=%08x sample_rate_conf=%08x",
+    i2s_out->dev->conf.val,
+    i2s_out->dev->fifo_conf.val,
+    i2s_out->dev->conf_chan.val,
+    i2s_out->dev->conf1.val,
+    i2s_out->dev->conf2.val,
+    i2s_out->dev->clkm_conf.val,
+    i2s_out->dev->sample_rate_conf.val
+  );
+
   // reset eof state
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 

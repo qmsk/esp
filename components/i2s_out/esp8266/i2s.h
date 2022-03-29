@@ -50,6 +50,15 @@ static inline void i2s_start_rx(volatile i2s_struct_t *i2s)
   i2s->conf.rx_start = 1;
 }
 
+static inline void i2s_stop_tx(volatile i2s_struct_t *i2s)
+{
+  i2s->conf.tx_start = 0;
+}
+static inline void i2s_stop_rx(volatile i2s_struct_t *i2s)
+{
+  i2s->conf.rx_start = 0;
+}
+
 static inline void i2s_reset(volatile i2s_struct_t *i2s)
 {
   i2s->conf.val |= I2S_I2S_RESET_MASK;

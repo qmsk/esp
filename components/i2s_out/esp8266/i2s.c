@@ -115,3 +115,12 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 
   return 0;
 }
+
+void i2s_out_i2s_stop(struct i2s_out *i2s_out)
+{
+  taskENTER_CRITICAL();
+
+  i2s_stop_tx(&I2S0);
+
+  taskEXIT_CRITICAL();
+}

@@ -59,11 +59,11 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   I2S0.conf.tx_slave_mod = 0; // generate output clock
   I2S0.conf.rx_slave_mod = 0;
-  I2S0.conf.right_first = 0; // TX channels left -> right, matching FIFO byte order
-  I2S0.conf.msb_right = 1; // XXX: most significant bit first?
-  // XXX: tx_msb_shift?
-  // XXX: rx_msb_shift?
-  I2S0.conf.bits_mod = 0; // XXX: probably (sample bits - 16, 0-15)
+  I2S0.conf.right_first = 0; // TX LEFT, RIGHT
+  I2S0.conf.msb_right = 0; // FIFO is LEFT, RIGHT
+  I2S0.conf.tx_msb_shift = 0;
+  I2S0.conf.rx_msb_shift = 0;
+  I2S0.conf.bits_mod = 0; // 16
   I2S0.conf.clkm_div_num = options.clock.clkm_div;
   I2S0.conf.bck_div_num = options.clock.bck_div;
 

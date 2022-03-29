@@ -106,7 +106,7 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
 int i2s_out_write(struct i2s_out *i2s_out, void *data, size_t len);
 
 /**
-* Copy exactly `len` bytes from `data` into the internal TX DMA buffer.
+ * Copy exactly `len` bytes from `data` into the internal TX DMA buffer.
  *
  * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
  * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.

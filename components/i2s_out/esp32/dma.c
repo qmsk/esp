@@ -227,6 +227,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
 
   // copy data to desc buf
   LOG_DEBUG("copy size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
+  LOG_DEBUG_BUFFER(buf, size);
 
   memcpy(desc->buf + desc->len, buf, size);
 

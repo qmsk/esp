@@ -35,7 +35,7 @@ struct i2s_out;
 
 struct i2s_out_clock_options {
   // using the default non-APLL 160MHz clock
-  uint32_t clkm_div   : 6; // master clock divider
+  uint32_t clkm_div   : 8; // master clock divider
   uint32_t bck_div    : 6; // bit clock divider
 };
 

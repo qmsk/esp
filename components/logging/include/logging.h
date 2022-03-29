@@ -23,4 +23,7 @@
 #define LOG_WARN(...)   ESP_LOG_LEVEL(ESP_LOG_WARN, __func__, __VA_ARGS__)
 #define LOG_ERROR(...)  ESP_LOG_LEVEL(ESP_LOG_ERROR, __func__, __VA_ARGS__)
 
+#define LOG_DEBUG_BUFFER(buf, len)      IF_DEBUG({ ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_DEBUG); })
+#define LOG_INFO_BUFFER(buf, len)      ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO);
+
 #endif

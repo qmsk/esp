@@ -204,6 +204,7 @@ int i2s_out_close(struct i2s_out *i2s_out)
 {
   int err = i2s_out_flush(i2s_out);
 
+  i2s_out_i2s_stop(i2s_out);
   i2s_out_pin_teardown(i2s_out);
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {

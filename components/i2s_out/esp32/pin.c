@@ -20,6 +20,7 @@ int i2s_out_pin_init(struct i2s_out *i2s_out)
 {
   i2s_out->bck_gpio = -1;
   i2s_out->data_gpio = -1;
+  i2s_out->inv_data_gpio = -1;
 
   return 0;
 }
@@ -59,6 +60,17 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     esp_rom_gpio_connect_out_signal(i2s_out->data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
   }
 
+  if (options.inv_data_gpio > 0) {
+    i2s_out->inv_data_gpio = options.inv_data_gpio;
+
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->inv_data_gpio], PIN_FUNC_GPIO);
+    gpio_ll_input_disable(&GPIO, i2s_out->inv_data_gpio);
+    gpio_ll_output_enable(&GPIO, i2s_out->inv_data_gpio);
+
+    // invert gpio output pin
+    esp_rom_gpio_connect_out_signal(i2s_out->inv_data_gpio, i2s_data_out_sig[i2s_out->port], true, false);
+  }
+
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   return 0;
@@ -81,6 +93,12 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
     gpio_ll_output_disable(&GPIO, i2s_out->data_gpio);
 
     i2s_out->data_gpio = -1;
+  }
+
+  if (i2s_out->inv_data_gpio >= 0) {
+    gpio_ll_output_disable(&GPIO, i2s_out->inv_data_gpio);
+
+    i2s_out->inv_data_gpio = -1;
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);

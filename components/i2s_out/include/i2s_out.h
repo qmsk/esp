@@ -82,6 +82,9 @@ struct i2s_out_options {
 
   // Use GPIO pin for data out signal
   gpio_num_t data_gpio; // -1 to disable
+
+  // Use GPIO pin for inverted data out signal
+  gpio_num_t inv_data_gpio; // -1 to disable
 #endif
 };
 

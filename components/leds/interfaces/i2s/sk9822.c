@@ -19,7 +19,7 @@ int leds_tx_i2s_sk9822(const struct leds_interface_i2s_options *options, union s
     .pin_timeout  = options->pin_timeout,
 #if LEDS_I2S_GPIO_PINS_ENABLED
     .bck_gpio     = options->clock_pin,
-    .data_gpio    = options->gpio_pin,
+    .data_gpio    = options->data_pin,
 #endif
   };
   int err;

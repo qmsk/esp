@@ -56,7 +56,7 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
     .pin_timeout  = options->pin_timeout,
 #if LEDS_I2S_GPIO_PINS_ENABLED
     .bck_gpio     = GPIO_NUM_NC,
-    .data_gpio    = options->gpio_pin,
+    .data_gpio    = options->data_pin,
 #endif
   };
   int err;

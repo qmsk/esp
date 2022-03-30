@@ -113,17 +113,17 @@
     options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
     options->pin_timeout = LEDS_I2S_PIN_TIMEOUT;
   #elif LEDS_I2S_GPIO_PINS_ENABLED
-    options->gpio_pin = config->i2s_gpio_pin;
+    options->data_pin = config->i2s_data_pin;
     options->clock_pin = config->i2s_clock_pin;
     // TODO: use i2s_pin_mutex for arbitrary gpio pins?
   #endif
     options->clock_rate = config->i2s_clock;
 
-    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p gpio_pin=%d clock_pin=%d clock_rate=%d", state->index + 1,
+    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p data_pin=%d clock_pin=%d clock_rate=%d", state->index + 1,
       i2s_config->port,
       options->pin_mutex,
     #if LEDS_I2S_GPIO_PINS_ENABLED
-      options->gpio_pin,
+      options->data_pin,
       options->clock_pin,
     #else
       -1, -1,

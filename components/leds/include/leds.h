@@ -191,7 +191,7 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     TickType_t pin_timeout;
 
   #if LEDS_I2S_GPIO_PINS_ENABLED
-    gpio_num_t gpio_pin;
+    gpio_num_t data_pin; // GPIO_NUM_NC to disable
   #endif
 
     // only used for protocols with separate clock/data lines

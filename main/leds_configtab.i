@@ -56,9 +56,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S bit clock to GPIO pin. Only used for protocols with a separate clock/data.",
     .uint16_type = { .value = &LEDS_CONFIG.i2s_clock_pin, .max = (GPIO_NUM_MAX - 1) },
   },
-  { CONFIG_TYPE_UINT16, "i2s_gpio_pin",
+  { CONFIG_TYPE_UINT16, "i2s_data_pin",
+    .alias = "i2s_gpio_pin",
     .description = "Output I2S data to GPIO pin.",
-    .uint16_type = { .value = &LEDS_CONFIG.i2s_gpio_pin, .max = (GPIO_NUM_MAX - 1) },
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_pin, .max = (GPIO_NUM_MAX - 1) },
   },
 # endif
 #endif

@@ -120,6 +120,7 @@ struct leds_config {
 # if LEDS_I2S_GPIO_PINS_ENABLED
   uint16_t i2s_clock_pin;
   uint16_t i2s_data_pin;
+  uint16_t i2s_data_inv_pin;
 # endif
 #endif
 

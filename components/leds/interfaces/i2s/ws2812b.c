@@ -55,8 +55,9 @@ int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union 
     .pin_mutex    = options->pin_mutex,
     .pin_timeout  = options->pin_timeout,
 #if LEDS_I2S_GPIO_PINS_ENABLED
-    .bck_gpio     = GPIO_NUM_NC,
-    .data_gpio    = options->data_pin,
+    .bck_gpio       = GPIO_NUM_NC,
+    .data_gpio      = options->data_pin,
+    .inv_data_gpio  = options->inv_data_pin,
 #endif
   };
   int err;

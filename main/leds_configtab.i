@@ -61,6 +61,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S data to GPIO pin.",
     .uint16_type = { .value = &LEDS_CONFIG.i2s_data_pin, .max = (GPIO_NUM_MAX - 1) },
   },
+  { CONFIG_TYPE_UINT16, "i2s_data_inv_pin",
+    .description = "Output inverted I2S data to GPIO pin.",
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_inv_pin, .max = (GPIO_NUM_MAX - 1) },
+  },
 # endif
 #endif
 

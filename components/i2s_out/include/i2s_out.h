@@ -47,6 +47,10 @@ static inline struct i2s_out_clock_options i2s_out_clock(int rate)
   int div = I2S_OUT_BASE_CLOCK / rate;
   int mdiv = div % (1 << 6);
 
+  // XXX: this results in invalid clock divisors for many inputs
+  //      both clkm/bck_div must be >= 2
+  //      bck_div must be < 64
+  //      clkm_div must be < 256
   return (struct i2s_out_clock_options) {
     .clkm_div   = mdiv,
     .bck_div    = div / mdiv,

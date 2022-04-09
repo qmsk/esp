@@ -362,6 +362,11 @@ int start_http_listen(struct http_state *http, struct http_config *config)
   char port[32];
   int err;
 
+  if (!http->server) {
+    LOG_ERROR("http->server not initialized");
+    return -1;
+  }
+
   // server listeners
   if (snprintf(port, sizeof(port), "%d", config->port) >= sizeof(port)) {
     LOG_ERROR("snprintf port");
@@ -416,6 +421,11 @@ int start_http_tasks(struct http_state *http)
 int start_http()
 {
   int err;
+
+  if (!http_config.enabled) {
+    LOG_INFO("disabled");
+    return 0;
+  }
 
   if ((err = start_http_listen(&http_state, &http_config))) {
     LOG_ERROR("start_http_listen");

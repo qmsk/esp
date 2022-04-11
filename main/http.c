@@ -42,13 +42,12 @@ struct http_config {
   char     username[32];
   char     password[32];
 } http_config = {
-  .enabled  = HTTP_CONFIG_ENABLED,
   .host     = HTTP_CONFIG_HOST,
 };
 
 const struct configtab http_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .bool_type = { .value = &http_config.enabled },
+    .bool_type = { .value = &http_config.enabled, .default_value = HTTP_CONFIG_ENABLED },
   },
   { CONFIG_TYPE_STRING, "host",
     .string_type = { .value = http_config.host, .size = sizeof(http_config.host) },

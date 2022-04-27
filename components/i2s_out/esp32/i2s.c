@@ -1,5 +1,6 @@
 #include "../i2s_out.h"
 #include "intr.h"
+#include "i2s.h"
 
 #include <hal/i2s_ll.h>
 
@@ -29,17 +30,19 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   // TODO: SOC_I2S_SUPPORTS_PDM_RX/TX, SOC_I2S_SUPPORTS_TDM?
   i2s_ll_tx_enable_pdm(i2s_out->dev, false);
 
-  // configure 16-bit word ordering, write(0x76543210) -> FIFO 0x10, 0x32, 0x54, 0x76 -> TX 76543210
+  // use 16-bit dual channel mode with uint32 LSB word ordering
+  // write(0x76543210) -> FIFO 0x10, 0x32, 0x54, 0x76 -> TX 76543210
   i2s_ll_tx_enable_msb_right(i2s_out->dev, false);
   i2s_ll_tx_enable_right_first(i2s_out->dev, false);
 
-  // use tx_fifo_mod=0, tx_chan_mod=0
   i2s_ll_tx_force_enable_fifo_mod(i2s_out->dev, true);
-  i2s_ll_tx_set_sample_bit(i2s_out->dev, I2S_BITS_PER_SAMPLE_16BIT, I2S_BITS_PER_CHAN_16BIT);
-  i2s_ll_tx_enable_mono_mode(i2s_out->dev, false);
+  i2s_out_tx_set_fifo_mod(i2s_out->dev, 0); // 16-bit dual channel data
+  i2s_ll_tx_set_bits_mod(i2s_out->dev, 16); // 16-bit per channel
+  i2s_out_tx_set_chan_mod(i2s_out->dev, 0); // dual-channel mode
 
+  // setup WS signal; not used
   i2s_ll_tx_enable_msb_shift(i2s_out->dev, false);
-  i2s_ll_tx_set_ws_width(i2s_out->dev, 16);
+  i2s_out_tx_enable_short_sync(i2s_out->dev, false);
 
   // likely to trigger in between DMA transfers, and stop the packet short?
   i2s_ll_tx_stop_on_fifo_empty(i2s_out->dev, false);

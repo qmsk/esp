@@ -9,6 +9,8 @@
 #if CONFIG_LEDS_I2S_ENABLED
 # include <i2s_out.h>
 # define LEDS_I2S_GPIO_PINS_ENABLED I2S_OUT_GPIO_PINS_SUPPORTED
+# define LEDS_I2S_DATA_PINS_ENABLED I2S_OUT_PARALLEL_SUPPORTED
+# define LEDS_I2S_DATA_PINS_SIZE I2S_OUT_PARALLEL_SIZE
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
@@ -191,7 +193,25 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     TickType_t pin_timeout;
 
   #if LEDS_I2S_GPIO_PINS_ENABLED
-    gpio_num_t data_pin, inv_data_pin; // GPIO_NUM_NC to disable
+  # if LEDS_I2S_DATA_PINS_ENABLED
+    unsigned data_pins_count; // default 0 -> serial output with a single data_pin
+  # endif
+
+    // use GPIO_NUM_NC < 0 to disable
+    union {
+      gpio_num_t data_pin; // for pin_count == 0 -> serial output
+    #if LEDS_I2S_DATA_PINS_ENABLED
+      gpio_num_t data_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
+    #endif
+    };
+
+    // use GPIO_NUM_NC < 0 to disable
+    union {
+      gpio_num_t inv_data_pin; // for pin_count == 0 -> serial output
+    #if LEDS_I2S_DATA_PINS_ENABLED
+      gpio_num_t inv_data_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
+    #endif
+    };
   #endif
 
     // only used for protocols with separate clock/data lines
@@ -202,11 +222,18 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
   };
 
   /*
-   * Returns total TX buffer sized required for protocol and count LEDs.
+   * Returns total TX buffer sized required for protocol with `led_count` LEDs on one serial pin.
    *
    * @return 0 if not supported for protocol
    */
-  size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count);
+  size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count);
+
+  /*
+   * Returns total TX buffer sized required for protocol with `led_count` LEDs across `pin_count` parallel pins.
+   *
+   * @return 0 if not supported for protocol
+   */
+  size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count);
 #endif
 
 struct leds_options {

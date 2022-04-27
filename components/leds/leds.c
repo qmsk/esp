@@ -87,20 +87,53 @@ enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol p
   }
 #endif
 
-size_t leds_i2s_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
+size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count)
 {
   switch (protocol) {
     case LEDS_PROTOCOL_WS2812B:
-      return leds_protocol_ws2812b_i2s_buffer_size(count);
+      return leds_protocol_ws2812b_i2s_buffer_size(led_count);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_protocol_ws2811_i2s_buffer_size(count);
+      return leds_protocol_ws2811_i2s_buffer_size(led_count);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_protocol_sk6812grbw_i2s_buffer_size(count);
+      return leds_protocol_sk6812grbw_i2s_buffer_size(led_count);
 
     case LEDS_PROTOCOL_SK9822:
-      return leds_protocol_sk9822_i2s_buffer_size(count);
+      return leds_protocol_sk9822_i2s_buffer_size(led_count);
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
+size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count)
+{
+  unsigned count, parallel_factor;
+
+  if (pin_count) {
+    // assuming 8-bit parallel output
+    count = led_count / pin_count;
+    parallel_factor = 8;
+  } else {
+    // serial output
+    count = led_count;
+    parallel_factor = 1;
+  }
+
+  switch (protocol) {
+    case LEDS_PROTOCOL_WS2812B:
+      return parallel_factor * leds_protocol_ws2812b_i2s_buffer_size(count);
+
+    case LEDS_PROTOCOL_WS2811:
+      return parallel_factor * leds_protocol_ws2811_i2s_buffer_size(count);
+
+    case LEDS_PROTOCOL_SK6812_GRBW:
+      return parallel_factor * leds_protocol_sk6812grbw_i2s_buffer_size(count);
+
+    case LEDS_PROTOCOL_SK9822:
+      return parallel_factor * leds_protocol_sk9822_i2s_buffer_size(count);
 
     default:
       // unknown

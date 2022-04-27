@@ -72,10 +72,25 @@
 
       enabled = true;
 
-      // update maximum trasnfer size
-      size_t size = leds_i2s_buffer_for_protocol(config->protocol, config->count);
+      // update maximum transfer size
+      size_t size;
 
-      LOG_INFO("leds%d: i2s%d configured, data buffer size=%u", i + 1, i2s_config->port, size);
+    #if LEDS_I2S_GPIO_PINS_ENABLED
+      if (config->i2s_data_pin_count > 1) {
+        // parallel output
+        size = leds_i2s_parallel_buffer_size(config->protocol, config->count, config->i2s_data_pin_count);
+
+        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u", i + 1, i2s_config->port, config->count, config->i2s_data_pin_count, size);
+      } else {
+        size = leds_i2s_serial_buffer_size(config->protocol, config->count);
+
+        LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u", i + 1, i2s_config->port, config->count, size);
+      }
+    #else
+      size = leds_i2s_serial_buffer_size(config->protocol, config->count);
+
+      LOG_INFO("leds%d: i2s%d configured for %u leds, data buffer size=%u", i + 1, i2s_config->port, config->count, size);
+    #endif
 
       if (size > buffer_size) {
         buffer_size = size;
@@ -113,22 +128,42 @@
     options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
     options->pin_timeout = LEDS_I2S_PIN_TIMEOUT;
   #elif LEDS_I2S_GPIO_PINS_ENABLED
-    options->data_pin = config->i2s_data_pin ? config->i2s_data_pin : GPIO_NUM_NC;
-    options->inv_data_pin = config->i2s_data_inv_pin ? config->i2s_data_inv_pin : GPIO_NUM_NC;
+    if (config->i2s_data_pin_count > 1) {
+      // parallel output
+      options->data_pins_count = config->i2s_data_pin_count;
+
+      for (int i = 0; i < config->i2s_data_pin_count || i < config->i2s_data_inv_pin_count; i++) {
+          options->data_pins[i] = i < config->i2s_data_pin_count ? config->i2s_data_pins[i] : GPIO_NUM_NC;
+          options->inv_data_pins[i] = i < config->i2s_data_inv_pin_count ? config->i2s_data_inv_pins[i] : GPIO_NUM_NC;
+
+          LOG_INFO("leds%d: parallel data_pins[%d]=%d inv_data_pins[%d]=%d", state->index + 1,
+            i, options->data_pins[i],
+            i, options->inv_data_pins[i]
+          );
+      }
+    } else {
+      // serial output
+      options->data_pin = config->i2s_data_pin_count > 0 ? config->i2s_data_pins[0] : GPIO_NUM_NC;
+      options->inv_data_pin = config->i2s_data_inv_pin_count > 0 ? config->i2s_data_inv_pins[0] : GPIO_NUM_NC;
+
+      LOG_INFO("leds%d: serial data_pin=%d inv_data_pin=%d", state->index + 1,
+        options->data_pin,
+        options->inv_data_pin
+      );
+    }
     options->clock_pin = config->i2s_clock_pin ? config->i2s_clock_pin : GPIO_NUM_NC;
     // TODO: use i2s_pin_mutex for arbitrary gpio pins?
   #endif
     options->clock_rate = config->i2s_clock;
 
-    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p data_pin=%d inv_data_pin=%d clock_pin=%d clock_rate=%d", state->index + 1,
+    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p data_pin_count=%u clock_pin=%d clock_rate=%d", state->index + 1,
       i2s_config->port,
       options->pin_mutex,
     #if LEDS_I2S_GPIO_PINS_ENABLED
-      options->data_pin,
-      options->inv_data_pin,
+      options->data_pins_count,
       options->clock_pin,
     #else
-      -1, -1, -1,
+      0, -1,
     #endif
       options->clock_rate
     );

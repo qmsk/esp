@@ -34,8 +34,8 @@ struct i2s_out {
   SemaphoreHandle_t pin_mutex;
 #if CONFIG_IDF_TARGET_ESP32
   gpio_num_t bck_gpio;
-  gpio_num_t serial_data_gpio, inv_data_gpio;
-  gpio_num_t parallel_data_gpios[I2S_OUT_OPTIONS_DATA_GPIO_SIZE];
+  gpio_num_t data_gpios[I2S_OUT_PARALLEL_SIZE];
+  gpio_num_t inv_data_gpios[I2S_OUT_PARALLEL_SIZE];
 #endif
 
   /* dma */

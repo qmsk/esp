@@ -14,8 +14,8 @@ typedef int i2s_port_t;
   #define I2S_PORT_0      0
   #define I2S_PORT_MAX    1
 
-  #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 0
-  #define I2S_OUT_OPTIONS_PARALLEL_ENABLED 0
+  #define I2S_OUT_GPIO_PINS_SUPPORTED 0
+  #define I2S_OUT_PARALLEL_SUPPORTED 0
 
   #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
@@ -31,9 +31,9 @@ typedef int i2s_port_t;
   #define I2S_PORT_1      1
   #define I2S_PORT_MAX    2
 
-  #define I2S_OUT_OPTIONS_GPIO_PINS_ENABLED 1
-  #define I2S_OUT_OPTIONS_PARALLEL_ENABLED 1
-  #define I2S_OUT_OPTIONS_DATA_GPIO_SIZE 8
+  #define I2S_OUT_GPIO_PINS_SUPPORTED 1
+  #define I2S_OUT_PARALLEL_SUPPORTED 1
+  #define I2S_OUT_PARALLEL_SIZE 8
 
   #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
@@ -89,21 +89,26 @@ struct i2s_out_options {
   // Timeout for acquiring pin mutex, default 0 -> immediate error if pin in use
   TickType_t pin_timeout;
 
-#if I2S_OUT_OPTIONS_GPIO_PINS_ENABLED
+#if I2S_OUT_GPIO_PINS_SUPPORTED
   // Use GPIO pin for bit clock out signal
   gpio_num_t bck_gpio; // -1 to disable
   bool bck_inv;
 
-  // Use GPIO pin for data out signal
+  // Use GPIO pin for data out signal, -1 to disable
   union {
-    gpio_num_t serial_data_gpio; // -1 to disable
-#if I2S_OUT_OPTIONS_PARALLEL_ENABLED
-    gpio_num_t parallel_data_gpios[I2S_OUT_OPTIONS_DATA_GPIO_SIZE]; // -1 to disable
-#endif
+    gpio_num_t data_gpio; // serial
+# if I2S_OUT_PARALLEL_SUPPORTED
+    gpio_num_t data_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
+# endif
   };
 
-  // Use GPIO pin for inverted data out signal
-  gpio_num_t inv_data_gpio; // -1 to disable
+  // Use GPIO pin for inverted data out signal, -1 to disable
+  union {
+    gpio_num_t inv_data_gpio; // serial
+# if I2S_OUT_PARALLEL_SUPPORTED
+    gpio_num_t inv_data_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
+# endif
+  };
 #endif
 };
 
@@ -136,31 +141,33 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
  */
 int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_t count);
 
-/**
- * Copy exactly 8 channels of 8-bit `data` into the internal TX DMA buffer, transposing the buffers for
- * parallel output.
- *
- * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
- * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
- *
- * @param data 8-bit data per channel
- *
- * Returns <0 error, 0 on success, >0 if TX buffer is full.
- */
-int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t data[8]);
+#if I2S_OUT_PARALLEL_SUPPORTED
+  /**
+   * Copy exactly 8 channels of 8-bit `data` into the internal TX DMA buffer, transposing the buffers for
+   * parallel output.
+   *
+   * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
+   * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
+   *
+   * @param data 8-bit data per channel
+   *
+   * Returns <0 error, 0 on success, >0 if TX buffer is full.
+   */
+  int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t data[8]);
 
-/**
- * Copy exactly 8 channels of 16-bit `data` into the internal TX DMA buffer, transposing the buffers for
- * parallel output.
- *
- * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
- * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
- *
- * @param data 8-bit data per channel
- *
- * Returns <0 error, 0 on success, >0 if TX buffer is full.
- */
-int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t data[8]);
+  /**
+   * Copy exactly 8 channels of 16-bit `data` into the internal TX DMA buffer, transposing the buffers for
+   * parallel output.
+   *
+   * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
+   * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
+   *
+   * @param data 8-bit data per channel
+   *
+   * Returns <0 error, 0 on success, >0 if TX buffer is full.
+   */
+  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t data[8]);
+#endif
 
 /**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.

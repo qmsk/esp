@@ -10,5 +10,9 @@
 
 #if CONFIG_LEDS_I2S_ENABLED
   /* interfaces/i2s/ws2812b.c */
-  int leds_tx_i2s_ws2812b(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count, struct leds_limit limit);
+  int leds_tx_i2s_ws2812b_serial(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count, struct leds_limit limit);
+
+# if I2S_OUT_PARALLEL_SUPPORTED
+  int leds_tx_i2s_ws2812b_parallel(const struct leds_interface_i2s_options *options, union ws2812b_pixel *pixels, unsigned count, struct leds_limit limit);
+# endif
 #endif

@@ -32,7 +32,15 @@ int leds_protocol_ws2812b_tx(struct leds_protocol_ws2812b *protocol, union leds_
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_tx_i2s_ws2812b(&options->i2s, protocol->pixels, protocol->count, limit);
+    #if LEDS_I2S_DATA_PINS_ENABLED
+      if (options->i2s.data_pins_count) {
+        return leds_tx_i2s_ws2812b_parallel(&options->i2s, protocol->pixels, protocol->count, limit);
+      } else {
+        return leds_tx_i2s_ws2812b_serial(&options->i2s, protocol->pixels, protocol->count, limit);
+      }
+    #else
+      return leds_tx_i2s_ws2812b_serial(&options->i2s, protocol->pixels, protocol->count, limit);
+    #endif
   #endif
 
     default:

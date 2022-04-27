@@ -211,7 +211,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, size_t size)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
 
@@ -227,12 +227,18 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
   }
 
   // copy data to desc buf
-  LOG_DEBUG("copy size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
-  LOG_DEBUG_BUFFER(data, size);
+  LOG_DEBUG("return size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
 
-  memcpy(desc->buf + desc->len, data, size);
+  *ptr = desc->buf + desc->len;
 
-  desc->len += size;
+  return size;
+}
+
+void i2s_out_dma_commit(struct i2s_out *i2s_out, size_t len)
+{
+  struct dma_desc *desc = i2s_out->dma_write_desc;
+
+  desc->len += len;
 
   // commit if full
   if (desc->len >= desc->size) {
@@ -242,8 +248,22 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
 
     i2s_out->dma_write_desc = desc->next;
   }
+}
 
-  return size;
+int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
+{
+  void *ptr;
+  int len = i2s_out_dma_buffer(i2s_out, &ptr, size);
+
+  // copy data to desc buf
+  LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
+  LOG_DEBUG_BUFFER(data, len);
+
+  memcpy(ptr, data, len);
+
+  i2s_out_dma_commit(i2s_out, len);
+
+  return len;
 }
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)

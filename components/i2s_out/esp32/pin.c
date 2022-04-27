@@ -11,16 +11,24 @@ static const uint8_t i2s_bck_out_sig[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = I2S1O_BCK_OUT_IDX,
 };
 
-static const uint8_t i2s_data_out_sig[I2S_PORT_MAX] = {
+static const uint8_t i2s_serial_data_out_sig[I2S_PORT_MAX] = {
   [I2S_PORT_0]  = I2S0O_DATA_OUT23_IDX,
   [I2S_PORT_1]  = I2S1O_DATA_OUT23_IDX,
+};
+
+static const uint8_t i2s_parallel8_data_out_sig[I2S_PORT_MAX] = {
+  [I2S_PORT_1]  = I2S1O_DATA_OUT0_IDX, // special 8-bit mode on I2S1 only
 };
 
 int i2s_out_pin_init(struct i2s_out *i2s_out)
 {
   i2s_out->bck_gpio = -1;
-  i2s_out->data_gpio = -1;
+  i2s_out->serial_data_gpio = -1;
   i2s_out->inv_data_gpio = -1;
+
+  for (int i = 0; i < I2S_OUT_OPTIONS_DATA_GPIO_SIZE; i++) {
+    i2s_out->parallel_data_gpios[i] = -1;
+  }
 
   return 0;
 }
@@ -36,7 +44,40 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     }
   }
 
-  LOG_DEBUG("bck_gpio=%d data_gpio=%d", i2s_out->bck_gpio, i2s_out->data_gpio);
+  switch (options.mode) {
+    case I2S_OUT_MODE_32BIT_SERIAL:
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_32BIT_SERIAL bck_gpio=%d serial_data_gpio=%d inv_data_gpio=%d", i2s_out->port,
+        options.bck_gpio,
+        options.serial_data_gpio,
+        options.inv_data_gpio
+      );
+
+      break;
+
+    case I2S_OUT_MODE_8BIT_PARALLEL:
+      if (!i2s_parallel8_data_out_sig[i2s_out->port]) {
+        LOG_ERROR("unsupported mode=I2S_OUT_MODE_8BIT_PARALLEL for port=%d", i2s_out->port);
+        return -1;
+      }
+
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_8BIT_PARALLEL bck_gpio=%d parallel_data_gpio=[%d, %d, %d, %d, %d, %d, %d, %d]", i2s_out->port,
+        options.bck_gpio,
+        options.parallel_data_gpios[0],
+        options.parallel_data_gpios[1],
+        options.parallel_data_gpios[2],
+        options.parallel_data_gpios[3],
+        options.parallel_data_gpios[4],
+        options.parallel_data_gpios[5],
+        options.parallel_data_gpios[6],
+        options.parallel_data_gpios[7]
+      );
+
+      break;
+
+    default:
+      LOG_ERROR("invalid mode=%d", options.mode);
+      return -1;
+  }
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -50,25 +91,46 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
     esp_rom_gpio_connect_out_signal(i2s_out->bck_gpio, i2s_bck_out_sig[i2s_out->port], options.bck_inv, false);
   }
 
-  if (options.data_gpio > 0) {
-    i2s_out->data_gpio = options.data_gpio;
+  switch (options.mode) {
+    case I2S_OUT_MODE_32BIT_SERIAL:
+      if (options.serial_data_gpio > 0) {
+        i2s_out->serial_data_gpio = options.serial_data_gpio;
 
-    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->data_gpio], PIN_FUNC_GPIO);
-    gpio_ll_input_disable(&GPIO, i2s_out->data_gpio);
-    gpio_ll_output_enable(&GPIO, i2s_out->data_gpio);
+        gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->serial_data_gpio], PIN_FUNC_GPIO);
+        gpio_ll_input_disable(&GPIO, i2s_out->serial_data_gpio);
+        gpio_ll_output_enable(&GPIO, i2s_out->serial_data_gpio);
 
-    esp_rom_gpio_connect_out_signal(i2s_out->data_gpio, i2s_data_out_sig[i2s_out->port], false, false);
-  }
+        esp_rom_gpio_connect_out_signal(i2s_out->serial_data_gpio, i2s_serial_data_out_sig[i2s_out->port], false, false);
+      }
 
-  if (options.inv_data_gpio > 0) {
-    i2s_out->inv_data_gpio = options.inv_data_gpio;
+      if (options.inv_data_gpio > 0) {
+        i2s_out->inv_data_gpio = options.inv_data_gpio;
 
-    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->inv_data_gpio], PIN_FUNC_GPIO);
-    gpio_ll_input_disable(&GPIO, i2s_out->inv_data_gpio);
-    gpio_ll_output_enable(&GPIO, i2s_out->inv_data_gpio);
+        gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->inv_data_gpio], PIN_FUNC_GPIO);
+        gpio_ll_input_disable(&GPIO, i2s_out->inv_data_gpio);
+        gpio_ll_output_enable(&GPIO, i2s_out->inv_data_gpio);
 
-    // invert gpio output pin
-    esp_rom_gpio_connect_out_signal(i2s_out->inv_data_gpio, i2s_data_out_sig[i2s_out->port], true, false);
+        // invert gpio output pin
+        esp_rom_gpio_connect_out_signal(i2s_out->inv_data_gpio, i2s_serial_data_out_sig[i2s_out->port], true, false);
+      }
+
+      break;
+
+    case I2S_OUT_MODE_8BIT_PARALLEL:
+      for (int i = 0; i < I2S_OUT_OPTIONS_DATA_GPIO_SIZE; i++) {
+        gpio_num_t parallel_data_gpio = options.parallel_data_gpios[i];
+
+        if (parallel_data_gpio > 0) {
+          // TODO: i2s_out->data_gpio = options.data_gpio;
+
+          gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[parallel_data_gpio], PIN_FUNC_GPIO);
+          gpio_ll_input_disable(&GPIO, parallel_data_gpio);
+          gpio_ll_output_enable(&GPIO, parallel_data_gpio);
+
+          // data[0] is mapped to the most significant bit, which is OUT7
+          esp_rom_gpio_connect_out_signal(parallel_data_gpio, i2s_parallel8_data_out_sig[i2s_out->port] + 8 - i - 1, false, false);
+        }
+      }
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);
@@ -89,16 +151,24 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
     i2s_out->bck_gpio = -1;
   }
 
-  if (i2s_out->data_gpio >= 0) {
-    gpio_ll_output_disable(&GPIO, i2s_out->data_gpio);
+  if (i2s_out->serial_data_gpio >= 0) {
+    gpio_ll_output_disable(&GPIO, i2s_out->serial_data_gpio);
 
-    i2s_out->data_gpio = -1;
+    i2s_out->serial_data_gpio = -1;
   }
 
   if (i2s_out->inv_data_gpio >= 0) {
     gpio_ll_output_disable(&GPIO, i2s_out->inv_data_gpio);
 
     i2s_out->inv_data_gpio = -1;
+  }
+
+  for (int i = 0; i < I2S_OUT_OPTIONS_DATA_GPIO_SIZE; i++) {
+    if (i2s_out->parallel_data_gpios[i] >= 0) {
+      gpio_ll_output_disable(&GPIO, i2s_out->parallel_data_gpios[i]);
+
+      i2s_out->parallel_data_gpios[i] = -1;
+    }
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);

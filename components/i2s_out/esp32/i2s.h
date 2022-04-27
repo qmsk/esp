@@ -16,3 +16,13 @@ static inline void i2s_out_tx_enable_short_sync(i2s_dev_t *hw, bool en)
 {
     hw->conf.tx_short_sync = en;
 }
+
+static inline void i2s_out_tx_enable_wrx2(i2s_dev_t *hw, bool en)
+{
+    hw->conf2.lcd_tx_wrx2_en = en;
+}
+
+static inline void i2s_out_tx_enable_sdx2(i2s_dev_t *hw, bool en)
+{
+    hw->conf2.lcd_tx_sdx2_en = en;
+}

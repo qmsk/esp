@@ -41,7 +41,7 @@ int leds_tx_i2s_ws2812b_serial(const struct leds_interface_i2s_options *options,
 {
   struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   struct i2s_out_options i2s_out_options = {
-    .mode         = I2S_OUT_MODE_32BIT_SERIAL,
+    .mode         = I2S_OUT_MODE_16BIT_SERIAL,
 
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us WS2812B bit
@@ -79,16 +79,19 @@ int leds_tx_i2s_ws2812b_serial(const struct leds_interface_i2s_options *options,
 
   WITH_STATS_TIMER(&stats->tx) {
     for (unsigned i = 0; i < count; i++) {
-      uint32_t buf[3];
+      uint16_t buf[6];
       uint32_t grb = ws2812b_pixel_limit(pixels[i], limit)._grb;
 
-      // 32-bit little-endian
-      buf[0] = (ws2812b_lut[(grb >> 20) & 0xf] << 16) | (ws2812b_lut[(grb >> 16) & 0xf]);
-      buf[1] = (ws2812b_lut[(grb >> 12) & 0xf] << 16) | (ws2812b_lut[(grb >>  8) & 0xf]);
-      buf[2] = (ws2812b_lut[(grb >>  4) & 0xf] << 16) | (ws2812b_lut[(grb >>  0) & 0xf]);
+      // 16-bit little-endian
+      buf[0] = ws2812b_lut[(grb >> 20) & 0xf];
+      buf[1] = ws2812b_lut[(grb >> 16) & 0xf];
+      buf[2] = ws2812b_lut[(grb >> 12) & 0xf];
+      buf[3] = ws2812b_lut[(grb >>  8) & 0xf];
+      buf[4] = ws2812b_lut[(grb >>  4) & 0xf];
+      buf[5] = ws2812b_lut[(grb >>  0) & 0xf];
 
-      if ((err = i2s_out_write_serial32(options->i2s_out, buf, 3))) {
-        LOG_ERROR("i2s_out_write_serial32");
+      if ((err = i2s_out_write_serial16(options->i2s_out, buf, 6))) {
+        LOG_ERROR("i2s_out_write_serial16");
         goto error;
       }
     }

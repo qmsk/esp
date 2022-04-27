@@ -41,6 +41,8 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
 {
   struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   struct i2s_out_options i2s_out_options = {
+    .mode         = I2S_OUT_MODE_32BIT_SERIAL,
+
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us SK6812 bit
     // two SK6812 bits per I2S byte
@@ -86,7 +88,7 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
       buf[3] = (sk6812_lut[(grbw >>  4) & 0xf] << 16) | (sk6812_lut[(grbw >>  0) & 0xf]);
 
       if ((err = i2s_out_write_serial32(options->i2s_out, buf, 4))) {
-        LOG_ERROR("i2s_out_write_all");
+        LOG_ERROR("i2s_out_write_serial32");
         goto error;
       }
     }

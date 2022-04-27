@@ -41,6 +41,8 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
 {
   struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   struct i2s_out_options i2s_out_options = {
+    .mode         = I2S_OUT_MODE_32BIT_SERIAL,
+
     // 3.2MHz bit clock => 0.3125us per I2S bit
     // four I2S bits per 1.25us WS2811 bit
     // two WS2811 bits per I2S byte
@@ -86,7 +88,7 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
       buf[2] = (ws2811_lut[(rgb >>  4) & 0xf] << 16) | (ws2811_lut[(rgb >>  0) & 0xf]);
 
       if ((err = i2s_out_write_serial32(options->i2s_out, buf, 3))) {
-        LOG_ERROR("i2s_out_write_all");
+        LOG_ERROR("i2s_out_write_serial32");
         goto error;
       }
     }

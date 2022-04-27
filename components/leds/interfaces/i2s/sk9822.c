@@ -9,6 +9,7 @@ int leds_tx_i2s_sk9822(const struct leds_interface_i2s_options *options, union s
 {
   struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   struct i2s_out_options i2s_out_options = {
+    .mode         = I2S_OUT_MODE_32BIT_SERIAL,
     .clock        = i2s_out_clock(options->clock_rate),
 
     .eof_value    = SK9822_END_FRAME_UINT32,
@@ -43,7 +44,7 @@ int leds_tx_i2s_sk9822(const struct leds_interface_i2s_options *options, union s
     uint32_t start_frame = SK9822_START_FRAME_UINT32;
 
     if ((err = i2s_out_write_serial32(options->i2s_out, &start_frame, 1))) {
-      LOG_ERROR("i2s_out_write_all");
+      LOG_ERROR("i2s_out_write_serial32");
       goto error;
     }
 
@@ -53,7 +54,7 @@ int leds_tx_i2s_sk9822(const struct leds_interface_i2s_options *options, union s
       uint32_t xbgr = sk9822_pixel_limit(pixels[i], limit).xbgr;
 
       if ((err = i2s_out_write_serial32(options->i2s_out, &xbgr, 1))) {
-        LOG_ERROR("i2s_out_write_all");
+        LOG_ERROR("i2s_out_write_serial32");
         goto error;
       }
     }

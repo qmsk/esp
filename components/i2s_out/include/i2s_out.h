@@ -20,7 +20,8 @@ typedef int i2s_port_t;
   #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
   enum i2s_out_mode {
-    I2S_OUT_MODE_32BIT_SERIAL,  // default
+    I2S_OUT_MODE_16BIT_SERIAL,  // 2x16-bit little-endian
+    I2S_OUT_MODE_32BIT_SERIAL,  // 32-bit little-endian
   };
 
 #elif CONFIG_IDF_TARGET_ESP32
@@ -38,7 +39,8 @@ typedef int i2s_port_t;
   #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
   enum i2s_out_mode {
-    I2S_OUT_MODE_32BIT_SERIAL,  // default
+    I2S_OUT_MODE_16BIT_SERIAL,  // 2x16-bit little-endian
+    I2S_OUT_MODE_32BIT_SERIAL,  // 32-bit little-endian
     I2S_OUT_MODE_8BIT_PARALLEL, // I2S1 (I2S_PORT_1) -only
   };
 #endif
@@ -127,7 +129,20 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size);
 int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
 
 /**
- * Copy exactly `size` 32-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
+ * Copy exactly `count` 16-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
+ *
+ * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
+ * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
+ *
+ * @param data 32-bit aligned data (LSB)
+ * @param count number of 32-bit words
+ *
+ * Returns <0 error, 0 on success, >0 if TX buffer is full.
+ */
+int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count);
+
+/**
+ * Copy exactly `count` 32-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
  *
  * I2S TX uses 32-bit little-endian words, each set of 4 bytes is transmitted in least-significant-byte -> most-significant-bit first order.
  *

@@ -251,10 +251,9 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, const uint32_t *data, size_t count)
+int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
-  size_t size = sizeof(*data) * count;
 
   LOG_DEBUG("desc=%p (owner=%u eof=%u len=%u size=%u): size=%u", desc, desc->owner, desc->eof, desc->len, desc->size, size);
 
@@ -264,8 +263,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const uint32_t *data, size_t coun
   }
 
   if (size > desc->size || desc->len + size > desc->size) {
-    // always 32-bit aligned, assuming size/len are also aligned
-    size = TRUNC(desc->size - desc->len, uint32_t);
+    size = desc->size - desc->len;
   }
 
   // copy data to desc buf
@@ -274,7 +272,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const uint32_t *data, size_t coun
 
   memcpy(desc->buf + desc->len, data, size);
 
-  desc->len += ALIGN(size, uint32_t);
+  desc->len += size;
 
   // commit if full
   if (desc->len >= desc->size) {
@@ -285,7 +283,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const uint32_t *data, size_t coun
     i2s_out->dma_write_desc = desc->next;
   }
 
-  return size / sizeof(uint32_t);
+  return size;
 }
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)

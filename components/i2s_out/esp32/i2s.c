@@ -31,6 +31,24 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_ll_tx_enable_pdm(i2s_out->dev, false);
 
   switch (options.mode) {
+    case I2S_OUT_MODE_16BIT_SERIAL:
+      i2s_ll_enable_lcd(i2s_out->dev, false);
+
+      // use 16-bit dual channel mode with uint16 LSB word ordering
+      i2s_ll_tx_enable_msb_right(i2s_out->dev, true);
+      i2s_ll_tx_enable_right_first(i2s_out->dev, false);
+
+      i2s_ll_tx_force_enable_fifo_mod(i2s_out->dev, true);
+      i2s_out_tx_set_fifo_mod(i2s_out->dev, 0); // 16-bit dual channel data
+      i2s_ll_tx_set_bits_mod(i2s_out->dev, 16); // 16-bit per channel
+      i2s_out_tx_set_chan_mod(i2s_out->dev, 0); // 16-bit dual channel mode
+
+      // setup WS signal; not used
+      i2s_ll_tx_enable_msb_shift(i2s_out->dev, false);
+      i2s_out_tx_enable_short_sync(i2s_out->dev, false);
+
+      break;
+
     case I2S_OUT_MODE_32BIT_SERIAL:
       i2s_ll_enable_lcd(i2s_out->dev, false);
 
@@ -42,7 +60,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
       i2s_ll_tx_force_enable_fifo_mod(i2s_out->dev, true);
       i2s_out_tx_set_fifo_mod(i2s_out->dev, 0); // 16-bit dual channel data
       i2s_ll_tx_set_bits_mod(i2s_out->dev, 16); // 16-bit per channel
-      i2s_out_tx_set_chan_mod(i2s_out->dev, 0); // dual-channel mode
+      i2s_out_tx_set_chan_mod(i2s_out->dev, 0); // 16-bit dual channel mode
 
       // setup WS signal; not used
       i2s_ll_tx_enable_msb_shift(i2s_out->dev, false);
@@ -60,9 +78,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
       // 4 8-bit samples per 32-bit fifo slot, each 16-bit half has its 8-bit bytes swapped
       // https://www.esp32.com/viewtopic.php?f=13&t=3256#p15350
       i2s_ll_tx_force_enable_fifo_mod(i2s_out->dev, true);
-      i2s_out_tx_set_fifo_mod(i2s_out->dev, 1); // super special mode
+      i2s_out_tx_set_fifo_mod(i2s_out->dev, 1); // 8-bit quad channel data
       i2s_ll_tx_set_bits_mod(i2s_out->dev, 8);
-      i2s_out_tx_set_chan_mod(i2s_out->dev, 1); // super special mode
+      i2s_out_tx_set_chan_mod(i2s_out->dev, 1); // 8-bit single channel mode
 
       // setup WS signal; not used
       i2s_ll_tx_enable_msb_shift(i2s_out->dev, false);

@@ -119,7 +119,7 @@ error:
   return err;
 }
 
-static int i2s_out_write(struct i2s_out *i2s_out, const uint32_t *data, size_t count)
+static int i2s_out_write(struct i2s_out *i2s_out, const void *data, size_t size)
 {
   int ret = 0;
 
@@ -128,8 +128,8 @@ static int i2s_out_write(struct i2s_out *i2s_out, const uint32_t *data, size_t c
     return -1;
   }
 
-  while (count) {
-    if ((ret = i2s_out_dma_write(i2s_out, data, count)) < 0) {
+  while (size) {
+    if ((ret = i2s_out_dma_write(i2s_out, data, size)) < 0) {
       LOG_ERROR("i2s_out_dma_write");
       break;
     } else if (!ret) {
@@ -137,7 +137,7 @@ static int i2s_out_write(struct i2s_out *i2s_out, const uint32_t *data, size_t c
       ret = 1;
       break;
     } else {
-      count -= ret;
+      size -= ret;
       data += ret;
       ret = 0;
     }
@@ -150,9 +150,14 @@ static int i2s_out_write(struct i2s_out *i2s_out, const uint32_t *data, size_t c
   return ret;
 }
 
+int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count)
+{
+  return i2s_out_write(i2s_out, data, count * sizeof(*data));
+}
+
 int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_t count)
 {
-  return i2s_out_write(i2s_out, data, count);
+  return i2s_out_write(i2s_out, data, count * sizeof(*data));
 }
 
 #if I2S_OUT_PARALLEL_SUPPORTED
@@ -163,7 +168,7 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
     // 8x8-bit -> 2x32-bit
     i2s_out_transpose_parallel8x8(data, buf);
 
-    return i2s_out_write(i2s_out, buf, 2);
+    return i2s_out_write(i2s_out, buf, sizeof(buf));
   }
 
   int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t data[8])
@@ -173,7 +178,7 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
     // 8x8-bit -> 2x32-bit
     i2s_out_transpose_parallel8x16(data, buf);
 
-    return i2s_out_write(i2s_out, buf, 4);
+    return i2s_out_write(i2s_out, buf, sizeof(buf));
   }
 #endif
 

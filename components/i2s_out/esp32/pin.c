@@ -44,6 +44,15 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   }
 
   switch (options.mode) {
+    case I2S_OUT_MODE_16BIT_SERIAL:
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_16BIT_SERIAL bck_gpio=%d serial_data_gpio=%d inv_data_gpio=%d", i2s_out->port,
+        options.bck_gpio,
+        options.data_gpio,
+        options.inv_data_gpio
+      );
+
+      break;
+
     case I2S_OUT_MODE_32BIT_SERIAL:
       LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_32BIT_SERIAL bck_gpio=%d serial_data_gpio=%d inv_data_gpio=%d", i2s_out->port,
         options.bck_gpio,
@@ -91,6 +100,7 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   }
 
   switch (options.mode) {
+    case I2S_OUT_MODE_16BIT_SERIAL:
     case I2S_OUT_MODE_32BIT_SERIAL:
       if (options.data_gpio > 0) {
         i2s_out->data_gpios[0] = options.data_gpio;

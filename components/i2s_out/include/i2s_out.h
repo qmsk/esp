@@ -103,28 +103,19 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size);
 int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
 
 /**
- * Copy up to `len` bytes from `data` into the internal TX DMA buffer.
+ * Copy exactly `size` 32-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
  *
- * I2S TX uses 32-bit little-endian words, i.e. each set of 4 bytes is transmitted in reverse order.
- *
- * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
- * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
- *
- * Returns <0 on error, 0 if TX buffer full, >0 number of bytes written.
- */
-int i2s_out_write(struct i2s_out *i2s_out, void *data, size_t len);
-
-/**
- * Copy exactly `len` bytes from `data` into the internal TX DMA buffer.
- *
- * I2S TX uses 32-bit little-endian words, i.e. each set of 4 bytes is transmitted in reverse order.
+ * I2S TX uses 32-bit little-endian words, each set of 4 bytes is transmitted in least-significant-byte -> most-significant-bit first order.
  *
  * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
  * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
+ *
+ * @param data 32-bit aligned data (LSB)
+ * @param count number of 32-bit words
  *
  * Returns <0 error, 0 on success, >0 if TX buffer is full.
  */
-int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len);
+int i2s_out_write_serial32(struct i2s_out *i2s_out, uint32_t *data, size_t count);
 
 /**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.

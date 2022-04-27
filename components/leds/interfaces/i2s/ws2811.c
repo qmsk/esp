@@ -85,7 +85,7 @@ int leds_tx_i2s_ws2811(const struct leds_interface_i2s_options *options, union w
       buf[1] = (ws2811_lut[(rgb >> 12) & 0xf] << 16) | (ws2811_lut[(rgb >>  8) & 0xf]);
       buf[2] = (ws2811_lut[(rgb >>  4) & 0xf] << 16) | (ws2811_lut[(rgb >>  0) & 0xf]);
 
-      if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
+      if ((err = i2s_out_write_serial32(options->i2s_out, buf, 3))) {
         LOG_ERROR("i2s_out_write_all");
         goto error;
       }

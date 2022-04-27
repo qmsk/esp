@@ -85,7 +85,7 @@ int leds_tx_i2s_sk6812grbw(const struct leds_interface_i2s_options *options, uni
       buf[2] = (sk6812_lut[(grbw >> 12) & 0xf] << 16) | (sk6812_lut[(grbw >>  8) & 0xf]);
       buf[3] = (sk6812_lut[(grbw >>  4) & 0xf] << 16) | (sk6812_lut[(grbw >>  0) & 0xf]);
 
-      if ((err = i2s_out_write_all(options->i2s_out, buf, sizeof(buf)))) {
+      if ((err = i2s_out_write_serial32(options->i2s_out, buf, 4))) {
         LOG_ERROR("i2s_out_write_all");
         goto error;
       }

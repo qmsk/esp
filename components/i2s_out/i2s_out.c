@@ -118,25 +118,7 @@ error:
   return err;
 }
 
-int i2s_out_write(struct i2s_out *i2s_out, void *data, size_t len)
-{
-  int ret;
-
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
-  }
-
-  ret = i2s_out_dma_write(i2s_out, data, len);
-
-  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
-    LOG_ERROR("xSemaphoreGiveRecursive");
-  }
-
-  return ret;
-}
-
-int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
+int i2s_out_write_serial32(struct i2s_out *i2s_out, uint32_t *data, size_t count)
 {
   int ret = 0;
 
@@ -145,8 +127,8 @@ int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
     return -1;
   }
 
-  while (len) {
-    if ((ret = i2s_out_dma_write(i2s_out, data, len)) < 0) {
+  while (count) {
+    if ((ret = i2s_out_dma_write(i2s_out, data, count)) < 0) {
       LOG_ERROR("i2s_out_dma_write");
       break;
     } else if (!ret) {
@@ -154,7 +136,8 @@ int i2s_out_write_all(struct i2s_out *i2s_out, void *data, size_t len)
       ret = 1;
       break;
     } else {
-      len -= ret;
+      count -= ret;
+      data += ret;
       ret = 0;
     }
   }

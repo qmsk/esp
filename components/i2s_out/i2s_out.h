@@ -53,7 +53,7 @@ struct i2s_out {
 /* dma.c */
 int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size);
 int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
-int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size);
+int i2s_out_dma_write(struct i2s_out *i2s_out, uint32_t *data, size_t count);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
 void i2s_out_dma_start(struct i2s_out *i2s_out);
 int i2s_out_dma_flush(struct i2s_out *i2s_out);

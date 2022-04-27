@@ -11,6 +11,7 @@
 #include <string.h>
 
 #define ALIGN(size, type) (((size) + (sizeof(type) - 1)) & ~(sizeof(type) - 1))
+#define TRUNC(size, type) ((size) & ~(sizeof(type) - 1))
 
 #define DMA_EOF_BUF_SIZE (DMA_DESC_SIZE_MIN)
 
@@ -210,9 +211,10 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
+int i2s_out_dma_write(struct i2s_out *i2s_out, uint32_t *data, size_t count)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
+  size_t size = sizeof(*data) * count;
 
   LOG_DEBUG("desc=%p (owner=%u eof=%u len=%u size=%u): size=%u", desc, desc->owner, desc->eof, desc->len, desc->size, size);
 
@@ -222,16 +224,17 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
   }
 
   if (size > desc->size || desc->len + size > desc->size) {
-    size = desc->size - desc->len;
+    // always 32-bit aligned, assuming size/len are also aligned
+    size = TRUNC(desc->size - desc->len, uint32_t);
   }
 
   // copy data to desc buf
   LOG_DEBUG("copy size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
-  LOG_DEBUG_BUFFER(buf, size);
+  LOG_DEBUG_BUFFER(data, size);
 
-  memcpy(desc->buf + desc->len, buf, size);
+  memcpy(desc->buf + desc->len, data, size);
 
-  desc->len += size;
+  desc->len += ALIGN(size, uint32_t);
 
   // commit if full
   if (desc->len >= desc->size) {
@@ -242,7 +245,7 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, void *buf, size_t size)
     i2s_out->dma_write_desc = desc->next;
   }
 
-  return size;
+  return size / sizeof(uint32_t);
 }
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)

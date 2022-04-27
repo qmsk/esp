@@ -171,17 +171,18 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
   int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t data[8]);
 
   /**
-   * Copy exactly 8 channels of 16-bit `data` into the internal TX DMA buffer, transposing the buffers for
+   * Copy 8 channels of `width` x 16-bit `data`  into the internal TX DMA buffer, transposing the buffers for
    * parallel output.
    *
    * This does not yet start the I2S output. The internal TX DMA buffer only fits `buffer_size` bytes.
    * Use `i2s_out_flush()` / `i2s_out_close()` to start the I2S output and empty the TX DMA buffer.
    *
-   * @param data 8-bit data per channel
+   * @param data[8][width] 16-bit data per channel
+   * @param width number of uint16_t values per channel
    *
    * Returns <0 error, 0 on success, >0 if TX buffer is full.
    */
-  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t data[8]);
+   int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width);
 #endif
 
 /**

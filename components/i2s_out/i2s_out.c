@@ -171,14 +171,46 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
     return i2s_out_write(i2s_out, buf, sizeof(buf));
   }
 
-  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t data[8])
+  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width)
   {
-    uint32_t buf[4];
+    int ret = 0;
 
-    // 8x8-bit -> 2x32-bit
-    i2s_out_transpose_parallel8x16(data, buf);
+    if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+      LOG_ERROR("xSemaphoreTakeRecursive");
+      return -1;
+    }
 
-    return i2s_out_write(i2s_out, buf, sizeof(buf));
+    for (unsigned index = 0; index < width; ) {
+      void *ptr;
+      size_t size;
+      size_t len = 0;
+
+      // XXX: split write when misaligned on end of DMA buffer?
+      if ((size = i2s_out_dma_buffer(i2s_out, &ptr, (width - index) * 16)) < 16) {
+        LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
+        ret = 1;
+        goto error;
+      }
+
+      for (uint32_t *buf = ptr; size >= 16; ) {
+        // 8x16-bit -> 4x32-bit
+        i2s_out_transpose_parallel8x16(data, width, index++, buf);
+
+        buf += 4;
+        size -= 16;
+        len += 16;
+      }
+
+      i2s_out_dma_commit(i2s_out, len);
+    }
+
+error:
+    if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+      LOG_ERROR("xSemaphoreGiveRecursive");
+    }
+
+    return ret;
+
   }
 #endif
 

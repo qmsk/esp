@@ -211,7 +211,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, uint32_t *data, size_t count)
+int i2s_out_dma_write(struct i2s_out *i2s_out, const uint32_t *data, size_t count)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
   size_t size = sizeof(*data) * count;

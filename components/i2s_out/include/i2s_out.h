@@ -115,7 +115,7 @@ int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
  *
  * Returns <0 error, 0 on success, >0 if TX buffer is full.
  */
-int i2s_out_write_serial32(struct i2s_out *i2s_out, uint32_t *data, size_t count);
+int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count);
 
 /**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.

@@ -100,7 +100,7 @@ int leds_protocol_p9813_init(struct leds_protocol_p9813 *protocol, union leds_in
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
-      return 1;
+      return -1;
   }
 
   protocol->packet = buf;

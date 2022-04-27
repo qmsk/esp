@@ -36,7 +36,7 @@ int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
-      return 1;
+      return -1;
   }
 }
 

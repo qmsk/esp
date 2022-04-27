@@ -37,7 +37,7 @@ int leds_protocol_ws2812b_tx(struct leds_protocol_ws2812b *protocol, union leds_
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
-      return 1;
+      return -1;
   }
 }
 

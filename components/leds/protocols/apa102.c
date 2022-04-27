@@ -102,7 +102,7 @@ int leds_protocol_apa102_init(struct leds_protocol_apa102 *protocol, union leds_
 
     default:
       LOG_ERROR("unsupported interface=%#x", options->interface);
-      return 1;
+      return -1;
   }
 
   protocol->packet = buf;

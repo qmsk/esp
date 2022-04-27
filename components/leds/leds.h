@@ -16,9 +16,18 @@
 #include "protocols/sk9822.h"
 
 union leds_interface_state {
-  #if CONFIG_LEDS_SPI_ENABLED
-      struct leds_interface_spi spi;
-  #endif
+#if CONFIG_LEDS_SPI_ENABLED
+  struct leds_interface_spi spi;
+#endif
+};
+
+union leds_protocol_state {
+  struct leds_protocol_apa102 apa102;
+  struct leds_protocol_p9813 p9813;
+  struct leds_protocol_ws2812b ws2812b;
+  struct leds_protocol_sk6812grbw sk6812grbw;
+  struct leds_protocol_ws2811 ws2811;
+  struct leds_protocol_sk9822 sk9822;
 };
 
 #include <stdbool.h>
@@ -31,14 +40,7 @@ struct leds {
   union leds_interface_state interface;
 
   // protocol state
-  union {
-    struct leds_protocol_apa102 apa102;
-    struct leds_protocol_p9813 p9813;
-    struct leds_protocol_ws2812b ws2812b;
-    struct leds_protocol_sk6812grbw sk6812grbw;
-    struct leds_protocol_ws2811 ws2811;
-    struct leds_protocol_sk9822 sk9822;
-  } protocol;
+  union leds_protocol_state protocol;
 
   // if false, all leds are inactive
   bool active;

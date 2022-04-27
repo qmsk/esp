@@ -166,28 +166,25 @@ error:
       unsigned segment_count = count / segment_size; // number of pixels per pin
 
       for (unsigned i = 0; i < segment_count; i++) {
-        // three sets of 8 parallel sub-pixels, two consecutive 16-bit values per sub-pixel
-        uint16_t buf[6][8] = {};
+        // 8 sets of 24x4-bit sub-pixels as 6x16-bit LUT values
+        uint16_t buf[8][6] = {};
 
         for (unsigned j = 0; j < segment_size; j++) {
           uint32_t grb = ws2812b_pixel_limit(pixels[j * segment_count + i], limit)._grb;
 
           // 16-bit little-endian
-          buf[0][j] = ws2812b_lut[(grb >> 20) & 0xf];
-          buf[1][j] = ws2812b_lut[(grb >> 16) & 0xf];
-          buf[2][j] = ws2812b_lut[(grb >> 12) & 0xf];
-          buf[3][j] = ws2812b_lut[(grb >>  8) & 0xf];
-          buf[4][j] = ws2812b_lut[(grb >>  4) & 0xf];
-          buf[5][j] = ws2812b_lut[(grb >>  0) & 0xf];
+          buf[j][0] = ws2812b_lut[(grb >> 20) & 0xf];
+          buf[j][1] = ws2812b_lut[(grb >> 16) & 0xf];
+          buf[j][2] = ws2812b_lut[(grb >> 12) & 0xf];
+          buf[j][3] = ws2812b_lut[(grb >>  8) & 0xf];
+          buf[j][4] = ws2812b_lut[(grb >>  4) & 0xf];
+          buf[j][5] = ws2812b_lut[(grb >>  0) & 0xf];
         }
 
-        // TOOD: optimize?
-        for (unsigned k = 0; k < 6; k++) {
-          // write each sub-pixel half
-          if ((err = i2s_out_write_parallel8x16(options->i2s_out, buf[k]))) {
-            LOG_ERROR("i2s_out_write_parallel8x16");
-            goto error;
-          }
+        // write each set of pixels
+        if ((err = i2s_out_write_parallel8x16(options->i2s_out, buf, 6))) {
+          LOG_ERROR("i2s_out_write_parallel8x16");
+          goto error;
         }
       }
 

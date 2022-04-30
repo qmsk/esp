@@ -21,7 +21,7 @@ static int leds_interface_i2s_tx_32bit_bck(struct i2s_out *i2s_out, struct leds_
     // transmit in 32-bit little-endian order
     uint32_t buf[1];
 
-    tx.pixel_func.i2s_mode_32bit(buf, tx.protocol, i, tx.limit);
+    tx.func.i2s_mode_32bit(buf, tx.data, i, tx.limit);
 
     if ((err = i2s_out_write_serial32(i2s_out, buf, 1))) {
       LOG_ERROR("i2s_out_write_serial32");
@@ -39,7 +39,7 @@ static int leds_interface_i2s_tx_24bit_4x4_serial16(struct i2s_out *i2s_out, str
   for (unsigned i = 0; i < tx.count; i++) {
     uint16_t buf[6];
 
-    tx.pixel_func.i2s_mode_24bit_4x4(buf, tx.protocol, i, tx.limit);
+    tx.func.i2s_mode_24bit_4x4(buf, tx.data, i, tx.limit);
 
     if ((err = i2s_out_write_serial16(i2s_out, buf, 6))) {
       LOG_ERROR("i2s_out_write_serial16");
@@ -57,7 +57,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
   for (unsigned i = 0; i < tx.count; i++) {
     uint16_t buf[8];
 
-    tx.pixel_func.i2s_mode_32bit_4x4(buf, tx.protocol, i, tx.limit);
+    tx.func.i2s_mode_32bit_4x4(buf, tx.data, i, tx.limit);
 
     if ((err = i2s_out_write_serial16(i2s_out, buf, 8))) {
       LOG_ERROR("i2s_out_write_serial16");
@@ -77,7 +77,7 @@ static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, st
     uint16_t buf[8][6] = {};
 
     for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.pixel_func.i2s_mode_24bit_4x4(buf[j], tx.protocol, i, tx.limit);
+      tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, i, tx.limit);
     }
 
     if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 6))) {
@@ -98,7 +98,7 @@ static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct i2s_out *i2s_out, st
     uint16_t buf[8][8] = {};
 
     for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.pixel_func.i2s_mode_32bit_4x4(buf[j], tx.protocol, i, tx.limit);
+      tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, i, tx.limit);
     }
 
     if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 8))) {

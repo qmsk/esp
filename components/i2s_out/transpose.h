@@ -21,7 +21,7 @@ static inline void i2s_out_transpose_parallel8x8(const uint8_t data[8], uint32_t
   buf[1] = ((buf[1] << 8) & 0xFF00FF00) | ((buf[1] >> 8) & 0x00FF00FF);
 }
 
-// transpose an array of data[8][step] parallel 8x16-bit values at [index] -> 4x32-bit I2S 8-bit FIFO values at *buf
+// transpose an array of data[8][step] parallel 8x16-bit values at [0..8][index] -> 4x32-bit I2S 8-bit FIFO values at *buf
 static inline void i2s_out_transpose_parallel8x16(uint16_t data[], unsigned step, unsigned index, uint32_t buf[4])
 {
   uint32_t a, b, c, d, t;

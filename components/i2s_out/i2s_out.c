@@ -182,18 +182,20 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
 
     for (unsigned index = 0; index < width; ) {
       void *ptr;
-      size_t size;
-      size_t len = 0;
+      size_t size = (width - index) * 16;
 
       // XXX: split write when misaligned on end of DMA buffer?
-      if ((size = i2s_out_dma_buffer(i2s_out, &ptr, (width - index) * 16)) < 16) {
+      if ((size = i2s_out_dma_buffer(i2s_out, &ptr, size)) < 16) {
         LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
         ret = 1;
         goto error;
       }
 
-      for (uint32_t *buf = ptr; size >= 16; ) {
-        // 8x16-bit -> 4x32-bit
+      // transpose each 8x16-bit -> 4x32-bit block that fits
+      uint32_t *buf = ptr;
+      size_t len = 0;
+
+      while (size >= 16) {
         i2s_out_transpose_parallel8x16(data, width, index++, buf);
 
         buf += 4;

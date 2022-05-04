@@ -11,6 +11,7 @@
 #include <string.h>
 
 // align MUST be a power of two
+// ref http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
 #define CHECK_ALIGN(align) ((align) && !((align) & ((align) - 1)))
 
 // grow size to alignment

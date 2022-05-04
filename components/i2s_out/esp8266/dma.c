@@ -11,8 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ALIGN(size, type) (((size) + (sizeof(type) - 1)) & ~(sizeof(type) - 1))
-#define TRUNC(size, type) ((size) & ~(sizeof(type) - 1))
+// align MUST be a power of two
+// ref http://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+#define CHECK_ALIGN(align) ((align) && !((align) & ((align) - 1)))
+
+// grow size to alignment
+#define ALIGN(size, align) (((size) + ((align) - 1)) & ~((align) - 1))
+
+// shrink size to aligment
+#define TRUNC(size, align) ((size) & ~((align) - 1))
 
 #define DMA_EOF_BUF_SIZE (DMA_DESC_SIZE_MIN)
 
@@ -28,7 +35,7 @@ static inline void *dma_calloc(size_t count, size_t size)
   return heap_caps_calloc(count, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 }
 
-void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t size, struct dma_desc *next)
+void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t size, size_t align, struct dma_desc *next)
 {
   struct dma_desc **nextp = NULL;
 
@@ -39,12 +46,12 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
       *nextp = desc;
     }
 
-    desc->size = (size > DMA_DESC_SIZE_MAX) ? DMA_DESC_SIZE_MAX : size;
+    desc->size = (size > TRUNC(DMA_DESC_SIZE_MAX, align)) ? TRUNC(DMA_DESC_SIZE_MAX, align) : size;
     desc->len = 0;
     desc->owner = 0;
     desc->buf = buf;
 
-    LOG_DEBUG("i=%u desc=%p: size=%u buf=%p", i, desc, desc->size, desc->buf);
+    LOG_DEBUG("i=%u desc=%p: size=%u buf=%p (align=%u size=%u)", i, desc, desc->size, desc->buf, align, size);
 
     buf += desc->size;
     size -= desc->size;
@@ -56,6 +63,14 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
     // loop
     *nextp = next;
   }
+}
+
+/* Prepare desc for DMA start */
+struct dma_desc *commit_dma_desc(struct dma_desc *desc)
+{
+  desc->owner = 1;
+
+  return desc->next;
 }
 
 void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
@@ -93,26 +108,29 @@ void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *nex
   }
 }
 
-int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
+int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
 {
   size_t buf_size = 0;
   unsigned desc_count = 0;
 
+  assert(CHECK_ALIGN(align)); // alignment MUST be a power of two
+
+  // force 32-bit alignment for hardware FIFO
+  align = ALIGN(align, sizeof(uint32_t));
+  size = ALIGN(size, sizeof(uint32_t));
+
   // calculate buffer size for DMA descriptors
   for (desc_count = 0; buf_size < size; desc_count++) {
-    if (buf_size + DMA_DESC_SIZE_MAX <= size) {
-      buf_size += DMA_DESC_SIZE_MAX;
-    } else if (buf_size + DMA_DESC_SIZE_MIN >= size) {
-      buf_size += DMA_DESC_SIZE_MIN;
+    if (buf_size + TRUNC(DMA_DESC_SIZE_MAX, align) <= size) {
+      buf_size += TRUNC(DMA_DESC_SIZE_MAX, align);
+    } else if (buf_size + ALIGN(DMA_DESC_SIZE_MIN, align) >= size) {
+      buf_size += ALIGN(DMA_DESC_SIZE_MIN, align);
     } else {
       buf_size = size;
     }
   }
 
-  // force 32-bit aligned
-  buf_size = ALIGN(buf_size, uint32_t);
-
-  LOG_DEBUG("size=%u -> desc_count=%u buf_size=%u", size, desc_count, buf_size);
+  LOG_DEBUG("size=%u align=%u -> desc_count=%u buf_size=%u", size, align, desc_count, buf_size);
 
   // allocate single word-aligned buffer
   if (!(i2s_out->dma_rx_buf = dma_malloc(buf_size))) {
@@ -139,8 +157,8 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
   }
 
   // initialize linked list of DMA descriptors
-  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, i2s_out->dma_eof_desc);
-  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), i2s_out->dma_eof_desc);
 
   i2s_out->dma_rx_count = desc_count;
 
@@ -252,39 +270,78 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
+/*
+ * Return a pointer into a DMA buffer capable of holding up to count * size bytes.
+ *
+ * @return size of usable buffer in units of size, up to count. 0 if full
+ */
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size)
+{
+  for (;;) {
+    struct dma_desc *desc = i2s_out->dma_write_desc;
+
+    // hit dma_eof_desc?
+    if (desc->owner || desc->eof) {
+      LOG_DEBUG("eof desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
+
+      // unable to find a usable DMA buffer, TX buffers full
+      *ptr = NULL;
+
+      // TODO: start DMA early and wait for a free buffer?
+      return 0;
+    }
+
+    // can fit minimum size
+    if (desc->len + size > desc->size) {
+      LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
+
+      // commit, try with the next buffer
+      i2s_out->dma_write_desc = commit_dma_desc(desc);
+
+      continue;
+    }
+
+    if (desc->len + count * size > desc->size) {
+      LOG_DEBUG("limited desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+
+      // limit to available buffer size
+      count = (desc->size - desc->len) / size;
+
+    } else {
+      LOG_DEBUG("complete desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) >= count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+    }
+
+    *ptr = desc->buf + desc->len;
+
+    LOG_DEBUG("return ptr=%p count=%u size=%u", *ptr, count, size);
+
+    return count;
+  }
+}
+
+void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
 
-  LOG_DEBUG("desc=%p (owner=%u eof=%u len=%u size=%u): size=%u", desc, desc->owner, desc->eof, desc->len, desc->size, size);
+  desc->len += count * size;
+}
 
-  if (desc->owner || desc->eof || desc->len >= desc->size) {
-    // XXX: TX buffers full, wait for DMA?
-    return 0;
+int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
+{
+  void *ptr;
+  int len = i2s_out_dma_buffer(i2s_out, &ptr, size, 1); // single unaligned bytes
+
+  if (len) {
+    // copy data to desc buf
+    LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
+
+
+    memcpy(ptr, data, len);
+
+    i2s_out_dma_commit(i2s_out, len, 1);
   }
 
-  if (size > desc->size || desc->len + size > desc->size) {
-    size = desc->size - desc->len;
-  }
-
-  // copy data to desc buf
-  LOG_DEBUG("copy size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
-
-
-  memcpy(desc->buf + desc->len, data, size);
-
-  desc->len += size;
-
-  // commit if full
-  if (desc->len >= desc->size) {
-    desc->owner = 1;
-
-    LOG_DEBUG("commit desc=%p (owner=%u eof=%u len=%u size=%u) -> next=%p", desc, desc->owner, desc->eof, desc->len, desc->size, desc->next);
-
-    i2s_out->dma_write_desc = desc->next;
-  }
-
-  return size;
+  return len;
 }
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)

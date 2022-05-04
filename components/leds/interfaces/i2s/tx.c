@@ -4,7 +4,7 @@
 
 #include <logging.h>
 
-static int leds_interface_i2s_tx_32bit_bck(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx)
+static int leds_interface_i2s_tx_32bit_bck_serial32(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx)
 {
   int err;
 
@@ -90,6 +90,36 @@ static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, st
   return 0;
 }
 
+static int leds_interface_i2s_tx_32bit_bck_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
+{
+  unsigned length = tx.count / parallel;
+  int err;
+
+  // start frame
+  uint32_t start_frame[8] = { [0 ... 7] = tx.start_frame.i2s_mode_32bit };
+
+  if ((err = i2s_out_write_parallel8x32(i2s_out, start_frame, 1))) {
+    LOG_ERROR("i2s_out_write_parallel8x32");
+    return err;
+  }
+
+  for (unsigned i = 0; i < length; i++) {
+    // 8 sets of 32-bit pixel data
+    uint32_t buf[8][1] = {};
+
+    for (unsigned j = 0; j < parallel && j < 8; j++) {
+      tx.func.i2s_mode_32bit(buf[j], tx.data, j * length + i, tx.limit);
+    }
+
+    if ((err = i2s_out_write_parallel8x32(i2s_out, buf, 1))) {
+      LOG_ERROR("i2s_out_write_parallel8x32");
+      return err;
+    }
+  }
+
+  return 0;
+}
+
 static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
 {
   unsigned length = tx.count / parallel;
@@ -116,7 +146,11 @@ static int leds_interface_i2s_tx_mode(struct i2s_out *i2s_out, enum leds_interfa
 {
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-      return leds_interface_i2s_tx_32bit_bck(i2s_out, tx);
+      if (parallel) {
+        return leds_interface_i2s_tx_32bit_bck_parallel8(i2s_out, tx, parallel);
+      } else {
+        return leds_interface_i2s_tx_32bit_bck_serial32(i2s_out, tx);
+      }
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
       if (parallel) {
@@ -155,8 +189,12 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
 
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-      // TODO: parallel?
-      i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
+      if (options->data_pins_count) {
+        i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
+      } else {
+        // raw 32-bit samples
+        i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
+      }
 
       break;
 

@@ -36,7 +36,11 @@ size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsign
 {
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-      return I2S_OUT_WRITE_SERIAL32_ALIGN;
+      if (parallel) {
+        return I2S_OUT_WRITE_PARALLEL8X32_ALIGN;
+      } else {
+        return I2S_OUT_WRITE_SERIAL32_ALIGN;
+      }
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:

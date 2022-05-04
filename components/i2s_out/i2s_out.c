@@ -180,30 +180,30 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_
       return -1;
     }
 
-    for (unsigned index = 0; index < width; ) {
-      void *ptr;
-      size_t size = (width - index) * 16;
+    uint32_t (*buf)[4];
+    unsigned index = 0;
 
-      // XXX: split write when misaligned on end of DMA buffer?
-      if ((size = i2s_out_dma_buffer(i2s_out, &ptr, size)) < 16) {
+    while (index < width) {
+      // get DMA buffer for remaining blocks
+      void *ptr;
+      size_t count;
+
+      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf)))) {
         LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
         ret = 1;
         goto error;
       }
 
-      // transpose each 8x16-bit -> 4x32-bit block that fits
-      uint32_t *buf = ptr;
-      size_t len = 0;
+      // transpose each 8x16-bit block -> 4x32-bit buffer that fits into the DMA buffer
+      buf = ptr;
 
-      while (size >= 16) {
-        i2s_out_transpose_parallel8x16(data, width, index++, buf);
+      for (int i = 0; i < count; i++) {
+        LOG_DEBUG("index=%u: buf[%d]=%p ", index, i, buf[i]);
 
-        buf += 4;
-        size -= 16;
-        len += 16;
+        i2s_out_transpose_parallel8x16(data, width, index++, buf[i]);
       }
 
-      i2s_out_dma_commit(i2s_out, len);
+      i2s_out_dma_commit(i2s_out, count, sizeof(*buf));
     }
 
 error:

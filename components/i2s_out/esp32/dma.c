@@ -57,6 +57,14 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
   }
 }
 
+/* Prepare desc for DMA start */
+struct dma_desc *commit_dma_desc(struct dma_desc *desc)
+{
+  desc->owner = 1;
+
+  return desc->next;
+}
+
 void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
 {
   uint32_t *ptr = (uint32_t *) eof_desc->buf;
@@ -212,57 +220,76 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   return 0;
 }
 
-size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, size_t size)
+/*
+ * Return a pointer into a DMA buffer capable of holding up to count * size bytes.
+ *
+ * @return size of usable buffer in units of size, up to count. 0 if full
+ */
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size)
 {
-  struct dma_desc *desc = i2s_out->dma_write_desc;
+  for (;;) {
+    struct dma_desc *desc = i2s_out->dma_write_desc;
 
-  LOG_DEBUG("desc=%p (owner=%u eof=%u len=%u size=%u): size=%u", desc, desc->owner, desc->eof, desc->len, desc->size, size);
+    // hit dma_eof_desc?
+    if (desc->owner || desc->eof) {
+      LOG_DEBUG("eof desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
 
-  if (desc->owner || desc->eof || desc->len >= desc->size) {
-    // XXX: TX buffers full, wait for DMA?
-    return 0;
+      // unable to find a usable DMA buffer, TX buffers full
+      *ptr = NULL;
+
+      // TODO: start DMA early and wait for a free buffer?
+      return 0;
+    }
+
+    // can fit minimum size
+    if (desc->len + size > desc->size) {
+      LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
+
+      // commit, try with the next buffer
+      i2s_out->dma_write_desc = commit_dma_desc(desc);
+
+      continue;
+    }
+
+    if (desc->len + count * size > desc->size) {
+      LOG_DEBUG("limited desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+
+      // limit to available buffer size
+      count = (desc->size - desc->len) / size;
+
+    } else {
+      LOG_DEBUG("complete desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) >= count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+    }
+
+    *ptr = desc->buf + desc->len;
+
+    LOG_DEBUG("return ptr=%p count=%u size=%u", *ptr, count, size);
+
+    return count;
   }
-
-  if (size > desc->size || desc->len + size > desc->size) {
-    size = desc->size - desc->len;
-  }
-
-  // copy data to desc buf
-  LOG_DEBUG("return size=%u -> buf=%p + len=%u", size, desc->buf, desc->len);
-
-  *ptr = desc->buf + desc->len;
-
-  return size;
 }
 
-void i2s_out_dma_commit(struct i2s_out *i2s_out, size_t len)
+void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size)
 {
   struct dma_desc *desc = i2s_out->dma_write_desc;
 
-  desc->len += len;
-
-  // commit if full
-  if (desc->len >= desc->size) {
-    desc->owner = 1;
-
-    LOG_DEBUG("commit desc=%p (owner=%u eof=%u len=%u size=%u) -> next=%p", desc, desc->owner, desc->eof, desc->len, desc->size, desc->next);
-
-    i2s_out->dma_write_desc = desc->next;
-  }
+  desc->len += count * size;
 }
 
 int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
 {
   void *ptr;
-  int len = i2s_out_dma_buffer(i2s_out, &ptr, size);
+  int len = i2s_out_dma_buffer(i2s_out, &ptr, size, 1); // single unaligned bytes
 
-  // copy data to desc buf
-  LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
-  LOG_DEBUG_BUFFER(data, len);
+  if (len) {
+    // copy data to desc buf
+    LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
+    LOG_DEBUG_BUFFER(data, len);
 
-  memcpy(ptr, data, len);
+    memcpy(ptr, data, len);
 
-  i2s_out_dma_commit(i2s_out, len);
+    i2s_out_dma_commit(i2s_out, len, 1);
+  }
 
   return len;
 }

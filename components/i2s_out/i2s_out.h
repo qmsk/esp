@@ -54,8 +54,8 @@ struct i2s_out {
 /* dma.c */
 int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size);
 int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
-size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, size_t size);
-void i2s_out_dma_commit(struct i2s_out *i2s_out, size_t len);
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size);
+void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size);
 int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
 void i2s_out_dma_start(struct i2s_out *i2s_out);

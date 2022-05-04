@@ -49,7 +49,7 @@
   int init_leds_i2s()
   {
     const struct leds_i2s_config *i2s_config = &leds_i2s_config;
-    size_t buffer_size = 0;
+    size_t buffer_size = 0, buffer_align = 0;
     bool enabled = false;
     int err;
 
@@ -73,27 +73,33 @@
       enabled = true;
 
       // update maximum transfer size
-      size_t size;
+      size_t size, align;
 
     #if LEDS_I2S_GPIO_PINS_ENABLED
       if (config->i2s_data_pin_count > 1) {
         // parallel output
         size = leds_i2s_parallel_buffer_size(config->protocol, config->count, config->i2s_data_pin_count);
+        align = leds_i2s_parallel_buffer_align(config->protocol, config->i2s_data_pin_count);
 
-        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u", i + 1, i2s_config->port, config->count, config->i2s_data_pin_count, size);
+        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, config->i2s_data_pin_count, size, align);
       } else {
         size = leds_i2s_serial_buffer_size(config->protocol, config->count);
+        align = leds_i2s_serial_buffer_align(config->protocol);
 
-        LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u", i + 1, i2s_config->port, config->count, size);
+        LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, size, align);
       }
     #else
       size = leds_i2s_serial_buffer_size(config->protocol, config->count);
+      align = leds_i2s_serial_buffer_align(config->protocol);
 
-      LOG_INFO("leds%d: i2s%d configured for %u leds, data buffer size=%u", i + 1, i2s_config->port, config->count, size);
+      LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, size, align);
     #endif
 
       if (size > buffer_size) {
         buffer_size = size;
+      }
+      if (align > buffer_align) {
+        buffer_align = align;
       }
     }
 
@@ -102,11 +108,11 @@
       return 0;
     }
 
-    LOG_INFO("leds: i2s port=%d -> buffer_size=%u", i2s_config->port,
-      buffer_size
+    LOG_INFO("leds: i2s port=%d -> buffer_size=%u buffer_align=%u", i2s_config->port,
+      buffer_size, buffer_align
     );
 
-    if ((err = i2s_out_new(&leds_i2s_out, i2s_config->port, buffer_size))) {
+    if ((err = i2s_out_new(&leds_i2s_out, i2s_config->port, buffer_size, buffer_align))) {
       LOG_ERROR("i2s_out_new(port=%d)", i2s_config->port);
       return err;
     }

@@ -212,7 +212,49 @@ error:
     }
 
     return ret;
+  }
 
+  int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width)
+  {
+    int ret = 0;
+
+    if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+      LOG_ERROR("xSemaphoreTakeRecursive");
+      return -1;
+    }
+
+    uint32_t (*buf)[8];
+    unsigned index = 0;
+
+    while (index < width) {
+      // get DMA buffer for remaining blocks
+      void *ptr;
+      size_t count;
+
+      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf)))) {
+        LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
+        ret = 1;
+        goto error;
+      }
+
+      // transpose each 8x32-bit block -> 8x32-bit buffer that fits into the DMA buffer
+      buf = ptr;
+
+      for (int i = 0; i < count; i++) {
+        LOG_DEBUG("index=%u: buf[%d]=%p ", index, i, buf[i]);
+
+        i2s_out_transpose_parallel8x32(data, width, index++, buf[i]);
+      }
+
+      i2s_out_dma_commit(i2s_out, count, sizeof(*buf));
+    }
+
+error:
+    if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+      LOG_ERROR("xSemaphoreGiveRecursive");
+    }
+
+    return ret;
   }
 #endif
 

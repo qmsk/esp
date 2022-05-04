@@ -20,7 +20,8 @@ struct leds_interface_stats {
 #if CONFIG_LEDS_I2S_ENABLED
   struct leds_interface_i2s_stats {
     struct stats_timer open;
-    struct stats_timer tx;
+    struct stats_timer write;
+    struct stats_timer flush;
   } i2s;
 #endif
 };

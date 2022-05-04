@@ -274,8 +274,9 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
-    print_stats_timer("i2s", "open",   &stats.i2s.open);
-    print_stats_timer("i2s", "tx",     &stats.i2s.tx);
+    print_stats_timer("i2s", "open",    &stats.i2s.open);
+    print_stats_timer("i2s", "write",   &stats.i2s.write);
+    print_stats_timer("i2s", "flush",   &stats.i2s.flush);
     printf("\n");
   #endif
   }

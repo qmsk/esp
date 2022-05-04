@@ -144,7 +144,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
   }
 #endif
 
-static int leds_interface_i2s_tx_mode(struct i2s_out *i2s_out, enum leds_interface_i2s_mode mode, struct leds_interface_i2s_tx tx, unsigned parallel)
+static int leds_interface_i2s_tx_write(struct i2s_out *i2s_out, enum leds_interface_i2s_mode mode, struct leds_interface_i2s_tx tx, unsigned parallel)
 {
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
@@ -315,11 +315,13 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
   }
 #endif
 
-  WITH_STATS_TIMER(&stats->tx) {
-    if ((err = leds_interface_i2s_tx_mode(options->i2s_out, mode, tx, parallel))) {
+  WITH_STATS_TIMER(&stats->write) {
+    if ((err = leds_interface_i2s_tx_write(options->i2s_out, mode, tx, parallel))) {
       goto error;
     }
+  }
 
+  WITH_STATS_TIMER(&stats->flush) {
     if ((err = i2s_out_flush(options->i2s_out))) {
       LOG_ERROR("i2s_out_flush");
       goto error;

@@ -15,7 +15,8 @@ void leds_reset_interface_stats()
 #endif
 #if CONFIG_LEDS_I2S_ENABLED
   stats_timer_init(&leds_interface_stats.i2s.open);
-  stats_timer_init(&leds_interface_stats.i2s.tx);
+  stats_timer_init(&leds_interface_stats.i2s.write);
+  stats_timer_init(&leds_interface_stats.i2s.flush);
 #endif
 }
 

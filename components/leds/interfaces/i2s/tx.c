@@ -160,7 +160,7 @@ static int leds_interface_i2s_tx_mode(struct i2s_out *i2s_out, enum leds_interfa
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED
-      if (I2S_OUT_PARALLEL_SUPPORTED && parallel) {
+      if (parallel) {
         return leds_interface_i2s_tx_24bit_4x4_parallel8(i2s_out, tx, parallel);
       } else {
         return leds_interface_i2s_tx_24bit_4x4_serial16(i2s_out, tx);
@@ -171,7 +171,7 @@ static int leds_interface_i2s_tx_mode(struct i2s_out *i2s_out, enum leds_interfa
 
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED
-      if (I2S_OUT_PARALLEL_SUPPORTED && parallel) {
+      if (parallel) {
         return leds_interface_i2s_tx_32bit_4x4_parallel8(i2s_out, tx, parallel);
       } else {
         return leds_interface_i2s_tx_32bit_4x4_serial16(i2s_out, tx);
@@ -231,7 +231,7 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
         i2s_out_options.mode = I2S_OUT_MODE_16BIT_SERIAL;
       }
     #else
-    i2s_out_options.mode = I2S_OUT_MODE_16BIT_SERIAL;
+      i2s_out_options.mode = I2S_OUT_MODE_16BIT_SERIAL;
     #endif
 
       break;

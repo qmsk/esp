@@ -67,6 +67,7 @@ void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count
   }
 
   eof_desc->len = count * sizeof(value);
+  eof_desc->eof = 1;
 }
 
 void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
@@ -307,7 +308,7 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
 
   i2s_out->dma_eof_desc->owner = 1;
-  i2s_out->dma_eof_desc->eof = 1;
+  i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
 
   LOG_DEBUG("dma_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
     i2s_out->dma_write_desc,

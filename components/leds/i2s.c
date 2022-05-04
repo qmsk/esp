@@ -50,7 +50,9 @@
         LOG_FATAL("invalid protocol=%d", protocol);
     }
   }
+#endif
 
+#if CONFIG_LEDS_I2S_ENABLED && I2S_OUT_PARALLEL_SUPPORTED
   size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count)
   {
     switch (protocol) {
@@ -96,5 +98,4 @@
         LOG_FATAL("invalid protocol=%d", protocol);
     }
   }
-
 #endif

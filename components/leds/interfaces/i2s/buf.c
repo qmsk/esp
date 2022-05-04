@@ -6,6 +6,7 @@ size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigne
 {
   unsigned count;
 
+#if I2S_OUT_PARALLEL_SUPPORTED
   if (parallel) {
     // assuming 8-bit parallel output
     count = led_count / parallel;
@@ -15,6 +16,11 @@ size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigne
     count = led_count;
     parallel = 1;
   }
+#else
+  // serial output
+  count = led_count;
+  parallel = 1;
+#endif
 
   switch (mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
@@ -36,19 +42,27 @@ size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsign
 {
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
+    #if I2S_OUT_PARALLEL_SUPPORTED
       if (parallel) {
         return I2S_OUT_WRITE_PARALLEL8X32_ALIGN;
       } else {
         return I2S_OUT_WRITE_SERIAL32_ALIGN;
       }
+    #else
+      return I2S_OUT_WRITE_SERIAL16_ALIGN;
+    #endif
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
+    #if I2S_OUT_PARALLEL_SUPPORTED
       if (parallel) {
         return I2S_OUT_WRITE_PARALLEL8X16_ALIGN;
       } else {
         return I2S_OUT_WRITE_SERIAL16_ALIGN;
       }
+    #else
+      return I2S_OUT_WRITE_SERIAL16_ALIGN;
+    #endif
 
     default:
       LOG_FATAL("invalid mode=%d", mode);

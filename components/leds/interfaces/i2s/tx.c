@@ -68,103 +68,117 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
   return 0;
 }
 
-static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
-{
-  unsigned length = tx.count / parallel;
-  int err;
+#if I2S_OUT_PARALLEL_SUPPORTED
+  static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
+  {
+    unsigned length = tx.count / parallel;
+    int err;
 
-  for (unsigned i = 0; i < length; i++) {
-    // 8 sets of 6x16-bit pixel data
-    uint16_t buf[8][6] = {};
+    for (unsigned i = 0; i < length; i++) {
+      // 8 sets of 6x16-bit pixel data
+      uint16_t buf[8][6] = {};
 
-    for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
+      for (unsigned j = 0; j < parallel && j < 8; j++) {
+        tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
+      }
+
+      if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 6))) {
+        LOG_ERROR("i2s_out_write_parallel8x16");
+        return err;
+      }
     }
 
-    if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 6))) {
-      LOG_ERROR("i2s_out_write_parallel8x16");
-      return err;
-    }
+    return 0;
   }
 
-  return 0;
-}
+  static int leds_interface_i2s_tx_32bit_bck_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
+  {
+    unsigned length = tx.count / parallel;
+    int err;
 
-static int leds_interface_i2s_tx_32bit_bck_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
-{
-  unsigned length = tx.count / parallel;
-  int err;
+    // start frame
+    uint32_t start_frame[8] = { [0 ... 7] = tx.start_frame.i2s_mode_32bit };
 
-  // start frame
-  uint32_t start_frame[8] = { [0 ... 7] = tx.start_frame.i2s_mode_32bit };
-
-  if ((err = i2s_out_write_parallel8x32(i2s_out, start_frame, 1))) {
-    LOG_ERROR("i2s_out_write_parallel8x32");
-    return err;
-  }
-
-  for (unsigned i = 0; i < length; i++) {
-    // 8 sets of 32-bit pixel data
-    uint32_t buf[8][1] = {};
-
-    for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.func.i2s_mode_32bit(buf[j], tx.data, j * length + i, tx.limit);
-    }
-
-    if ((err = i2s_out_write_parallel8x32(i2s_out, buf, 1))) {
+    if ((err = i2s_out_write_parallel8x32(i2s_out, start_frame, 1))) {
       LOG_ERROR("i2s_out_write_parallel8x32");
       return err;
     }
-  }
 
-  return 0;
-}
+    for (unsigned i = 0; i < length; i++) {
+      // 8 sets of 32-bit pixel data
+      uint32_t buf[8][1] = {};
 
-static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
-{
-  unsigned length = tx.count / parallel;
-  int err;
+      for (unsigned j = 0; j < parallel && j < 8; j++) {
+        tx.func.i2s_mode_32bit(buf[j], tx.data, j * length + i, tx.limit);
+      }
 
-  for (unsigned i = 0; i < length; i++) {
-    // 8 sets of 6x16-bit pixel data
-    uint16_t buf[8][8] = {};
-
-    for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
+      if ((err = i2s_out_write_parallel8x32(i2s_out, buf, 1))) {
+        LOG_ERROR("i2s_out_write_parallel8x32");
+        return err;
+      }
     }
 
-    if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 8))) {
-      LOG_ERROR("i2s_out_write_parallel8x16");
-      return err;
-    }
+    return 0;
   }
 
-  return 0;
-}
+  static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
+  {
+    unsigned length = tx.count / parallel;
+    int err;
+
+    for (unsigned i = 0; i < length; i++) {
+      // 8 sets of 6x16-bit pixel data
+      uint16_t buf[8][8] = {};
+
+      for (unsigned j = 0; j < parallel && j < 8; j++) {
+        tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
+      }
+
+      if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 8))) {
+        LOG_ERROR("i2s_out_write_parallel8x16");
+        return err;
+      }
+    }
+
+    return 0;
+  }
+#endif
 
 static int leds_interface_i2s_tx_mode(struct i2s_out *i2s_out, enum leds_interface_i2s_mode mode, struct leds_interface_i2s_tx tx, unsigned parallel)
 {
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
+    #if I2S_OUT_PARALLEL_SUPPORTED
       if (parallel) {
         return leds_interface_i2s_tx_32bit_bck_parallel8(i2s_out, tx, parallel);
       } else {
         return leds_interface_i2s_tx_32bit_bck_serial32(i2s_out, tx);
       }
+    #else
+      return leds_interface_i2s_tx_32bit_bck_serial32(i2s_out, tx);
+    #endif
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
-      if (parallel) {
+    #if I2S_OUT_PARALLEL_SUPPORTED
+      if (I2S_OUT_PARALLEL_SUPPORTED && parallel) {
         return leds_interface_i2s_tx_24bit_4x4_parallel8(i2s_out, tx, parallel);
       } else {
         return leds_interface_i2s_tx_24bit_4x4_serial16(i2s_out, tx);
       }
+    #else
+      return leds_interface_i2s_tx_24bit_4x4_serial16(i2s_out, tx);
+    #endif
 
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
-      if (parallel) {
+    #if I2S_OUT_PARALLEL_SUPPORTED
+      if (I2S_OUT_PARALLEL_SUPPORTED && parallel) {
         return leds_interface_i2s_tx_32bit_4x4_parallel8(i2s_out, tx, parallel);
       } else {
         return leds_interface_i2s_tx_32bit_4x4_serial16(i2s_out, tx);
       }
+    #else
+      return leds_interface_i2s_tx_32bit_4x4_serial16(i2s_out, tx);
+    #endif
 
     default:
       LOG_ERROR("unknown mode=%08x", mode);
@@ -185,27 +199,40 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
     .inv_data_gpio  = options->inv_data_pin,
 #endif
   };
+#if LEDS_I2S_DATA_PINS_ENABLED
+  unsigned parallel = options->data_pins_count;
+#else
+  unsigned parallel = 0;
+#endif
   int err;
 
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
+    #if LEDS_I2S_DATA_PINS_ENABLED
       if (options->data_pins_count) {
         i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
       } else {
         // raw 32-bit samples
         i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
       }
+    #else
+      i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
+    #endif
 
       break;
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
+    #if LEDS_I2S_DATA_PINS_ENABLED
       if (options->data_pins_count) {
         i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
       } else {
         // using 4x4bit -> 16-bit samples
         i2s_out_options.mode = I2S_OUT_MODE_16BIT_SERIAL;
       }
+    #else
+    i2s_out_options.mode = I2S_OUT_MODE_16BIT_SERIAL;
+    #endif
 
       break;
   }
@@ -246,7 +273,7 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
       break;
   }
 
-
+#if I2S_OUT_GPIO_PINS_SUPPORTED
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
       i2s_out_options.bck_gpio = options->clock_pin;
@@ -258,7 +285,9 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
 
       break;
   }
+#endif
 
+#if LEDS_I2S_DATA_PINS_ENABLED
   if (options->data_pins_count) {
     for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
       i2s_out_options.data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->data_pins[i] : GPIO_NUM_NC;
@@ -268,6 +297,10 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
     i2s_out_options.data_gpio = options->data_pin;
     i2s_out_options.inv_data_gpio = options->inv_data_pin;
   }
+#elif LEDS_I2S_GPIO_PINS_ENABLED
+  i2s_out_options.data_gpio = options->data_pin;
+  i2s_out_options.inv_data_gpio = options->inv_data_pin;
+#endif
 
   WITH_STATS_TIMER(&stats->open) {
     if ((err = i2s_out_open(options->i2s_out, i2s_out_options))) {
@@ -283,7 +316,7 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
 #endif
 
   WITH_STATS_TIMER(&stats->tx) {
-    if ((err = leds_interface_i2s_tx_mode(options->i2s_out, mode, tx, options->data_pins_count))) {
+    if ((err = leds_interface_i2s_tx_mode(options->i2s_out, mode, tx, parallel))) {
       goto error;
     }
 

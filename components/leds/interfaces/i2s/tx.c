@@ -70,14 +70,15 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
 
 static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
 {
+  unsigned length = tx.count / parallel;
   int err;
 
-  for (unsigned i = 0; i < tx.count / parallel; i++) {
+  for (unsigned i = 0; i < length; i++) {
     // 8 sets of 6x16-bit pixel data
     uint16_t buf[8][6] = {};
 
     for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, i, tx.limit);
+      tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
     }
 
     if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 6))) {
@@ -91,14 +92,15 @@ static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct i2s_out *i2s_out, st
 
 static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct i2s_out *i2s_out, struct leds_interface_i2s_tx tx, unsigned parallel)
 {
+  unsigned length = tx.count / parallel;
   int err;
 
-  for (unsigned i = 0; i < tx.count / parallel; i++) {
+  for (unsigned i = 0; i < length; i++) {
     // 8 sets of 6x16-bit pixel data
     uint16_t buf[8][8] = {};
 
     for (unsigned j = 0; j < parallel && j < 8; j++) {
-      tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, i, tx.limit);
+      tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
     }
 
     if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 8))) {

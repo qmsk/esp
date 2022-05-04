@@ -483,17 +483,21 @@ Supports up to two multiplexed outputs using active-high/low GPIOs.
 
 The FLASH LED will blink on DMX updates.
 
-## `spi-leds`
+## `leds`
 
 Art-NET DMX controller for RGB LEDs.
 
-Supports up to four multiplexed outouts using active-high/low GPIOs.
+Supports up to four separate outputs with different interfaces, protocols.
+
+Supports GPIO-multiplexed outputs sharing the same interface peripheral, with external line driver active-high/low output-enable GPIOs.
 
 The FLASH LED will flash on SPI-LEDs updates.
 
 The ATX PSU output will enable when any SPI-LEDs are active.
 
-The I2S output uses the same IO pins as the UART0 console, and cannot be used while the console is active. Disable the console or set a console timeout to use the I2S output interface.
+The *ESP32* I2S output supports arbitrary clock, data and inverted-data output IO pins. Up to 8 data pins can be configured for parallel outputs with a higher refresh rate, at the cost of higher memory usage for DMA buffers (`I2S1` only).
+
+The *ESP8266* I2S output uses the same IO pins as the UART0 console, and cannot be used while the console is active. Disable the console or set a console timeout to use the I2S output interface.
 
 # HTTP
 

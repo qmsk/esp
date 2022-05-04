@@ -135,7 +135,7 @@
       .length = size * 8, // transaction length is in bits
       .tx_buffer = buf,
     };
-    int ret;
+    int ret = 0;
     esp_err_t err;
 
     WITH_STATS_TIMER(&stats->open) {
@@ -151,10 +151,12 @@
     }
   #endif
 
-    // TODO: additional gpio_out support, if spi_cs is not enough?
-    if ((ret = spi_device_transmit(interface->device, &transaction))) {
-      LOG_ERROR("spi_device_transmit");
-      goto error;
+    WITH_STATS_TIMER(&stats->tx) {
+      // TODO: additional gpio_out support, if spi_cs is not enough?
+      if ((ret = spi_device_transmit(interface->device, &transaction))) {
+        LOG_ERROR("spi_device_transmit");
+        goto error;
+      }
     }
 
 error:

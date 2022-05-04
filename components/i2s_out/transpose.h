@@ -1,4 +1,5 @@
 // code adapted from https://github.com/hcs0/Hackers-Delight/blob/master/transpose8.c.txt
+// transpose an array of data[8] parallel 8x8-bit values at [0..8] -> 2x32-bit I2S 8-bit FIFO values at *buf
 static inline void i2s_out_transpose_parallel8x8(const uint8_t data[8], uint32_t buf[2])
 {
   uint32_t x, y, t;

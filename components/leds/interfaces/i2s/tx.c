@@ -82,7 +82,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
         tx.func.i2s_mode_24bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
       }
 
-      if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 6))) {
+      if ((err = i2s_out_write_parallel8x16(i2s_out, (uint16_t *) buf, 6))) {
         LOG_ERROR("i2s_out_write_parallel8x16");
         return err;
       }
@@ -112,7 +112,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
         tx.func.i2s_mode_32bit(buf[j], tx.data, j * length + i, tx.limit);
       }
 
-      if ((err = i2s_out_write_parallel8x32(i2s_out, buf, 1))) {
+      if ((err = i2s_out_write_parallel8x32(i2s_out, (uint32_t *) buf, 1))) {
         LOG_ERROR("i2s_out_write_parallel8x32");
         return err;
       }
@@ -134,7 +134,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct i2s_out *i2s_out, str
         tx.func.i2s_mode_32bit_4x4(buf[j], tx.data, j * length + i, tx.limit);
       }
 
-      if ((err = i2s_out_write_parallel8x16(i2s_out, buf, 8))) {
+      if ((err = i2s_out_write_parallel8x16(i2s_out, (uint16_t *) buf, 8))) {
         LOG_ERROR("i2s_out_write_parallel8x16");
         return err;
       }

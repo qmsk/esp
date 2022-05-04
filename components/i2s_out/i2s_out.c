@@ -33,7 +33,7 @@ int i2s_out_init(struct i2s_out *i2s_out, i2s_port_t port)
   return 0;
 }
 
-int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size)
+int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, size_t buffer_align)
 {
   struct i2s_out *i2s_out = NULL;
   int err;
@@ -53,7 +53,7 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size)
     goto error;
   }
 
-  if ((err = i2s_out_dma_init(i2s_out, buffer_size))) {
+  if ((err = i2s_out_dma_init(i2s_out, buffer_size, buffer_align))) {
     LOG_ERROR("i2s_out_dma_init");
     goto error;
   }

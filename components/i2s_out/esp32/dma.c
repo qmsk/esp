@@ -10,8 +10,14 @@
 
 #include <string.h>
 
-#define ALIGN(size, type) (((size) + (sizeof(type) - 1)) & ~(sizeof(type) - 1))
-#define TRUNC(size, type) ((size) & ~(sizeof(type) - 1))
+// align MUST be a power of two
+#define CHECK_ALIGN(align) ((align) && !((align) & ((align) - 1)))
+
+// grow size to alignment
+#define ALIGN(size, align) (((size) + ((align) - 1)) & ~((align) - 1))
+
+// shrink size to aligment
+#define TRUNC(size, align) ((size) & ~((align) - 1))
 
 #define DMA_EOF_BUF_SIZE (DMA_DESC_SIZE_MIN)
 
@@ -27,7 +33,7 @@ static inline void *dma_calloc(size_t count, size_t size)
   return heap_caps_calloc(count, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 }
 
-void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t size, struct dma_desc *next)
+void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t size, size_t align, struct dma_desc *next)
 {
   struct dma_desc **nextp = NULL;
 
@@ -38,12 +44,12 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
       *nextp = desc;
     }
 
-    desc->size = (size > DMA_DESC_SIZE_MAX) ? DMA_DESC_SIZE_MAX : size;
+    desc->size = (size > TRUNC(DMA_DESC_SIZE_MAX, align)) ? TRUNC(DMA_DESC_SIZE_MAX, align) : size;
     desc->len = 0;
     desc->owner = 0;
     desc->buf = buf;
 
-    LOG_DEBUG("i=%u desc=%p: size=%u buf=%p", i, desc, desc->size, desc->buf);
+    LOG_DEBUG("i=%u desc=%p: size=%u buf=%p (align=%u size=%u)", i, desc, desc->size, desc->buf, align, size);
 
     buf += desc->size;
     size -= desc->size;
@@ -100,26 +106,29 @@ void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *nex
   }
 }
 
-int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
+int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
 {
   size_t buf_size = 0;
   unsigned desc_count = 0;
 
+  assert(CHECK_ALIGN(align)); // alignment MUST be a power of two
+
+  // force 32-bit alignment for hardware FIFO
+  align = ALIGN(align, sizeof(uint32_t));
+  size = ALIGN(size, sizeof(uint32_t));
+
   // calculate buffer size for DMA descriptors
   for (desc_count = 0; buf_size < size; desc_count++) {
-    if (buf_size + DMA_DESC_SIZE_MAX <= size) {
-      buf_size += DMA_DESC_SIZE_MAX;
-    } else if (buf_size + DMA_DESC_SIZE_MIN >= size) {
-      buf_size += DMA_DESC_SIZE_MIN;
+    if (buf_size + TRUNC(DMA_DESC_SIZE_MAX, align) <= size) {
+      buf_size += TRUNC(DMA_DESC_SIZE_MAX, align);
+    } else if (buf_size + ALIGN(DMA_DESC_SIZE_MIN, align) >= size) {
+      buf_size += ALIGN(DMA_DESC_SIZE_MIN, align);
     } else {
       buf_size = size;
     }
   }
 
-  // force 32-bit aligned
-  buf_size = ALIGN(buf_size, uint32_t);
-
-  LOG_DEBUG("size=%u -> desc_count=%u buf_size=%u", size, desc_count, buf_size);
+  LOG_DEBUG("size=%u align=%u -> desc_count=%u buf_size=%u", size, align, desc_count, buf_size);
 
   // allocate single word-aligned buffer
   if (!(i2s_out->dma_rx_buf = dma_malloc(buf_size))) {
@@ -146,8 +155,8 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size)
   }
 
   // initialize linked list of DMA descriptors
-  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, i2s_out->dma_eof_desc);
-  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), i2s_out->dma_eof_desc);
 
   i2s_out->dma_rx_count = desc_count;
 

@@ -24,6 +24,10 @@ typedef int i2s_port_t;
     I2S_OUT_MODE_32BIT_SERIAL,  // 32-bit little-endian
   };
 
+  // buffer_align required for various write modes
+  #define I2S_OUT_WRITE_SERIAL16_ALIGN sizeof(uint16_t)
+  #define I2S_OUT_WRITE_SERIAL32_ALIGN sizeof(uint32_t)
+
 #elif CONFIG_IDF_TARGET_ESP32
   #include <hal/gpio_types.h>
   #include <soc/soc.h>
@@ -43,6 +47,13 @@ typedef int i2s_port_t;
     I2S_OUT_MODE_32BIT_SERIAL,  // 32-bit little-endian
     I2S_OUT_MODE_8BIT_PARALLEL, // I2S1 (I2S_PORT_1) -only
   };
+
+  // buffer_align required for various write modes
+  #define I2S_OUT_WRITE_SERIAL16_ALIGN sizeof(uint16_t)
+  #define I2S_OUT_WRITE_SERIAL32_ALIGN sizeof(uint32_t)
+  #define I2S_OUT_WRITE_PARALLEL8X8_ALIGN sizeof(uint8_t[8])
+  #define I2S_OUT_WRITE_PARALLEL8X16_ALIGN sizeof(uint16_t[8])
+
 #endif
 
 struct i2s_out;
@@ -116,8 +127,13 @@ struct i2s_out_options {
 
 /**
  * Allocate a new I2S output with an internal DMA TX buffer.
+ *
+ * The internal DMA buffers will hold `buffer_size` bytes, and be writable in chunks of `buffer_align` bytes.
+
+ * The `buffer_align` MUST be a power of two.
+ * The 32-bit hardware FIFO dictates a minimum 4-byte alignment, and `buffer_align` will be adjusted if necessary.
  */
-int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size);
+int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, size_t buffer_align);
 
 /**
  * Setup the I2S output.

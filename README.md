@@ -8,12 +8,16 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 * Fully configurable via the USB Console CLI or HTTP Web UI
 * WiFi STA/AP support with DHCP or static addressing
 * Ethernet support with DHCP client/server or static addressing
-* Support for WS2811/WS2812B, SK6812, APA102/SK9822 and P9813 LED driver protocols
-* Up to four separate SPI, UART and I2S outputs with optional GPIO output-enable multiplexing
+* Support for WS2811/WS2812B, SK6812 RGBW, SK9822 and APA102/P9813 LED protocols
+* Up to four separate SPI, UART or I2S outputs with different protocols
+* GPIO output-enable multiplexing for multiple outputs with a single output peripheral
+* I2S output with a bit-clock signal (SK9822)
+* I2S parallel outputs using ESP-32 I2S1 8-bit mode (memory-efficient)
 * Multiple Art-NET universes per output for >170 LEDs
 * Software power-limiting for LED outputs
 * Art-NET polling/discovery support
-* Art-NET DMX input and up to two Art-NET DMX outputs with optional GPIO output-enable multiplexing
+* Art-NET DMX input (UART)
+* Art-NET DMX outputs (UART) with GPIO output-enable multiplexing
 * ATX-PSU power-enable/good support
 
 # Build

@@ -222,18 +222,21 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
   };
 
   /*
-   * Returns total TX buffer sized required for protocol with `led_count` LEDs on one serial pin.
+   * Returns total TX buffer size, align required for protocol with `led_count` LEDs on one serial pin.
    *
    * @return 0 if not supported for protocol
    */
   size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count);
+  size_t leds_i2s_serial_buffer_align(enum leds_protocol protocol);
 
   /*
-   * Returns total TX buffer sized required for protocol with `led_count` LEDs across `pin_count` parallel pins.
+   * Returns total TX buffer size/align required for protocol with `led_count` LEDs across `pin_count` parallel pins.
    *
    * @return 0 if not supported for protocol
    */
   size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count);
+  size_t leds_i2s_parallel_buffer_align(enum leds_protocol protocol, unsigned pin_count);
+
 #endif
 
 struct leds_options {

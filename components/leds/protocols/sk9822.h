@@ -3,6 +3,7 @@
 #include <leds.h>
 #include "../protocol.h"
 #include "../interface.h"
+#include "../interfaces/i2s.h"
 #include "../limit.h"
 
 #define SK9822_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
@@ -25,13 +26,9 @@ union __attribute__((packed)) sk9822_pixel {
 #define SK9822_END_FRAME_UINT32 (uint32_t) 0x00000000
 #define SK9822_END_FRAME_COUNT(count) (1 + count / 32)
 
-#define SK9822_PIXEL_TOTAL_DIVISOR (3 * 255 * 31) // one pixel at full brightness
+#define LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
 
-static inline size_t leds_protocol_sk9822_i2s_buffer_size(unsigned count)
-{
-  // excluding SK9822_END_FRAME_COUNT, generated using eof DMA link
-  return (1 + count) * sizeof(union sk9822_pixel);
-}
+#define SK9822_PIXEL_TOTAL_DIVISOR (3 * 255 * 31) // one pixel at full brightness
 
 static inline bool sk9822_pixel_active(const union sk9822_pixel pixel)
 {

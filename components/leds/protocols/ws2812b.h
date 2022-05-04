@@ -3,17 +3,12 @@
 #include <leds.h>
 #include "../protocol.h"
 #include "../interface.h"
+#include "../interfaces/i2s.h"
 #include "../limit.h"
 
-// 24 bits per pixel, 2 bits per I2S byte
-#define WS2812B_I2S_SIZE (3 * 4)
+#define LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL
 
 #define WS2812B_PIXEL_TOTAL_DIVISOR (3 * 255) // one pixel at full brightness
-
-static inline size_t leds_protocol_ws2812b_i2s_buffer_size(unsigned count)
-{
-  return WS2812B_I2S_SIZE * count;
-}
 
 union ws2812b_pixel {
   struct {

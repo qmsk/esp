@@ -3,17 +3,12 @@
 #include <leds.h>
 #include "../protocol.h"
 #include "../interface.h"
+#include "../interfaces/i2s.h"
 #include "../limit.h"
 
-// 32 bits per pixel, 2 bits per I2S byte
-#define SK6812_GRBW_I2S_SIZE (4 * 4)
+#define LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL
 
 #define SK6812_GRBW_PIXEL_TOTAL_DIVISOR (4 * 255) // one pixel at full brightness
-
-static inline size_t leds_protocol_sk6812grbw_i2s_buffer_size(unsigned count)
-{
-  return SK6812_GRBW_I2S_SIZE * count;
-}
 
 union sk6812grbw_pixel {
   struct {

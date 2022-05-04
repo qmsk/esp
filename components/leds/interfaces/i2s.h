@@ -27,6 +27,9 @@ struct leds_interface_i2s_tx {
   } func;
 };
 
+size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);
+size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsigned pin_count);
+
 int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, struct leds_interface_i2s_tx tx);
 
 #endif

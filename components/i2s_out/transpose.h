@@ -106,9 +106,9 @@ static inline void i2s_out_transpose_parallel8x32(uint32_t data[], unsigned step
   f = ((e << 4) & 0xF0F0F0F0) | (f & 0x0F0F0F0F);
   e = t;
 
-  t = (h & 0xF0F0F0F0) | ((g >> 4) & 0x0F0F0F0F);
-  g = ((h << 4) & 0xF0F0F0F0) | (g & 0x0F0F0F0F);
-  h = t;
+  t = (g & 0xF0F0F0F0) | ((h >> 4) & 0x0F0F0F0F);
+  h = ((g << 4) & 0xF0F0F0F0) | (h & 0x0F0F0F0F);
+  g = t;
 
   // swap the 8-bit bytes of each 16-bit half of the 32-bit sample for the I2S 8-bit parallel fifo mode
   // TODO: is it possible to merge this into the above bit-wrangling?

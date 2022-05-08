@@ -141,35 +141,39 @@
       for (int i = 0; i < config->i2s_data_pin_count || i < config->i2s_data_inv_pin_count; i++) {
           options->data_pins[i] = i < config->i2s_data_pin_count ? config->i2s_data_pins[i] : GPIO_NUM_NC;
           options->inv_data_pins[i] = i < config->i2s_data_inv_pin_count ? config->i2s_data_inv_pins[i] : GPIO_NUM_NC;
+          options->clock_pins[i] = i < config->i2s_clock_pin_count ? config->i2s_clock_pins[i] : GPIO_NUM_NC;
 
-          LOG_INFO("leds%d: parallel data_pins[%d]=%d inv_data_pins[%d]=%d", state->index + 1,
+          LOG_INFO("leds%d: parallel data_pins[%d]=%d inv_data_pins[%d]=%d clock_pins[%d]=%d", state->index + 1,
             i, options->data_pins[i],
-            i, options->inv_data_pins[i]
+            i, options->inv_data_pins[i],
+            i, options->clock_pins[i]
           );
       }
     } else {
       // serial output
+      options->data_pins_count = 0;
+
       options->data_pin = config->i2s_data_pin_count > 0 ? config->i2s_data_pins[0] : GPIO_NUM_NC;
       options->inv_data_pin = config->i2s_data_inv_pin_count > 0 ? config->i2s_data_inv_pins[0] : GPIO_NUM_NC;
+      options->clock_pin = config->i2s_clock_pin_count > 0 ? config->i2s_clock_pins[0] : GPIO_NUM_NC;
 
-      LOG_INFO("leds%d: serial data_pin=%d inv_data_pin=%d", state->index + 1,
+      LOG_INFO("leds%d: serial data_pin=%d inv_data_pin=%d clock_pin=%d", state->index + 1,
         options->data_pin,
-        options->inv_data_pin
+        options->inv_data_pin,
+        options->clock_pin
       );
     }
-    options->clock_pin = config->i2s_clock_pin ? config->i2s_clock_pin : GPIO_NUM_NC;
     // TODO: use i2s_pin_mutex for arbitrary gpio pins?
   #endif
     options->clock_rate = config->i2s_clock;
 
-    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p data_pin_count=%u clock_pin=%d clock_rate=%d", state->index + 1,
+    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p data_pin_count=%u clock_rate=%d", state->index + 1,
       i2s_config->port,
       options->pin_mutex,
     #if LEDS_I2S_GPIO_PINS_ENABLED
       options->data_pins_count,
-      options->clock_pin,
     #else
-      0, -1,
+      0,
     #endif
       options->clock_rate
     );

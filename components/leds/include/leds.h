@@ -216,9 +216,16 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
     // only used for protocols with separate clock/data lines
     int clock_rate;
+
   #if LEDS_I2S_GPIO_PINS_ENABLED
-    gpio_num_t clock_pin;
+    // use GPIO_NUM_NC < 0 to disable
+    union {
+      gpio_num_t clock_pin;
+    #if LEDS_I2S_DATA_PINS_ENABLED
+      gpio_num_t clock_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
+    #endif
   #endif
+    };
   };
 
   /*

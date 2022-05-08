@@ -273,31 +273,20 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
       break;
   }
 
-#if I2S_OUT_GPIO_PINS_SUPPORTED
-  switch(mode) {
-    case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-      i2s_out_options.bck_gpio = options->clock_pin;
-
-      break;
-
-    default:
-      i2s_out_options.bck_gpio = GPIO_NUM_NC;
-
-      break;
-  }
-#endif
-
 #if LEDS_I2S_DATA_PINS_ENABLED
   if (options->data_pins_count) {
     for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+      i2s_out_options.bck_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->clock_pins[i] : GPIO_NUM_NC;
       i2s_out_options.data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->data_pins[i] : GPIO_NUM_NC;
       i2s_out_options.inv_data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->inv_data_pins[i] : GPIO_NUM_NC;
     }
   } else {
+    i2s_out_options.bck_gpio = options->clock_pin;
     i2s_out_options.data_gpio = options->data_pin;
     i2s_out_options.inv_data_gpio = options->inv_data_pin;
   }
 #elif LEDS_I2S_GPIO_PINS_ENABLED
+  i2s_out_options.bck_gpio = options->clock_pin;
   i2s_out_options.data_gpio = options->data_pin;
   i2s_out_options.inv_data_gpio = options->inv_data_pin;
 #endif

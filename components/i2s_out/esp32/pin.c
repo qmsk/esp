@@ -22,9 +22,9 @@ static const uint8_t i2s_parallel8_data_out_sig[I2S_PORT_MAX] = {
 
 int i2s_out_pin_init(struct i2s_out *i2s_out)
 {
-  i2s_out->bck_gpio = -1;
 
   for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+    i2s_out->bck_gpios[i] = -1;
     i2s_out->data_gpios[i] = -1;
     i2s_out->inv_data_gpios[i] = -1;
   }
@@ -89,19 +89,20 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  if (options.bck_gpio > 0) {
-    i2s_out->bck_gpio = options.bck_gpio;
-
-    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[i2s_out->bck_gpio], PIN_FUNC_GPIO);
-    gpio_ll_input_disable(&GPIO, i2s_out->bck_gpio);
-    gpio_ll_output_enable(&GPIO, i2s_out->bck_gpio);
-
-    esp_rom_gpio_connect_out_signal(i2s_out->bck_gpio, i2s_bck_out_sig[i2s_out->port], options.bck_inv, false);
-  }
 
   switch (options.mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:
     case I2S_OUT_MODE_32BIT_SERIAL:
+      if (options.bck_gpio > 0) {
+        i2s_out->bck_gpios[0] = options.bck_gpio;
+
+        gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[options.bck_gpio], PIN_FUNC_GPIO);
+        gpio_ll_input_disable(&GPIO, options.bck_gpio);
+        gpio_ll_output_enable(&GPIO, options.bck_gpio);
+
+        esp_rom_gpio_connect_out_signal(options.bck_gpio, i2s_bck_out_sig[i2s_out->port], options.bck_inv, false);
+      }
+
       if (options.data_gpio > 0) {
         i2s_out->data_gpios[0] = options.data_gpio;
 
@@ -127,6 +128,16 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
     case I2S_OUT_MODE_8BIT_PARALLEL:
       for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+        if (options.bck_gpios[i] > 0) {
+          i2s_out->bck_gpios[i] = options.bck_gpios[i];
+
+          gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[options.bck_gpios[i]], PIN_FUNC_GPIO);
+          gpio_ll_input_disable(&GPIO, options.bck_gpios[i]);
+          gpio_ll_output_enable(&GPIO, options.bck_gpios[i]);
+
+          esp_rom_gpio_connect_out_signal(options.bck_gpios[i], i2s_bck_out_sig[i2s_out->port], options.bck_inv, false);
+        }
+
         if (options.data_gpios[i] > 0) {
           i2s_out->data_gpios[i] = options.data_gpios[i];
 
@@ -163,13 +174,14 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
   taskENTER_CRITICAL(&i2s_out->mux);
 
   // place output into a safe state
-  if (i2s_out->bck_gpio >= 0) {
-    gpio_ll_output_disable(&GPIO, i2s_out->bck_gpio);
-
-    i2s_out->bck_gpio = -1;
-  }
 
   for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+    if (i2s_out->bck_gpios[i] >= 0) {
+      gpio_ll_output_disable(&GPIO, i2s_out->bck_gpios[i]);
+
+      i2s_out->bck_gpios[i] = -1;
+    }
+
     if (i2s_out->data_gpios[i] >= 0) {
       gpio_ll_output_disable(&GPIO, i2s_out->data_gpios[i]);
 

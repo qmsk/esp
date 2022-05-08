@@ -104,9 +104,14 @@ struct i2s_out_options {
   TickType_t pin_timeout;
 
 #if I2S_OUT_GPIO_PINS_SUPPORTED
-  // Use GPIO pin for bit clock out signal
-  gpio_num_t bck_gpio; // -1 to disable
-  bool bck_inv;
+  // Use GPIO pin for bit clock out signal, -1 to disable
+  union {
+    gpio_num_t bck_gpio; // -1 to disable
+# if I2S_OUT_PARALLEL_SUPPORTED
+    gpio_num_t bck_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
+# endif
+  };
+  bool bck_inv; // invert bck signal
 
   // Use GPIO pin for data out signal, -1 to disable
   union {

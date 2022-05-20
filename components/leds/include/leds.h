@@ -224,8 +224,8 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     #if LEDS_I2S_DATA_PINS_ENABLED
       gpio_num_t clock_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
     #endif
-  #endif
     };
+  #endif
   };
 
   /*

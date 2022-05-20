@@ -617,6 +617,10 @@ int uart_close(struct uart *uart)
     goto error;
   }
 
+  // TX intr should be disabled after uart_tx_flush() completes
+  // XXX: what about RX intr?
+  uart_dev_teardown(uart);
+
 error:
   uart_release_tx(uart);
 

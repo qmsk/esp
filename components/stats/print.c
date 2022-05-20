@@ -4,10 +4,11 @@
 
 void print_stats_timer(const char *title, const char *desc, const struct stats_timer *timer)
 {
-  printf("\t%10s : %-10s %12.3fs total / %6u count @ %12.3fs = %6.1fms avg, %5.1f%% util\n", title, desc,
+  printf("\t%10s : %-10s %12.3fs total / %6u count @ %12.3fs = %6.1f/s @ %6.1fms avg, %5.1f%% util\n", title, desc,
     (float)(timer->total) / 1000.0f / 1000.0f,
     timer->count,
     stats_timer_seconds_passed(timer),
+    stats_timer_average_rate(timer),
     stats_timer_average_seconds(timer),
     stats_timer_utilization(timer) * 100.0f
   );

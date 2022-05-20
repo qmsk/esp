@@ -62,6 +62,15 @@ static inline float stats_timer_seconds_passed(const struct stats_timer *timer)
   }
 }
 
+static inline float stats_timer_average_rate(const struct stats_timer *timer)
+{
+  if (timer->update > timer->reset) {
+    return ((float) timer->count) / ((float)(timer->update - timer->reset) / 1000000.0f);
+  } else {
+    return 0.0f;
+  }
+}
+
 static inline float stats_timer_average_seconds(const struct stats_timer *timer)
 {
   if (timer->count) {

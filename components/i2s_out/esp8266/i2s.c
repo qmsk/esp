@@ -59,19 +59,40 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   I2S0.conf.tx_slave_mod = 0; // generate output clock
   I2S0.conf.rx_slave_mod = 0;
-  I2S0.conf.right_first = 0; // TX LEFT, RIGHT
-  I2S0.conf.msb_right = 0; // FIFO is LEFT, RIGHT
-  I2S0.conf.tx_msb_shift = 0;
-  I2S0.conf.rx_msb_shift = 0;
-  I2S0.conf.bits_mod = 0; // 16
   I2S0.conf.clkm_div_num = options.clock.clkm_div;
   I2S0.conf.bck_div_num = options.clock.bck_div;
 
-  I2S0.fifo_conf.tx_fifo_mod = I2S_TX_FIFO_MODE_16BIT_FULL; // 16-bit left + 16-bit right
-  I2S0.fifo_conf.rx_fifo_mod = I2S_RX_FIFO_MODE_16BIT_FULL; // unused
+  switch (options.mode) {
+    case I2S_OUT_MODE_16BIT_SERIAL:
+      I2S0.conf.right_first = 0; // TX LEFT, RIGHT
+      I2S0.conf.msb_right = 1; // FIFO is RIGHT, LEFT
+      I2S0.conf.tx_msb_shift = 0;
+      I2S0.conf.rx_msb_shift = 0;
+      I2S0.conf.bits_mod = 0; // 16
 
-  I2S0.conf_chan.tx_chan_mod = I2S_TX_CHAN_MODE_DUAL; // transmit both channels
-  I2S0.conf_chan.rx_chan_mod = I2S_RX_CHAN_MODE_DUAL; // transmit both channels
+      I2S0.fifo_conf.tx_fifo_mod = I2S_TX_FIFO_MODE_16BIT_FULL; // 16-bit left + 16-bit right
+      I2S0.fifo_conf.rx_fifo_mod = I2S_RX_FIFO_MODE_16BIT_FULL; // unused
+
+      I2S0.conf_chan.tx_chan_mod = I2S_TX_CHAN_MODE_DUAL; // transmit both channels
+      I2S0.conf_chan.rx_chan_mod = I2S_RX_CHAN_MODE_DUAL; // transmit both channels
+
+      break;
+
+    case I2S_OUT_MODE_32BIT_SERIAL:
+      I2S0.conf.right_first = 0; // TX LEFT, RIGHT
+      I2S0.conf.msb_right = 0; // FIFO is LEFT, RIGHT
+      I2S0.conf.tx_msb_shift = 0;
+      I2S0.conf.rx_msb_shift = 0;
+      I2S0.conf.bits_mod = 0; // 16
+
+      I2S0.fifo_conf.tx_fifo_mod = I2S_TX_FIFO_MODE_16BIT_FULL; // 16-bit left + 16-bit right
+      I2S0.fifo_conf.rx_fifo_mod = I2S_RX_FIFO_MODE_16BIT_FULL; // unused
+
+      I2S0.conf_chan.tx_chan_mod = I2S_TX_CHAN_MODE_DUAL; // transmit both channels
+      I2S0.conf_chan.rx_chan_mod = I2S_RX_CHAN_MODE_DUAL; // transmit both channels
+
+      break;
+  }
 
   // use DMA
   i2s_fifo_dma_enable(&I2S0);

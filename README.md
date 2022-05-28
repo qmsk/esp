@@ -14,7 +14,7 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 * I2S output with a bit-clock signal (SK9822)
 * I2S parallel outputs using ESP-32 I2S1 8-bit mode (memory-efficient)
 * Multiple Art-NET universes per output for >170 LEDs
-* Software power-limiting for LED outputs
+* Software power-limiting for LED outputs with configurable total and per-group limits
 * Art-NET poll/discovery support
 * Art-NET sync support (recommended when outputting multiple universes per port)
 * Art-NET DMX seq support (ignore out-of-order packets)

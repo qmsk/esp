@@ -1,4 +1,5 @@
 #include <leds_stats.h>
+#include "leds.h"
 #include "leds_stats.h"
 
 struct leds_interface_stats leds_interface_stats;
@@ -23,4 +24,20 @@ void leds_reset_interface_stats()
 void leds_get_interface_stats(struct leds_interface_stats *stats)
 {
   *stats = leds_interface_stats;
+}
+
+void leds_get_limit_total_stats(struct leds *leds, struct leds_limit_stats *total_stats)
+{
+  *total_stats = leds->limit_total_stats;
+}
+
+void leds_get_limit_group_stats(struct leds *leds, struct leds_limit_stats *group_stats, size_t *size)
+{
+  unsigned i;
+
+  for (i = 0; i < *size && i < leds->limit.group_count; i++) {
+    group_stats[i] = leds->limit_groups_stats[i];
+  }
+
+  *size = i;
 }

@@ -1,6 +1,7 @@
- #pragma once
+#pragma once
 
 #include <leds.h>
+#include <leds_stats.h>
 
 #include "interface.h"
 #if CONFIG_LEDS_SPI_ENABLED
@@ -45,9 +46,10 @@ struct leds {
   // if false, all leds are inactive
   bool active;
 
-  // limit used for last leds_tx()
-  unsigned tx_total;
-  struct leds_limit tx_limit;
+  // limit used for leds_tx()
+  struct leds_limit limit;
+
+  struct leds_limit_stats limit_total_stats, *limit_groups_stats;
 };
 
 int leds_init(struct leds *leds, const struct leds_options *options);

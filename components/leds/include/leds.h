@@ -254,7 +254,8 @@ struct leds_options {
   unsigned count;
 
   /* Limit number of active LEDs by color. Going over the limit will scale down all LEDs */
-  unsigned limit;
+  unsigned limit_groups;
+  unsigned limit_total, limit_group;
 
   /* By interface */
   union {
@@ -356,27 +357,9 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame);
 unsigned leds_count_active(struct leds *leds);
 
 /*
- * Return total power for leds, ref options->limit.
+ * Return total power for leds, ref options->limit_total.
  */
-unsigned leds_count_total(struct leds *leds);
+unsigned leds_count_total_power(struct leds *leds);
 
 /* Output frames on interface */
 int leds_tx(struct leds *leds);
-
-/*
- * Get power limit utilization from last leds_tx() operation.
- * *
- * @return 0.0 .. 1.0 .. +inf
- *         0.0 -> all LEDs are off, or no limit configured
- *         1.0 -> at power limit
- *        >1.0 -> power limiting active
- */
-float leds_limit_utilization(struct leds *leds);
-/*
- * Get power limit applied to last leds_tx() operation.
- *
- * This is applied using integer math internally, the floating point value is an approximation.
- *
- * @return 0.0 .. 1.0, with 1.0 meaning power is not being limited and numbers closer to 0 meaning more power limiting.
- */
-float leds_limit_active(struct leds *leds);

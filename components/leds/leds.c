@@ -124,8 +124,20 @@ static inline bool leds_color_active (struct leds_color color)
 
 int leds_init(struct leds *leds, const struct leds_options *options)
 {
+  int err;
+
   leds->options = *options;
   leds->active = 0;
+
+  if ((err = leds_limit_init(&leds->limit, options->limit_groups, options->count))) {
+    LOG_ERROR("leds_limit_init");
+    return err;
+  }
+
+  if (!(leds->limit_groups_stats = calloc(leds->limit.group_count, sizeof(*leds->limit_groups_stats)))) {
+    LOG_ERROR("calloc[limit_groups_stats]");
+    return err;
+  }
 
   switch(options->protocol) {
     case LEDS_PROTOCOL_NONE:
@@ -167,13 +179,17 @@ int leds_new(struct leds **ledsp, const struct leds_options *options)
 
   if ((err = leds_init(leds, options))) {
     LOG_ERROR("leds_init");
-    free(leds);
-    return -1;
+    goto error;
   }
 
   *ledsp = leds;
 
   return 0;
+
+error:
+  free(leds);
+
+  return err;
 }
 
 const struct leds_options *leds_options(struct leds *leds)
@@ -419,29 +435,29 @@ unsigned leds_count_active(struct leds *leds)
   return active;
 }
 
-unsigned leds_count_total(struct leds *leds)
+unsigned leds_count_total_power(struct leds *leds)
 {
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_NONE:
       return 0;
 
     case LEDS_PROTOCOL_APA102:
-      return leds_protocol_apa102_count_total(&leds->protocol.apa102);
+      return leds_protocol_apa102_count_power(&leds->protocol.apa102, 0, leds->options.count);
 
     case LEDS_PROTOCOL_P9813:
-      return leds_protocol_p9813_count_total(&leds->protocol.p9813);
+      return leds_protocol_p9813_count_power(&leds->protocol.p9813, 0, leds->options.count);
 
     case LEDS_PROTOCOL_WS2812B:
-      return leds_protocol_ws2812b_count_total(&leds->protocol.ws2812b);
+      return leds_protocol_ws2812b_count_power(&leds->protocol.ws2812b, 0, leds->options.count);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_protocol_sk6812grbw_count_total(&leds->protocol.sk6812grbw);
+      return leds_protocol_sk6812grbw_count_power(&leds->protocol.sk6812grbw, 0, leds->options.count);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_protocol_ws2811_count_total(&leds->protocol.ws2811);
+      return leds_protocol_ws2811_count_power(&leds->protocol.ws2811, 0, leds->options.count);
 
     case LEDS_PROTOCOL_SK9822:
-      return leds_protocol_sk9822_count_total(&leds->protocol.sk9822);
+      return leds_protocol_sk9822_count_power(&leds->protocol.sk9822, 0, leds->options.count);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
@@ -449,19 +465,87 @@ unsigned leds_count_total(struct leds *leds)
   }
 }
 
+static unsigned leds_count_group_power(struct leds *leds, unsigned group)
+{
+  unsigned count = leds->limit.group_size;
+  unsigned index = leds->limit.group_size * group;
+
+  switch(leds->options.protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return 0;
+
+    case LEDS_PROTOCOL_APA102:
+      return leds_protocol_apa102_count_power(&leds->protocol.apa102, index, count);
+
+    case LEDS_PROTOCOL_P9813:
+      return leds_protocol_p9813_count_power(&leds->protocol.p9813, index, count);
+
+    case LEDS_PROTOCOL_WS2812B:
+      return leds_protocol_ws2812b_count_power(&leds->protocol.ws2812b, index, count);
+
+    case LEDS_PROTOCOL_SK6812_GRBW:
+      return leds_protocol_sk6812grbw_count_power(&leds->protocol.sk6812grbw, index, count);
+
+    case LEDS_PROTOCOL_WS2811:
+      return leds_protocol_ws2811_count_power(&leds->protocol.ws2811, index, count);
+
+    case LEDS_PROTOCOL_SK9822:
+      return leds_protocol_sk9822_count_power(&leds->protocol.sk9822, index, count);
+
+    default:
+      LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
+      return -1;
+  }
+}
+
+void leds_update_limit(struct leds *leds)
+{
+  unsigned total_power = 0;
+
+  if (leds->limit.group_count && leds->options.limit_group) {
+    for (unsigned group = 0; group < leds->limit.group_count; group++) {
+      unsigned group_power = leds_count_group_power(leds, group);
+      unsigned output_power = leds_limit_set_group(&leds->limit, group, leds->options.limit_group, group_power);
+
+      total_power += output_power;
+
+      LOG_DEBUG("group[%u] limit=%u power=%u -> output power=%u", group,
+        leds->options.limit_group,
+        group_power,
+        output_power
+      );
+
+      leds->limit_groups_stats[group] = (struct leds_limit_stats) {
+        .limit  = leds->options.limit_group,
+        .power  = group_power,
+        .output = output_power,
+      };
+    }
+  } else {
+    total_power = leds_count_total_power(leds);
+  }
+
+  // apply total limit
+  if (leds->options.limit_total) {
+    unsigned output_power = leds_limit_set_total(&leds->limit, leds->options.limit_total, total_power);
+
+    LOG_DEBUG("total limit=%u power=%u -> output power=%u",
+      leds->options.limit_total,
+      total_power,
+      output_power
+    );
+
+    leds->limit_total_stats = (struct leds_limit_stats) {
+      .limit  = leds->options.limit_total,
+      .power  = total_power,
+      .output = output_power,
+    };
+  }
+}
+
 int leds_tx(struct leds *leds)
 {
-  if (!leds->options.limit) {
-    leds->tx_total = 0;
-    leds->tx_limit = leds_limit_unity();
-
-    LOG_DEBUG("limit=%u: disabled", leds->options.limit);
-  } else {
-    leds->tx_total = leds_count_total(leds);
-    leds->tx_limit = leds_limit_total(leds->options.limit, leds->tx_total);
-
-    LOG_DEBUG("limit=%u < total=%u: limit multiplier=%u shift=%u", leds->options.limit, leds->tx_total, leds->tx_limit.multiplier, leds->tx_limit.shift);
-  }
+  leds_update_limit(leds);
 
   switch(leds->options.protocol) {
     case LEDS_PROTOCOL_NONE:
@@ -476,35 +560,19 @@ int leds_tx(struct leds *leds)
       return leds_protocol_p9813_tx(&leds->protocol.p9813, &leds->interface, &leds->options);
 
     case LEDS_PROTOCOL_WS2812B:
-      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options, leds->tx_limit);
+      return leds_protocol_ws2812b_tx(&leds->protocol.ws2812b, &leds->interface, &leds->options, &leds->limit);
 
     case LEDS_PROTOCOL_SK6812_GRBW:
-      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options, leds->tx_limit);
+      return leds_protocol_sk6812grbw_tx(&leds->protocol.sk6812grbw, &leds->interface, &leds->options, &leds->limit);
 
     case LEDS_PROTOCOL_WS2811:
-      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, leds->tx_limit);
+      return leds_protocol_ws2811_tx(&leds->protocol.ws2811, &leds->interface, &leds->options, &leds->limit);
 
     case LEDS_PROTOCOL_SK9822:
-      return leds_protocol_sk9822_tx(&leds->protocol.sk9822, &leds->interface, &leds->options, leds->tx_limit);
+      return leds_protocol_sk9822_tx(&leds->protocol.sk9822, &leds->interface, &leds->options, &leds->limit);
 
     default:
       LOG_ERROR("unknown protocol=%#x", leds->options.protocol);
       return -1;
   }
-}
-
-float leds_limit_utilization(struct leds *leds)
-{
-  if (!leds->options.limit) {
-    return 0.0;
-  }
-
-  return (float)(leds->tx_total) / (float)(leds->options.limit);
-}
-
-float leds_limit_active(struct leds *leds)
-{
-  struct leds_limit limit = leds->tx_limit;
-
-  return (float)(limit.multiplier) / (float)(1 << limit.shift);
 }

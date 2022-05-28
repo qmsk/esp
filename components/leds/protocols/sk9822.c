@@ -6,10 +6,10 @@
 
 #include <stdlib.h>
 
-static void leds_protocol_sk9822_i2s_out(uint32_t buf[1], void *data, unsigned index, struct leds_limit limit)
+static void leds_protocol_sk9822_i2s_out(uint32_t buf[1], void *data, unsigned index, const struct leds_limit *limit)
 {
   union sk9822_pixel *pixels = data;
-  uint32_t xbgr = sk9822_pixel_limit(pixels[index], limit).xbgr;
+  uint32_t xbgr = sk9822_pixel_limit(pixels[index], index, limit).xbgr;
 
   // 32-bit little-endian
   buf[0] = xbgr;
@@ -27,7 +27,7 @@ int leds_protocol_sk9822_init(struct leds_protocol_sk9822 *protocol, union leds_
   return 0;
 }
 
-int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit)
+int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:

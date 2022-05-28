@@ -71,7 +71,7 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, union sk6812grbw_pixel *pixels, unsigned count, struct leds_limit limit)
+int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, union sk6812grbw_pixel *pixels, unsigned count, const struct leds_limit *limit)
 {
   struct leds_interface_uart_stats *stats = &leds_interface_stats.uart;
   struct uart_options uart_options = {
@@ -106,7 +106,7 @@ int leds_tx_uart_sk6812grbw(const struct leds_interface_uart_options *options, u
     vTaskPrioritySet(NULL, SK6812_TX_TASK_PRIORITY);
 
     for (unsigned i = 0; i < count; i++) {
-      uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], limit).grbw;
+      uint32_t grbw = sk6812grbw_pixel_limit(pixels[i], i, limit).grbw;
 
       buf[0]  = sk6812_lut[(grbw >> 28) & 0xf];
       buf[1]  = sk6812_lut[(grbw >> 24) & 0xf];

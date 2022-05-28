@@ -60,12 +60,12 @@ static inline unsigned p9813_frame_power(const struct p9813_frame frame)
   return frame.b + frame.r + frame.g;
 }
 
-static inline struct p9813_frame p9813_frame_limit(const struct p9813_frame frame, struct leds_limit limit)
+static inline struct p9813_frame p9813_frame_limit(const struct p9813_frame frame, unsigned index, const struct leds_limit *limit)
 {
   return (struct p9813_frame) {
-    .b  = leds_limit_uint8(limit, frame.b),
-    .g  = leds_limit_uint8(limit, frame.g),
-    .r  = leds_limit_uint8(limit, frame.r),
+    .b  = leds_limit_uint8(limit, index, frame.b),
+    .g  = leds_limit_uint8(limit, index, frame.g),
+    .r  = leds_limit_uint8(limit, index, frame.r),
   };
 }
 

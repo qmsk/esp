@@ -41,13 +41,13 @@ static inline unsigned sk9822_pixel_power(const union sk9822_pixel pixel)
   return (pixel.b + pixel.g + pixel.r) * SK9822_BRIGHTNESS(pixel.global);
 }
 
-static inline union sk9822_pixel sk9822_pixel_limit(const union sk9822_pixel pixel, struct leds_limit limit)
+static inline union sk9822_pixel sk9822_pixel_limit(const union sk9822_pixel pixel, unsigned index, const struct leds_limit *limit)
 {
   return (union sk9822_pixel) {
     .global = pixel.global, // TODO: use driving current instead of PWM for power limit?
-    .b      = leds_limit_uint8(limit, pixel.b),
-    .g      = leds_limit_uint8(limit, pixel.g),
-    .r      = leds_limit_uint8(limit, pixel.r),
+    .b      = leds_limit_uint8(limit, index, pixel.b),
+    .g      = leds_limit_uint8(limit, index, pixel.g),
+    .r      = leds_limit_uint8(limit, index, pixel.r),
   };
 }
 
@@ -57,7 +57,7 @@ struct leds_protocol_sk9822 {
 };
 
 int leds_protocol_sk9822_init(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options);
-int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit);
+int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit);
 
 void leds_protocol_sk9822_set(struct leds_protocol_sk9822 *protocol, unsigned index, struct leds_color color);
 void leds_protocol_sk9822_set_all(struct leds_protocol_sk9822 *protocol, struct leds_color color);

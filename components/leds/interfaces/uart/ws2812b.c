@@ -120,7 +120,7 @@ static const uint16_t ws2812b_lut[] = {
 };
 
 
-int leds_tx_uart_ws2812b(const struct leds_interface_uart_options *options, union ws2812b_pixel *pixels, unsigned count, struct leds_limit limit)
+int leds_tx_uart_ws2812b(const struct leds_interface_uart_options *options, union ws2812b_pixel *pixels, unsigned count, const struct leds_limit *limit)
 {
   struct leds_interface_uart_stats *stats = &leds_interface_stats.uart;
   struct uart_options uart_options = {
@@ -155,7 +155,7 @@ int leds_tx_uart_ws2812b(const struct leds_interface_uart_options *options, unio
     vTaskPrioritySet(NULL, WS2812B_TX_TASK_PRIORITY);
 
     for (unsigned i = 0; i < count; i++) {
-      uint32_t grb = ws2812b_pixel_limit(pixels[i], limit)._grb;
+      uint32_t grb = ws2812b_pixel_limit(pixels[i], i, limit)._grb;
 
       buf[0] = ws2812b_lut[(grb >> 18) & 0x3f];
       buf[1] = ws2812b_lut[(grb >> 12) & 0x3f];

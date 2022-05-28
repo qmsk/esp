@@ -14,16 +14,16 @@ enum leds_interface_i2s_mode {
 struct leds_interface_i2s_tx {
   void *data;
   unsigned count;
-  struct leds_limit limit;
+  const struct leds_limit *limit;
 
   union {
     uint32_t i2s_mode_32bit;
   } start_frame;
 
   union {
-    void (*i2s_mode_32bit)(uint32_t buf[1], void *data, unsigned index, struct leds_limit limit);
-    void (*i2s_mode_24bit_4x4)(uint16_t buf[6], void *data, unsigned index, struct leds_limit limit);
-    void (*i2s_mode_32bit_4x4)(uint16_t buf[8], void *data, unsigned index, struct leds_limit limit);
+    void (*i2s_mode_32bit)(uint32_t buf[1], void *data, unsigned index, const struct leds_limit *limit);
+    void (*i2s_mode_24bit_4x4)(uint16_t buf[6], void *data, unsigned index, const struct leds_limit *limit);
+    void (*i2s_mode_32bit_4x4)(uint16_t buf[8], void *data, unsigned index, const struct leds_limit *limit);
   } func;
 };
 

@@ -29,12 +29,12 @@ static inline unsigned ws2811_pixel_power(const union ws2811_pixel pixel)
   return pixel.b + pixel.r + pixel.g;
 }
 
-static inline union ws2811_pixel ws2811_pixel_limit(const union ws2811_pixel pixel, struct leds_limit limit)
+static inline union ws2811_pixel ws2811_pixel_limit(const union ws2811_pixel pixel, unsigned index, const struct leds_limit *limit)
 {
   return (union ws2811_pixel) {
-    .b  = leds_limit_uint8(limit, pixel.b),
-    .g  = leds_limit_uint8(limit, pixel.g),
-    .r  = leds_limit_uint8(limit, pixel.r),
+    .b  = leds_limit_uint8(limit, index, pixel.b),
+    .g  = leds_limit_uint8(limit, index, pixel.g),
+    .r  = leds_limit_uint8(limit, index, pixel.r),
   };
 }
 
@@ -44,7 +44,7 @@ struct leds_protocol_ws2811 {
 };
 
 int leds_protocol_ws2811_init(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options);
-int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit);
+int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit);
 
 void leds_protocol_ws2811_set(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color);
 void leds_protocol_ws2811_set_all(struct leds_protocol_ws2811 *protocol, struct leds_color color);

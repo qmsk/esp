@@ -38,10 +38,10 @@ static const uint16_t ws2811_lut[] = {
   [0b1111] = WS2811_LUT(0b1111),
 };
 
-static void leds_protocol_ws2811_i2s_out(uint16_t buf[6], void *data, unsigned index, struct leds_limit limit)
+static void leds_protocol_ws2811_i2s_out(uint16_t buf[6], void *data, unsigned index, const struct leds_limit *limit)
 {
   union ws2811_pixel *pixels = data;
-  uint32_t rgb = ws2811_pixel_limit(pixels[index], limit)._rgb;
+  uint32_t rgb = ws2811_pixel_limit(pixels[index], index, limit)._rgb;
 
   // 16-bit little-endian
   buf[0] = ws2811_lut[(rgb >> 20) & 0xf];
@@ -64,7 +64,7 @@ int leds_protocol_ws2811_init(struct leds_protocol_ws2811 *protocol, union leds_
   return 0;
 }
 
-int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit)
+int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:

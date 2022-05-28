@@ -38,10 +38,10 @@ static const uint16_t sk6812_lut[] = {
   [0b1111] = SK6812_LUT(0b1111),
 };
 
-static void leds_protocol_sk6812grbw_i2s_out(uint16_t buf[8], void *data, unsigned index, struct leds_limit limit)
+static void leds_protocol_sk6812grbw_i2s_out(uint16_t buf[8], void *data, unsigned index, const struct leds_limit *limit)
 {
   union sk6812grbw_pixel *pixels = data;
-  uint32_t grbw = sk6812grbw_pixel_limit(pixels[index], limit).grbw;
+  uint32_t grbw = sk6812grbw_pixel_limit(pixels[index], index, limit).grbw;
 
   // 16-bit little-endian
   buf[0] = sk6812_lut[(grbw >> 28) & 0xf];
@@ -66,7 +66,7 @@ int leds_protocol_sk6812grbw_init(struct leds_protocol_sk6812grbw *protocol, uni
   return 0;
 }
 
-int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options, struct leds_limit limit)
+int leds_protocol_sk6812grbw_tx(struct leds_protocol_sk6812grbw *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:

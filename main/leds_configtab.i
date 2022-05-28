@@ -26,7 +26,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
       "Apply per-group power limit for the maximum number of LED pixels at full brightness within each group of consecutive LEDs."
       "Default 0 -> no per-group limit"
     ),
-    .uint16_type = { .value = &LEDS_CONFIG.limit_group, .max = LEDS_COUNT_MAX },
+    .uint16_type = { .value = &LEDS_CONFIG.limit_group, .max = LEDS_LIMIT_GROUPS_MAX },
   },
   { CONFIG_TYPE_UINT16, "limit_groups",
     .description = (

@@ -134,8 +134,8 @@ int leds_init(struct leds *leds, const struct leds_options *options)
     return err;
   }
 
-  if (!(leds->limit_groups_stats = calloc(leds->limit.group_count, sizeof(*leds->limit_groups_stats)))) {
-    LOG_ERROR("calloc[limit_groups_stats]");
+  if (!(leds->limit_groups_status = calloc(leds->limit.group_count, sizeof(*leds->limit_groups_status)))) {
+    LOG_ERROR("calloc[limit_groups_status]");
     return err;
   }
 
@@ -515,7 +515,8 @@ void leds_update_limit(struct leds *leds)
         output_power
       );
 
-      leds->limit_groups_stats[group] = (struct leds_limit_stats) {
+      leds->limit_groups_status[group] = (struct leds_limit_status) {
+        .count  = leds->limit.group_size,
         .limit  = leds->options.limit_group,
         .power  = group_power,
         .output = output_power,
@@ -535,7 +536,8 @@ void leds_update_limit(struct leds *leds)
       output_power
     );
 
-    leds->limit_total_stats = (struct leds_limit_stats) {
+    leds->limit_total_status = (struct leds_limit_status) {
+      .count  = leds->options.count,
       .limit  = leds->options.limit_total,
       .power  = total_power,
       .output = output_power,

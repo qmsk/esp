@@ -6,6 +6,7 @@
 #include <logging.h>
 #include <leds.h>
 #include <leds_stats.h>
+#include <leds_status.h>
 #include <stats_print.h>
 
 #include <string.h>
@@ -30,8 +31,48 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %s\n", "Protocol", config_enum_to_string(leds_protocol_enum, options->protocol));
     printf("\t%-20s: %s\n", "Color Parameter", config_enum_to_string(leds_color_parameter_enum, leds_color_parameter_for_protocol(options->protocol)));
     printf("\t%-20s: %5u\n", "Count", options->count);
-    printf("\t%-20s: %5u @ %5.1f%%\n", "Limit", options->limit, leds_limit_utilization(state->leds) * 100.0);
-    printf("\t%-20s: %5u @ %5.1f%%\n", "Active", state->active, leds_limit_active(state->leds) * 100.0);
+    printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
+    printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);
+    printf("\n");
+  }
+
+  return 0;
+}
+
+int leds_cmd_status(int argc, char **argv, void *ctx)
+{
+  for (int i = 0; i < LEDS_COUNT; i++) {
+    const struct leds_config *config = &leds_configs[i];
+    struct leds_state *state = &leds_states[i];
+
+    if (!config->enabled || !state->leds) {
+      continue;
+    }
+
+    printf("leds%d:\n", i + 1);
+
+    struct leds_limit_status limit_total_status;
+    struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
+    size_t groups = LEDS_LIMIT_GROUPS_MAX;
+
+    leds_get_limit_total_status(state->leds, &limit_total_status);
+    leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
+
+    printf("\tActive   : %5u\n", state->active);
+    printf("\tTotal    : config %5.1f%% util %5.1f%% applied %5.1f%%\n",
+      leds_limit_status_configured(&limit_total_status),
+      leds_limit_status_utilization(&limit_total_status),
+      leds_limit_status_active(&limit_total_status)
+    );
+
+    for (unsigned j = 0; j < groups; j++) {
+      printf("\tGroup[%2d]: config %5.1f%% util %5.1f%% applied %5.1f%%\n", j,
+        leds_limit_status_configured(&limit_groups_status[j]),
+        leds_limit_status_utilization(&limit_groups_status[j]),
+        leds_limit_status_active(&limit_groups_status[j])
+      );
+    }
+
     printf("\n");
   }
 
@@ -307,6 +348,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 
 const struct cmd leds_commands[] = {
   { "info",     leds_cmd_info,                                          .describe = "Show LED info" },
+  { "status",   leds_cmd_status,                                        .describe = "Show LED status" },
   { "clear",    leds_cmd_clear,                                         .describe = "Clear all output values" },
   { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },

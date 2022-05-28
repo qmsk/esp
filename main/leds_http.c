@@ -4,13 +4,14 @@
 #include "http_routes.h"
 #include "http_handlers.h"
 
+#include <leds_status.h>
 #include <logging.h>
 #include <json.h>
 
 #include <limits.h>
 #include <string.h>
 
-static int leds_api_write_object_enabled(struct json_writer *w, int index, struct leds_state *state)
+static int leds_api_write_object_options(struct json_writer *w, struct leds_state *state)
 {
   const struct leds_options *options = leds_options(state->leds);
 
@@ -19,21 +20,57 @@ static int leds_api_write_object_enabled(struct json_writer *w, int index, struc
     ||  JSON_WRITE_MEMBER_STRING(w, "protocol", config_enum_to_string(leds_protocol_enum, options->protocol))
     ||  JSON_WRITE_MEMBER_STRING(w, "color_parameter", config_enum_to_string(leds_color_parameter_enum, leds_color_parameter_for_protocol(options->protocol)))
     ||  JSON_WRITE_MEMBER_UINT(w, "count", options->count)
-    ||  JSON_WRITE_MEMBER_UINT(w, "limit", options->limit)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "limit_utilization", leds_limit_utilization(state->leds))
-    ||  JSON_WRITE_MEMBER_UINT(w, "active", state->active)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "active_limit", leds_limit_active(state->leds))
+    ||  JSON_WRITE_MEMBER_UINT(w, "limit_total", options->limit_total)
+    ||  JSON_WRITE_MEMBER_UINT(w, "limit_group", options->limit_group)
+    ||  JSON_WRITE_MEMBER_UINT(w, "limit_groups", options->limit_groups)
+  );
+}
+
+static int leds_api_write_object_leds_limit_status(struct json_writer *w, const struct leds_limit_status *status)
+{
+  return (
+        JSON_WRITE_MEMBER_UINT(w, "count", status->count)
+    ||  JSON_WRITE_MEMBER_UINT(w, "limit", status->limit)
+    ||  JSON_WRITE_MEMBER_UINT(w, "power", status->power)
+    ||  JSON_WRITE_MEMBER_UINT(w, "output", status->output)
+  );
+}
+
+static int leds_api_write_object_leds_limit_status_groups(struct json_writer *w, const struct leds_limit_status *groups_status, size_t groups)
+{
+  int err;
+
+  for (unsigned i = 0; i < groups; i++) {
+    if ((err = JSON_WRITE_OBJECT(w, leds_api_write_object_leds_limit_status(w, &groups_status[i])))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
+static int leds_api_write_object_status(struct json_writer *w, struct leds_state *state)
+{
+  struct leds_limit_status limit_total_status;
+  struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
+  size_t groups = LEDS_LIMIT_GROUPS_MAX;
+
+  leds_get_limit_total_status(state->leds, &limit_total_status);
+  leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
+
+  return (
+        JSON_WRITE_MEMBER_UINT(w, "active", state->active)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &limit_total_status))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, limit_groups_status, groups))
   );
 }
 
 static int leds_api_write_object(struct json_writer *w, int index, struct leds_state *state)
 {
-  bool enabled = state->config->enabled && state->leds;
-
   return (
         JSON_WRITE_MEMBER_UINT(w, "index", index + 1)
-    ||  JSON_WRITE_MEMBER_BOOL(w, "enabled", enabled)
-    ||  (enabled ? leds_api_write_object_enabled(w, index, state) : 0)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
   );
 }
 
@@ -44,6 +81,10 @@ static int leds_api_write_array(struct json_writer *w)
   for (int i = 0; i < LEDS_COUNT; i++)
   {
     struct leds_state *state = &leds_states[i];
+
+    if (!state->config->enabled || !state->leds) {
+      continue;
+    }
 
     if ((err = JSON_WRITE_OBJECT(w, leds_api_write_object(w, i, state)))) {
       return err;

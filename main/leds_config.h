@@ -5,6 +5,8 @@
 
 #include <stdbool.h>
 
+#define LEDS_LIMIT_GROUPS_MAX 8
+
 struct leds_state *state;
 
 #if CONFIG_LEDS_GPIO_ENABLED

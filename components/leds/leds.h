@@ -1,7 +1,7 @@
 #pragma once
 
 #include <leds.h>
-#include <leds_stats.h>
+#include <leds_status.h>
 
 #include "interface.h"
 #if CONFIG_LEDS_SPI_ENABLED
@@ -49,7 +49,7 @@ struct leds {
   // limit used for leds_tx()
   struct leds_limit limit;
 
-  struct leds_limit_stats limit_total_stats, *limit_groups_stats;
+  struct leds_limit_status limit_total_status, *limit_groups_status;
 };
 
 int leds_init(struct leds *leds, const struct leds_options *options);

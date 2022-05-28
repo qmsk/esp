@@ -134,7 +134,7 @@ int leds_init(struct leds *leds, const struct leds_options *options)
     return err;
   }
 
-  if (!(leds->limit_groups_status = calloc(leds->limit.group_count, sizeof(*leds->limit_groups_status)))) {
+  if (!(leds->limit_groups_status = calloc(leds->limit.group_count, sizeof(*leds->limit_groups_status))) && leds->limit.group_count) {
     LOG_ERROR("calloc[limit_groups_status]");
     return err;
   }

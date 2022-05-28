@@ -4,13 +4,13 @@
 
 int leds_limit_init(struct leds_limit *limit, unsigned groups, unsigned leds)
 {
-  if (!(limit->group_multipliers = calloc(groups, sizeof(*limit->group_multipliers)))) {
+  if (!(limit->group_multipliers = calloc(groups, sizeof(*limit->group_multipliers))) && groups) {
     LOG_ERROR("calloc");
     return -1;
   }
 
   limit->group_count = groups;
-  limit->group_size = leds / groups;
+  limit->group_size = groups ? leds / groups : 0;
 
   limit->total_multipler = (1 << LEDS_LIMIT_TOTAL_SHIFT);
 

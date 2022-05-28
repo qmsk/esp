@@ -2,6 +2,8 @@
 
 #include <logging.h>
 
+#include <stdlib.h>
+
 int leds_limit_init(struct leds_limit *limit, unsigned groups, unsigned leds)
 {
   if (!(limit->group_multipliers = calloc(groups, sizeof(*limit->group_multipliers))) && groups) {

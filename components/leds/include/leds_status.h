@@ -19,7 +19,7 @@ struct leds_limit_status {
 static inline float leds_limit_status_configured(const struct leds_limit_status *status)
 {
   if (status->limit && status->count) {
-    return status->limit / status->count;
+    return (float) status->limit / (float) status->count;
   } else {
     return 1.0f;
   }
@@ -36,7 +36,7 @@ static inline float leds_limit_status_configured(const struct leds_limit_status 
 static inline float leds_limit_status_utilization(const struct leds_limit_status *status)
 {
   if (status->limit) {
-    return status->power / status->limit;
+    return (float) status->power / (float) status->limit;
   } else {
     return 0.0f;
   }
@@ -52,7 +52,7 @@ static inline float leds_limit_status_utilization(const struct leds_limit_status
 static inline float leds_limit_status_active(const struct leds_limit_status *status)
 {
   if (status->power) {
-    return status->output / status->power;
+    return (float) status->output / (float) status->power;
   } else {
     return 1.0f;
   }

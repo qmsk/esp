@@ -60,16 +60,16 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
 
     printf("\tActive   : %5u\n", state->active);
     printf("\tTotal    : config %5.1f%% util %5.1f%% applied %5.1f%%\n",
-      leds_limit_status_configured(&limit_total_status),
-      leds_limit_status_utilization(&limit_total_status),
-      leds_limit_status_active(&limit_total_status)
+      leds_limit_status_configured(&limit_total_status) * 100.0f,
+      leds_limit_status_utilization(&limit_total_status) * 100.0f,
+      leds_limit_status_active(&limit_total_status) * 100.0f
     );
 
     for (unsigned j = 0; j < groups; j++) {
       printf("\tGroup[%2d]: config %5.1f%% util %5.1f%% applied %5.1f%%\n", j,
-        leds_limit_status_configured(&limit_groups_status[j]),
-        leds_limit_status_utilization(&limit_groups_status[j]),
-        leds_limit_status_active(&limit_groups_status[j])
+        leds_limit_status_configured(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_utilization(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_active(&limit_groups_status[j]) * 100.0f
       );
     }
 

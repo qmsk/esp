@@ -13,12 +13,27 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Number of LED pixels",
     .uint16_type = { .value = &LEDS_CONFIG.count, .max = LEDS_COUNT_MAX },
   },
-  { CONFIG_TYPE_UINT16, "limit",
+  { CONFIG_TYPE_UINT16, "limit_total",
+    .alias = "limit",
     .description = (
-      "Software power limit for the maximum number of LED pixels at full brightness, pixels values over the limit are scaled down."
-      "Default 0 -> no limit"
+      "Apply total power limit for the maximum number of LED pixels at full brightness across all LEDs."
+      "Default 0 -> no total limit"
     ),
-    .uint16_type = { .value = &LEDS_CONFIG.limit, .max = LEDS_COUNT_MAX },
+    .uint16_type = { .value = &LEDS_CONFIG.limit_total, .max = LEDS_COUNT_MAX },
+  },
+  { CONFIG_TYPE_UINT16, "limit_group",
+    .description = (
+      "Apply per-group power limit for the maximum number of LED pixels at full brightness within each group of consecutive LEDs."
+      "Default 0 -> no per-group limit"
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.limit_group, .max = LEDS_COUNT_MAX },
+  },
+  { CONFIG_TYPE_UINT16, "limit_groups",
+    .description = (
+      "Number of groups to split consecutive LEDs across for per-group power limiting."
+      "Default 0 -> no groups"
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.limit_groups, .max = LEDS_COUNT_MAX },
   },
 
 #if CONFIG_LEDS_SPI_ENABLED

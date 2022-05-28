@@ -253,9 +253,14 @@ struct leds_options {
 
   unsigned count;
 
-  /* Limit number of active LEDs by color. Going over the limit will scale down all LEDs */
+  /* Limit total power equivalent to this amount of LEDs at full brightness. Going over the limit will scale down all LEDs */
+  unsigned limit_total;
+
+  /* Limit per-group power equivalent to this amount of LEDs at full brightness. Going over the limit will scale down all LEDs in the group */
+  unsigned limit_group;
+
+  /* Split LEDs into given number of groups for per-group power limiting of consecutive LEDs */
   unsigned limit_groups;
-  unsigned limit_total, limit_group;
 
   /* By interface */
   union {

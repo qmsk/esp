@@ -155,10 +155,12 @@ const struct configtab *leds_configtabs[LEDS_COUNT] = {
 int config_leds(struct leds_state *state, const struct leds_config *config)
 {
   struct leds_options options = {
-      .interface  = config->interface,
-      .protocol   = config->protocol,
-      .count      = config->count,
-      .limit      = config->limit,
+      .interface    = config->interface,
+      .protocol     = config->protocol,
+      .count        = config->count,
+      .limit_total  = config->limit_total,
+      .limit_group  = config->limit_group,
+      .limit_groups = config->limit_groups,
   };
   int err;
 
@@ -170,6 +172,11 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
     config_enum_to_string(leds_interface_enum, options.interface),
     config_enum_to_string(leds_protocol_enum, options.protocol),
     options.count
+  );
+
+  LOG_INFO("leds%d: limit total=%u groups=%u / %u", state->index + 1,
+    options.limit_total,
+    options.limit_group, options.limit_groups
   );
 
   switch(options.interface) {

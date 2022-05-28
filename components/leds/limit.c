@@ -34,7 +34,7 @@ unsigned leds_limit_set_group(struct leds_limit *limit, unsigned group, unsigned
 
   limit->group_multipliers[group] = multiplier;
 
-  return (power * multiplier) << LEDS_LIMIT_GROUP_SHIFT;
+  return (power * multiplier) >> LEDS_LIMIT_GROUP_SHIFT;
 }
 
 unsigned leds_limit_set_total(struct leds_limit *limit, unsigned total_limit, unsigned power)
@@ -50,5 +50,5 @@ unsigned leds_limit_set_total(struct leds_limit *limit, unsigned total_limit, un
 
   limit->total_multipler = multiplier;
 
-  return (power * multiplier) << LEDS_LIMIT_TOTAL_SHIFT;
+  return (power * multiplier) >> LEDS_LIMIT_TOTAL_SHIFT;
 }

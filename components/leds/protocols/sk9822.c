@@ -88,13 +88,13 @@ unsigned leds_protocol_sk9822_count_active(struct leds_protocol_sk9822 *protocol
   return active;
 }
 
-unsigned leds_protocol_sk9822_count_total(struct leds_protocol_sk9822 *protocol)
+unsigned leds_protocol_sk9822_count_power(struct leds_protocol_sk9822 *protocol, unsigned index, unsigned count)
 {
-  unsigned total = 0;
+  unsigned power = 0;
 
-  for (unsigned index = 0; index < protocol->count; index++) {
-    total += sk9822_pixel_total(protocol->pixels[index]);
+  for (unsigned i = index; i < index + count; i++) {
+    power += sk9822_pixel_power(protocol->pixels[i]);
   }
 
-  return total / SK9822_PIXEL_TOTAL_DIVISOR;
+  return power / SK9822_PIXEL_POWER_DIVISOR;
 }

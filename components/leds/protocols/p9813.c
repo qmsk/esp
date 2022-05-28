@@ -25,7 +25,7 @@ struct __attribute__((packed)) p9813_packet {
 
 #define P9813_CONTROL_BYTE(b, g, r) (0xC0 | ((~(b) & 0xC0) >> 2) | ((~(g) & 0xC0) >> 4) | ((~(r) & 0xC0) >> 6))
 
-#define P9813_FRAME_TOTAL_DIVISOR (3 * 255) // one frame at full brightness
+#define P9813_FRAME_POWER_DIVISOR (3 * 255) // one frame at full brightness
 
 static size_t p9813_packet_size(unsigned count)
 {
@@ -55,7 +55,7 @@ static inline bool p9813_frame_active(const struct p9813_frame frame)
   return frame.b || frame.g || frame.r;
 }
 
-static inline unsigned p9813_frame_total(const struct p9813_frame frame)
+static inline unsigned p9813_frame_power(const struct p9813_frame frame)
 {
   return frame.b + frame.r + frame.g;
 }
@@ -166,13 +166,13 @@ unsigned leds_protocol_p9813_count_active(struct leds_protocol_p9813 *protocol)
   return active;
 }
 
-unsigned leds_protocol_p9813_count_total(struct leds_protocol_p9813 *protocol)
+unsigned leds_protocol_p9813_count_power(struct leds_protocol_p9813 *protocol, unsigned index, unsigned count)
 {
-  unsigned total = 0;
+  unsigned power = 0;
 
-  for (unsigned index = 0; index < protocol->count; index++) {
-    total += p9813_frame_total(protocol->packet->frames[index]);
+  for (unsigned i = index; i < index + count; i++) {
+    power += p9813_frame_power(protocol->packet->frames[i]);
   }
 
-  return total / P9813_FRAME_TOTAL_DIVISOR;
+  return power / P9813_FRAME_POWER_DIVISOR;
 }

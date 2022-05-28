@@ -22,4 +22,4 @@ void leds_protocol_apa102_set(struct leds_protocol_apa102 *protocol, unsigned in
 void leds_protocol_apa102_set_all(struct leds_protocol_apa102 *protocol, struct leds_color color);
 
 unsigned leds_protocol_apa102_count_active(struct leds_protocol_apa102 *protocol);
-unsigned leds_protocol_apa102_count_total(struct leds_protocol_apa102 *protocol);
+unsigned leds_protocol_apa102_count_power(struct leds_protocol_apa102 *protocol, unsigned index, unsigned count);

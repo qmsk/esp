@@ -8,7 +8,7 @@
 
 #define LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL
 
-#define WS2812B_PIXEL_TOTAL_DIVISOR (3 * 255) // one pixel at full brightness
+#define WS2812B_PIXEL_POWER_DIVISOR (3 * 255) // one pixel at full brightness
 
 union ws2812b_pixel {
   struct {
@@ -25,7 +25,7 @@ static inline bool ws2812b_pixel_active(const union ws2812b_pixel pixel)
   return pixel.b || pixel.r || pixel.g;
 }
 
-static inline unsigned ws2812b_pixel_total(const union ws2812b_pixel pixel)
+static inline unsigned ws2812b_pixel_power(const union ws2812b_pixel pixel)
 {
   return pixel.b + pixel.r + pixel.g;
 }
@@ -51,4 +51,4 @@ void leds_protocol_ws2812b_set(struct leds_protocol_ws2812b *protocol, unsigned 
 void leds_protocol_ws2812b_set_all(struct leds_protocol_ws2812b *protocol, struct leds_color color);
 
 unsigned leds_protocol_ws2812b_count_active(struct leds_protocol_ws2812b *protocol);
-unsigned leds_protocol_ws2812b_count_total(struct leds_protocol_ws2812b *protocol);
+unsigned leds_protocol_ws2812b_count_power(struct leds_protocol_ws2812b *protocol, unsigned index, unsigned count);

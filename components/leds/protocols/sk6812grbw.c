@@ -131,13 +131,13 @@ unsigned leds_protocol_sk6812grbw_count_active(struct leds_protocol_sk6812grbw *
   return active;
 }
 
-unsigned leds_protocol_sk6812grbw_count_total(struct leds_protocol_sk6812grbw *protocol)
+unsigned leds_protocol_sk6812grbw_count_power(struct leds_protocol_sk6812grbw *protocol, unsigned index, unsigned count)
 {
-  unsigned total = 0;
+  unsigned power = 0;
 
-  for (unsigned index = 0; index < protocol->count; index++) {
-    total += sk6812grbw_pixel_total(protocol->pixels[index]);
+  for (unsigned i = index; i < index + count; i++) {
+    power += sk6812grbw_pixel_power(protocol->pixels[i]);
   }
 
-  return total / SK6812_GRBW_PIXEL_TOTAL_DIVISOR;
+  return power / SK6812_GRBW_PIXEL_POWER_DIVISOR;
 }

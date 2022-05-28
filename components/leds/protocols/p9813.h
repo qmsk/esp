@@ -21,4 +21,4 @@ void leds_protocol_p9813_set(struct leds_protocol_p9813 *protocol, unsigned inde
 void leds_protocol_p9813_set_all(struct leds_protocol_p9813 *protocol, struct leds_color color);
 
 unsigned leds_protocol_p9813_count_active(struct leds_protocol_p9813 *protocol);
-unsigned leds_protocol_p9813_count_total(struct leds_protocol_p9813 *protocol);
+unsigned leds_protocol_p9813_count_power(struct leds_protocol_p9813 *protocol, unsigned index, unsigned count);

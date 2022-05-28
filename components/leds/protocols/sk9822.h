@@ -28,14 +28,14 @@ union __attribute__((packed)) sk9822_pixel {
 
 #define LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
 
-#define SK9822_PIXEL_TOTAL_DIVISOR (3 * 255 * 31) // one pixel at full brightness
+#define SK9822_PIXEL_POWER_DIVISOR (3 * 255 * 31) // one pixel at full brightness
 
 static inline bool sk9822_pixel_active(const union sk9822_pixel pixel)
 {
   return (pixel.b || pixel.g || pixel.r) && SK9822_BRIGHTNESS(pixel.global) > 0;
 }
 
-static inline unsigned sk9822_pixel_total(const union sk9822_pixel pixel)
+static inline unsigned sk9822_pixel_power(const union sk9822_pixel pixel)
 {
   // use brightness to 0..31 to not overflow a 32-bit uint for a 16-bit LEDS_COUNT_MAX
   return (pixel.b + pixel.g + pixel.r) * SK9822_BRIGHTNESS(pixel.global);
@@ -63,4 +63,4 @@ void leds_protocol_sk9822_set(struct leds_protocol_sk9822 *protocol, unsigned in
 void leds_protocol_sk9822_set_all(struct leds_protocol_sk9822 *protocol, struct leds_color color);
 
 unsigned leds_protocol_sk9822_count_active(struct leds_protocol_sk9822 *protocol);
-unsigned leds_protocol_sk9822_count_total(struct leds_protocol_sk9822 *protocol);
+unsigned leds_protocol_sk9822_count_power(struct leds_protocol_sk9822 *protocol, unsigned index, unsigned count);

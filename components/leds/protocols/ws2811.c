@@ -127,13 +127,13 @@ unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol
   return active;
 }
 
-unsigned leds_protocol_ws2811_count_total(struct leds_protocol_ws2811 *protocol)
+unsigned leds_protocol_ws2811_count_power(struct leds_protocol_ws2811 *protocol, unsigned index, unsigned count)
 {
-  unsigned total = 0;
+  unsigned power = 0;
 
-  for (unsigned index = 0; index < protocol->count; index++) {
-    total += ws2811_pixel_total(protocol->pixels[index]);
+  for (unsigned i = index; i < index + count; i++) {
+    power += ws2811_pixel_power(protocol->pixels[i]);
   }
 
-  return total / WS2811_PIXEL_TOTAL_DIVISOR;
+  return power / WS2811_PIXEL_POWER_DIVISOR;
 }

@@ -30,3 +30,12 @@ CONFIG_ESP_MAIN_TASK_AFFINITY=0x0
 
 # Optimize memory usage
 CONFIG_MDNS_TASK_STACK_SIZE=2048
+
+# Tune ethernet -> lwip receive stack to handle UDP bursts for 16 artnet universes
+CONFIG_ETH_DMA_BUFFER_SIZE=1600
+CONFIG_ETH_DMA_RX_BUFFER_NUM=20
+CONFIG_ETH_DMA_TX_BUFFER_NUM=10
+
+# critically important for handling UDP bursts
+# the default =6 causes the majority of packets to be dropped for artnet universes >6
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=20

@@ -3,7 +3,7 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 # Features
 
 * Single codebase for ESP8266 and ESP32 support
-* Simple two-button + four-led physical interface for configuration reset and basic diagnostics
+* Simple two-button + four-led physical interface for configuration reset and basic diagnostics/tests
 * USB Console CLI and HTTP Web UI for configuration and advanced diagnostics (WiP)
 * Fully configurable via the USB Console CLI or HTTP Web UI
 * WiFi STA/AP support with DHCP or static addressing
@@ -91,43 +91,75 @@ If the `timeout` config is used, the console will use the UART0 to prompt the us
 
     ! Use [ENTER] to open console
 
-## Status LEDs
+## User LEDs / Buttons
 
-Designed for NodeMCU ESP8266 boards with the following fixed-function pins:
+Supports four LEDs and two buttons for a very basic user interface.
 
-* D0 (GPIO16): USER_LED (active-low with pull-up)
-* D3 (GPIO0): FLASH_LED (active-low with pull-up) + button
+Use the `make menuconfig` -> "qmsk-esp" component options to configure how the status LEDs/Buttons are connected.
+
+#### ESP8266
+
+Defaults for NodeMCU ESP8266 devkit, matching the built-in LEDs/buttons on the following pins:
+
+* D0 (GPIO16): USER_LED (active-low with pull-up) -> built-in LED
+* D3 (GPIO0): FLASH_LED (active-low with pull-up) -> built-in BOOT/FLASH button
 * D8 (GPIO15): ALERT_LED (active-high with pull-down)
 
 The active-low LEDs should be connected from +3.3V to the GPIO pin.
 The active-high LEDs should be connected from the GPIO pin to GND.
 
+#### ESP32
+
+Defaults for ESP32 devkits, without any built-in LEDs/buttons accessible on the external pins:
+
+* IO2: USER_LED (active-low with internal pull-up)
+* IO4: FLASH_LED (active-low with internal pull-up)
+* IO15: ALERT_LED (active-low with internal pull-up)
+
+The active-low LEDs should be connected from +3.3V to the GPIO pin.
+The active-high LEDs should be connected from the GPIO pin to GND.
+
+The built-in BOOT/FLASH button is connected to IO0 on the ESP32 devkits, but not all devkits break out IO0 on the external pin headers.
+
 ### User LED
 
+The USER LED on GPIO16 (ESP8266) / IO2 (ESP32) is used to indicate network connectivity:
+
 * Off: Boot / reset
-* Fast blinking: WiFi connecting
-* Slow blinking: WiFi disconnected
-* On: WiFi connected
+* Fast blinking: WiFi / Ethernet connecting
+* Slow blinking: WiFi / Ethernet disconnected
+* On: WiFi / Ethernet connected
 
 ### Flash LED
 
-Flashes for ~10ms on each spi-leds/dmx update.
+The FLASH LED on GPIO0 (ESP8266) / IO4 (ESP32) is used to indicate activity:
 
-### Alert LED
+Flashes for ~10ms on each LED output / update.
 
-* On: Boot failed
-* Slow: Missing configuration
-* Fast: Invalid configuration
+### Flash Button
 
-## Flash Button
-
-The FLASH button on GPIO0 is used to trigger config mode or a config reset.
+The FLASH button on GPIO0 (ESP8266) / GPIO4 (ESP32) is used to trigger config mode or a config reset.
 
 Press the FLASH button briefly until the USER LED starts flashing, and release to enter configuration mode. The UART0 console will be activated if stopped, which will block any I2S output.
 
 Press and hold FLASH button for >5s until the USER LED stops flashing, and the system will reset the configuration and restart.
 
 If the FLASH button is held pressed at app boot, the configuration will not be loaded, and the Alert LED will flash slowly to indicate that the default configuration is active. Note that this only applies on a soft reset, if the FLASH button is held at power reset, the bootloader will enter UART flashing mode.
+
+### Alert LED
+
+The ALERT LED on GPIO15 (ESP8266) / IO15 (ESP32) is used to indicate configuration issues:
+
+* On: Boot failed
+* Slow: Missing configuration
+* Fast: Invalid configuration
+
+### Alert Button (Test)
+
+The ALERT button on GPIO15 (ESP266) / IO15 (ESP32) is used to initiate the built-in self-test mode:
+
+* Short press: cycle through the test modes manually, leaving them active when released
+* Long press: cycle through the test modes automatically, and clear the test mode when released
 
 ## CLI
 

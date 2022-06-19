@@ -13,6 +13,7 @@
 
 #define TEST_MODE_COLOR_FRAMES 25
 #define TEST_MODE_CHASE_FRAMES 2
+#define TEST_MODE_RAINBOW_FADEIN_FRAMES 25
 
 int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color color)
 {
@@ -76,6 +77,12 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
 }
 
 /* Convert a value i from 0..c into a value between 0.0 .. 1.0 with a phase offset of a/b+c */
+static inline float interval(unsigned i, unsigned n)
+{
+  return (float)(i) / (float)(n);
+}
+
+/* Convert a value i from 0..c into a value between 0.0 .. 1.0 with a phase offset of a/b+c */
 static inline float phased_interval(unsigned i, unsigned n, unsigned a, unsigned b, unsigned c)
 {
   return (float)((i + a * n / b + c) % n) / (float)(n);
@@ -133,6 +140,12 @@ int leds_test_rainbow_frame(struct leds *leds, unsigned frame)
     float r3 = clamp(r2);
     float g3 = clamp(g2);
     float b3 = clamp(b2);
+
+    if (frame < TEST_MODE_RAINBOW_FADEIN_FRAMES) {
+      r3 *= interval(frame, TEST_MODE_RAINBOW_FADEIN_FRAMES);
+      g3 *= interval(frame, TEST_MODE_RAINBOW_FADEIN_FRAMES);
+      b3 *= interval(frame, TEST_MODE_RAINBOW_FADEIN_FRAMES);
+    }
 
     color.r = r3 * 255;
     color.g = g3 * 255;

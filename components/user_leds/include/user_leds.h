@@ -33,19 +33,14 @@ enum user_leds_state {
   USER_LEDS_READ,
 };
 
-struct user_led_options {
+struct user_leds_options {
   gpio_num_t gpio;
   enum user_leds_mode mode;
 };
 
-struct user_leds_options {
-  unsigned count;
-  struct user_led_options leds[];
-};
-
 struct user_leds;
 
-int user_leds_new(struct user_leds **ledsp, const struct user_leds_options *options);
+int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds_options options[]);
 
 /*
  * Run user_leds mainloop.

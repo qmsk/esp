@@ -4,7 +4,7 @@
 
 #include <logging.h>
 
-static int user_led_init_gpio(struct user_led *led, unsigned index, const struct user_led_options options)
+static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_leds_options options)
 {
   gpio_config_t config = {
       .pin_bit_mask = (1 << options.gpio),
@@ -32,7 +32,7 @@ static int user_led_init_gpio(struct user_led *led, unsigned index, const struct
   return 0;
 }
 
-int user_led_init(struct user_led *led, unsigned index, const struct user_led_options options)
+int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options)
 {
   int err;
 

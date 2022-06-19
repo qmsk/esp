@@ -5,14 +5,12 @@
 
 #include <esp_err.h>
 
-int user_leds_init(struct user_leds *leds, const struct user_leds_options *options)
+static int user_leds_init(struct user_leds *leds, const struct user_leds_options options[])
 {
   int err;
 
-  leds->count = options->count;
-
-  for (unsigned i = 0; i < options->count; i++) {
-    if ((err = user_led_init(&leds->leds[i], i, options->leds[i]))) {
+  for (unsigned i = 0; i < leds->count; i++) {
+    if ((err = user_led_init(&leds->leds[i], i, options[i]))) {
       LOG_ERROR("user_led_init[%u]", i);
       return err;
     }
@@ -31,7 +29,7 @@ int user_leds_init(struct user_leds *leds, const struct user_leds_options *optio
   return 0;
 }
 
-int user_leds_new(struct user_leds **ledsp, const struct user_leds_options *options)
+int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds_options options[])
 {
   struct user_leds *leds;
   int err;
@@ -41,7 +39,9 @@ int user_leds_new(struct user_leds **ledsp, const struct user_leds_options *opti
     return -1;
   }
 
-  if (!(leds->leds = calloc(options->count, sizeof(*leds->leds)))) {
+  leds->count = count;
+
+  if (!(leds->leds = calloc(count, sizeof(*leds->leds)))) {
     LOG_ERROR("calloc");
     err = -1;
     goto error;

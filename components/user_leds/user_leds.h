@@ -22,6 +22,9 @@
 #define USER_LEDS_PULSE_TICKS_OFF (50 / portTICK_RATE_MS)
 #define USER_LEDS_PULSE_TICKS_ON (200 / portTICK_RATE_MS)
 
+// read input every 1s
+#define USER_LEDS_READ_IDLE_TICKS (1000 / portTICK_RATE_MS)
+#define USER_LEDS_READ_HOLD_TICKS (1000 / portTICK_RATE_MS)
 
 // 10ms read wait
 #define USER_LEDS_READ_WAIT_TICKS (10 / portTICK_RATE_MS)
@@ -29,29 +32,32 @@
 #define USER_LEDS_EVENT_BITS ((1 << USER_LEDS_MAX) - 1)
 #define USER_LEDS_EVENT_BIT(i) (1 << i)
 
-struct user_leds_event {
-  enum user_leds_state state;
+enum user_leds_input_state {
+  USER_LEDS_READ_IDLE,
+  USER_LEDS_READ_WAIT,
+  USER_LEDS_READ,
 };
 
 struct user_led {
+  unsigned index;
   struct user_leds_options options;
 
-  SemaphoreHandle_t mutex;
   xQueueHandle queue;
 
   // set/override()
+  SemaphoreHandle_t mutex; // TODO
   enum user_leds_state set_state;
   bool set_override;
 
-  // read()
-  TaskHandle_t read_task;
-
-  // schedule()
-  portTickType tick; // next tick()
-
   // owned by task
-  enum user_leds_state state, output_state;
-  unsigned state_index;
+  enum user_leds_state output_state;
+  unsigned output_state_index;
+  TickType_t output_tick; // next scheduled tick()
+
+  // input
+  enum user_leds_input_state input_state;
+  TickType_t input_state_tick;
+  TickType_t input_tick; // next scheduled input_tick()
 };
 
 struct user_leds {
@@ -66,6 +72,11 @@ struct user_leds {
 
 /* user_led.c */
 int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options);
-TickType_t user_led_tick(struct user_led *led);
-TickType_t user_led_schedule(struct user_led *led, TickType_t period);
+
+TickType_t user_led_input_tick(struct user_led *led);
+TickType_t user_led_input_schedule(struct user_led *led, TickType_t period);
+
+TickType_t user_led_output_tick(struct user_led *led);
+TickType_t user_led_output_schedule(struct user_led *led, TickType_t period);
+
 void user_led_update(struct user_led *led);

@@ -36,7 +36,20 @@ int user_led_init(struct user_led *led, unsigned index, struct user_leds_options
 {
   int err;
 
+  led->index = index;
   led->options = options;
+
+  if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
+    led->input_tick = 0;
+  } else {
+    led->input_tick = portMAX_DELAY;
+  }
+
+  if (options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+    led->output_tick = 0;
+  } else {
+    led->output_tick = portMAX_DELAY;
+  }
 
   // enable GPIO output
   if ((err = user_led_init_gpio(led, index, options))) {
@@ -45,7 +58,7 @@ int user_led_init(struct user_led *led, unsigned index, struct user_leds_options
   }
 
   // setup task
-  if ((led->queue = xQueueCreate(1, sizeof(struct user_leds_event))) == NULL) {
+  if ((led->queue = xQueueCreate(1, sizeof(enum user_leds_state))) == NULL) {
     LOG_ERROR("xQueueCreate");
     return -1;
   }
@@ -87,24 +100,42 @@ static inline int user_led_input_read(struct user_led *led)
   return (led->options.mode & USER_LEDS_MODE_INVERTED_BIT) ? !level : level;
 }
 
-static void user_led_read_notify(struct user_led *led, int level)
+static void user_led_input_event(struct user_led *led, struct user_leds_input input)
 {
-  LOG_DEBUG("gpio=%d read_task=%p level=%d", led->options.gpio, led->read_task, level);
+  LOG_DEBUG("gpio=%d event index=%u type=%d tick=%u ticks=%u", led->options.gpio,
+    input.index,
+    input.event,
+    input.tick,
+    input.ticks
+  );
 
-  if (led->read_task) {
-    xTaskNotify(led->read_task, level ? USER_LEDS_READ_NOTIFY_BIT : 0, eSetBits);
+  if (led->options.input_queue) {
+    xQueueOverwrite(led->options.input_queue, &input);
+  }
 
-    led->read_task = false;
+  if (led->options.input_event_group) {
+    xEventGroupSetBits(led->options.input_event_group, led->options.input_event_bits);
   }
 }
 
-TickType_t user_led_tick(struct user_led *led)
+TickType_t user_led_input_tick(struct user_led *led)
 {
   // input states
-  switch(led->state) {
+  switch(led->input_state) {
+    case USER_LEDS_READ_IDLE:
+      if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+        led->input_state = USER_LEDS_READ_WAIT;
+      } else {
+        led->input_state = USER_LEDS_READ;
+      }
+
+      return USER_LEDS_READ_IDLE_TICKS;
+
     case USER_LEDS_READ_WAIT:
-      // wait for input to settle
-      led->state = USER_LEDS_READ;
+    // let input pin settle before reading
+      user_led_input_mode(led);
+
+      led->input_state = USER_LEDS_READ;
 
       LOG_DEBUG("gpio=%d: read wait", led->options.gpio);
 
@@ -112,45 +143,92 @@ TickType_t user_led_tick(struct user_led *led)
 
     case USER_LEDS_READ:
       // read input and notify waiting task
-      user_led_read_notify(led, user_led_input_read(led));
+      if (user_led_input_read(led)) {
+        if (led->input_state_tick) {
+          user_led_input_event(led, (struct user_leds_input) {
+            .index  = led->index,
+            .event  = USER_LEDS_INPUT_HOLD,
+            .tick   = led->input_state_tick,
+            .ticks  = xTaskGetTickCount() - led->input_state_tick,
+          });
+        } else {
+          led->input_state_tick = xTaskGetTickCount();
 
-      if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
-        // revert back to previous output mode
-        led->state = led->output_state;
+          user_led_input_event(led, (struct user_leds_input) {
+            .index  = led->index,
+            .event  = USER_LEDS_INPUT_PRESS,
+            .tick   = led->input_state_tick,
+            .ticks  = 0,
+          });
+        }
 
-        user_led_output_mode(led);
+      } else {
+        if (led->input_state_tick) {
+          user_led_input_event(led, (struct user_leds_input) {
+            .index  = led->index,
+            .event  = USER_LEDS_INPUT_RELEASE,
+            .tick   = led->input_state_tick,
+            .ticks  = xTaskGetTickCount() - led->input_state_tick,
+          });
+
+          led->input_state_tick = 0;
+        }
       }
 
-      break;
+      if (led->input_state_tick) {
+        if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+          // revert back to output mode
+          user_led_output_mode(led);
+
+          led->input_state = USER_LEDS_READ_WAIT;
+        } else {
+          led->input_state = USER_LEDS_READ;
+        }
+
+        return USER_LEDS_READ_HOLD_TICKS;
+
+      } else {
+        led->input_state = USER_LEDS_READ_IDLE;
+
+        if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+          // revert back to output mode
+          user_led_output_mode(led);
+        }
+
+        return USER_LEDS_READ_IDLE_TICKS;
+      }
 
     default:
-      break;
+      LOG_FATAL("invalid input_state=%d", led->input_state);
   }
+}
 
-  switch(led->state) {
+TickType_t user_led_output_tick(struct user_led *led)
+{
+  switch(led->output_state) {
     case USER_LEDS_OFF:
-      led->state_index = 0;
+      led->output_state_index = 0;
 
       user_led_output_off(led);
 
       return portMAX_DELAY;
 
     case USER_LEDS_ON:
-      led->state_index = 1;
+      led->output_state_index = 1;
 
       user_led_output_on(led);
 
       return portMAX_DELAY;
 
     case USER_LEDS_SLOW:
-      if (led->state_index) {
-        led->state_index = 0;
+      if (led->output_state_index) {
+        led->output_state_index = 0;
 
         user_led_output_off(led);
 
         return USER_LEDS_SLOW_TICKS_OFF;
       } else {
-        led->state_index = 1;
+        led->output_state_index = 1;
 
         user_led_output_on(led);
 
@@ -158,12 +236,12 @@ TickType_t user_led_tick(struct user_led *led)
       }
 
     case USER_LEDS_FAST:
-      if (led->state_index) {
-        led->state_index = 0;
+      if (led->output_state_index) {
+        led->output_state_index = 0;
 
         user_led_output_off(led);
       } else {
-        led->state_index = 1;
+        led->output_state_index = 1;
 
         user_led_output_on(led);
       }
@@ -171,26 +249,26 @@ TickType_t user_led_tick(struct user_led *led)
       return USER_LEDS_FAST_TICKS;
 
     case USER_LEDS_FLASH:
-      if (led->state_index) {
+      if (led->output_state_index) {
 
         user_led_output_off(led);
 
         return portMAX_DELAY;
       } else {
-        led->state_index = 1;
+        led->output_state_index = 1;
 
         return USER_LEDS_FLASH_TICKS;
       }
 
     case USER_LEDS_PULSE:
-      if (led->state_index) {
-        led->state_index = 0;
+      if (led->output_state_index) {
+        led->output_state_index = 0;
 
         user_led_output_off(led);
 
         return USER_LEDS_PULSE_TICKS_OFF;
       } else {
-        led->state_index = 1;
+        led->output_state_index = 1;
 
         user_led_output_on(led);
 
@@ -198,39 +276,59 @@ TickType_t user_led_tick(struct user_led *led)
       }
 
     default:
-      return portMAX_DELAY;
+      LOG_FATAL("invalid output_state=%d", led->output_state);
   }
 }
 
 // schedule next tick() period
-TickType_t user_led_schedule(struct user_led *led, TickType_t period)
+TickType_t user_led_input_schedule(struct user_led *led, TickType_t period)
 {
   TickType_t tick = xTaskGetTickCount();
 
   if (period == portMAX_DELAY) {
     // reset phase, indefinite period
-    led->tick = portMAX_DELAY;
+    led->input_tick = portMAX_DELAY;
 
-  } else if (led->tick == 0) {
+  } else if (led->input_tick == 0) {
     // start phase
-    led->tick = tick + period;
+    led->input_tick = tick + period;
 
   } else {
     // keep phase
-    led->tick += period;
+    led->input_tick += period;
   }
 
-  return led->tick;
+  return led->input_tick;
 }
 
-static void user_led_set_state(struct user_led *led, enum user_leds_state state)
+// schedule next tick() period
+TickType_t user_led_output_schedule(struct user_led *led, TickType_t period)
+{
+  TickType_t tick = xTaskGetTickCount();
+
+  if (period == portMAX_DELAY) {
+    // reset phase, indefinite period
+    led->output_tick = portMAX_DELAY;
+
+  } else if (led->output_tick == 0) {
+    // start phase
+    led->output_tick = tick + period;
+
+  } else {
+    // keep phase
+    led->output_tick += period;
+  }
+
+  return led->output_tick;
+}
+
+static void user_led_output_state(struct user_led *led, enum user_leds_state state)
 {
   LOG_DEBUG("gpio=%d: state=%d", led->options.gpio, state);
 
-  switch(led->state = state) {
+  switch(led->output_state = state) {
     case USER_LEDS_OFF:
-      led->output_state = state;
-      led->state_index = 0;
+      led->output_state_index = 0;
 
       user_led_output_mode(led);
       user_led_output_off(led); // XXX: redundant with tick()
@@ -238,8 +336,7 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
       break;
 
     case USER_LEDS_ON:
-      led->output_state = state;
-      led->state_index = 1;
+      led->output_state_index = 1;
 
       user_led_output_mode(led);
       user_led_output_on(led); // XXX: redundant with tick()
@@ -250,41 +347,26 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
     case USER_LEDS_FAST:
     case USER_LEDS_FLASH:
     case USER_LEDS_PULSE:
-      led->output_state = state;
-      led->state_index = 0;
+      led->output_state_index = 0;
 
       user_led_output_mode(led);
       user_led_output_on(led); // XXX: redundant with tick()
 
       break;
-
-    case USER_LEDS_READ:
-      if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
-        // let input settle before reading
-        led->state = USER_LEDS_READ_WAIT;
-      }
-
-      /* fall-through */
-
-    case USER_LEDS_READ_WAIT:
-      user_led_output_off(led);
-      user_led_input_mode(led);
-
-      break;
   }
 
   // reschedule immediate tick
-  led->tick = 0;
+  led->output_tick = 0;
 }
 
 void user_led_update(struct user_led *led)
 {
-  struct user_leds_event event;
+  enum user_leds_state state;
 
-  if (!xQueueReceive(led->queue, &event, 0)) {
-    LOG_WARN("spurious update, no event in queue");
+  if (!xQueueReceive(led->queue, &state, 0)) {
+    LOG_WARN("spurious update, no state in queue");
     return;
   }
 
-  user_led_set_state(led, event.state);
+  user_led_output_state(led, state);
 }

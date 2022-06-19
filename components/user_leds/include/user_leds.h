@@ -1,6 +1,9 @@
 #pragma once
 
 #include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
 
 #include <driver/gpio.h>
 #include <stdbool.h>
@@ -29,13 +32,34 @@ enum user_leds_state {
   USER_LEDS_FLASH,  // blink once
   USER_LEDS_PULSE,  // pulse off
 
-  USER_LEDS_READ_WAIT,
-  USER_LEDS_READ,
+};
+
+enum user_leds_input_event {
+  USER_LEDS_INPUT_PRESS,
+  USER_LEDS_INPUT_HOLD,
+  USER_LEDS_INPUT_RELEASE,
+};
+
+struct user_leds_input {
+  unsigned index; /** user_leds index */
+
+  enum user_leds_input_event event;
+
+  /**
+   * Number of ticks that button has been held for, or 0 when released.
+   */
+  TickType_t tick, ticks;
 };
 
 struct user_leds_options {
   gpio_num_t gpio;
+
   enum user_leds_mode mode;
+
+  // input mode
+  xQueueHandle input_queue; // struct user_leds_input
+  EventGroupHandle_t input_event_group;
+  EventBits_t input_event_bits;
 };
 
 struct user_leds;
@@ -61,13 +85,3 @@ int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state s
  */
 int user_leds_override(struct user_leds *leds, unsigned index, enum user_leds_state state);
 int user_leds_revert(struct user_leds *leds, unsigned index);
-
-/*
- * Briefly set GPIO as input, and read level set by external pull-up/down or switch.
- *
- * This will block concurrent user_leds_mode() changes for one tick during the read.
- * After the read, the output will remain floating.
- *
- * Returns <0 on error, 0 if idle, >0 if set.
- */
-int user_leds_read(struct user_leds *leds, unsigned index);

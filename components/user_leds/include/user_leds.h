@@ -26,8 +26,9 @@ enum user_leds_mode {
 };
 
 enum user_leds_state {
-  USER_LEDS_OFF,
-  USER_LEDS_ON,
+  USER_LEDS_IDLE,   // leave floating, enable input interrupts
+  USER_LEDS_OFF,    // drive inactive
+  USER_LEDS_ON,     // drive active
   USER_LEDS_SLOW,   // blink slow
   USER_LEDS_FAST,   // blink fast
   USER_LEDS_FLASH,  // blink once

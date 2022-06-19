@@ -30,6 +30,8 @@ static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_
           ((options.mode & USER_LEDS_MODE_INPUT_BIT) ? GPIO_MODE_DEF_INPUT : 0)
         | ((options.mode & USER_LEDS_MODE_OUTPUT_BIT) ? GPIO_MODE_DEF_OUTPUT : 0)
       ),
+
+      // XXX: pull-ups are only needed for inputs?
       .pull_up_en   = (options.mode & USER_LEDS_MODE_INVERTED_BIT) ? 1 : 0,
       .pull_down_en = (options.mode & USER_LEDS_MODE_INVERTED_BIT) ? 0 : 1,
   };
@@ -76,6 +78,19 @@ static inline void user_led_output_mode(struct user_led *led)
   }
 
   gpio_set_direction(led->options.gpio, (led->options.mode & USER_LEDS_MODE_INPUT_BIT) ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT);
+}
+
+static inline void user_led_output_idle(struct user_led *led)
+{
+  gpio_set_level(led->options.gpio, (led->options.mode & USER_LEDS_MODE_INVERTED_BIT) ? 1 : 0);
+
+  // disable output, leave floating on pull-ups
+  gpio_set_direction(led->options.gpio, GPIO_MODE_INPUT);
+
+  if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    // listen for input interrupts
+    gpio_intr_enable(led->options.gpio);
+  }
 }
 
 static inline void user_led_output_off(struct user_led *led)
@@ -134,7 +149,7 @@ int user_led_init(struct user_led *led, unsigned index, struct user_leds_options
 
   if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
     // initial read in input-only mode
-    led->input_state = USER_LEDS_READ_INIT;
+    led->input_state = USER_LEDS_READ_IDLE;
     led->input_tick = 0;
   } else {
     led->input_tick = portMAX_DELAY;
@@ -197,15 +212,6 @@ TickType_t user_led_input_tick(struct user_led *led)
 {
   // input states
   switch(led->input_state) {
-    case USER_LEDS_READ_INIT:
-      led->input_state = USER_LEDS_READ_IDLE;
-
-      if (led->input_state_tick) {
-        return USER_LEDS_READ_HOLD_TICKS;
-      } else {
-        return USER_LEDS_READ_IDLE_TICKS;
-      }
-
     case USER_LEDS_READ_IDLE:
       if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
         led->input_state = USER_LEDS_READ_WAIT;
@@ -213,17 +219,26 @@ TickType_t user_led_input_tick(struct user_led *led)
         led->input_state = USER_LEDS_READ;
       }
 
-      return USER_LEDS_READ_IDLE_TICKS;
+      if (led->input_state_tick) {
+        // for user_led_init_input() read -> USER_LEDS_INPUT_HOLD
+        return USER_LEDS_READ_HOLD_TICKS;
+      } else {
+        return USER_LEDS_READ_IDLE_TICKS;
+      }
 
     case USER_LEDS_READ_WAIT:
-    // let input pin settle before reading
-      user_led_input_mode(led);
+      if (led->output_state) {
+        // let input pin settle before reading
+        user_led_input_mode(led);
 
-      led->input_state = USER_LEDS_READ;
+        led->input_state = USER_LEDS_READ;
 
-      LOG_DEBUG("gpio=%d: read wait", led->options.gpio);
+        LOG_DEBUG("gpio=%d: read wait", led->options.gpio);
 
-      return USER_LEDS_READ_WAIT_TICKS;
+        return USER_LEDS_READ_WAIT_TICKS;
+      }
+
+      /* fall-through */
 
     case USER_LEDS_READ:
       // read input and notify waiting task
@@ -261,7 +276,7 @@ TickType_t user_led_input_tick(struct user_led *led)
       }
 
       if (led->input_state_tick) {
-        if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+        if (led->output_state) {
           // revert back to output mode
           user_led_output_mode(led);
 
@@ -275,7 +290,7 @@ TickType_t user_led_input_tick(struct user_led *led)
       } else {
         led->input_state = USER_LEDS_READ_IDLE;
 
-        if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+        if (led->output_state) {
           // revert back to output mode
           user_led_output_mode(led);
         }
@@ -290,7 +305,19 @@ TickType_t user_led_input_tick(struct user_led *led)
 
 TickType_t user_led_output_tick(struct user_led *led)
 {
+  if (!led->input_state && led->output_state) {
+    // force output mode
+    user_led_output_mode(led);
+  }
+
   switch(led->output_state) {
+    case USER_LEDS_IDLE:
+      led->output_state_index = 0;
+
+      user_led_output_idle(led);
+
+      return portMAX_DELAY;
+
     case USER_LEDS_OFF:
       led->output_state_index = 0;
 
@@ -335,8 +362,9 @@ TickType_t user_led_output_tick(struct user_led *led)
 
     case USER_LEDS_FLASH:
       if (led->output_state_index) {
+        user_led_output_idle(led);
 
-        user_led_output_off(led);
+        led->output_state = USER_LEDS_IDLE;
 
         return portMAX_DELAY;
       } else {

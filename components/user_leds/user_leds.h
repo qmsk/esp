@@ -33,7 +33,6 @@
 #define USER_LEDS_EVENT_BIT(i) (1 << i)
 
 enum user_leds_input_state {
-  USER_LEDS_READ_INIT,
   USER_LEDS_READ_IDLE,
   USER_LEDS_READ_WAIT,
   USER_LEDS_READ,

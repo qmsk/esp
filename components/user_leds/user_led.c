@@ -367,8 +367,6 @@ TickType_t user_led_output_schedule(struct user_led *led, TickType_t period)
 
 static void user_led_output_state(struct user_led *led, enum user_leds_state state)
 {
-  LOG_DEBUG("gpio=%d: state=%d", led->options.gpio, state);
-
   switch(led->output_state = state) {
     case USER_LEDS_OFF:
       led->output_state_index = 0;
@@ -397,10 +395,13 @@ void user_led_update(struct user_led *led)
 {
   enum user_leds_state state;
 
-  if (!xQueueReceive(led->queue, &state, 0)) {
-    LOG_WARN("spurious update, no state in queue");
-    return;
-  }
+  if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+    if (!xQueueReceive(led->queue, &state, 0)) {
+      LOG_DEBUG("[%u] queue empty", led->index);
+    } else {
+      LOG_DEBUG("[%u] queue state=%d", led->index, state);
 
-  user_led_output_state(led, state);
+      user_led_output_state(led, state);
+    }
+  }
 }

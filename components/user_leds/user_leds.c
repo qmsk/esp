@@ -148,7 +148,12 @@ int user_leds_get(struct user_leds *leds, unsigned index)
 
   struct user_led *led = &leds->leds[index];
 
-  LOG_DEBUG("[%u] gpio=%d", index, led->options.gpio);
+  if (!(led->options.mode & USER_LEDS_MODE_INPUT_BIT)) {
+    LOG_ERROR("[%u] not configured for input mode", index);
+    return -1;
+  }
+
+  LOG_DEBUG("[%u] gpio=%d mode=%04x", index, led->options.gpio, led->options.mode);
 
   if (led->input_state_tick) {
     return 1;
@@ -166,7 +171,12 @@ int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state s
 
   struct user_led *led = &leds->leds[index];
 
-  LOG_DEBUG("[%u] gpio=%d state=%d", index, led->options.gpio, state);
+  if (!(led->options.mode & USER_LEDS_MODE_OUTPUT_BIT)) {
+    LOG_ERROR("[%u] not configured for output mode", index);
+    return -1;
+  }
+
+  LOG_DEBUG("[%u] gpio=%d mode=%04x state=%d", index, led->options.gpio, led->options.mode, state);
 
   if (xQueueOverwrite(led->queue, &state) <= 0) {
     LOG_ERROR("xQueueOverwrite");

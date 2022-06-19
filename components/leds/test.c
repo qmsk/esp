@@ -6,6 +6,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <math.h>
+
 #define TEST_FRAME_RATE (25)
 #define TEST_FRAME_TICKS (1000 / TEST_FRAME_RATE / portTICK_RATE_MS)
 
@@ -71,6 +73,75 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
   } else {
     return 0;
   }
+}
+
+/* Convert a value i from 0..c into a value between 0.0 .. 1.0 with a phase offset of a/b+c */
+static inline float phased_interval(unsigned i, unsigned n, unsigned a, unsigned b, unsigned c)
+{
+  return (float)((i + a * n / b + c) % n) / (float)(n);
+}
+
+/* Convert a value x 0.0 .. 1.0 into a triangle wave between -1.0 ... +1.0 */
+static inline float interval2wave(float x)
+{
+  return fabsf(x * 2.0 - 1.0) * 3.0 - 1.0;
+}
+
+/* Clamp any value to between 0.0 .. 1.0 */
+static inline float clamp(float x)
+{
+  if (x < 0.0) {
+    return 0.0;
+  } else if (x > 1.0) {
+    return 1.0;
+  } else {
+    return x;
+  }
+}
+
+static inline uint8_t f2u8(float x) {
+  return x * 255;
+}
+
+int leds_test_rainbow_frame(struct leds *leds, unsigned frame)
+{
+  unsigned count = leds->options.count;
+  struct leds_color color;
+
+  switch (leds_color_parameter_for_protocol(leds->options.protocol)) {
+    case LEDS_COLOR_NONE:
+      break;
+
+    case LEDS_COLOR_DIMMER:
+      color.dimmer = 255;
+      break;
+
+    case LEDS_COLOR_WHITE:
+      color.white = 0;
+      break;
+  }
+
+  for (unsigned i = 0; i < count; i++) {
+    float r1 = phased_interval(i, count, 0, 3, frame);
+    float g1 = phased_interval(i, count, 1, 3, frame);
+    float b1 = phased_interval(i, count, 2, 3, frame);
+
+    float r2 = interval2wave(r1);
+    float g2 = interval2wave(g1);
+    float b2 = interval2wave(b1);
+
+    float r3 = clamp(r2);
+    float g3 = clamp(g2);
+    float b3 = clamp(b2);
+
+    color.r = r3 * 255;
+    color.g = g3 * 255;
+    color.b = b3 * 255;
+
+    leds_set(leds, i, color);
+  }
+
+  return TEST_FRAME_TICKS;
 }
 
 int leds_test_black_frame(struct leds *leds, unsigned frame)
@@ -146,6 +217,9 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
       return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
       });
+
+    case TEST_MODE_RAINBOW:
+      return leds_test_rainbow_frame(leds, frame);
 
     case TEST_MODE_END:
       return leds_test_black_frame(leds, frame);

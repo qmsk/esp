@@ -309,6 +309,7 @@ enum leds_test_mode {
   TEST_MODE_MAGENTA_RED,
   TEST_MODE_RED_BLACK,
 
+  TEST_MODE_RAINBOW,
   TEST_MODE_END
 };
 

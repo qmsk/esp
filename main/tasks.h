@@ -82,28 +82,26 @@ int start_taskf(struct task_options options, ...);
 
 #define ARTNET_LISTEN_TASK_STACK 2048
 
-// used for polling status led button inputs
-#define STATUS_LEDS_TASK_NAME "status-leds"
-#define STATUS_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
-#define STATUS_LEDS_TASK_AFFINITY TASKS_CPU_PRO
+// used for updating status leds and polling input buttons
+#define USER_LEDS_TASK_NAME "user-leds"
+#define USER_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
+#define USER_LEDS_TASK_AFFINITY TASKS_CPU_PRO
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define STATUS_LEDS_TASK_STACK 1024
+# define USER_LEDS_TASK_STACK 1024
 #elif CONFIG_IDF_TARGET_ESP32
-# define STATUS_LEDS_TASK_STACK 2048
+# define USER_LEDS_TASK_STACK 2048
 #endif
 
-// used for updating status leds
-#define STATUS_LEDS_USER_TASK_NAME  "status-led-user"  // max 16 chars
-#define STATUS_LEDS_FLASH_TASK_NAME "status-led-flash"
-#define STATUS_LEDS_ALERT_TASK_NAME "status-led-alert"
-#define STATUS_LED_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
-#define STATUS_LED_TASK_AFFINITY TASKS_CPU_PRO
+// used for handling user events
+#define USER_EVENTS_TASK_NAME  "user-events"  // max 16 chars
+#define USER_EVENTS_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
+#define USER_EVENTS_TASK_AFFINITY TASKS_CPU_PRO
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define STATUS_LED_TASK_STACK 512
+# define USER_EVENTS_TASK_STACK 1024
 #elif CONFIG_IDF_TARGET_ESP32
-# define STATUS_LED_TASK_STACK 1024
+# define USER_EVENTS_TASK_STACK 2048
 #endif
 
 // uart configuration and management

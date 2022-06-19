@@ -1,8 +1,9 @@
 #include "user.h"
+#include "user_leds.h"
+
 #include "artnet.h"
 #include "config.h"
 #include "console.h"
-#include "status_leds.h"
 #include "system.h"
 #include "wifi.h"
 
@@ -56,7 +57,7 @@ void user_state(enum user_state state)
     LOG_INFO("%d", state);
   }
 
-  status_leds_state(state);
+  user_leds_state(state);
 }
 
 void user_activity(enum user_activity activity)
@@ -70,7 +71,7 @@ void user_activity(enum user_activity activity)
     LOG_DEBUG("%05x", activity);
   }
 
-  status_leds_activity(activity);
+  user_leds_activity(activity);
 }
 
 void user_alert(enum user_alert alert)
@@ -83,7 +84,7 @@ void user_alert(enum user_alert alert)
     LOG_WARN("%d", alert);
   }
 
-  status_leds_alert(alert);
+  user_leds_alert(alert);
 }
 
 void user_config_disable()

@@ -9,9 +9,9 @@
 #include "log.h"
 #include "http.h"
 #include "pin_mutex.h"
-#include "status_leds.h"
 #include "system.h"
 #include "user.h"
+#include "user_leds.h"
 #include "wifi.h"
 
 #include <logging.h>
@@ -44,8 +44,8 @@ void app_main(void)
     abort();
   }
 
-  if ((err = init_status_leds())) {
-    LOG_ERROR("init_status_leds");
+  if ((err = init_user_leds())) {
+    LOG_ERROR("init_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
@@ -62,8 +62,8 @@ void app_main(void)
     abort();
   }
 
-  if ((err = start_status_leds())) {
-    LOG_ERROR("start_status_leds");
+  if ((err = start_user_leds())) {
+    LOG_ERROR("start_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

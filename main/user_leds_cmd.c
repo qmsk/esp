@@ -1,5 +1,5 @@
-#include "status_leds.h"
-#include "status_leds_set.h"
+#include "user_leds.h"
+#include "user_leds_set.h"
 
 #include <logging.h>
 
@@ -7,29 +7,29 @@
 
 #include <sdkconfig.h>
 
-static int parse_status_led_mode(const char *str)
+static int parse_user_leds_mode(const char *str)
 {
   if (!strcasecmp(str, "off")) {
-    return STATUS_LED_OFF;
+    return USER_LEDS_OFF;
   } else if (!strcasecmp(str, "on")) {
-    return STATUS_LED_ON;
+    return USER_LEDS_ON;
   } else if (!strcasecmp(str, "slow")) {
-    return STATUS_LED_SLOW;
+    return USER_LEDS_SLOW;
   } else if (!strcasecmp(str, "fast")) {
-    return STATUS_LED_FAST;
+    return USER_LEDS_FAST;
   } else if (!strcasecmp(str, "flash")) {
-    return STATUS_LED_FLASH;
+    return USER_LEDS_FLASH;
   } else if (!strcasecmp(str, "pulse")) {
-    return STATUS_LED_PULSE;
+    return USER_LEDS_PULSE;
   } else {
     return -1;
   }
 }
 
 #if CONFIG_STATUS_LEDS_USER_ENABLED
-int status_leds_user_cmd(int argc, char **argv, void *ctx)
+int user_leds_user_cmd(int argc, char **argv, void *ctx)
 {
-  enum status_led_mode mode = STATUS_LED_ON;
+  enum user_leds_state state = USER_LEDS_ON;
   const char *arg = NULL;
   int err;
 
@@ -37,11 +37,11 @@ int status_leds_user_cmd(int argc, char **argv, void *ctx)
 
   } else if ((err = cmd_arg_str(argc, argv, 1, &arg))) {
     return err;
-  } else if ((mode = parse_status_led_mode(arg)) < 0) {
+  } else if ((state = parse_user_leds_mode(arg)) < 0) {
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_user_led(mode, portMAX_DELAY))) {
+  if ((err = set_user_led(state, portMAX_DELAY))) {
     LOG_ERROR("set_user_led");
     return err;
   }
@@ -51,9 +51,9 @@ int status_leds_user_cmd(int argc, char **argv, void *ctx)
 #endif
 
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
-int status_leds_flash_cmd(int argc, char **argv, void *ctx)
+int user_leds_flash_cmd(int argc, char **argv, void *ctx)
 {
-  enum status_led_mode mode = STATUS_LED_FLASH;
+  enum user_leds_state state = USER_LEDS_FLASH;
   const char *arg = NULL;
   int err;
 
@@ -61,11 +61,11 @@ int status_leds_flash_cmd(int argc, char **argv, void *ctx)
 
   } else if ((err = cmd_arg_str(argc, argv, 1, &arg))) {
     return err;
-  } else if ((mode = parse_status_led_mode(arg)) < 0) {
+  } else if ((state = parse_user_leds_mode(arg)) < 0) {
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_flash_led(mode, portMAX_DELAY))) {
+  if ((err = set_flash_led(state, portMAX_DELAY))) {
     LOG_ERROR("set_flash_led");
     return err;
   }
@@ -75,9 +75,9 @@ int status_leds_flash_cmd(int argc, char **argv, void *ctx)
 #endif
 
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
-int status_leds_alert_cmd(int argc, char **argv, void *ctx)
+int user_leds_alert_cmd(int argc, char **argv, void *ctx)
 {
-  enum status_led_mode mode = STATUS_LED_ON;
+  enum user_leds_state state = USER_LEDS_ON;
   const char *arg = NULL;
   int err;
 
@@ -85,11 +85,11 @@ int status_leds_alert_cmd(int argc, char **argv, void *ctx)
 
   } else if ((err = cmd_arg_str(argc, argv, 1, &arg))) {
     return err;
-  } else if ((mode = parse_status_led_mode(arg)) < 0) {
+  } else if ((state = parse_user_leds_mode(arg)) < 0) {
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_alert_led(mode, portMAX_DELAY))) {
+  if ((err = set_alert_led(state, portMAX_DELAY))) {
     LOG_ERROR("set_alert_led");
     return err;
   }
@@ -98,19 +98,19 @@ int status_leds_alert_cmd(int argc, char **argv, void *ctx)
 }
 #endif
 
-const struct cmd status_leds_commands[] = {
+const struct cmd user_leds_commands[] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
-  { "user",   status_leds_user_cmd,     .usage = "[MODE]",  .describe = "Set USER LED" },
+  { "user",   user_leds_user_cmd,     .usage = "[STATE]", .describe = "Set USER LED" },
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
-  { "flash",  status_leds_flash_cmd,    .usage = "[MODE]",  .describe = "Set FLASH LED" },
+  { "flash",  user_leds_flash_cmd,    .usage = "[STATE]", .describe = "Set FLASH LED" },
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
-  { "alert",  status_leds_alert_cmd,    .usage = "[MODE]",  .describe = "Set ALERT LED" },
+  { "alert",  user_leds_alert_cmd,    .usage = "[STATE]", .describe = "Set ALERT LED" },
 #endif
   {}
 };
 
-const struct cmdtab status_leds_cmdtab = {
-  .commands = status_leds_commands,
+const struct cmdtab user_leds_cmdtab = {
+  .commands = user_leds_commands,
 };

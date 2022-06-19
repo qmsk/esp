@@ -8,7 +8,7 @@
 #include "leds.h"
 #include "log.h"
 #include "spiffs.h"
-#include "status_leds.h"
+#include "user_leds.h"
 #include "system.h"
 #include "vfs.h"
 #include "wifi.h"
@@ -30,8 +30,8 @@ const struct cmd console_cli_commands[] = {
   { "help",   console_help_cmd,     .describe = "Show commands" },
   { "exit",   console_exit_cmd,     .describe = "Exit CLI" },
 
-  { "status-leds",  .describe = "Status LEDs",
-      .subcommands = &status_leds_cmdtab,
+  { "user-leds",  .describe = "User LEDs",
+      .subcommands = &user_leds_cmdtab,
   },
   { "spiffs",       .describe = "SPI Flash Filesystem",
       .subcommands = &spiffs_cmdtab,

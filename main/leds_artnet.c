@@ -45,11 +45,19 @@ static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test, const st
   }
 }
 
-static void leds_artnet_test_start(struct leds_artnet_test *test, enum leds_test_mode mode)
+static void leds_artnet_test_select(struct leds_artnet_test *test, enum leds_test_mode mode)
 {
   LOG_INFO("test start mode=%d", mode);
 
   test->mode = mode;
+  test->frame_tick = xTaskGetTickCount();
+  test->frame = 0;
+}
+static void leds_artnet_test_auto(struct leds_artnet_test *test)
+{
+  LOG_INFO("test auto mode=%d", test->mode);
+
+  test->mode++;
   test->frame_tick = xTaskGetTickCount();
   test->frame = 0;
 }
@@ -89,7 +97,7 @@ static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_
     test->frame_tick = xTaskGetTickCount();
   } else {
     // end
-    test->frame_tick = 0;
+    leds_artnet_test_reset(test);
   }
 }
 
@@ -153,9 +161,12 @@ static void leds_artnet_main(void *ctx)
     bool unsync = false, sync = false, test = false, clear = false;
 
     if (event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT)) {
-      if (!leds_artnet_test_active(&test_state) || !leds_test_state.auto_mode) {
-        // start test, or force next test mode
-        leds_artnet_test_start(&test_state, leds_test_state.mode);
+      if (leds_test_state.mode) {
+        // force specific test mode
+        leds_artnet_test_select(&test_state, leds_test_state.mode);
+      } else if (leds_test_state.auto_mode && !leds_artnet_test_active(&test_state)) {
+        // start auto test
+        leds_artnet_test_auto(&test_state);
       }
     }
 

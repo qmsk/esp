@@ -7,7 +7,9 @@ struct leds_test_state leds_test_state;
 
 void trigger_leds_test()
 {
-  if (leds_test_state.mode++ >= TEST_MODE_END) {
+  leds_test_state.mode++;
+
+  if (leds_test_state.mode >= TEST_MODE_END) {
     leds_test_state.mode = TEST_MODE_CHASE;
   }
 
@@ -19,6 +21,7 @@ void trigger_leds_test()
 
 void auto_leds_test()
 {
+  leds_test_state.mode = 0;
   leds_test_state.auto_mode = true;
 
   LOG_INFO("mode=%d auto=%d", leds_test_state.mode, leds_test_state.auto_mode);

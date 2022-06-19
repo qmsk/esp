@@ -239,18 +239,35 @@ int leds_cmd_test(int argc, char **argv, void *ctx)
   const struct leds_config *config;
   struct leds_state *state;
   unsigned leds_id;
+  const char *mode_arg = NULL;
+  enum leds_test_mode mode = 0;
   int err;
 
   if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
+    return err;
+
+  if (argc > 2 && (err = cmd_arg_str(argc, argv, 2, &mode_arg)))
     return err;
 
   if ((err = lookup_leds(leds_id, &config, &state))) {
     return err;
   }
 
-  if ((err = test_leds(state))) {
-    LOG_ERROR("test_leds");
-    return err;
+  if (mode_arg && (mode = config_enum_to_value(leds_test_mode_enum, mode_arg)) < 0) {
+    LOG_ERROR("invalid mode=%s", mode_arg);
+    return -1;
+  }
+
+  if (mode) {
+    if ((err = test_leds_mode(state, mode))) {
+      LOG_ERROR("test_leds_mode");
+      return err;
+    }
+  } else {
+    if ((err = test_leds(state))) {
+      LOG_ERROR("test_leds");
+      return err;
+    }
   }
 
   return 0;
@@ -353,7 +370,7 @@ const struct cmd leds_commands[] = {
   { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
-  { "test",     leds_cmd_test,    .usage = "LEDS-ID",                   .describe = "Output test patterns" },
+  { "test",     leds_cmd_test,    .usage = "LEDS-ID [MODE]",            .describe = "Output test patterns" },
   { "stats",    leds_cmd_stats,   .usage = "[reset]",                   .describe = "Show/reset LED stats" },
   { }
 };

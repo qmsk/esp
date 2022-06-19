@@ -11,6 +11,9 @@
 // reset if held for >5s
 #define USER_LEDS_CONFIG_RESET_THRESHOLD (5000 / portTICK_RATE_MS)
 
+// reset if held for >1s
+#define USER_LEDS_TEST_RESET_THRESHOLD (500 / portTICK_RATE_MS)
+
 xTaskHandle user_events_task;
 
 // TODO: read at boot -> disable config load, enable config mode
@@ -66,21 +69,28 @@ void on_user_test_input(struct user_leds_input input)
 {
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
-      LOG_WARN("start");
-      override_user_led(input.index, USER_LEDS_PULSE); // feedback
-      user_test_mode();
+      LOG_WARN("trigger");
+      user_test_trigger();
 
       break;
 
     case USER_LEDS_INPUT_HOLD:
-      LOG_WARN("continue");
+      if (input.hold > USER_LEDS_TEST_RESET_THRESHOLD) {
+        LOG_WARN("hold");
+        user_test_hold();
+      } else {
+        LOG_WARN("wait");
+      }
 
       break;
 
     case USER_LEDS_INPUT_RELEASE:
-      LOG_WARN("cancel");
-      revert_user_led(input.index);
-      user_test_cancel();
+      if (input.hold > USER_LEDS_TEST_RESET_THRESHOLD) {
+        LOG_WARN("cancel");
+        user_test_cancel();
+      } else {
+        LOG_WARN("coast");
+      }
 
       break;
   }

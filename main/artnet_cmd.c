@@ -172,13 +172,6 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
   return 0;
 }
 
-int artnet_cmd_test(int argc, char **argv, void *ctx)
-{
-  test_artnet();
-
-  return 0;
-}
-
 int artnet_cmd_sync(int argc, char **argv, void *ctx)
 {
   int err;
@@ -199,7 +192,6 @@ int artnet_cmd_sync(int argc, char **argv, void *ctx)
 const struct cmd artnet_commands[] = {
   { "info",      artnet_cmd_info,     .usage = "",                      .describe = "Show configuration" },
   { "stats",     artnet_cmd_stats,    .usage = "[reset]",               .describe = "Show/reset receiver and output stats" },
-  { "test",      artnet_cmd_test,     .usage = "",                      .describe = "Trigger output test mode" },
   { "sync",      artnet_cmd_sync,     .usage = "",                      .describe = "Force output sync" },
   { }
 };

@@ -1,9 +1,9 @@
 #include "user.h"
 #include "user_leds.h"
 
-#include "artnet.h"
 #include "config.h"
 #include "console.h"
+#include "leds_test.h"
 #include "system.h"
 #include "wifi.h"
 
@@ -109,12 +109,17 @@ void user_config_reset()
   system_restart();
 }
 
-void user_test_mode()
+void user_test_trigger()
 {
-  test_artnet();
+  trigger_leds_test();
+}
+
+void user_test_hold()
+{
+  auto_leds_test();
 }
 
 void user_test_cancel()
 {
-  cancel_artnet_test();
+  reset_leds_test();
 }

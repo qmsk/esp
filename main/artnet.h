@@ -17,9 +17,3 @@ int start_artnet();
  * reconfigure artnet receiver
  */
 int update_artnet_network();
-
-/*
- * Test artnet outputs
- */
-void test_artnet();
-void cancel_artnet_test();

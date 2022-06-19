@@ -41,5 +41,6 @@ void user_config_disable();
 void user_config_mode();
 void user_config_reset();
 
-void user_test_mode();
+void user_test_trigger();
+void user_test_hold();
 void user_test_cancel();

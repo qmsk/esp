@@ -3,6 +3,7 @@
 #include "leds_config.h"
 #include "leds_state.h"
 #include "leds_stats.h"
+#include "leds_test.h"
 #include "artnet_state.h"
 #include "tasks.h"
 
@@ -19,7 +20,7 @@ struct leds_artnet_test {
 
 static bool leds_artnet_test_active(struct leds_artnet_test *test)
 {
-  return !!test->frame_tick;
+  return test->mode;
 }
 
 /* Return number of ticks to wait for next test frame, or portMAX_DELAY if not in test mode */
@@ -44,21 +45,12 @@ static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test, const st
   }
 }
 
-static void leds_artnet_test_start(struct leds_artnet_test *test)
+static void leds_artnet_test_start(struct leds_artnet_test *test, enum leds_test_mode mode)
 {
-  LOG_INFO("test start");
+  LOG_INFO("test start mode=%d", mode);
 
-  test->mode = 0;
+  test->mode = mode;
   test->frame_tick = xTaskGetTickCount();
-  test->frame = 0;
-}
-
-static void leds_artnet_test_end(struct leds_artnet_test *test)
-{
-  LOG_INFO("test end");
-
-  test->mode = TEST_MODE_END;
-  test->frame_tick = 0;
   test->frame = 0;
 }
 
@@ -71,7 +63,7 @@ static void leds_artnet_test_reset(struct leds_artnet_test *test)
   test->frame = 0;
 }
 
-static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_test *test)
+static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_test *test, bool auto_mode)
 {
   int frame_ticks;
 
@@ -81,20 +73,23 @@ static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_
 
   if ((frame_ticks = leds_set_test(state->leds, test->mode, test->frame)) < 0) {
     LOG_ERROR("leds_set_test");
-    test->mode = 0;
-    test->frame = 0;
-  } else if (frame_ticks == 0) {
-    test->mode++;
-    test->frame = 0;
-  } else {
+    leds_artnet_test_reset(test);
+  } else if (frame_ticks) {
     // tick for next frame
     test->frame++;
     test->frame_tick += frame_ticks;
-  }
-
-  // end of test cycle?
-  if (test->mode > TEST_MODE_END) {
-    leds_artnet_test_reset(test);
+  } else if (!auto_mode) {
+    // pause
+    test->frame = 0;
+    test->frame_tick = 0;
+  } else if (test->mode < TEST_MODE_END) {
+    // advance to next mode
+    test->mode++;
+    test->frame = 0;
+    test->frame_tick = xTaskGetTickCount();
+  } else {
+    // end
+    test->frame_tick = 0;
   }
 }
 
@@ -157,67 +152,74 @@ static void leds_artnet_main(void *ctx)
     // start/stop test mode
     bool unsync = false, sync = false, test = false, clear = false;
 
+    if (event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT)) {
+      if (!leds_artnet_test_active(&test_state) || !leds_test_state.auto_mode) {
+        // start test, or force next test mode
+        leds_artnet_test_start(&test_state, leds_test_state.mode);
+      }
+    }
+
     if (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
       sync = true;
     }
-    if (event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT)) {
-      leds_artnet_test_start(&test_state);
-    }
 
-    if (leds_artnet_test_active(&test_state)) {
-      if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS) || (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT))) {
-        // have output data, end test
-        leds_artnet_test_end(&test_state);
-      }
+    if (sync || (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
+      if (leds_artnet_test_active(&test_state)) {
+        // have output data, cancel test
+        leds_artnet_test_reset(&test_state);
 
-      WITH_STATS_TIMER(&stats->test) {
-        leds_artnet_test_frame(state, &test_state);
-      }
-
-      test = true;
-    } else if (state->config->artnet_dmx_timeout && !event_bits) {
-      LOG_DEBUG("leds%d: timeout", state->index + 1);
-
-      stats_counter_increment(&stats->timeout);
-
-      clear = true;
-    }
-
-    // set output from artnet universe
-    for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
-      if (!(event_bits & (1 << index))) {
-        continue;
-      }
-
-      if (artnet_output_read(state->artnet.outputs[index], state->artnet.dmx, 0)) {
-        LOG_WARN("leds%d: artnet_output[%d] empty", state->index + 1, index);
-        continue;
-      }
-
-      WITH_STATS_TIMER(&stats->set) {
-        leds_artnet_set(state, index, state->artnet.dmx);
-      }
-
-      if (!state->artnet.dmx->sync_mode) {
-        // at least one DMX update is in non-synchronous mode, so force update
-        unsync = true;
-      }
-    }
-
-    // tx output if required
-    if (unsync || sync || test) {
-      WITH_STATS_TIMER(&stats->update) {
-        if (update_leds(state)) {
-          LOG_WARN("leds%d: update_leds", state->index + 1);
-          continue;
+        if (leds_clear_all(state->leds)) {
+          LOG_WARN("leds_clear_all");
         }
       }
     }
 
-    if (clear) {
+    if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
+      // set output from artnet universe
+      for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
+        if (!(event_bits & (1 << index))) {
+          continue;
+        }
+
+        if (artnet_output_read(state->artnet.outputs[index], state->artnet.dmx, 0)) {
+          LOG_WARN("leds%d: artnet_output[%d] empty", state->index + 1, index);
+          continue;
+        }
+
+        WITH_STATS_TIMER(&stats->set) {
+          leds_artnet_set(state, index, state->artnet.dmx);
+        }
+
+        if (!state->artnet.dmx->sync_mode) {
+          // at least one DMX update is in non-synchronous mode, so force update
+          unsync = true;
+        }
+      }
+    } else if (leds_artnet_test_active(&test_state)) {
+      // set test frame
+      WITH_STATS_TIMER(&stats->test) {
+        leds_artnet_test_frame(state, &test_state, leds_test_state.auto_mode);
+      }
+
+      test = true;
+
+    } else if (state->config->artnet_dmx_timeout) {
+      LOG_DEBUG("leds%d: timeout", state->index + 1);
+
+      stats_counter_increment(&stats->timeout);
+
+      if (leds_clear_all(state->leds)) {
+        LOG_WARN("leds_clear_all");
+      }
+
+      clear = true;
+    }
+
+    // tx output if required
+    if (unsync || sync || test || clear) {
       WITH_STATS_TIMER(&stats->update) {
-        if (clear_leds(state)) {
-          LOG_WARN("leds%d: clear_leds", state->index + 1);
+        if (update_leds(state)) {
+          LOG_WARN("leds%d: update_leds", state->index + 1);
           continue;
         }
       }

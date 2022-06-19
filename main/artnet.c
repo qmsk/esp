@@ -251,24 +251,3 @@ void notify_artnet_outputs(EventBits_t bits)
     }
   }
 }
-
-void test_artnet()
-{
-  if (!artnet) {
-    LOG_WARN("artnet disabled");
-    return;
-  }
-
-  notify_artnet_outputs(1 << LEDS_ARTNET_EVENT_TEST_BIT);
-}
-
-void cancel_artnet_test()
-{
-  if (!artnet) {
-    LOG_WARN("artnet disabled");
-    return;
-  }
-
-  // force-sync will abort the test mode
-  notify_artnet_outputs(1 << LEDS_ARTNET_EVENT_SYNC_BIT);
-}

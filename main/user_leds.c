@@ -1,4 +1,6 @@
 #include "user_leds.h"
+#include "user_leds_config.h"
+#include "user_leds_input.h"
 #include "user_leds_set.h"
 #include "user.h"
 #include "tasks.h"
@@ -9,15 +11,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <sdkconfig.h>
-
-// read FLASH every 1s
-#define USER_LEDS_READ_TICKS (1000 / portTICK_RATE_MS)
-
-// reset if held for >5s
-#define USER_LEDS_CONFIG_RESET_THRESHOLD 5
-
-// test if held for >1s
-#define USER_LEDS_TEST_THRESHOLD 1
 
 enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
   [USER_STATE_BOOT]             = USER_LEDS_OFF,
@@ -35,55 +28,82 @@ enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_SETUP]        = USER_LEDS_FAST,
 };
 
+// state
+struct user_leds *user_leds;
+xTaskHandle user_leds_task;
+
+QueueHandle_t user_leds_input_queue;
+
 // config
-enum user_led {
-#if CONFIG_STATUS_LEDS_USER_ENABLED
-  USER_LED,
+#define USER_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#if CONFIG_STATUS_LEDS_USER_MODE_TEST
+  #define USER_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+#else
+  #define USER_LED_MODE_INPUT_BIT 0
 #endif
-#if CONFIG_STATUS_LEDS_FLASH_ENABLED
-  FLASH_LED,
-#endif
-#if CONFIG_STATUS_LEDS_ALERT_ENABLED
-  ALERT_LED,
+#if CONFIG_STATUS_LEDS_USER_GPIO_INVERTED
+  #define USER_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+#else
+  #define USER_LED_MODE_INVERTED_BIT 0
 #endif
 
-  USER_LEDS_COUNT
-};
+#define FLASH_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+  #define FLASH_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+#else
+  #define FLASH_LED_MODE_INPUT_BIT 0
+#endif
+#if CONFIG_STATUS_LEDS_FLASH_GPIO_INVERTED
+  #define FLASH_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+#else
+  #define FLASH_LED_MODE_INVERTED_BIT 0
+#endif
 
-static const struct user_leds_options user_leds_options[] = {
+#define ALERT_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
+  #define ALERT_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+#else
+  #define ALERT_LED_MODE_INPUT_BIT 0
+#endif
+#if CONFIG_STATUS_LEDS_ALERT_GPIO_INVERTED
+  #define ALERT_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+#else
+  #define ALERT_LED_MODE_INVERTED_BIT 0
+#endif
+
+static struct user_leds_options user_leds_options[] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   [USER_LED] = {
     .gpio = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
-  #if CONFIG_STATUS_LEDS_USER_GPIO_INVERTED
-    .mode = USER_LEDS_MODE_OUTPUT_BIT | USER_LEDS_MODE_INVERTED_BIT,
-  #endif
+    .mode = USER_LED_MODE_INPUT_BIT | USER_LED_MODE_OUTPUT_BIT | USER_LED_MODE_INVERTED_BIT,
   },
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
   [FLASH_LED] = {
     .gpio = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
-  #if CONFIG_STATUS_LEDS_FLASH_GPIO_INVERTED
-    .mode = USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_OUTPUT_BIT | USER_LEDS_MODE_INVERTED_BIT,
-  #endif
+    .mode = FLASH_LED_MODE_INPUT_BIT | FLASH_LED_MODE_OUTPUT_BIT | FLASH_LED_MODE_INVERTED_BIT,
   },
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
   [ALERT_LED] = {
     .gpio = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
-  #if CONFIG_STATUS_LEDS_ALERT_GPIO_INVERTED
-    .mode = USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_OUTPUT_BIT | USER_LEDS_MODE_INVERTED_BIT,
-  #endif
+    .mode = ALERT_LED_MODE_INPUT_BIT | ALERT_LED_MODE_OUTPUT_BIT | ALERT_LED_MODE_INVERTED_BIT,
   },
 #endif
 };
 
-// state
-struct user_leds *user_leds;
-xTaskHandle user_leds_task;
-
 int init_user_leds()
 {
   int err;
+
+  if ((user_leds_input_queue = xQueueCreate(1, sizeof(struct user_leds_input))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  for (unsigned i = 0; i < USER_LEDS_COUNT; i++) {
+    user_leds_options[i].input_queue = user_leds_input_queue;
+  }
 
   if ((err = user_leds_new(&user_leds, USER_LEDS_COUNT, user_leds_options))) {
     LOG_ERROR("user_leds_new");
@@ -93,128 +113,9 @@ int init_user_leds()
   return 0;
 }
 
-static void init_config_button(struct user_leds *user_leds, enum user_led led)
-{
-  int ret;
-
-  if ((ret = user_leds_read(user_leds, led)) < 0) {
-    LOG_WARN("user_leds_read");
-  } else if (ret) {
-    LOG_WARN("config disable");
-
-    // temporarily disable configuration loading
-    user_config_disable();
-  }
-}
-
-static void read_config_button(struct user_leds *user_leds, enum user_led led)
-{
-  static int boot = 1, hold = 0;
-  int ret;
-  int released = 0;
-
-  if ((ret = user_leds_read(user_leds, led)) < 0) {
-    LOG_WARN("user_leds_read");
-    return;
-  } else if (ret && boot) {
-    // do not initiate config reset if held during boot, assume waking up after reset
-    LOG_WARN("ignored (disarmed at boot)");
-  } else if (ret) {
-    hold++;
-    LOG_INFO("hold=%d", hold);
-  } else if (hold > 0) {
-    released = hold;
-    LOG_INFO("released=%d", released);
-    hold = 0;
-  } else if (boot) {
-    // reset boot state, accept button press
-    LOG_INFO("armed");
-    boot = 0;
-  }
-
-  // button must be held for threshold samples to reset, and is canceled if released before that
-  if (hold > USER_LEDS_CONFIG_RESET_THRESHOLD) {
-    LOG_WARN("config reset");
-    user_state(USER_STATE_RESET);
-    user_leds_revert(user_leds, led);
-    user_config_reset();
-  } else if (hold == 1) {
-    // trigger once at start of flash sequence
-    LOG_WARN("config");
-    user_leds_override(user_leds, led, USER_LEDS_PULSE);
-    user_config_mode();
-  } else if (released > 0) {
-    LOG_WARN("cancel");
-    user_leds_revert(user_leds, led);
-  }
-}
-
-static void read_test_button(struct user_leds *user_leds, enum user_led led)
-{
-  static int hold = 0;
-  int ret;
-  int released = 0;
-
-  if ((ret = user_leds_read(user_leds, led)) < 0) {
-    LOG_WARN("status_led_read");
-    return;
-  } else if (ret) {
-    hold++;
-    LOG_INFO("hold=%d", hold);
-  } else if (hold > 0) {
-    released = hold;
-    LOG_INFO("released=%d", released);
-    hold = 0;
-  }
-
-  // button must be held for threshold samples to trigger, and is held to keep the test active
-  if (hold > USER_LEDS_TEST_THRESHOLD) {
-    LOG_WARN("continue");
-  } else if (hold == USER_LEDS_TEST_THRESHOLD) {
-    LOG_WARN("start");
-    user_leds_override(user_leds, led, USER_LEDS_PULSE);
-    user_test_mode();
-  } else if (released) {
-    LOG_WARN("cancel");
-    user_leds_revert(user_leds, led);
-    user_test_cancel();
-  }
-}
-
-#if CONFIG_IDF_TARGET_ESP32
-// esp-idf vTaskDelayUntil compat macro is broken
-# undef vTaskDelayUntil
-# define vTaskDelayUntil xTaskDelayUntil
-#endif
-
-// TODO: move to user_events.c
-xTaskHandle user_events_task;
-
-void user_events_main(void *arg)
-{
-  struct user_leds *user_leds = arg;
-
-#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
-  // needs flash LED task to be running
-  init_config_button(user_leds, FLASH_LED);
-#endif
-
-  for (TickType_t tick = xTaskGetTickCount(); ; vTaskDelayUntil(&tick, USER_LEDS_READ_TICKS)) {
-  #if CONFIG_STATUS_LEDS_USER_MODE_TEST
-    read_test_button(user_leds, USER_LED);
-  #endif
-  #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
-    read_config_button(user_leds, FLASH_LED);
-  #endif
-  #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
-    read_test_button(user_leds, ALERT_LED);
-  #endif
-  }
-}
-
 int start_user_leds()
 {
-  struct task_options leds_task_options = {
+  struct task_options task_options = {
     .main       = user_leds_main,
     .name       = USER_LEDS_TASK_NAME,
     .stack_size = USER_LEDS_TASK_STACK,
@@ -223,15 +124,6 @@ int start_user_leds()
     .handle     = &user_leds_task,
     .affinity   = USER_LEDS_TASK_AFFINITY,
   };
-  struct task_options events_task_options = {
-    .main       = user_events_main,
-    .name       = USER_EVENTS_TASK_NAME,
-    .stack_size = USER_EVENTS_TASK_STACK,
-    .arg        = user_leds,
-    .priority   = USER_EVENTS_TASK_PRIORITY,
-    .handle     = &user_events_task,
-    .affinity   = USER_EVENTS_TASK_AFFINITY,
-  };
   int err;
 
   if (!user_leds) {
@@ -239,19 +131,22 @@ int start_user_leds()
     return -1;
   }
 
-  if ((err = start_task(leds_task_options))) {
+  if ((err = start_task(task_options))) {
     LOG_ERROR("start_task[%s]", USER_LEDS_TASK_NAME);
-    return err;
-  }
-
-  if ((err = start_task(events_task_options))) {
-    LOG_ERROR("start_task[%s]", USER_EVENTS_TASK_NAME);
     return err;
   }
 
   return 0;
 }
 
+int read_user_leds_input(struct user_leds_input *inputp, TickType_t timeout)
+{
+  if (!xQueueReceive(user_leds_input_queue, inputp, timeout)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   int set_user_led(enum user_leds_state state, TickType_t timeout)

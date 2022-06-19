@@ -11,6 +11,7 @@
 #include "pin_mutex.h"
 #include "system.h"
 #include "user.h"
+#include "user_events.h"
 #include "user_leds.h"
 #include "wifi.h"
 
@@ -50,6 +51,12 @@ void app_main(void)
     abort();
   }
 
+  if ((err = init_user_events())) {
+    LOG_ERROR("init_user_events");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
   if ((err = init_system())) {
     LOG_ERROR("init_system");
     user_alert(USER_ALERT_ERROR_BOOT);
@@ -64,6 +71,12 @@ void app_main(void)
 
   if ((err = start_user_leds())) {
     LOG_ERROR("start_user_leds");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if ((err = start_user_events())) {
+    LOG_ERROR("start_user_events");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

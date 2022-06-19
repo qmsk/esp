@@ -82,6 +82,17 @@ int start_taskf(struct task_options options, ...);
 
 #define ARTNET_LISTEN_TASK_STACK 2048
 
+// used for handling user events
+#define USER_EVENTS_TASK_NAME  "user-events"  // max 16 chars
+#define USER_EVENTS_TASK_PRIORITY (tskIDLE_PRIORITY + 6)
+#define USER_EVENTS_TASK_AFFINITY TASKS_CPU_PRO
+
+#if CONFIG_IDF_TARGET_ESP8266
+# define USER_EVENTS_TASK_STACK 1024
+#elif CONFIG_IDF_TARGET_ESP32
+# define USER_EVENTS_TASK_STACK 2048
+#endif
+
 // used for updating status leds and polling input buttons
 #define USER_LEDS_TASK_NAME "user-leds"
 #define USER_LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
@@ -91,17 +102,6 @@ int start_taskf(struct task_options options, ...);
 # define USER_LEDS_TASK_STACK 1024
 #elif CONFIG_IDF_TARGET_ESP32
 # define USER_LEDS_TASK_STACK 2048
-#endif
-
-// used for handling user events
-#define USER_EVENTS_TASK_NAME  "user-events"  // max 16 chars
-#define USER_EVENTS_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
-#define USER_EVENTS_TASK_AFFINITY TASKS_CPU_PRO
-
-#if CONFIG_IDF_TARGET_ESP8266
-# define USER_EVENTS_TASK_STACK 1024
-#elif CONFIG_IDF_TARGET_ESP32
-# define USER_EVENTS_TASK_STACK 2048
 #endif
 
 // uart configuration and management

@@ -14,19 +14,38 @@
 xTaskHandle user_events_task;
 
 // TODO: read at boot -> disable config load, enable config mode
-// TODO: ignore when pressed at boot
+void init_user_config_input(enum user_led led)
+{
+  int ret;
+
+  if ((ret = get_user_led(led)) < 0) {
+    LOG_ERROR("get_user_led");
+  } else if (ret) {
+    LOG_WARN("config boot disabled");
+    user_config_disable();
+  }
+}
+
 void on_user_config_input(struct user_leds_input input)
 {
+  static bool pressed = false;
+
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
       // enter config mode
-      LOG_WARN("config");
+      LOG_WARN("config start");
+      pressed = true;
       override_user_led(input.index, USER_LEDS_PULSE); // feedback
       user_config_mode();
       break;
 
     case USER_LEDS_INPUT_HOLD:
-      if (input.ticks > USER_LEDS_CONFIG_RESET_THRESHOLD) {
+      if (!pressed) {
+        // ignore when held at boot without press event
+        LOG_WARN("config ignore");
+      } else if (input.hold < USER_LEDS_CONFIG_RESET_THRESHOLD) {
+        LOG_WARN("config hold");
+      } else {
         LOG_WARN("config reset");
         user_state(USER_STATE_RESET);
         revert_user_led(input.index);
@@ -36,6 +55,7 @@ void on_user_config_input(struct user_leds_input input)
 
     case USER_LEDS_INPUT_RELEASE:
       LOG_WARN("cancel");
+      pressed = false;
       revert_user_led(input.index);
 
       break;
@@ -119,6 +139,10 @@ int start_user_events()
     .affinity   = USER_EVENTS_TASK_AFFINITY,
   };
   int err;
+
+#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+  init_user_config_input(FLASH_LED);
+#endif
 
   if ((err = start_task(task_options))) {
     LOG_ERROR("start_task[%s]", USER_EVENTS_TASK_NAME);

@@ -143,6 +143,11 @@ int start_user_leds()
   return 0;
 }
 
+int get_user_led(enum user_led led)
+{
+  return user_leds_get(user_leds, led);
+}
+
 int read_user_leds_input(struct user_leds_input *inputp, TickType_t timeout)
 {
   if (!xQueueReceive(user_leds_input_queue, inputp, timeout)) {

@@ -409,32 +409,6 @@ TickType_t user_led_output_schedule(struct user_led *led, TickType_t period)
   return led->output_tick;
 }
 
-static void user_led_output_state(struct user_led *led, enum user_leds_state state)
-{
-  switch(led->output_state = state) {
-    case USER_LEDS_OFF:
-      led->output_state_index = 0;
-
-      break;
-
-    case USER_LEDS_ON:
-      led->output_state_index = 1;
-
-      break;
-
-    case USER_LEDS_SLOW:
-    case USER_LEDS_FAST:
-    case USER_LEDS_FLASH:
-    case USER_LEDS_PULSE:
-      led->output_state_index = 0;
-
-      break;
-  }
-
-  // reschedule immediate tick
-  led->output_tick = 0;
-}
-
 void user_led_update(struct user_led *led)
 {
   enum user_leds_state state;
@@ -455,7 +429,10 @@ void user_led_update(struct user_led *led)
     } else {
       LOG_DEBUG("[%u] queue state=%d", led->index, state);
 
-      user_led_output_state(led, state);
+      // reschedule immediate output write for state
+      led->output_state = state;
+      led->output_state_index = 0;
+      led->output_tick = 0;
     }
   }
 }

@@ -111,11 +111,12 @@ static inline int user_led_input_read(struct user_led *led)
 
 static void user_led_input_event(struct user_led *led, struct user_leds_input input)
 {
-  LOG_DEBUG("gpio=%d event index=%u type=%d tick=%u ticks=%u", led->options.gpio,
+  LOG_DEBUG("gpio=%d event index=%u type=%d press=%u hold=%u release=%u", led->options.gpio,
     input.index,
     input.event,
-    input.tick,
-    input.ticks
+    input.press,
+    input.hold,
+    input.release
   );
 
   if (led->options.input_queue) {
@@ -176,8 +177,8 @@ TickType_t user_led_input_tick(struct user_led *led)
           user_led_input_event(led, (struct user_leds_input) {
             .index  = led->index,
             .event  = USER_LEDS_INPUT_HOLD,
-            .tick   = led->input_state_tick,
-            .ticks  = xTaskGetTickCount() - led->input_state_tick,
+            .press  = led->input_state_tick,
+            .hold   = xTaskGetTickCount() - led->input_state_tick,
           });
         } else {
           led->input_state_tick = xTaskGetTickCount();
@@ -185,18 +186,19 @@ TickType_t user_led_input_tick(struct user_led *led)
           user_led_input_event(led, (struct user_leds_input) {
             .index  = led->index,
             .event  = USER_LEDS_INPUT_PRESS,
-            .tick   = led->input_state_tick,
-            .ticks  = 0,
+            .press  = led->input_state_tick,
           });
         }
 
       } else {
         if (led->input_state_tick) {
+          TickType_t tick = xTaskGetTickCount();
           user_led_input_event(led, (struct user_leds_input) {
-            .index  = led->index,
-            .event  = USER_LEDS_INPUT_RELEASE,
-            .tick   = led->input_state_tick,
-            .ticks  = xTaskGetTickCount() - led->input_state_tick,
+            .index    = led->index,
+            .event    = USER_LEDS_INPUT_RELEASE,
+            .press    = led->input_state_tick,
+            .hold     = tick - led->input_state_tick,
+            .release  = tick,
           });
 
           led->input_state_tick = 0;

@@ -46,9 +46,14 @@ struct user_leds_input {
   enum user_leds_input_event event;
 
   /**
-   * Number of ticks that button has been held for, or 0 when released.
+   * Number of ticks that button has been held for, up until release
    */
-  TickType_t tick, ticks;
+  TickType_t hold;
+
+  /*
+   * Tick when button was pressed/released.
+   */
+  TickType_t press, release;
 };
 
 struct user_leds_options {

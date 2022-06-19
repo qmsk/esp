@@ -58,6 +58,7 @@ struct user_led {
 
   // interrupts
   EventGroupHandle_t leds_event_group;
+  SemaphoreHandle_t input_interrupt;
 };
 
 struct user_leds {

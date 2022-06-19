@@ -11,6 +11,10 @@ static IRAM_ATTR void user_led_gpio_isr (void * arg)
 
   LOG_ISR_DEBUG("[%u]", led->index);
 
+  if (!xSemaphoreGiveFromISR(led->input_interrupt, &xHigherPriorityTaskWoken)) {
+    LOG_ISR_DEBUG("xSemaphoreGiveFromISR");
+  }
+
   if (!xEventGroupSetBitsFromISR(led->leds_event_group, USER_LEDS_EVENT_BIT(led->index), &xHigherPriorityTaskWoken)) {
     LOG_ISR_WARN("xEventGroupSetBitsFromISR");
   }
@@ -140,6 +144,13 @@ int user_led_init(struct user_led *led, unsigned index, struct user_leds_options
     led->output_tick = 0;
   } else {
     led->output_tick = portMAX_DELAY;
+  }
+
+  if (options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    if (!(led->input_interrupt = xSemaphoreCreateBinary())) {
+      LOG_ERROR("xSemaphoreCreateBinary");
+      return -1;
+    }
   }
 
   // enable GPIO output
@@ -429,9 +440,13 @@ void user_led_update(struct user_led *led)
   enum user_leds_state state;
 
   if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
-    // reschedule immediate input read
-    led->input_state = USER_LEDS_READ;
-    led->input_tick = 0;
+    if (xSemaphoreTake(led->input_interrupt, 0)) {
+      LOG_DEBUG("[%u] isr fired", led->index);
+
+      // reschedule immediate input read
+      led->input_state = USER_LEDS_READ;
+      led->input_tick = 0;
+    }
   }
 
   if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {

@@ -42,12 +42,8 @@ struct user_led {
   unsigned index;
   struct user_leds_options options;
 
+  // set() updates
   xQueueHandle queue;
-
-  // set/override()
-  SemaphoreHandle_t mutex; // TODO
-  enum user_leds_state set_state;
-  bool set_override;
 
   // owned by task
   enum user_leds_state output_state;
@@ -65,8 +61,7 @@ struct user_leds {
 
   struct user_led *leds;
 
-  // set()
-  SemaphoreHandle_t mutex;
+  // set() updates
   EventGroupHandle_t event_group;
 };
 

@@ -16,11 +16,6 @@ static int user_leds_init(struct user_leds *leds, const struct user_leds_options
     }
   }
 
-  if (!(leds->mutex = xSemaphoreCreateMutex())) {
-    LOG_ERROR("xSemaphoreCreateMutex");
-    return -1;
-  }
-
   if (!(leds->event_group = xEventGroupCreate())) {
     LOG_ERROR("xEventGroupCreate");
     return -1;
@@ -144,9 +139,16 @@ void user_leds_main(void *arg)
   }
 }
 
-static int user_leds_write(struct user_leds *leds, unsigned index, enum user_leds_state state)
+int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state)
 {
+  if (index > leds->count) {
+    LOG_ERROR("invalid index=%u for count=%u", index, leds->count);
+    return -1;
+  }
+
   struct user_led *led = &leds->leds[index];
+
+  LOG_DEBUG("[%u] gpio=%d state=%d", index, led->options.gpio, state);
 
   if (xQueueOverwrite(led->queue, &state) <= 0) {
     LOG_ERROR("xQueueOverwrite");
@@ -156,93 +158,4 @@ static int user_leds_write(struct user_leds *leds, unsigned index, enum user_led
   xEventGroupSetBits(leds->event_group, USER_LEDS_EVENT_BIT(index));
 
   return 0;
-}
-
-int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state, TickType_t timeout)
-{
-  struct user_led *led = &leds->leds[index];
-  int err = 0;
-
-  if (!xSemaphoreTake(leds->mutex, timeout)) {
-    LOG_DEBUG("xSemaphoreTake: timeout");
-    return 1;
-  }
-
-  LOG_DEBUG("[%u] gpio=%d state=%d", index, led->options.gpio, state);
-
-  led->set_state = state;
-
-  if (led->set_override) {
-    // skip set op
-    LOG_DEBUG("override");
-
-  } else if ((err = user_leds_write(leds, index, state))) {
-    LOG_ERROR("user_leds_write");
-    goto error;
-  }
-
-error:
-  if (!xSemaphoreGive(leds->mutex)) {
-    LOG_WARN("xSemaphoreGive");
-  }
-
-  return err;
-}
-
-int user_leds_override(struct user_leds *leds, unsigned index, enum user_leds_state state)
-{
-  struct user_led *led = &leds->leds[index];
-  int err = 0;
-
-  if (!xSemaphoreTake(leds->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTake");
-    return -1;
-  }
-
-  LOG_DEBUG("[%u] gpio=%d state=%d", index, led->options.gpio, state);
-
-  led->set_override = true;
-
-  if ((err = user_leds_write(leds, index, state))) {
-    LOG_ERROR("user_leds_write");
-    goto error;
-  }
-
-error:
-  if (!xSemaphoreGive(leds->mutex)) {
-    LOG_WARN("xSemaphoreGive");
-  }
-
-  return err;
-}
-
-int user_leds_revert(struct user_leds *leds, unsigned index)
-{
-  struct user_led *led = &leds->leds[index];
-  enum user_leds_state state;
-  int err = 0;
-
-  if (!xSemaphoreTake(leds->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTake");
-    return -1;
-  }
-
-  // use last mode set
-  state = led->set_state;
-
-  LOG_DEBUG("[%u] gpio=%d state=%d", index, led->options.gpio, state);
-
-  led->set_override = false;
-
-  if ((err = user_leds_write(leds, index, state))) {
-    LOG_ERROR("user_leds_write");
-    goto error;
-  }
-
-error:
-  if (!xSemaphoreGive(leds->mutex)) {
-    LOG_WARN("xSemaphoreGive");
-  }
-
-  return err;
 }

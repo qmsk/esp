@@ -76,12 +76,6 @@ void user_leds_main(void *arg);
 /*
  * Set output mode. Newest update wins.
  *
- * @return <0 on error, 0 on success, 1 on timeout
+ * @return <0 on error, 0 on success.
  */
-int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state, TickType_t timeout);
-
-/*
- * Override output mode. Supresses user_leds_set() until reverted.
- */
-int user_leds_override(struct user_leds *leds, unsigned index, enum user_leds_state state);
-int user_leds_revert(struct user_leds *leds, unsigned index);
+int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state);

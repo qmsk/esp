@@ -24,7 +24,7 @@
 
 // read input every 1s
 #define USER_LEDS_READ_IDLE_TICKS (1000 / portTICK_RATE_MS)
-#define USER_LEDS_READ_HOLD_TICKS (1000 / portTICK_RATE_MS)
+#define USER_LEDS_READ_HOLD_TICKS (500 / portTICK_RATE_MS)
 
 // 10ms read wait
 #define USER_LEDS_READ_WAIT_TICKS (10 / portTICK_RATE_MS)

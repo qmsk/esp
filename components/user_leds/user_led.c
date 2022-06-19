@@ -106,7 +106,7 @@ TickType_t user_led_tick(struct user_led *led)
       // wait for input to settle
       led->state = USER_LEDS_READ;
 
-      LOG_DEBUG("gpio=%d: input wait", led->options.gpio);
+      LOG_DEBUG("gpio=%d: read wait", led->options.gpio);
 
       return USER_LEDS_READ_WAIT_PERIOD / portTICK_RATE_MS;
 
@@ -133,14 +133,14 @@ TickType_t user_led_tick(struct user_led *led)
 
       user_led_output_off(led);
 
-      return 0;
+      return portMAX_DELAY;
 
     case USER_LEDS_ON:
       led->state_index = 1;
 
       user_led_output_on(led);
 
-      return 0;
+      return portMAX_DELAY;
 
     case USER_LEDS_SLOW:
       if (led->state_index) {
@@ -175,7 +175,7 @@ TickType_t user_led_tick(struct user_led *led)
 
         user_led_output_off(led);
 
-        return 0;
+        return portMAX_DELAY;
       } else {
         led->state_index = 1;
 
@@ -198,7 +198,7 @@ TickType_t user_led_tick(struct user_led *led)
       }
 
     default:
-      return 0;
+      return portMAX_DELAY;
   }
 }
 
@@ -207,9 +207,9 @@ TickType_t user_led_schedule(struct user_led *led, TickType_t period)
 {
   TickType_t tick = xTaskGetTickCount();
 
-  if (period == 0) {
+  if (period == portMAX_DELAY) {
     // reset phase, indefinite period
-    led->tick = 0;
+    led->tick = portMAX_DELAY;
 
   } else if (led->tick == 0) {
     // start phase
@@ -233,7 +233,7 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
       led->state_index = 0;
 
       user_led_output_mode(led);
-      user_led_output_off(led);
+      user_led_output_off(led); // XXX: redundant with tick()
 
       break;
 
@@ -242,7 +242,7 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
       led->state_index = 1;
 
       user_led_output_mode(led);
-      user_led_output_on(led);
+      user_led_output_on(led); // XXX: redundant with tick()
 
       break;
 
@@ -254,7 +254,7 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
       led->state_index = 0;
 
       user_led_output_mode(led);
-      user_led_output_on(led);
+      user_led_output_on(led); // XXX: redundant with tick()
 
       break;
 
@@ -269,7 +269,12 @@ static void user_led_set_state(struct user_led *led, enum user_leds_state state)
     case USER_LEDS_READ_WAIT:
       user_led_output_off(led);
       user_led_input_mode(led);
+
+      break;
   }
+
+  // reschedule immediate tick
+  led->tick = 0;
 }
 
 void user_led_update(struct user_led *led)

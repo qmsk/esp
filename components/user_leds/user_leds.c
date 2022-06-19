@@ -66,20 +66,20 @@ error:
 TickType_t user_leds_tick(struct user_leds *leds)
 {
   TickType_t this_tick = xTaskGetTickCount();
-  TickType_t next_tick = 0;
+  TickType_t next_tick = portMAX_DELAY;
 
   for (unsigned i = 0; i < leds->count; i++) {
     struct user_led *led = &leds->leds[i];
     TickType_t led_tick = led->tick;
 
-    if (led_tick && led_tick <= this_tick) {
+    if (led_tick <= this_tick) {
       TickType_t period = user_led_tick(led);
       led_tick = user_led_schedule(led, period);
 
-      LOG_DEBUG("[%u] mode=%d state=%d -> period=%u tick=%u", i, led->options.mode, led->state, period, led_tick);
+      LOG_DEBUG("[%u] mode=%d state=%d state_index=%u -> period=%u tick=%u", i, led->options.mode, led->state, led->state_index, period, led_tick);
     }
 
-    if (!next_tick || led_tick < next_tick) {
+    if (led_tick < next_tick) {
       next_tick = led_tick;
     }
   }
@@ -91,15 +91,21 @@ TickType_t user_leds_schedule(struct user_leds *leds, TickType_t tick)
 {
   TickType_t now = xTaskGetTickCount();
 
-  if (tick == 0) {
+  if (tick == portMAX_DELAY) {
+    LOG_DEBUG("now=%u tick=%u -> block", now, tick);
+
     // indefinite period
     return portMAX_DELAY;
 
   } else if (tick > now) {
+    LOG_DEBUG("now=%u tick=%u -> wait %u", now, tick, tick - now);
+
     // future tick
-    return now - now;
+    return tick - now;
 
   } else {
+    LOG_DEBUG("now=%u tick=%u -> immediate", now, tick);
+
     // missed tick, catchup
     return 0;
   }
@@ -114,12 +120,12 @@ void user_leds_main(void *arg)
     TickType_t delay = user_leds_schedule(leds, tick);
     unsigned bits;
 
-    LOG_DEBUG("tick=%u delay=%u", tick, delay);
-
     if (!(bits = xEventGroupWaitBits(leds->event_group, USER_LEDS_EVENT_BITS, pdTRUE, pdFALSE, delay))) {
       // timeout, just tick() next frame
       continue;
     }
+
+    LOG_DEBUG("bits=%08x", bits);
 
     for (unsigned i = 0; i < leds->count; i++) {
       if (bits & USER_LEDS_EVENT_BIT(i)) {
@@ -127,6 +133,20 @@ void user_leds_main(void *arg)
       }
     }
   }
+}
+
+static int user_leds_event(struct user_leds *leds, unsigned index, struct user_leds_event event)
+{
+  struct user_led *led = &leds->leds[index];
+
+  if (xQueueOverwrite(led->queue, &event) <= 0) {
+    LOG_ERROR("xQueueOverwrite");
+    return -1;
+  }
+
+  xEventGroupSetBits(leds->event_group, USER_LEDS_EVENT_BIT(index));
+
+  return 0;
 }
 
 int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state, TickType_t timeout)
@@ -148,9 +168,8 @@ int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state s
     // skip set op
     LOG_DEBUG("override");
 
-  } else if (xQueueOverwrite(led->queue, &event) <= 0) {
-    LOG_ERROR("xQueueOverwrite");
-    err = -1;
+  } else if ((err = user_leds_event(leds, index, event))) {
+    LOG_ERROR("user_leds_event");
     goto error;
   }
 
@@ -177,9 +196,8 @@ int user_leds_override(struct user_leds *leds, unsigned index, enum user_leds_st
 
   led->set_override = true;
 
-  if (xQueueOverwrite(led->queue, &event) <= 0) {
-    LOG_ERROR("xQueueOverwrite");
-    err = -1;
+  if ((err = user_leds_event(leds, index, event))) {
+    LOG_ERROR("user_leds_event");
     goto error;
   }
 
@@ -209,9 +227,8 @@ int user_leds_revert(struct user_leds *leds, unsigned index)
 
   led->set_override = false;
 
-  if (xQueueOverwrite(led->queue, &event) <= 0) {
-    LOG_ERROR("xQueueOverwrite");
-    err = -1;
+  if ((err = user_leds_event(leds, index, event))) {
+    LOG_ERROR("user_leds_event");
     goto error;
   }
 
@@ -241,9 +258,8 @@ int user_leds_read(struct user_leds *leds, unsigned index)
   LOG_DEBUG("[%u] gpio=%d state=%d read_task=%p", index, led->options.gpio, event.state, led->read_task);
 
   // set input mode and read
-  if (xQueueOverwrite(led->queue, &event) <= 0) {
-    LOG_ERROR("xQueueOverwrite");
-    ret = -1;
+  if ((ret = user_leds_event(leds, index, event))) {
+    LOG_ERROR("user_leds_event");
     goto error;
   }
 

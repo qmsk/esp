@@ -255,6 +255,8 @@ TickType_t user_led_output_tick(struct user_led *led)
 
         return portMAX_DELAY;
       } else {
+        user_led_output_on(led);
+
         led->output_state_index = 1;
 
         return USER_LEDS_FLASH_TICKS;
@@ -330,16 +332,10 @@ static void user_led_output_state(struct user_led *led, enum user_leds_state sta
     case USER_LEDS_OFF:
       led->output_state_index = 0;
 
-      user_led_output_mode(led);
-      user_led_output_off(led); // XXX: redundant with tick()
-
       break;
 
     case USER_LEDS_ON:
       led->output_state_index = 1;
-
-      user_led_output_mode(led);
-      user_led_output_on(led); // XXX: redundant with tick()
 
       break;
 
@@ -348,9 +344,6 @@ static void user_led_output_state(struct user_led *led, enum user_leds_state sta
     case USER_LEDS_FLASH:
     case USER_LEDS_PULSE:
       led->output_state_index = 0;
-
-      user_led_output_mode(led);
-      user_led_output_on(led); // XXX: redundant with tick()
 
       break;
   }

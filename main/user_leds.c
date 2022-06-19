@@ -1,7 +1,7 @@
 #include "user_leds.h"
 #include "user_leds_config.h"
 #include "user_leds_input.h"
-#include "user_leds_set.h"
+#include "user_leds_output.h"
 #include "user.h"
 #include "tasks.h"
 
@@ -31,6 +31,10 @@ enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
 // state
 struct user_leds *user_leds;
 xTaskHandle user_leds_task;
+
+// revert/override
+enum user_leds_state user_leds_state[USER_LEDS_COUNT];
+bool user_leds_override[USER_LEDS_COUNT];
 
 QueueHandle_t user_leds_input_queue;
 
@@ -148,77 +152,72 @@ int read_user_leds_input(struct user_leds_input *inputp, TickType_t timeout)
   }
 }
 
-#if CONFIG_STATUS_LEDS_USER_ENABLED
-  int set_user_led(enum user_leds_state state, TickType_t timeout)
-  {
-    if (!user_leds) {
-      return 0;
-    }
+int override_user_led(enum user_led led, enum user_leds_state state)
+{
+  user_leds_override[led] = true;
 
-    return user_leds_set(user_leds, USER_LED, state, timeout);
+  return user_leds_set(user_leds, led, state);
+}
+
+int revert_user_led(enum user_led led)
+{
+  enum user_leds_state state = user_leds_state[led];
+
+  user_leds_override[led] = false;
+
+  return user_leds_set(user_leds, led, state);
+}
+
+int set_user_led(enum user_led led, enum user_leds_state state)
+{
+  if (!user_leds) {
+    return 0;
   }
-#endif
 
-#if CONFIG_STATUS_LEDS_FLASH_ENABLED
-  int set_flash_led(enum user_leds_state state, TickType_t timeout)
-  {
-    if (!user_leds) {
-      return 0;
-    }
+  user_leds_state[led] = state;
 
-    return user_leds_set(user_leds, FLASH_LED, state, timeout);
+  if (!user_leds_override[led]) {
+    return user_leds_set(user_leds, led, state);
+  } else {
+    return 0;
   }
+}
 
-#endif
-
-#if CONFIG_STATUS_LEDS_ALERT_ENABLED
-  int set_alert_led(enum user_leds_state state, TickType_t timeout)
-  {
-    // TODO: early gpio alert output before init_user_leds()?
-    if (!user_leds) {
-      return 0;
-    }
-
-    return user_leds_set(user_leds, ALERT_LED, state, timeout);
-  }
-#endif
-
-void user_leds_state(enum user_state state)
+void set_user_leds_state(enum user_state state)
 {
   enum user_leds_state leds_state = state < USER_STATE_MAX ? user_state_led_state[state] : USER_LEDS_ON;
 
 #if CONFIG_STATUS_LEDS_USER_MODE || CONFIG_STATUS_LEDS_USER_MODE_TEST
   // blocking
-  if (set_user_led(leds_state, portMAX_DELAY)) {
+  if (set_user_led(USER_LED, leds_state)) {
     LOG_WARN("set_user_led");
   }
 #endif
 }
 
-void user_leds_activity(enum user_activity activity)
+void set_user_leds_activity(enum user_activity activity)
 {
 #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
-  // this happens in the leds/dmx fastpath, do not block on the status_led mutex during each 1s interval 10ms status_led_read()
-  if (set_flash_led(USER_LEDS_FLASH, 0)) {
+  if (set_user_led(FLASH_LED, USER_LEDS_FLASH)) {
     // just skip this FLASH activity
-    LOG_DEBUG("set_flash_led");
+    LOG_DEBUG("set_user_led");
   }
 #endif
 }
 
-void user_leds_alert(enum user_alert alert)
+void set_user_leds_alert(enum user_alert alert)
 {
   enum user_leds_state leds_state = alert < USER_ALERT_MAX ? user_alert_led_state[alert] : USER_LEDS_ON;
 
 #if CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
   // blocking
-  if (set_flash_led(leds_state, portMAX_DELAY)) {
+  if (set_user_led(FLASH_LED, leds_state)) {
     LOG_WARN("set_flash_led");
   }
 #elif CONFIG_STATUS_LEDS_ALERT_MODE || CONFIG_STATUS_LEDS_ALERT_MODE_TEST
   // blocking
-  if (set_alert_led(leds_state, portMAX_DELAY)) {
-    LOG_WARN("set_alert_led");
+  if (set_user_led(ALERT_LED, leds_state)) {
+    LOG_WARN("set_user_led");
   }
 #else
   (void) state;

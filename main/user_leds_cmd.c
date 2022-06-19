@@ -1,5 +1,5 @@
 #include "user_leds.h"
-#include "user_leds_set.h"
+#include "user_leds_output.h"
 
 #include <logging.h>
 
@@ -41,7 +41,7 @@ int user_leds_user_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_user_led(state, portMAX_DELAY))) {
+  if ((err = set_user_led(USER_LED, state))) {
     LOG_ERROR("set_user_led");
     return err;
   }
@@ -65,8 +65,8 @@ int user_leds_flash_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_flash_led(state, portMAX_DELAY))) {
-    LOG_ERROR("set_flash_led");
+  if ((err = set_user_led(FLASH_LED, state))) {
+    LOG_ERROR("set_user_led");
     return err;
   }
 
@@ -89,7 +89,7 @@ int user_leds_alert_cmd(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if ((err = set_alert_led(state, portMAX_DELAY))) {
+  if ((err = set_user_led(ALERT_LED, state))) {
     LOG_ERROR("set_alert_led");
     return err;
   }

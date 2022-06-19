@@ -57,7 +57,7 @@ void user_state(enum user_state state)
     LOG_INFO("%d", state);
   }
 
-  user_leds_state(state);
+  set_user_leds_state(state);
 }
 
 void user_activity(enum user_activity activity)
@@ -71,7 +71,7 @@ void user_activity(enum user_activity activity)
     LOG_DEBUG("%05x", activity);
   }
 
-  user_leds_activity(activity);
+  set_user_leds_activity(activity);
 }
 
 void user_alert(enum user_alert alert)
@@ -84,7 +84,7 @@ void user_alert(enum user_alert alert)
     LOG_WARN("%d", alert);
   }
 
-  user_leds_alert(alert);
+  set_user_leds_alert(alert);
 }
 
 void user_config_disable()

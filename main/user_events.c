@@ -2,6 +2,7 @@
 #include "user_leds.h"
 #include "user_leds_config.h"
 #include "user_leds_input.h"
+#include "user_leds_output.h"
 
 #include "tasks.h"
 
@@ -12,8 +13,6 @@
 
 xTaskHandle user_events_task;
 
-extern struct user_leds *user_leds; // XXX: replace with override/revert_*() functions
-
 // TODO: read at boot -> disable config load, enable config mode
 // TODO: ignore when pressed at boot
 void on_user_config_input(struct user_leds_input input)
@@ -22,7 +21,7 @@ void on_user_config_input(struct user_leds_input input)
     case USER_LEDS_INPUT_PRESS:
       // enter config mode
       LOG_WARN("config");
-      user_leds_override(user_leds, input.index, USER_LEDS_PULSE);
+      override_user_led(input.index, USER_LEDS_PULSE); // feedback
       user_config_mode();
       break;
 
@@ -30,14 +29,14 @@ void on_user_config_input(struct user_leds_input input)
       if (input.ticks > USER_LEDS_CONFIG_RESET_THRESHOLD) {
         LOG_WARN("config reset");
         user_state(USER_STATE_RESET);
-        user_leds_revert(user_leds, input.index);
+        revert_user_led(input.index);
         user_config_reset();
       }
       break;
 
     case USER_LEDS_INPUT_RELEASE:
       LOG_WARN("cancel");
-      user_leds_revert(user_leds, input.index);
+      revert_user_led(input.index);
 
       break;
   }
@@ -48,7 +47,7 @@ void on_user_test_input(struct user_leds_input input)
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
       LOG_WARN("start");
-      user_leds_override(user_leds, input.index, USER_LEDS_PULSE);
+      override_user_led(input.index, USER_LEDS_PULSE); // feedback
       user_test_mode();
 
       break;
@@ -60,7 +59,7 @@ void on_user_test_input(struct user_leds_input input)
 
     case USER_LEDS_INPUT_RELEASE:
       LOG_WARN("cancel");
-      user_leds_revert(user_leds, input.index);
+      revert_user_led(input.index);
       user_test_cancel();
 
       break;

@@ -39,42 +39,6 @@ static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_
   return 0;
 }
 
-int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options)
-{
-  int err;
-
-  led->index = index;
-  led->options = options;
-
-  if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
-    // initial read in input-only mode
-    led->input_state = USER_LEDS_READ_INIT;
-    led->input_tick = 0;
-  } else {
-    led->input_tick = portMAX_DELAY;
-  }
-
-  if (options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
-    led->output_tick = 0;
-  } else {
-    led->output_tick = portMAX_DELAY;
-  }
-
-  // enable GPIO output
-  if ((err = user_led_init_gpio(led, index, options))) {
-    LOG_ERROR("user_led_init_gpio[%u]", index);
-    return err;
-  }
-
-  // setup task
-  if ((led->queue = xQueueCreate(1, sizeof(enum user_leds_state))) == NULL) {
-    LOG_ERROR("xQueueCreate");
-    return -1;
-  }
-
-  return 0;
-}
-
 static inline void user_led_output_mode(struct user_led *led)
 {
   LOG_DEBUG("gpio=%d", led->options.gpio);
@@ -109,6 +73,63 @@ static inline int user_led_input_read(struct user_led *led)
   return (led->options.mode & USER_LEDS_MODE_INVERTED_BIT) ? !level : level;
 }
 
+static int user_led_init_input(struct user_led *led)
+{
+  // read input and set initial state
+  if (user_led_input_read(led)) {
+    led->input_state_tick = xTaskGetTickCount();
+  }
+
+  if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+    // revert back to output mode
+    user_led_output_mode(led);
+  }
+
+  return 0;
+}
+
+int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options)
+{
+  int err;
+
+  led->index = index;
+  led->options = options;
+
+  if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
+    // initial read in input-only mode
+    led->input_state = USER_LEDS_READ_INIT;
+    led->input_tick = 0;
+  } else {
+    led->input_tick = portMAX_DELAY;
+  }
+
+  if (options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+    led->output_tick = 0;
+  } else {
+    led->output_tick = portMAX_DELAY;
+  }
+
+  // enable GPIO output
+  if ((err = user_led_init_gpio(led, index, options))) {
+    LOG_ERROR("user_led_init_gpio[%u]", index);
+    return err;
+  }
+
+  if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
+    if ((err = user_led_init_input(led))) {
+      LOG_ERROR("user_led_init_input");
+    }
+  }
+
+  // setup task
+  if ((led->queue = xQueueCreate(1, sizeof(enum user_leds_state))) == NULL) {
+    LOG_ERROR("xQueueCreate");
+    return -1;
+  }
+
+  return 0;
+}
+
 static void user_led_input_event(struct user_led *led, struct user_leds_input input)
 {
   LOG_DEBUG("gpio=%d event index=%u type=%d press=%u hold=%u release=%u", led->options.gpio,
@@ -133,16 +154,6 @@ TickType_t user_led_input_tick(struct user_led *led)
   // input states
   switch(led->input_state) {
     case USER_LEDS_READ_INIT:
-      // read input and set initial state
-      if (user_led_input_read(led)) {
-        led->input_state_tick = xTaskGetTickCount();
-      }
-
-      if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
-        // revert back to output mode
-        user_led_output_mode(led);
-      }
-
       led->input_state = USER_LEDS_READ_IDLE;
 
       if (led->input_state_tick) {

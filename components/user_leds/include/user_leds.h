@@ -31,7 +31,6 @@ enum user_leds_state {
   USER_LEDS_FAST,   // blink fast
   USER_LEDS_FLASH,  // blink once
   USER_LEDS_PULSE,  // pulse off
-
 };
 
 enum user_leds_input_event {
@@ -79,7 +78,14 @@ int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds
 void user_leds_main(void *arg);
 
 /*
- * Set output mode. Newest update wins.
+ * Get input status.
+ *
+ * @return <0 on error, 0 if idle, 1 if pressed.
+ */
+int user_leds_get(struct user_leds *leds, unsigned index);
+
+/*
+ * Set output state. Newest update wins.
  *
  * @return <0 on error, 0 on success.
  */

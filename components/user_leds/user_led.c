@@ -24,6 +24,13 @@ static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_
     options.mode & USER_LEDS_MODE_INVERTED_BIT
   );
 
+  if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
+    // initialy input-only to read initial input state
+    config.mode = GPIO_MODE_INPUT;
+  } else if (options.mode & GPIO_MODE_DEF_OUTPUT) {
+    config.mode = GPIO_MODE_OUTPUT;
+  }
+
   if ((err = gpio_config(&config))) {
     LOG_ERROR("gpio_config: %s", esp_err_to_name(err));
     return -1;
@@ -40,6 +47,8 @@ int user_led_init(struct user_led *led, unsigned index, struct user_leds_options
   led->options = options;
 
   if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
+    // initial read in input-only mode
+    led->input_state = USER_LEDS_READ_INIT;
     led->input_tick = 0;
   } else {
     led->input_tick = portMAX_DELAY;
@@ -122,6 +131,25 @@ TickType_t user_led_input_tick(struct user_led *led)
 {
   // input states
   switch(led->input_state) {
+    case USER_LEDS_READ_INIT:
+      // read input and set initial state
+      if (user_led_input_read(led)) {
+        led->input_state_tick = xTaskGetTickCount();
+      }
+
+      if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
+        // revert back to output mode
+        user_led_output_mode(led);
+      }
+
+      led->input_state = USER_LEDS_READ_IDLE;
+
+      if (led->input_state_tick) {
+        return USER_LEDS_READ_HOLD_TICKS;
+      } else {
+        return USER_LEDS_READ_IDLE_TICKS;
+      }
+
     case USER_LEDS_READ_IDLE:
       if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
         led->input_state = USER_LEDS_READ_WAIT;

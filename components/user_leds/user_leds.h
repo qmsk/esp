@@ -9,22 +9,22 @@
 #include <freertos/task.h>
 
 // 100ms on / 1800ms off
-#define USER_LEDS_SLOW_PERIOD_ON 100
-#define USER_LEDS_SLOW_PERIOD_OFF 1800
+#define USER_LEDS_SLOW_TICKS_ON (100 / portTICK_RATE_MS)
+#define USER_LEDS_SLOW_TICKS_OFF (1800 / portTICK_RATE_MS)
 
 // 100ms on / 100ms off
-#define USER_LEDS_FAST_PERIOD 100
+#define USER_LEDS_FAST_TICKS (100 / portTICK_RATE_MS)
 
 // 10ms on
-#define USER_LEDS_FLASH_PERIOD 10
+#define USER_LEDS_FLASH_TICKS (10 / portTICK_RATE_MS)
 
 // 50ms off / 200ms on
-#define USER_LEDS_PULSE_PERIOD_OFF 50
-#define USER_LEDS_PULSE_PERIOD_ON 200
+#define USER_LEDS_PULSE_TICKS_OFF (50 / portTICK_RATE_MS)
+#define USER_LEDS_PULSE_TICKS_ON (200 / portTICK_RATE_MS)
+
 
 // 10ms read wait
-#define USER_LEDS_READ_WAIT_PERIOD 10
-#define USER_LEDS_READ_NOTIFY_BIT 0x1
+#define USER_LEDS_READ_WAIT_TICKS (10 / portTICK_RATE_MS)
 
 #define USER_LEDS_EVENT_BITS ((1 << USER_LEDS_MAX) - 1)
 #define USER_LEDS_EVENT_BIT(i) (1 << i)

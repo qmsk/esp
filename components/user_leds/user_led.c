@@ -108,7 +108,7 @@ TickType_t user_led_tick(struct user_led *led)
 
       LOG_DEBUG("gpio=%d: read wait", led->options.gpio);
 
-      return USER_LEDS_READ_WAIT_PERIOD / portTICK_RATE_MS;
+      return USER_LEDS_READ_WAIT_TICKS;
 
     case USER_LEDS_READ:
       // read input and notify waiting task
@@ -148,13 +148,13 @@ TickType_t user_led_tick(struct user_led *led)
 
         user_led_output_off(led);
 
-        return USER_LEDS_SLOW_PERIOD_OFF / portTICK_RATE_MS;
+        return USER_LEDS_SLOW_TICKS_OFF;
       } else {
         led->state_index = 1;
 
         user_led_output_on(led);
 
-        return USER_LEDS_SLOW_PERIOD_ON / portTICK_RATE_MS;
+        return USER_LEDS_SLOW_TICKS_ON;
       }
 
     case USER_LEDS_FAST:
@@ -168,7 +168,7 @@ TickType_t user_led_tick(struct user_led *led)
         user_led_output_on(led);
       }
 
-      return USER_LEDS_FAST_PERIOD / portTICK_RATE_MS;
+      return USER_LEDS_FAST_TICKS;
 
     case USER_LEDS_FLASH:
       if (led->state_index) {
@@ -179,7 +179,7 @@ TickType_t user_led_tick(struct user_led *led)
       } else {
         led->state_index = 1;
 
-        return USER_LEDS_FLASH_PERIOD / portTICK_RATE_MS;
+        return USER_LEDS_FLASH_TICKS;
       }
 
     case USER_LEDS_PULSE:
@@ -188,13 +188,13 @@ TickType_t user_led_tick(struct user_led *led)
 
         user_led_output_off(led);
 
-        return USER_LEDS_PULSE_PERIOD_OFF / portTICK_RATE_MS;
+        return USER_LEDS_PULSE_TICKS_OFF;
       } else {
         led->state_index = 1;
 
         user_led_output_on(led);
 
-        return USER_LEDS_PULSE_PERIOD_ON / portTICK_RATE_MS;
+        return USER_LEDS_PULSE_TICKS_ON;
       }
 
     default:

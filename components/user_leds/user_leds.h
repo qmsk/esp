@@ -55,6 +55,9 @@ struct user_led {
   enum user_leds_input_state input_state;
   TickType_t input_state_tick;
   TickType_t input_tick; // next scheduled input_tick()
+
+  // interrupts
+  EventGroupHandle_t leds_event_group;
 };
 
 struct user_leds {
@@ -67,7 +70,7 @@ struct user_leds {
 };
 
 /* user_led.c */
-int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options);
+int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options, EventGroupHandle_t leds_event_group);
 
 TickType_t user_led_input_tick(struct user_led *led);
 TickType_t user_led_input_schedule(struct user_led *led, TickType_t period);

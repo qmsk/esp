@@ -11,9 +11,10 @@
 #define USER_LEDS_MAX 8
 
 enum user_leds_mode {
-  USER_LEDS_MODE_INPUT_BIT      = 0x01,
-  USER_LEDS_MODE_OUTPUT_BIT     = 0x02,
-  USER_LEDS_MODE_INVERTED_BIT   = 0x10,
+  USER_LEDS_MODE_INPUT_BIT      = 0x01, // configure GPIO as input, post user_leds_input events to queue
+  USER_LEDS_MODE_OUTPUT_BIT     = 0x02, // configure GPIO as output, follow user_leds_set() state
+  USER_LEDS_MODE_INVERTED_BIT   = 0x10, // use active-low level for both input/output
+  USER_LEDS_MODE_INTERRUPT_BIT  = 0x20, // use gpio driver interrupts for input
 
   USER_LEDS_MODE_NONE             = 0,
   USER_LEDS_MODE_OUTPUT_HIGH      = (USER_LEDS_MODE_OUTPUT_BIT),

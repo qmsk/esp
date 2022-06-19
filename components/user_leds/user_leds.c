@@ -9,16 +9,16 @@ static int user_leds_init(struct user_leds *leds, const struct user_leds_options
 {
   int err;
 
-  for (unsigned i = 0; i < leds->count; i++) {
-    if ((err = user_led_init(&leds->leds[i], i, options[i]))) {
-      LOG_ERROR("user_led_init[%u]", i);
-      return err;
-    }
-  }
-
   if (!(leds->event_group = xEventGroupCreate())) {
     LOG_ERROR("xEventGroupCreate");
     return -1;
+  }
+
+  for (unsigned i = 0; i < leds->count; i++) {
+    if ((err = user_led_init(&leds->leds[i], i, options[i], leds->event_group))) {
+      LOG_ERROR("user_led_init[%u]", i);
+      return err;
+    }
   }
 
   return 0;

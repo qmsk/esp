@@ -4,6 +4,20 @@
 
 #include <logging.h>
 
+static IRAM_ATTR void user_led_gpio_isr (void * arg)
+{
+  struct user_led *led = arg;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  LOG_ISR_DEBUG("[%u]", led->index);
+
+  if (!xEventGroupSetBitsFromISR(led->leds_event_group, USER_LEDS_EVENT_BIT(led->index), &xHigherPriorityTaskWoken)) {
+    LOG_ISR_WARN("xEventGroupSetBitsFromISR");
+  }
+
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_leds_options options)
 {
   gpio_config_t config = {
@@ -36,6 +50,15 @@ static int user_led_init_gpio(struct user_led *led, unsigned index, struct user_
     return -1;
   }
 
+  if (options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    gpio_set_intr_type(options.gpio, GPIO_INTR_ANYEDGE);
+
+    if ((err = gpio_isr_handler_add(options.gpio, user_led_gpio_isr, led))) {
+      LOG_ERROR("gpio_isr_handler_add: %s", esp_err_to_name(err));
+      return -1;
+    }
+  }
+
   return 0;
 }
 
@@ -43,7 +66,12 @@ static inline void user_led_output_mode(struct user_led *led)
 {
   LOG_DEBUG("gpio=%d", led->options.gpio);
 
-  gpio_set_direction(led->options.gpio, GPIO_MODE_OUTPUT);
+  if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    // do not trigger interrupts when driving pin in output mode
+    gpio_intr_disable(led->options.gpio);
+  }
+
+  gpio_set_direction(led->options.gpio, (led->options.mode & USER_LEDS_MODE_INPUT_BIT) ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT);
 }
 
 static inline void user_led_output_off(struct user_led *led)
@@ -62,6 +90,10 @@ static inline void user_led_input_mode(struct user_led *led)
 
   // disable output
   gpio_set_direction(led->options.gpio, GPIO_MODE_INPUT);
+
+  if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    gpio_intr_enable(led->options.gpio);
+  }
 }
 
 static inline int user_led_input_read(struct user_led *led)
@@ -88,12 +120,13 @@ static int user_led_init_input(struct user_led *led)
   return 0;
 }
 
-int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options)
+int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options, EventGroupHandle_t leds_event_group)
 {
   int err;
 
   led->index = index;
   led->options = options;
+  led->leds_event_group = leds_event_group;
 
   if (options.mode & USER_LEDS_MODE_INPUT_BIT) {
     // initial read in input-only mode
@@ -394,6 +427,12 @@ static void user_led_output_state(struct user_led *led, enum user_leds_state sta
 void user_led_update(struct user_led *led)
 {
   enum user_leds_state state;
+
+  if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+    // reschedule immediate input read
+    led->input_state = USER_LEDS_READ;
+    led->input_tick = 0;
+  }
 
   if (led->options.mode & USER_LEDS_MODE_OUTPUT_BIT) {
     if (!xQueueReceive(led->queue, &state, 0)) {

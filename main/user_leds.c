@@ -39,65 +39,81 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
-#define USER_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_USER_MODE_TEST
-  #define USER_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+  #define USER_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
 #else
-  #define USER_LED_MODE_INPUT_BIT 0
+  #define USER_LED_MODE_INPUT_BITS 0
 #endif
 #if CONFIG_STATUS_LEDS_USER_GPIO_INVERTED
-  #define USER_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+  #define USER_LED_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
 #else
-  #define USER_LED_MODE_INVERTED_BIT 0
+  #define USER_LED_MODE_INVERTED_BITS 0
 #endif
 
-#define FLASH_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#define FLASH_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
-  #define FLASH_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+  #define FLASH_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
 #else
-  #define FLASH_LED_MODE_INPUT_BIT 0
+  #define FLASH_LED_MODE_INPUT_BITS 0
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_GPIO_INVERTED
-  #define FLASH_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+  #define FLASH_LED_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
 #else
-  #define FLASH_LED_MODE_INVERTED_BIT 0
+  #define FLASH_LED_MODE_INVERTED_BITS 0
 #endif
 
-#define ALERT_LED_MODE_OUTPUT_BIT USER_LEDS_MODE_OUTPUT_BIT
+#define ALERT_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
-  #define ALERT_LED_MODE_INPUT_BIT USER_LEDS_MODE_INPUT_BIT
+  #define ALERT_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
 #else
-  #define ALERT_LED_MODE_INPUT_BIT 0
+  #define ALERT_LED_MODE_INPUT_BITS 0
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_GPIO_INVERTED
-  #define ALERT_LED_MODE_INVERTED_BIT USER_LEDS_MODE_INVERTED_BIT
+  #define ALERT_LED_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
 #else
-  #define ALERT_LED_MODE_INVERTED_BIT 0
+  #define ALERT_LED_MODE_INVERTED_BITS 0
 #endif
 
 static struct user_leds_options user_leds_options[] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   [USER_LED] = {
     .gpio = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
-    .mode = USER_LED_MODE_INPUT_BIT | USER_LED_MODE_OUTPUT_BIT | USER_LED_MODE_INVERTED_BIT,
+    .mode = USER_LED_MODE_INPUT_BITS | USER_LED_MODE_OUTPUT_BITS | USER_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
   [FLASH_LED] = {
     .gpio = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
-    .mode = FLASH_LED_MODE_INPUT_BIT | FLASH_LED_MODE_OUTPUT_BIT | FLASH_LED_MODE_INVERTED_BIT,
+    .mode = FLASH_LED_MODE_INPUT_BITS | FLASH_LED_MODE_OUTPUT_BITS | FLASH_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
   [ALERT_LED] = {
     .gpio = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
-    .mode = ALERT_LED_MODE_INPUT_BIT | ALERT_LED_MODE_OUTPUT_BIT | ALERT_LED_MODE_INVERTED_BIT,
+    .mode = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
   },
 #endif
 };
 
+static int init_user_leds_gpio_interrupts()
+{
+  esp_err_t err;
+
+  LOG_INFO("enabling gpio interrupts");
+
+  // TODO: common across different modules?
+  if ((err = gpio_install_isr_service(0))) {
+    LOG_ERROR("gpio_install_isr_service: %s", esp_err_to_name(err));
+    return -1;
+  }
+
+  return 0;
+}
+
 int init_user_leds()
 {
+  bool interrupts = false;
   int err;
 
   if ((user_leds_input_queue = xQueueCreate(1, sizeof(struct user_leds_input))) == NULL) {
@@ -107,6 +123,15 @@ int init_user_leds()
 
   for (unsigned i = 0; i < USER_LEDS_COUNT; i++) {
     user_leds_options[i].input_queue = user_leds_input_queue;
+
+    if (user_leds_options[i].mode & USER_LEDS_MODE_INTERRUPT_BIT) {
+      interrupts = true;
+    }
+  }
+
+  if (interrupts && (err = init_user_leds_gpio_interrupts())) {
+    LOG_ERROR("init_user_leds_gpio_interrupts");
+    return err;
   }
 
   if ((err = user_leds_new(&user_leds, USER_LEDS_COUNT, user_leds_options))) {

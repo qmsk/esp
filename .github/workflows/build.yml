@@ -102,8 +102,7 @@ jobs:
     steps:
       - name: Setup
         run: |
-          echo "BUILD_UID=$(id -u)" >> $GITHUB_ENV
-          echo "BUILD_GID=$(id -g)" >> $GITHUB_ENV
+          echo "USER_ID=$(id -u)" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -123,8 +122,6 @@ jobs:
         with:
           build-args: |
             ESP8266_RTOS_SDK_VERSION=${{ env.ESP8266_RTOS_SDK_VERSION }}
-            BUILD_UID=${{ env.BUILD_UID }}
-            BUILD_GID=${{ env.BUILD_GID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: sdk/esp8266-rtos-sdk

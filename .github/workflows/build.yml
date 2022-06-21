@@ -28,8 +28,15 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Builld
+      - name: Build
         run: npm run build
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist/
+          if-no-files-found: error
 
   # requires web/dist directory to exist
   build-esp32:
@@ -44,6 +51,12 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Download web-dist
+        uses: actions/download-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist
 
       - name: Build SDK
         run: docker-compose -f projects/esp32/docker-compose.yml build sdk

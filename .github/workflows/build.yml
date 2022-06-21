@@ -130,7 +130,7 @@ jobs:
           tags: qmsk/esp8266-rtos-sdk:dev
 
       - name: Build
-        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build
+        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all
 
       - name: Upload esp8266-build
         uses: actions/upload-artifact@v3

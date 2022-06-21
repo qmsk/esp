@@ -89,9 +89,13 @@ jobs:
         with:
           name: esp32-build
           path: |
-            projects/esp32/build/**/*.bin
-            projects/esp32/build/**/*.map
-            projects/esp32/build/**/*.elf
+            projects/esp32/build/bootloader/*.bin
+            projects/esp32/build/bootloader/*.map
+            projects/esp32/build/bootloader/*.elf
+            projects/esp32/build/partition_table/*.bin
+            projects/esp32/build/*.bin
+            projects/esp32/build/*.map
+            projects/esp32/build/*.elf
           if-no-files-found: error
 
   # requires web/dist directory to exist

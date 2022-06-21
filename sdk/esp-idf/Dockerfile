@@ -24,11 +24,11 @@ ENV \
   ESP_PYTHON=python3
 
 # install.sh
-RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install --targets=${ESP_IDF_TARGETS}
-RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py install-python-env
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py --non-interactive install --targets=${ESP_IDF_TARGETS}
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py --non-interactive install-python-env
 
 # export.sh
-RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py export > /opt/esp-idf-envs.sh
+RUN ${ESP_PYTHON} /opt/esp-idf/tools/idf_tools.py --non-interactive export > /opt/esp-idf-envs.sh
 RUN . /opt/esp-idf-envs.sh && ${ESP_PYTHON} /opt/esp-idf/tools/check_python_dependencies.py
 
 ADD entrypoint.sh /opt/esp-idf-entrypoint.sh

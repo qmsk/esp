@@ -1,5 +1,7 @@
 .*
 
+!.github
+
 /projects/*/sdkconfig
 /projects/*/sdkconfig@*
 /projects/*/sdkconfig.old

@@ -79,3 +79,12 @@ TickType_t user_led_output_tick(struct user_led *led);
 TickType_t user_led_output_schedule(struct user_led *led, TickType_t period);
 
 void user_led_update(struct user_led *led);
+
+/* gpio.c */
+int user_led_init_gpio(struct user_led *led, unsigned index, struct user_leds_options options);
+void user_led_output_mode(struct user_led *led);
+void user_led_output_idle(struct user_led *led);
+void user_led_output_off(struct user_led *led);
+void user_led_output_on(struct user_led *led);
+void user_led_input_mode(struct user_led *led);
+int user_led_input_read(struct user_led *led);

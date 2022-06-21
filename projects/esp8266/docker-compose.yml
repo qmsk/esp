@@ -10,14 +10,14 @@
 version: '3.8'
 services:
   sdk:
-    image: qmsk/esp8266-rtos-sdk
+    image: qmsk/esp8266-rtos-sdk:dev
     build:
       context: ../../sdk/esp8266-rtos-sdk
       args:
         ESP8266_RTOS_SDK_VERSION: v3.4
 
   build:
-    image: qmsk/esp8266-rtos-sdk
+    image: qmsk/esp8266-rtos-sdk:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp8266
@@ -29,7 +29,7 @@ services:
       SDKCONFIG_DEFAULTS: sdkconfig.defaults /build/boardconfig/${BOARDCONFIG:-qmsk-esp}
 
   flash:
-    image: qmsk/esp8266-rtos-sdk
+    image: qmsk/esp8266-rtos-sdk:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp8266
@@ -43,7 +43,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   config-reset:
-    image: qmsk/esp8266-rtos-sdk
+    image: qmsk/esp8266-rtos-sdk:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp8266
@@ -57,7 +57,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   monitor:
-    image: qmsk/esp8266-rtos-sdk
+    image: qmsk/esp8266-rtos-sdk:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp8266

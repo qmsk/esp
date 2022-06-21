@@ -1,0 +1,150 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
+
+env:
+  NODE_VERSION: 15.x
+  ESP_IDF_VERSION: v4.4
+  ESP8266_RTOS_SDK_VERSION: v3.4
+
+jobs:
+  build-web:
+    runs-on: ubuntu-20.04
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload web-dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist/
+          if-no-files-found: error
+
+  # requires web/dist directory to exist
+  build-esp32:
+    needs:
+      - build-web
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup
+        run: |
+          echo "BUILD_UID=$(id -u)" >> $GITHUB_ENV
+          echo "BUILD_GID=$(id -g)" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download web-dist
+        uses: actions/download-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # XXX: build --load -> build --output=type=docker is almost as slow as uncached build...
+      - name: Build SDK
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            ESP_IDF_VERSION=${{ env.ESP_IDF_VERSION }}
+            BUILD_UID=${{ env.BUILD_UID }}
+            BUILD_GID=${{ env.BUILD_GID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: sdk/esp-idf
+          load: true
+          push: false
+          tags: qmsk/esp-idf:dev
+
+      - name: Build
+        run: docker-compose -f projects/esp32/docker-compose.yml run --rm build
+
+      - name: Upload esp32-build
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp32-build
+          path: |
+            projects/esp32/build/bootloader/*.bin
+            projects/esp32/build/bootloader/*.map
+            projects/esp32/build/bootloader/*.elf
+            projects/esp32/build/partition_table/*.bin
+            projects/esp32/build/*.bin
+            projects/esp32/build/*.map
+            projects/esp32/build/*.elf
+            projects/esp32/build/flash_project_args
+            projects/esp32/build/flasher_args.json
+          if-no-files-found: error
+
+  # requires web/dist directory to exist
+  build-esp8266:
+    needs:
+      - build-web
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup
+        run: |
+          echo "USER_ID=$(id -u)" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download web-dist
+        uses: actions/download-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # XXX: build --load -> build --output=type=docker is almost as slow as uncached build...
+      - name: Build SDK
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            ESP8266_RTOS_SDK_VERSION=${{ env.ESP8266_RTOS_SDK_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: sdk/esp8266-rtos-sdk
+          load: true
+          push: false
+          tags: qmsk/esp8266-rtos-sdk:dev
+
+      - name: Build
+        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_args
+
+      - name: Upload esp8266-build
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp8266-build
+          path: |
+            projects/esp8266/build/*.bin
+            projects/esp8266/build/*.map
+            projects/esp8266/build/*.elf
+            projects/esp8266/build/flash_args
+          if-no-files-found: error

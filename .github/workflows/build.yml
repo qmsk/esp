@@ -58,6 +58,11 @@ jobs:
           name: web-dist
           path: web/dist
 
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
       - name: Build SDK
         run: docker-compose -f projects/esp32/docker-compose.yml build sdk
 

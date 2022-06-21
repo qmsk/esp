@@ -11,6 +11,7 @@ on:
 env:
   NODE_VERSION: 15.x
   ESP_IDF_VERSION: v4.4
+  ESP8266_RTOS_SDK_VERSION: v3.4
 
 jobs:
   build-web:
@@ -65,6 +66,7 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
 
+      # XXX: build --load -> build --output=type=docker is almost as slow as uncached build...
       - name: Build SDK
         uses: docker/build-push-action@v3
         with:
@@ -86,6 +88,57 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: esp32-build
+          path: |
+            build/**/*.bin
+            build/**/*.map
+            build/**/*.elf
+          if-no-files-found: error
+
+  # requires web/dist directory to exist
+  build-esp8266:
+    needs:
+      - build-web
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup
+        run: |
+          echo "BUILD_UID=$(id -u)" >> $GITHUB_ENV
+          echo "BUILD_GID=$(id -g)" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download web-dist
+        uses: actions/download-artifact@v3
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # XXX: build --load -> build --output=type=docker is almost as slow as uncached build...
+      - name: Build SDK
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            ESP8266_RTOS_SDK_VERSION=${{ env.ESP8266_RTOS_SDK_VERSION }}
+            BUILD_UID=${{ env.BUILD_UID }}
+            BUILD_GID=${{ env.BUILD_GID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: sdk/esp8266-rtos-sdk
+          load: true
+          push: false
+          tags: qmsk/esp8266-rtos-sdk:dev
+
+      - name: Build
+        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build
+
+      - name: Upload esp8266-build
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp8266-build
           path: |
             build/**/*.bin
             build/**/*.map

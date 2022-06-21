@@ -43,12 +43,12 @@
 
   static int init_eth_phy()
   {
+#if CONFIG_ETH_PHY_LAN87XX
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 
     phy_config.phy_addr = CONFIG_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_ETH_PHY_RESET_GPIO_NUM;
 
-  #if CONFIG_ETH_PHY_LAN87XX
     LOG_INFO("lan87xx: phy_addr=%d reset_gpio_num=%d",
       phy_config.phy_addr,
       phy_config.reset_gpio_num
@@ -58,11 +58,14 @@
       LOG_ERROR("esp_eth_phy_new_lan87xx");
       return -1;
     }
-  #else
-  # error No CONFIG_ETH_PHY_* configured
-  #endif
 
     return 0;
+  #else
+    LOG_ERROR("no CONFIG_ETH_PHY_* configured");
+    
+    return -1;
+  #endif
+
   }
 
   static int init_eth_driver()

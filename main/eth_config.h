@@ -1,5 +1,13 @@
 #pragma once
 
+#include <sdkconfig.h>
+
+#if CONFIG_ETH_PHY_LAN87XX
+# define ETH_ENABLED 1
+#else
+# define ETH_ENABLED 0
+#endif
+
 enum eth_mode {
   ETH_MODE_NONE,
   ETH_MODE_STATIC,

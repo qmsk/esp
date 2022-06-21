@@ -54,7 +54,11 @@
 
   bool is_eth_enabled()
   {
+  #if ETH_ENABLED
     return eth_config.enabled;
+  #else
+    return false;
+  #endif
   }
 
   bool is_eth_dhcp_client()

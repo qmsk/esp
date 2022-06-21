@@ -10,6 +10,7 @@ on:
 
 env:
   NODE_VERSION: 15.x
+  ESP_IDF_VERSION: v4.4
 
 jobs:
   build-web:
@@ -67,7 +68,18 @@ jobs:
           install: true
 
       - name: Build SDK
-        run: docker-compose -f projects/esp32/docker-compose.yml build sdk
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            ESP_IDF_VERSION=${{ env.ESP_IDF_VERSION }}
+            BUILD_UID=${{ env.BUILD_UID }}
+            BUILD_GID=${{ env.BUILD_GID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: sdk/esp-idf
+          load: true
+          push: false
+          tags: qmsk/esp-idf:dev
 
       - name: Build
         run: docker-compose -f projects/esp32/docker-compose.yml run --rm build

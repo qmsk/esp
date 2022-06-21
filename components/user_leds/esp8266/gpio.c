@@ -19,7 +19,7 @@ static IRAM_ATTR void user_led_gpio_isr (void * arg)
     LOG_ISR_WARN("xEventGroupSetBitsFromISR");
   }
 
-  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR();
 }
 
 int user_led_init_gpio(struct user_led *led, unsigned index, struct user_leds_options options)
@@ -74,10 +74,11 @@ void user_led_output_mode(struct user_led *led)
 
   if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
     // do not trigger interrupts when driving pin in output mode
-    gpio_intr_disable(led->options.gpio);
+    gpio_set_intr_type(led->options.gpio, GPIO_INTR_DISABLE);
   }
 
-  gpio_set_direction(led->options.gpio, (led->options.mode & USER_LEDS_MODE_INPUT_BIT) ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT);
+  // esp8266 gpio input is always connected
+  gpio_set_direction(led->options.gpio, GPIO_MODE_OUTPUT);
 }
 
 void user_led_output_idle(struct user_led *led)
@@ -89,7 +90,7 @@ void user_led_output_idle(struct user_led *led)
 
   if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
     // listen for input interrupts
-    gpio_intr_enable(led->options.gpio);
+    gpio_set_intr_type(led->options.gpio, GPIO_INTR_ANYEDGE);
   }
 }
 
@@ -111,7 +112,7 @@ void user_led_input_mode(struct user_led *led)
   gpio_set_direction(led->options.gpio, GPIO_MODE_INPUT);
 
   if (led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT) {
-    gpio_intr_enable(led->options.gpio);
+    gpio_set_intr_type(led->options.gpio, GPIO_INTR_ANYEDGE);
   }
 }
 

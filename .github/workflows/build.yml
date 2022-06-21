@@ -134,7 +134,7 @@ jobs:
           tags: qmsk/esp8266-rtos-sdk:dev
 
       - name: Build
-        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all
+        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_sh
 
       - name: Upload esp8266-build
         uses: actions/upload-artifact@v3
@@ -144,4 +144,5 @@ jobs:
             projects/esp8266/build/*.bin
             projects/esp8266/build/*.map
             projects/esp8266/build/*.elf
+            projects/esp8266/build/*.sh
           if-no-files-found: error

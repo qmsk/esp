@@ -5,7 +5,7 @@
 version: '3.8'
 services:
   sdk:
-    image: qmsk/esp-idf
+    image: qmsk/esp-idf:dev
     build:
       context: ../../sdk/esp-idf
       args:
@@ -15,7 +15,7 @@ services:
     command: idf.py --version
 
   build:
-    image: qmsk/esp-idf
+    image: qmsk/esp-idf:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32
@@ -23,7 +23,7 @@ services:
     init: true
 
   flash:
-    image: qmsk/esp-idf
+    image: qmsk/esp-idf:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32
@@ -35,7 +35,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   monitor:
-    image: qmsk/esp-idf
+    image: qmsk/esp-idf:dev
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32

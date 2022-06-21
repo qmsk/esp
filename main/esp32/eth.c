@@ -10,13 +10,6 @@
 
 #include <sdkconfig.h>
 
-// WT32-ETH01
-#define ETH_MAC_MDC_GPIO_NUM 23
-#define ETH_MAC_MDIO_GPIO_NUM 18
-#define ETH_PHY_LAN87XX 1
-#define ETH_PHY_ADDR 1
-#define ETH_PHY_RESET_GPIO_NUM 16 // not actually wired to LAN87XX nRST pin, but the 50MHz OSC EN pin - close enough, both are active-high
-
 static esp_eth_mac_t *eth_mac;
 static esp_eth_phy_t *eth_phy;
 static esp_eth_handle_t eth_handle;

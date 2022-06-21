@@ -1,5 +1,7 @@
 ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for multiple outputs/universes and additional Web UI, DMX input/output support.
 
+[![Build](https://github.com/qmsk/esp/actions/workflows/build.yml/badge.svg)](https://github.com/qmsk/esp/actions/workflows/build.yml)
+
 # Features
 
 * Single codebase for ESP8266 and ESP32 support

@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Upload
+      - name: Upload web-dist
         uses: actions/upload-artifact@v3
         with:
           name: web-dist
@@ -81,3 +81,13 @@ jobs:
 
       - name: Build
         run: docker-compose -f projects/esp32/docker-compose.yml run --rm build
+
+      - name: Upload esp32-build
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp32-build
+          path: |
+            build/**/*.bin
+            build/**/*.map
+            build/**/*.elf
+          if-no-files-found: error

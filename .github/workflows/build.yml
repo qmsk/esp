@@ -96,6 +96,8 @@ jobs:
             projects/esp32/build/*.bin
             projects/esp32/build/*.map
             projects/esp32/build/*.elf
+            projects/esp32/build/flash_project_args
+            projects/esp32/build/flasher_args.json
           if-no-files-found: error
 
   # requires web/dist directory to exist
@@ -134,7 +136,7 @@ jobs:
           tags: qmsk/esp8266-rtos-sdk:dev
 
       - name: Build
-        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_sh
+        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_args
 
       - name: Upload esp8266-build
         uses: actions/upload-artifact@v3
@@ -144,5 +146,5 @@ jobs:
             projects/esp8266/build/*.bin
             projects/esp8266/build/*.map
             projects/esp8266/build/*.elf
-            projects/esp8266/build/*.sh
+            projects/esp8266/build/flash_args
           if-no-files-found: error

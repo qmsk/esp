@@ -139,15 +139,15 @@ int wifi_listen(const wifi_ap_config_t *ap_config)
   wifi_config_t config = { .ap = *ap_config };
   esp_err_t err;
 
-  // mode
-  if ((err = switch_wifi_mode(WIFI_MODE_AP))) {
-    LOG_ERROR("switch_wifi_mode WIFI_MODE_AP");
-    return err;
-  }
-
   // netif
   if ((err = init_wifi_interface(WIFI_IF_AP))) {
     LOG_ERROR("init_wifi_interface");
+    return err;
+  }
+
+  // mode
+  if ((err = switch_wifi_mode(WIFI_MODE_AP))) {
+    LOG_ERROR("switch_wifi_mode WIFI_MODE_AP");
     return err;
   }
 
@@ -177,15 +177,15 @@ int wifi_connect(const wifi_sta_config_t *sta_config)
   wifi_config_t config = { .sta = *sta_config };
   esp_err_t err;
 
-  // mode
-  if ((err = switch_wifi_mode(WIFI_MODE_STA))) {
-    LOG_ERROR("switch_wifi_mode WIFI_MODE_STA");
-    return err;
-  }
-
   // netif
   if ((err = init_wifi_interface(WIFI_IF_STA))) {
     LOG_ERROR("init_wifi_interface");
+    return err;
+  }
+
+  // mode
+  if ((err = switch_wifi_mode(WIFI_MODE_STA))) {
+    LOG_ERROR("switch_wifi_mode WIFI_MODE_STA");
     return err;
   }
 

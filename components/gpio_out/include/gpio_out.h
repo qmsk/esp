@@ -9,14 +9,15 @@
   typedef int gpio_out_pin_t;
   typedef uint32_t gpio_out_pins_t;
 
-  // GPIO16 is not supported (RTC)
-  #define GPIO_OUT_PIN_COUNT 16
+  #define GPIO_OUT_PIN_COUNT 17
   #define GPIO_OUT_PIN(x) ((gpio_out_pin_t)(x))
 
   #define GPIO_OUT_PINS_FMT "%08x"
   #define GPIO_OUT_PINS_ARGS(x) x
   #define GPIO_OUT_PINS_NONE 0
-  #define GPIO_OUT_PINS_ALL 0xffff
+  #define GPIO_OUT_PINS_ALL   0x1ffff
+  #define GPIO_OUT_PINS_HOST  0x0ffff
+  #define GPIO_OUT_PINS_RTC   0x10000
   #define GPIO_OUT_PINS(x) ((gpio_out_pins_t)(1 << x))
 
   #define GPIO_OUT_PINS_GPIO0  GPIO_OUT_PINS(0)
@@ -35,6 +36,7 @@
   #define GPIO_OUT_PINS_GPIO13 GPIO_OUT_PINS(13)
   #define GPIO_OUT_PINS_GPIO14 GPIO_OUT_PINS(14)
   #define GPIO_OUT_PINS_GPIO15 GPIO_OUT_PINS(15)
+  #define GPIO_OUT_PINS_GPIO16 GPIO_OUT_PINS(16) // RTC
 
 #elif CONFIG_IDF_TARGET_ESP32
   #include <hal/gpio_types.h>

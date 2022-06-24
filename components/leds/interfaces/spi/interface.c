@@ -42,8 +42,8 @@
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio.gpio_out) {
-      gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
+    if (options->gpio.gpio_options) {
+      gpio_out_set(options->gpio.gpio_options, options->gpio.gpio_out_pins);
     }
   #endif
 
@@ -70,8 +70,8 @@
 
   error:
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio.gpio_out) {
-      gpio_out_clear(options->gpio.gpio_out);
+    if (options->gpio.gpio_options) {
+      gpio_out_clear(options->gpio.gpio_options);
     }
   #endif
 
@@ -146,13 +146,12 @@
     }
 
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio.gpio_out) {
-      gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
+    if (options->gpio.gpio_options) {
+      gpio_out_set(options->gpio.gpio_options, options->gpio.gpio_out_pins);
     }
   #endif
 
     WITH_STATS_TIMER(&stats->tx) {
-      // TODO: additional gpio_out support, if spi_cs is not enough?
       if ((ret = spi_device_transmit(interface->device, &transaction))) {
         LOG_ERROR("spi_device_transmit");
         goto error;
@@ -161,8 +160,8 @@
 
 error:
   #if CONFIG_LEDS_GPIO_ENABLED
-    if (options->gpio.gpio_out) {
-      gpio_out_clear(options->gpio.gpio_out);
+    if (options->gpio.gpio_options) {
+      gpio_out_clear(options->gpio.gpio_options);
     }
   #endif
 

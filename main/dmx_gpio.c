@@ -2,10 +2,12 @@
 #include "dmx_config.h"
 #include "dmx_state.h"
 
-#include <gpio_out.h>
+#include <gpio.h>
 #include <logging.h>
 
-struct gpio_out dmx_gpio_out;
+struct gpio_options dmx_gpio_options = {
+  .type   = GPIO_TYPE_HOST,
+};
 
 int init_dmx_gpio()
 {
@@ -29,8 +31,8 @@ int init_dmx_gpio()
 
         LOG_INFO("dmx-output%d: gpio mode=LOW pin=%d", i + 1, config->gpio_pin);
 
-        dmx_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
-        dmx_gpio_out.inverted |= gpio_out_pin(config->gpio_pin);
+        dmx_gpio_options.pins |= gpio_host_pin(config->gpio_pin);
+        dmx_gpio_options.inverted |= gpio_host_pin(config->gpio_pin);
         break;
 
       case DMX_GPIO_MODE_HIGH:
@@ -38,7 +40,7 @@ int init_dmx_gpio()
 
         LOG_INFO("dmx-output%d: gpio mode=HIGH pin=%d", i + 1, config->gpio_pin);
 
-        dmx_gpio_out.pins |= gpio_out_pin(config->gpio_pin);
+        dmx_gpio_options.pins |= gpio_host_pin(config->gpio_pin);
         break;
 
       default:
@@ -52,13 +54,13 @@ int init_dmx_gpio()
     return 0;
   }
 
-  LOG_INFO("dmx: gpio -> pins=" GPIO_OUT_PINS_FMT " inverted=" GPIO_OUT_PINS_FMT,
-    GPIO_OUT_PINS_ARGS(dmx_gpio_out.pins),
-    GPIO_OUT_PINS_ARGS(dmx_gpio_out.inverted)
+  LOG_INFO("dmx: gpio -> pins=" GPIO_PINS_FMT " inverted=" GPIO_PINS_FMT,
+    GPIO_PINS_ARGS(dmx_gpio_options.pins),
+    GPIO_PINS_ARGS(dmx_gpio_options.inverted)
   );
 
-  if ((err = gpio_out_setup(&dmx_gpio_out))) {
-    LOG_ERROR("gpio_out_setup");
+  if ((err = gpio_init(&dmx_gpio_options))) {
+    LOG_ERROR("gpio_init");
     return err;
   }
 
@@ -72,8 +74,8 @@ int config_dmx_output_gpio(struct dmx_output_state *state, const struct dmx_outp
       config->gpio_pin
   );
 
-  options->gpio_out = &dmx_gpio_out;
-  options->gpio_out_pins = gpio_out_pin(config->gpio_pin);
+  options->gpio_options = &dmx_gpio_options;
+  options->gpio_out_pins = gpio_host_pin(config->gpio_pin);
 
   return 0;
 }

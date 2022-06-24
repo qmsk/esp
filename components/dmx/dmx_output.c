@@ -62,8 +62,8 @@ int dmx_output_open (struct dmx_output *out, struct uart *uart)
   }
 
   // enable output
-  if (out->options.gpio_out) {
-    gpio_out_set(out->options.gpio_out, out->options.gpio_out_pins);
+  if (out->options.gpio_options) {
+    gpio_out_set(out->options.gpio_options, out->options.gpio_out_pins);
   }
 
   return 0;
@@ -117,8 +117,8 @@ int dmx_output_close (struct dmx_output *out)
   }
 
   // disable output
-  if (out->options.gpio_out) {
-    gpio_out_clear(out->options.gpio_out);
+  if (out->options.gpio_options) {
+    gpio_out_clear(out->options.gpio_options);
   }
 
   if (uart_close_tx(out->uart)) {

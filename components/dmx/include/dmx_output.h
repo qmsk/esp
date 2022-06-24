@@ -1,14 +1,15 @@
 #pragma once
 
 #include <dmx.h>
-#include <gpio_out.h>
+#include <gpio.h>
 #include <uart.h>
 
 struct dmx_output;
 struct dmx_output_options {
+  
   /* Optional */
-  struct gpio_out *gpio_out;
-  gpio_out_pins_t gpio_out_pins;
+  struct gpio_options *gpio_options;
+  gpio_pins_t gpio_out_pins;
 };
 
 int dmx_output_new (struct dmx_output **outp, struct dmx_output_options options);

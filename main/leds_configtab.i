@@ -94,7 +94,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   { CONFIG_TYPE_UINT16, "gpio_pin",
     .description = "GPIO pin to activate when transmitting on this output",
     .count = &LEDS_CONFIG.gpio_count, .size = LEDS_GPIO_SIZE,
-    .uint16_type = { .value = LEDS_CONFIG.gpio_pin, .max = (GPIO_OUT_PIN_COUNT - 1) },
+    .uint16_type = { .value = LEDS_CONFIG.gpio_pin, .max = (GPIO_HOST_PIN_COUNT - 1) },
   },
 #endif
 

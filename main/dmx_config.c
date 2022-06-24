@@ -2,7 +2,7 @@
 #include "dmx_config.h"
 
 #include <artnet.h>
-#include <gpio_out.h>
+#include <gpio.h>
 #include <dmx_uart.h>
 
 struct dmx_uart_config dmx_uart_config;

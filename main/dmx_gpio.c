@@ -59,8 +59,8 @@ int init_dmx_gpio()
     GPIO_PINS_ARGS(dmx_gpio_options.inverted)
   );
 
-  if ((err = gpio_init(&dmx_gpio_options))) {
-    LOG_ERROR("gpio_init");
+  if ((err = gpio_setup(&dmx_gpio_options))) {
+    LOG_ERROR("gpio_setup");
     return err;
   }
 

@@ -6,7 +6,7 @@
 
 #include <esp_err.h>
 
-static void gpio_host_init_pin(gpio_pin_t gpio, bool inverted)
+static void gpio_host_setup_pin(gpio_pin_t gpio, bool inverted)
 {
   // clear
   gpio_ll_set_level(&GPIO, gpio, inverted ? true : false);
@@ -26,13 +26,13 @@ static void gpio_host_init_pin(gpio_pin_t gpio, bool inverted)
   gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
 }
 
-int gpio_host_init(const struct gpio_options *options)
+int gpio_host_setup(const struct gpio_options *options)
 {
   for (gpio_pin_t gpio = 0; gpio < GPIO_HOST_PIN_COUNT; gpio++) {
     if (options->pins & gpio_host_pin(gpio)) {
       bool inverted = options->inverted & gpio_host_pin(gpio);
 
-      gpio_host_init_pin(gpio, inverted);
+      gpio_host_setup_pin(gpio, inverted);
     }
   }
 

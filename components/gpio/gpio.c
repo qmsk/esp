@@ -3,11 +3,11 @@
 
 #include <logging.h>
 
-int gpio_init(const struct gpio_options *options)
+int gpio_setup(const struct gpio_options *options)
 {
   switch (options->type) {
     case GPIO_TYPE_HOST:
-      return gpio_host_init(options);
+      return gpio_host_setup(options);
 
     default:
       LOG_FATAL("unsupported type=%d", options->type);

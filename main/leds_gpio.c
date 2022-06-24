@@ -84,8 +84,8 @@
         GPIO_PINS_ARGS(leds_gpio_options[interface].inverted)
       );
 
-      if ((err = gpio_init(&leds_gpio_options[interface]))) {
-        LOG_ERROR("gpio_init");
+      if ((err = gpio_setup(&leds_gpio_options[interface]))) {
+        LOG_ERROR("gpio_setup");
         return err;
       }
     }

@@ -8,7 +8,7 @@
 #include <esp_err.h>
 #include <esp8266/gpio_struct.h>
 
-int gpio_host_init(const struct gpio_options *options)
+int gpio_host_setup(const struct gpio_options *options)
 {
   gpio_config_t config = {
     .pin_bit_mask   = options->pins,

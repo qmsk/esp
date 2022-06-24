@@ -112,7 +112,7 @@ struct gpio_options {
 };
 
 /* Setup output pins */
-int gpio_init(const struct gpio_options *options);
+int gpio_setup(const struct gpio_options *options);
 
 /* Clear all output pins */
 void gpio_out_clear(const struct gpio_options *options);

@@ -14,7 +14,7 @@ int gpio_setup(const struct gpio_options *options)
   }
 }
 
-void gpio_out_clear(const struct gpio_options *options)
+int gpio_out_clear(const struct gpio_options *options)
 {
   switch (options->type) {
     case GPIO_TYPE_HOST:
@@ -25,7 +25,7 @@ void gpio_out_clear(const struct gpio_options *options)
   }
 }
 
-void gpio_out_set(const struct gpio_options *options, gpio_pins_t pins)
+int gpio_out_set(const struct gpio_options *options, gpio_pins_t pins)
 {
   switch (options->type) {
     case GPIO_TYPE_HOST:
@@ -36,7 +36,7 @@ void gpio_out_set(const struct gpio_options *options, gpio_pins_t pins)
   }
 }
 
-void gpio_out_set_all(const struct gpio_options *options)
+int gpio_out_set_all(const struct gpio_options *options)
 {
   switch (options->type) {
     case GPIO_TYPE_HOST:

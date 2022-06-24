@@ -115,10 +115,10 @@ struct gpio_options {
 int gpio_setup(const struct gpio_options *options);
 
 /* Clear all output pins */
-void gpio_out_clear(const struct gpio_options *options);
+int gpio_out_clear(const struct gpio_options *options);
 
 /* Set specific output pins, clear others */
-void gpio_out_set(const struct gpio_options *options, gpio_pins_t pins);
+int gpio_out_set(const struct gpio_options *options, gpio_pins_t pins);
 
 /* Set all output pins */
-void gpio_out_set_all(const struct gpio_options *options);
+int gpio_out_set_all(const struct gpio_options *options);

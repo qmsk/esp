@@ -39,17 +39,23 @@ int gpio_host_setup(const struct gpio_options *options)
   return 0;
 }
 
-void gpio_host_clear(const struct gpio_options *options)
+int gpio_host_clear(const struct gpio_options *options)
 {
   gpio_host_out_pins(options->pins, GPIO_HOST_PINS_NONE ^ options->inverted);
+
+  return 0;
 }
 
-void gpio_host_set(const struct gpio_options *options, gpio_pins_t pins)
+int gpio_host_set(const struct gpio_options *options, gpio_pins_t pins)
 {
   gpio_host_out_pins(options->pins, pins ^ options->inverted);
+
+  return 0;
 }
 
-void gpio_host_set_all(const struct gpio_options *options)
+int gpio_host_set_all(const struct gpio_options *options)
 {
   gpio_host_out_pins(options->pins, GPIO_HOST_PINS_ALL ^ options->inverted);
+
+  return 0;
 }

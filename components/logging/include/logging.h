@@ -3,6 +3,8 @@
 
 #include "esp_log.h"
 
+#include <stdlib.h>
+
 #ifdef DEBUG
 # define IF_DEBUG(x) do { if (1) x } while(0)
 #else

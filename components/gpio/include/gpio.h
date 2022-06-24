@@ -34,7 +34,7 @@ enum gpio_type {
   #define GPIO_HOST_PINS_ALL   0x1ffff
   #define GPIO_HOST_PINS_HOST  0x0ffff
   #define GPIO_HOST_PINS_RTC   0x10000
-  #define GPIO_HOST_PINS(x) ((gpio_pins_t)(1 << x))
+  #define GPIO_HOST_PINS(x) (((gpio_pins_t)(1)) << x)
 
   #define GPIO_HOST_PINS_GPIO0  GPIO_HOST_PINS(0)
   #define GPIO_HOST_PINS_GPIO1  GPIO_HOST_PINS(1)
@@ -61,7 +61,7 @@ enum gpio_type {
 
   #define GPIO_HOST_PINS_NONE 0
   #define GPIO_HOST_PINS_ALL 0x00000003ffffffff
-  #define GPIO_HOST_PINS(x) ((gpio_pins_t)(1 << x))
+  #define GPIO_HOST_PINS(x) (((gpio_pins_t)(1)) << x)
 
   #define GPIO_HOST_PINS_GPIO0  GPIO_HOST_PINS(0)
   #define GPIO_HOST_PINS_GPIO1  GPIO_HOST_PINS(1)

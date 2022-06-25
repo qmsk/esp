@@ -12,6 +12,9 @@
 
   #define GPIO_PINS_FMT "%08x"
   #define GPIO_PINS_ARGS(x) x
+
+  // TODO
+  #define GPIO_I2C_ENABLED 0
 #elif CONFIG_IDF_TARGET_ESP32
   // more than 32 GPIOs
   typedef int gpio_pin_t;
@@ -20,10 +23,16 @@
   // newlib-nano printf does not support 64-bit formatting
   #define GPIO_PINS_FMT "%02x%08x"
   #define GPIO_PINS_ARGS(x) (uint32_t)(x >> 32), (uint32_t)(x & 0xffffffff)
+
+  #define GPIO_I2C_ENABLED 1
 #endif
 
 enum gpio_type {
   GPIO_TYPE_HOST,
+#if GPIO_I2C_ENABLED
+  GPIO_TYPE_I2C_PCA9534,
+  GPIO_TYPE_I2C_PCA9554,
+#endif
 };
 
 #if CONFIG_IDF_TARGET_ESP8266
@@ -98,11 +107,37 @@ enum gpio_type {
   #define GPIO_HOST_PINS_GPIO32 GPIO_HOST_PINS(32)
   #define GPIO_HOST_PINS_GPIO33 GPIO_HOST_PINS(33)
 #endif
+
+#if GPIO_I2C_ENABLED
+  #include <freertos/FreeRTOS.h>
+  #include <hal/i2c_types.h>
+
+  #define GPIO_I2C_ADDR_MAX 0xff
+
+  #define GPIO_I2C_PCA9554_PIN_COUNT 8
+  #define GPIO_I2C_PCA9554_PINS_MASK 0xff
+  #define GPIO_I2C_PCA9554_PINS(x) (((gpio_pins_t)(1)) << x)
+
+  #define GPIO_I2C_PCA9554_ADDR(addr) (GPIO_I2C_PCA9554_ADDR_BASE | ((addr) & GPIO_I2C_PCA9554_ADDR_MASK))
+  #define GPIO_I2C_PCA9554_ADDR_BASE 0x20
+  #define GPIO_I2C_PCA9554_ADDR_MASK 0x07
+#endif
+
 /* Return gpio_out_pins bitmask for numbered pin, or 0 if invalid */
 gpio_pins_t gpio_host_pin(gpio_pin_t pin);
 
 struct gpio_options {
   enum gpio_type type;
+
+  union {
+  #if GPIO_I2C_ENABLED
+    struct gpio_i2c_options {
+      i2c_port_t port;
+      uint8_t addr;
+      TickType_t timeout;
+    } i2c;
+  #endif
+  };
 
   // bitmask of pins to enable
   gpio_pins_t pins;

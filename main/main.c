@@ -5,6 +5,7 @@
 #include "dev_mutex.h"
 #include "dmx.h"
 #include "eth.h"
+#include "i2c_master.h"
 #include "leds.h"
 #include "log.h"
 #include "http.h"
@@ -41,6 +42,12 @@ void app_main(void)
 
   if ((err = init_dev_mutex())) {
     LOG_ERROR("init_dev_mutex");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
+  if ((err = init_i2c_master())) {
+    LOG_ERROR("init_i2c_master");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }

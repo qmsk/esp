@@ -1,12 +1,41 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "i2c_config.h"
 
 #include <gpio.h>
 
 #include <logging.h>
 
+#define LEDS_GPIO_I2C_TIMEOUT (1 / portTICK_RATE_MS)
+
 #if CONFIG_LEDS_GPIO_ENABLED
+  // config
+  struct leds_gpio_config leds_gpio_config = { };
+
+  const struct config_enum leds_gpio_type_enum[] = {
+    { "HOST",     GPIO_TYPE_HOST            },
+  #if LEDS_GPIO_I2C_ENABLED
+    { "PCA9534",  GPIO_TYPE_I2C_PCA9534     },
+    { "PCA9554",  GPIO_TYPE_I2C_PCA9554     },
+  #endif
+    {},
+  };
+
+  const struct configtab leds_gpio_configtab[] = {
+    { CONFIG_TYPE_ENUM, "type",
+      .description = "Select GPIO interface type.",
+      .enum_type = { .value = &leds_gpio_config.type, .values = leds_gpio_type_enum, .default_value = GPIO_TYPE_HOST },
+    },
+  #if LEDS_GPIO_I2C_ENABLED
+    { CONFIG_TYPE_UINT16, "i2c_addr",
+      .description = "Select I2C GPIO device address.",
+      .uint16_type = { .value = &leds_gpio_config.i2c_addr, .max = GPIO_I2C_ADDR_MAX },
+    },
+  #endif
+    {},
+  };
+
   // by interface
   struct gpio_options leds_gpio_options[LEDS_INTERFACE_COUNT] = {
   #if CONFIG_LEDS_SPI_ENABLED
@@ -74,17 +103,47 @@
     }
 
     for (enum leds_interface interface = 0; interface < LEDS_INTERFACE_COUNT; interface++) {
+      struct gpio_options *options = &leds_gpio_options[interface];
+
       if (!interfaces_enabled[interface]) {
         continue;
       }
 
-      LOG_INFO("leds: gpio[%s] -> pins=" GPIO_PINS_FMT " inverted=" GPIO_PINS_FMT,
+      switch ((options->type = leds_gpio_config.type)) {
+        case GPIO_TYPE_HOST:
+          break;
+
+      #if LEDS_GPIO_I2C_ENABLED
+        case GPIO_TYPE_I2C_PCA9534:
+        case GPIO_TYPE_I2C_PCA9554:
+          options->i2c.port = I2C_MASTER_PORT;
+          options->i2c.addr = leds_gpio_config.i2c_addr;
+          options->i2c.timeout = LEDS_GPIO_I2C_TIMEOUT;
+
+          LOG_INFO("leds: gpio[%s] i2c port=%d addr=%u timeout=%d",
+            config_enum_to_string(leds_interface_enum, interface),
+            options->i2c.port,
+            options->i2c.addr,
+            options->i2c.timeout
+          );
+
+          break;
+      #endif
+
+        default:
+          LOG_ERROR("invalid leds-gpio type=%d", options->type);
+          return -1;
+      }
+
+
+      LOG_INFO("leds: gpio[%s] -> type=%d pins=" GPIO_PINS_FMT " inverted=" GPIO_PINS_FMT,
         config_enum_to_string(leds_interface_enum, interface),
-        GPIO_PINS_ARGS(leds_gpio_options[interface].pins),
-        GPIO_PINS_ARGS(leds_gpio_options[interface].inverted)
+        options->type,
+        GPIO_PINS_ARGS(options->pins),
+        GPIO_PINS_ARGS(options->inverted)
       );
 
-      if ((err = gpio_setup(&leds_gpio_options[interface]))) {
+      if ((err = gpio_setup(options))) {
         LOG_ERROR("gpio_setup");
         return err;
       }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "i2c_config.h"
+
 #include <config.h>
 #include <leds.h>
 
@@ -18,6 +20,22 @@ struct leds_state *state;
     LEDS_GPIO_MODE_HIGH     = 1,
   };
 
+  #if GPIO_I2C_ENABLED && CONFIG_I2C_MASTER_ENABLED
+    #define LEDS_GPIO_I2C_ENABLED 1
+  #else
+    #define LEDS_GPIO_I2C_ENABLED 0
+  #endif
+
+  struct leds_gpio_config {
+    int type;
+  #if LEDS_GPIO_I2C_ENABLED
+    uint16_t i2c_addr;
+  #endif
+  };
+
+  extern struct leds_gpio_config leds_gpio_config;
+
+  extern const struct config_enum leds_gpio_type_enum[];
   extern const struct config_enum leds_gpio_mode_enum[];
 #endif
 

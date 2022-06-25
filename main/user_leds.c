@@ -132,8 +132,8 @@ int init_user_leds()
   if (interrupts && (err = init_user_leds_gpio_interrupts())) {
     LOG_ERROR("init_user_leds_gpio_interrupts");
     return err;
-  }
 
+  }
   if ((err = user_leds_new(&user_leds, USER_LEDS_COUNT, user_leds_options))) {
     LOG_ERROR("user_leds_new");
     return err;
@@ -250,6 +250,6 @@ void set_user_leds_alert(enum user_alert alert)
     LOG_WARN("set_user_led");
   }
 #else
-  (void) state;
+  (void) leds_state;
 #endif
 }

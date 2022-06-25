@@ -36,7 +36,7 @@ int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds
 
   leds->count = count;
 
-  if (!(leds->leds = calloc(count, sizeof(*leds->leds)))) {
+  if (!(leds->leds = calloc(count, sizeof(*leds->leds))) && count) {
     LOG_ERROR("calloc");
     err = -1;
     goto error;

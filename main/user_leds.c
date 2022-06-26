@@ -148,25 +148,8 @@ static struct user_leds_options user_leds_options[] = {
 #endif
 };
 
-static int init_user_leds_gpio_interrupts()
-{
-  LOG_INFO("enabling gpio interrupts");
-
-  // TODO: common across different modules?
-  /*
-  esp_err_t err;
-  if ((err = gpio_install_isr_service(0))) {
-    LOG_ERROR("gpio_install_isr_service: %s", esp_err_to_name(err));
-    return -1;
-  }
-  */
-
-  return 0;
-}
-
 int init_user_leds()
 {
-  bool interrupts = false;
   int err;
 
   if ((user_leds_input_queue = xQueueCreate(1, sizeof(struct user_leds_input))) == NULL) {
@@ -176,17 +159,8 @@ int init_user_leds()
 
   for (unsigned i = 0; i < USER_LEDS_COUNT; i++) {
     user_leds_options[i].input_queue = user_leds_input_queue;
-
-    if (user_leds_options[i].mode & USER_LEDS_MODE_INTERRUPT_BIT) {
-      interrupts = true;
-    }
   }
 
-  if (interrupts && (err = init_user_leds_gpio_interrupts())) {
-    LOG_ERROR("init_user_leds_gpio_interrupts");
-    return err;
-
-  }
   if ((err = user_leds_new(&user_leds, &user_leds_gpio, USER_LEDS_COUNT, user_leds_options))) {
     LOG_ERROR("user_leds_new");
     return err;

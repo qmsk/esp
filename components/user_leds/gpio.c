@@ -93,7 +93,11 @@ int user_leds_gpio_input(struct user_leds *leds)
   for (unsigned i = 0; i < leds->count; i++) {
     struct user_led *led = &leds->leds[i];
 
-    if (led->input_state) {
+    if (!(led->options.mode & USER_LEDS_MODE_INPUT_BIT)) {
+      continue;
+    }
+
+    if (led->input_state || !led->output_state) {
       input_pins |= GPIO_PINS(led->options.gpio_pin);
     }
   }
@@ -131,6 +135,10 @@ int user_leds_gpio_output(struct user_leds *leds)
 
   for (unsigned i = 0; i < leds->count; i++) {
     struct user_led *led = &leds->leds[i];
+
+    if (!(led->options.mode & USER_LEDS_MODE_OUTPUT_BIT)) {
+      continue;
+    }
 
     if (led->output_state && !led->input_state) {
       output_pins |= GPIO_PINS(led->options.gpio_pin);

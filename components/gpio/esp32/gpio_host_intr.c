@@ -65,6 +65,11 @@ int gpio_host_intr_init()
 
 void gpio_host_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio)
 {
+  if (gpio >= GPIO_HOST_PIN_COUNT) {
+    LOG_WARN("[%d] -> %p: invalid gpio_pin_t", gpio, options);
+    return;
+  }
+
   LOG_DEBUG("[%d] -> %p", gpio, options);
 
   gpio_host_intr_options[gpio] = options;

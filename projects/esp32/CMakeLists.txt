@@ -13,6 +13,15 @@ set(COMPONENT_DIRS $ENV{IDF_PATH}/components "../../components" ${EXTRA_COMPONEN
 # * wifi_provisioning: conflicts with custom json module
 set(EXCLUDE_COMPONENTS "wifi_provisioning")
 
+# use custom sdkconfig defaults from BOARDCONFIG env
+set(BOARDCONFIG "$ENV{BOARDCONFIG}")
+if(NOT BOARDCONFIG)
+  set(BOARDCONFIG "qmsk-esp")
+endif()
+
+set(SDKCONFIG "sdkconfig@${BOARDCONFIG}")
+set(SDKCONFIG_DEFAULTS "sdkconfig.defaults;boardconfig/${BOARDCONFIG}")
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(qmsk-esp32)
 

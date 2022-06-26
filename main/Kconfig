@@ -215,30 +215,35 @@ menu "qmsk-esp-eth"
       default y if ETH_BOARD_WT32_ETH01
 
   config ETH_MAC_MDC_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default 23  if ETH_BOARD_WT32_ETH01
       default 23
 
   config ETH_MAC_MDIO_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default 18  if ETH_BOARD_WT32_ETH01
       default 18
 
   config ETH_PHY_LAN87XX
+      depends on ETH_ENABLED
       bool
 
       default y if ETH_BOARD_WT32_ETH01
       default n
 
   config ETH_PHY_ADDR
+      depends on ETH_ENABLED
       int
 
       default  1  if ETH_BOARD_WT32_ETH01
       default -1
 
   config ETH_PHY_RESET_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default  16 if ETH_BOARD_WT32_ETH01

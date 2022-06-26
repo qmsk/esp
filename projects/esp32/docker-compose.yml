@@ -21,6 +21,8 @@ services:
     working_dir: /build/projects/esp32
     command: idf.py build
     init: true
+    environment:
+      BOARDCONFIG: "${BOARDCONFIG}"
 
   flash:
     image: qmsk/esp-idf:dev
@@ -45,3 +47,4 @@ services:
       - "${ESPPORT}"
     environment:
       ESPPORT: "${ESPPORT}"
+      BOARDCONFIG: "${BOARDCONFIG}"

@@ -57,7 +57,7 @@ int gpio_i2c_pc54xx_setup(const struct gpio_options *options)
 
 int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins)
 {
-  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(options->in_pins & pins));
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~(options->out_pins & ~pins)));
 }
 
 int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
@@ -69,7 +69,7 @@ int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
     return err;
   }
 
-  *pins = ((gpio_pins_t) value) ^ (options->inverted_pins & options->in_pins);
+  *pins = (((gpio_pins_t) value) ^ options->inverted_pins) & options->in_pins;
 
   return 0;
 }

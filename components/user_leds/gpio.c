@@ -3,6 +3,38 @@
 
 #include <logging.h>
 
+static IRAM_ATTR void user_leds_gpio_interrupt(gpio_pins_t pins, void *arg)
+{
+  struct user_leds *leds = arg;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+  LOG_ISR_DEBUG("pins=" GPIO_PINS_FMT, GPIO_PINS_ARGS(pins));
+
+  for (unsigned i = 0; i < leds->count; i++) {
+    struct user_led *led = &leds->leds[i];
+
+    if (!(led->options.mode & USER_LEDS_MODE_INTERRUPT_BIT)) {
+      continue;
+    };
+
+    if (!(pins & GPIO_PINS(led->options.gpio_pin))) {
+      continue;
+    }
+
+    LOG_ISR_DEBUG("[%u]", led->index);
+
+    if (!xSemaphoreGiveFromISR(led->input_interrupt, &xHigherPriorityTaskWoken)) {
+      LOG_ISR_DEBUG("xSemaphoreGiveFromISR");
+    }
+
+    if (!xEventGroupSetBitsFromISR(leds->event_group, USER_LEDS_EVENT_BIT(led->index), &xHigherPriorityTaskWoken)) {
+      LOG_ISR_WARN("xEventGroupSetBitsFromISR");
+    }
+  }
+
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 int user_leds_gpio_init(struct user_leds *leds, struct gpio_options *gpio_options)
 {
   int err;
@@ -33,6 +65,9 @@ int user_leds_gpio_init(struct user_leds *leds, struct gpio_options *gpio_option
       gpio_options->interrupt_pins |= GPIO_PINS(led->options.gpio_pin);
     }
   }
+
+  gpio_options->interrupt_func = user_leds_gpio_interrupt;
+  gpio_options->interrupt_arg = leds;
 
   LOG_INFO("gpio in_pins=" GPIO_PINS_FMT " out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT " interrupt_pins=" GPIO_PINS_FMT,
     GPIO_PINS_ARGS(gpio_options->in_pins),

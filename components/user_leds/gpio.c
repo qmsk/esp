@@ -140,7 +140,12 @@ int user_leds_gpio_output(struct user_leds *leds)
       continue;
     }
 
-    if (led->output_state && !led->input_state) {
+    if ((led->options.mode & USER_LEDS_MODE_INPUT_BIT) && !led->output_state) {
+      // do not enable the output pin if this this is a mixed INPUT/OUTPUT pin and the output is idle
+      // this allows the use of input interrupts
+    } else if (led->input_state) {
+      // do not enable the output pin if the input is being read
+    } else {
       output_pins |= GPIO_PINS(led->options.gpio_pin);
     }
 

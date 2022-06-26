@@ -66,7 +66,7 @@ static void gpio_host_setup_pin(gpio_pin_t gpio, bool input, bool output, bool i
   }
 
   // configure GPIO matrix as GPIO, to ensure that GPIO_FUNC is not driven by some other output signal
-  esp_rom_gpio_connect_out_signal(gpio, SIG_GPIO_OUT_IDX, false, false);
+  gpio_host_setup_signal(gpio);
 
   // configure IOMUX as GPIO
   gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
@@ -116,6 +116,8 @@ int gpio_host_setup_intr_pin(const struct gpio_options *options, gpio_pin_t gpio
 
     // configure RTC IOMUX as digital GPIO
     rtcio_ll_function_select(rtc_ionum, RTCIO_FUNC_DIGITAL);
+
+    LOG_DEBUG("RTCIO_TOUCH_PADn_REG[%d]@%#010x = %08x", rtc_ionum, rtc_io_desc[rtc_ionum].reg, REG_READ(rtc_io_desc[rtc_ionum].reg));
   }
 #endif
 
@@ -129,7 +131,7 @@ int gpio_host_setup_intr_pin(const struct gpio_options *options, gpio_pin_t gpio
   gpio_ll_set_intr_type(&GPIO, gpio, int_type);
 
   // configure GPIO matrix as GPIO, to ensure that GPIO_FUNC is not driven by some other output signal
-  esp_rom_gpio_connect_out_signal(gpio, SIG_GPIO_OUT_IDX, false, false);
+  gpio_host_setup_signal(gpio);
 
   // configure IOMUX as GPIO
   gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
@@ -138,6 +140,9 @@ int gpio_host_setup_intr_pin(const struct gpio_options *options, gpio_pin_t gpio
 
   LOG_DEBUG("GPIO_PIN_MUX_REG[%d]@%#010x = %08x", gpio, GPIO_PIN_MUX_REG[gpio], REG_READ(GPIO_PIN_MUX_REG[gpio]));
   LOG_DEBUG("GPIO_FUNC%d_OUT_SEL_CFG_REG@%p = %08x", gpio, &GPIO.func_out_sel_cfg[gpio].val, GPIO.func_out_sel_cfg[gpio].val);
+
+  LOG_DEBUG("enable=%08x", GPIO.enable);
+  LOG_DEBUG("out=%08x", GPIO.out);
 
   gpio_ll_intr_enable_on_core(&GPIO, core, gpio);
 

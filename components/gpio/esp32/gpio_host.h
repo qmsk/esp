@@ -1,8 +1,6 @@
 #pragma once
 
-#include <hal/gpio_types.h>
-#include <hal/gpio_ll.h>
-#include <soc/gpio_periph.h>
+#include <soc/gpio_struct.h>
 
 #define GPIO_HOST_PINS_LOW(x)  ((x) & 0xffffffff)
 #define GPIO_HOST_PINS_HIGH(x) ((x) >> 32)

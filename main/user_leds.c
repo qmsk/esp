@@ -3,6 +3,7 @@
 #include "user_leds_input.h"
 #include "user_leds_output.h"
 #include "user.h"
+#include "i2c_config.h"
 #include "tasks.h"
 
 #include <user_leds.h>
@@ -39,6 +40,9 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
+#define USER_LEDS_GPIO_I2C_TIMEOUT (1 / portTICK_RATE_MS)
+
+
 #define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_USER_MODE_TEST
   #define USER_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
@@ -76,7 +80,21 @@ QueueHandle_t user_leds_input_queue;
 #endif
 
 static struct gpio_options user_leds_gpio = {
+#if CONFIG_STATUS_LEDS_GPIO_TYPE_HOST
   .type = GPIO_TYPE_HOST,
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
+  .type = GPIO_TYPE_I2C_PCA9534,
+  .i2c.port = I2C_MASTER_PORT,
+  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9534,
+  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+  .type = GPIO_TYPE_I2C_PCA9554,
+  .i2c.port = I2C_MASTER_PORT,
+  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9554,
+  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+#else
+  #error "No CONFIG_STATUS_LEDS_GPIO_TYPE_* configured"
+#endif
 };
 
 static struct user_leds_options user_leds_options[] = {

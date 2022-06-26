@@ -107,7 +107,7 @@ void on_user_input(struct user_leds_input input)
 
   #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
     case FLASH_LED:
-      on_user_config_input(input, FLASH_LED);
+      on_user_config_input(input, ALERT_LED);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
@@ -117,7 +117,7 @@ void on_user_input(struct user_leds_input input)
   #endif
   #if CONFIG_STATUS_LEDS_CONFIG_MODE
     case CONFIG_BUTTON:
-      on_user_config_input(input, FLASH_LED);
+      on_user_config_input(input, ALERT_LED);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_TEST_MODE

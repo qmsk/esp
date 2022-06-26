@@ -29,7 +29,7 @@ void init_user_config_input(enum user_led led)
   }
 }
 
-void on_user_config_input(struct user_leds_input input)
+void on_user_config_input(struct user_leds_input input, enum user_led led)
 {
   static bool pressed = false;
 
@@ -38,7 +38,7 @@ void on_user_config_input(struct user_leds_input input)
       // enter config mode
       LOG_WARN("config start");
       pressed = true;
-      override_user_led(input.index, USER_LEDS_PULSE); // feedback
+      override_user_led(led, USER_LEDS_PULSE); // feedback
       user_config_mode();
       break;
 
@@ -51,7 +51,7 @@ void on_user_config_input(struct user_leds_input input)
       } else {
         LOG_WARN("config reset");
         user_state(USER_STATE_RESET);
-        revert_user_led(input.index);
+        revert_user_led(led);
         user_config_reset();
       }
       break;
@@ -59,7 +59,7 @@ void on_user_config_input(struct user_leds_input input)
     case USER_LEDS_INPUT_RELEASE:
       LOG_WARN("cancel");
       pressed = false;
-      revert_user_led(input.index);
+      revert_user_led(led);
 
       break;
   }
@@ -107,11 +107,21 @@ void on_user_input(struct user_leds_input input)
 
   #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
     case FLASH_LED:
-      on_user_config_input(input);
+      on_user_config_input(input, FLASH_LED);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
     case ALERT_LED:
+      on_user_test_input(input);
+      break;
+  #endif
+  #if CONFIG_STATUS_LEDS_CONFIG_MODE
+    case CONFIG_BUTTON:
+      on_user_config_input(input, FLASH_LED);
+      break;
+  #endif
+  #if CONFIG_STATUS_LEDS_TEST_MODE
+    case TEST_BUTTON:
       on_user_test_input(input);
       break;
   #endif
@@ -150,7 +160,9 @@ int start_user_events()
   };
   int err;
 
-#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
+#if CONFIG_STATUS_LEDS_CONFIG_MODE
+  init_user_config_input(CONFIG_BUTTON);
+#elif CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
   init_user_config_input(FLASH_LED);
 #endif
 

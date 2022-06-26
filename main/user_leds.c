@@ -79,6 +79,24 @@ QueueHandle_t user_leds_input_queue;
   #define ALERT_LED_MODE_INVERTED_BITS 0
 #endif
 
+#if CONFIG_STATUS_LEDS_CONFIG_ENABLED
+  #define CONFIG_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT)
+#endif
+#if CONFIG_STATUS_LEDS_CONFIG_GPIO_INVERTED
+  #define CONFIG_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
+#else
+  #define CONFIG_BUTTON_MODE_INVERTED_BITS 0
+#endif
+
+#if CONFIG_STATUS_LEDS_TEST_ENABLED
+  #define TEST_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT)
+#endif
+#if CONFIG_STATUS_LEDS_TEST_GPIO_INVERTED
+  #define TEST_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
+#else
+  #define TEST_BUTTON_MODE_INVERTED_BITS 0
+#endif
+
 static struct gpio_options user_leds_gpio = {
 #if CONFIG_STATUS_LEDS_GPIO_TYPE_HOST
   .type = GPIO_TYPE_HOST,
@@ -114,6 +132,18 @@ static struct user_leds_options user_leds_options[] = {
   [ALERT_LED] = {
     .gpio_pin = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
     .mode     = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
+  },
+#endif
+#if CONFIG_STATUS_LEDS_CONFIG_ENABLED
+  [CONFIG_BUTTON] = {
+    .gpio_pin = CONFIG_STATUS_LEDS_CONFIG_GPIO_NUM,
+    .mode     = CONFIG_BUTTON_MODE_INPUT_BITS | CONFIG_BUTTON_MODE_INVERTED_BITS,
+  },
+#endif
+#if CONFIG_STATUS_LEDS_TEST_ENABLED
+  [TEST_BUTTON] = {
+    .gpio_pin = CONFIG_STATUS_LEDS_TEST_GPIO_NUM,
+    .mode     = TEST_BUTTON_MODE_INPUT_BITS | TEST_BUTTON_MODE_INVERTED_BITS,
   },
 #endif
 };
@@ -250,7 +280,7 @@ void set_user_leds_state(enum user_state state)
 
 void set_user_leds_activity(enum user_activity activity)
 {
-#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+#if STATUS_LEDS_FLASH_MODE_ACTIVITY || CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
   if (set_user_led(FLASH_LED, USER_LEDS_FLASH)) {
     // just skip this FLASH activity
     LOG_DEBUG("set_user_led");

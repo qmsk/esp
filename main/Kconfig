@@ -51,13 +51,16 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_USER_MODE_TEST
 
   config STATUS_LEDS_USER_GPIO_NUM
+      depends on STATUS_LEDS_USER_ENABLED
       int "USER LED GPIO pin"
 
       default 2   if IDF_TARGET="esp32"
       default 16  if IDF_TARGET="esp8266"
 
   config STATUS_LEDS_USER_GPIO_INVERTED
+      depends on STATUS_LEDS_USER_ENABLED
       bool "USER LED GPIO active-low"
+
       default y   if IDF_TARGET="esp32"
       default y   if IDF_TARGET="esp8266"
 
@@ -68,6 +71,9 @@ menu "qmsk-esp"
 
     config STATUS_LEDS_FLASH_DISABLED
       bool "Disabled"
+
+    config STATUS_LEDS_FLASH_MODE_ACTIVITY
+      bool "Activity LED"
 
     config STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
       bool "Activity LED, Config button"
@@ -80,15 +86,18 @@ menu "qmsk-esp"
   config STATUS_LEDS_FLASH_ENABLED
       bool
       default n if STATUS_LEDS_FLASH_DISABLED
+      default y if STATUS_LEDS_FLASH_MODE_ACTIVITY
       default y if STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
       default y if STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
 
   config STATUS_LEDS_FLASH_GPIO_NUM
+      depends on STATUS_LEDS_FLASH_ENABLED
       int "FLASH LED GPIO pin"
       default 0   if IDF_TARGET="esp8266"
       default 4   if IDF_TARGET="esp32"
 
   config STATUS_LEDS_FLASH_GPIO_INVERTED
+      depends on STATUS_LEDS_FLASH_ENABLED
       bool "FLASH LED GPIO active-low"
       default y   if IDF_TARGET="esp8266"
       default y   if IDF_TARGET="esp32"
@@ -117,16 +126,72 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_ALERT_MODE_TEST
 
   config STATUS_LEDS_ALERT_GPIO_NUM
+      depends on STATUS_LEDS_ALERT_ENABLED
       int "ALERT LED GPIO pin"
 
       default 15  if IDF_TARGET="esp8266" && (ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0)
       default 15  if IDF_TARGET="esp32"
 
   config STATUS_LEDS_ALERT_GPIO_INVERTED
+      depends on STATUS_LEDS_ALERT_ENABLED
       bool "ALERT LED GPIO active-low"
 
       default n   if IDF_TARGET="esp8266"
       default y   if IDF_TARGET="esp32"
+
+
+  choice STATUS_LEDS_CONFIG
+    prompt "CONFIG button mode"
+    default STATUS_LEDS_CONFIG_DISABLED
+
+    config STATUS_LEDS_CONFIG_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_CONFIG_MODE
+      bool "CONFIG button"
+
+  endchoice
+
+  config STATUS_LEDS_CONFIG_ENABLED
+      bool
+
+      default n if STATUS_LEDS_CONFIG_DISABLED
+      default y if STATUS_LEDS_CONFIG_MODE
+
+  config STATUS_LEDS_CONFIG_GPIO_NUM
+      depends on STATUS_LEDS_CONFIG_ENABLED
+      int "CONFIG Button GPIO pin"
+
+  config STATUS_LEDS_CONFIG_GPIO_INVERTED
+      depends on STATUS_LEDS_CONFIG_ENABLED
+      bool "CONFIG Button GPIO active-low"
+
+
+  choice STATUS_LEDS_TEST
+    prompt "TEST button mode"
+    default STATUS_LEDS_TEST_DISABLED
+
+    config STATUS_LEDS_TEST_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_TEST_MODE
+      bool "TEST button"
+
+  endchoice
+
+  config STATUS_LEDS_TEST_ENABLED
+      bool
+
+      default n if STATUS_LEDS_TEST_DISABLED
+      default y if STATUS_LEDS_TEST_MODE
+
+  config STATUS_LEDS_TEST_GPIO_NUM
+      depends on STATUS_LEDS_TEST_ENABLED
+      int "TEST Button GPIO pin"
+
+  config STATUS_LEDS_TEST_GPIO_INVERTED
+      depends on STATUS_LEDS_TEST_ENABLED
+      bool "TEST Button GPIO active-low"
 
 endmenu
 

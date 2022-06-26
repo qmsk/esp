@@ -11,6 +11,11 @@ int gpio_host_clear(const struct gpio_options *options);
 int gpio_host_set(const struct gpio_options *options, gpio_pins_t pins);
 int gpio_host_set_all(const struct gpio_options *options);
 
+/* gpio_host_intr.c */
+int gpio_host_intr_init();
+void gpio_host_intr_setup(const struct gpio_options *options);
+int gpio_host_intr_core();
+
 /* gpio_i2c_pc54xx.c */
 int gpio_i2c_pc54xx_setup(const struct gpio_options *options);
 int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins);

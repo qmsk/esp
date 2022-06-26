@@ -127,6 +127,8 @@ enum gpio_type {
 /* Return gpio_out_pins bitmask for numbered pin, or 0 if invalid */
 gpio_pins_t gpio_host_pin(gpio_pin_t pin);
 
+typedef void (*gpio_interrupt_func_t)(gpio_pins_t pins, void *arg);
+
 struct gpio_options {
   enum gpio_type type;
 
@@ -148,7 +150,17 @@ struct gpio_options {
 
   // invert output for pins
   gpio_pins_t inverted_pins;
+
+  // enable input interrupts for pins
+  gpio_pins_t interrupt_pins;
+
+  // interrupt handler
+  gpio_interrupt_func_t interrupt_func;
+  void *interrupt_arg;
 };
+
+/* Setup input interrupt handler */
+int gpio_intr_init();
 
 /* Setup output pins */
 int gpio_setup(const struct gpio_options *options);

@@ -3,6 +3,11 @@
 
 #include <logging.h>
 
+int gpio_intr_init()
+{
+  return gpio_host_intr_init();
+}
+
 int gpio_setup(const struct gpio_options *options)
 {
   switch (options->type) {

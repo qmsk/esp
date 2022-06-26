@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include <gpio.h>
 #include "../gpio.h"
 #include "gpio_host.h"

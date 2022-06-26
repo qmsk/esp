@@ -28,6 +28,11 @@ menu "qmsk-esp"
     range 0 15
     default 0
 
+  config STATUS_LEDS_GPIO_I2C_INT_PIN
+    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9534 || STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+    int "HOST GPIO pin for I2S bus interrupt"
+    range 0 39
+    default 0
 
   choice STATUS_LEDS_USER
     prompt "USER LED/button mode"

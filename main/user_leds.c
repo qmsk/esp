@@ -80,7 +80,7 @@ QueueHandle_t user_leds_input_queue;
 #endif
 
 #if CONFIG_STATUS_LEDS_CONFIG_ENABLED
-  #define CONFIG_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT)
+  #define CONFIG_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
 #endif
 #if CONFIG_STATUS_LEDS_CONFIG_GPIO_INVERTED
   #define CONFIG_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
@@ -89,7 +89,7 @@ QueueHandle_t user_leds_input_queue;
 #endif
 
 #if CONFIG_STATUS_LEDS_TEST_ENABLED
-  #define TEST_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT)
+  #define TEST_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
 #endif
 #if CONFIG_STATUS_LEDS_TEST_GPIO_INVERTED
   #define TEST_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
@@ -105,11 +105,13 @@ static struct gpio_options user_leds_gpio = {
   .i2c.port = I2C_MASTER_PORT,
   .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9534,
   .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
 #elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
   .type = GPIO_TYPE_I2C_PCA9554,
   .i2c.port = I2C_MASTER_PORT,
   .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9554,
   .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
 #else
   #error "No CONFIG_STATUS_LEDS_GPIO_TYPE_* configured"
 #endif
@@ -159,6 +161,24 @@ int init_user_leds()
 
   for (unsigned i = 0; i < USER_LEDS_COUNT; i++) {
     user_leds_options[i].input_queue = user_leds_input_queue;
+  }
+
+  switch(user_leds_gpio.type) {
+    case GPIO_TYPE_HOST:
+      LOG_INFO("gpio host");
+      break;
+
+  #if GPIO_I2C_ENABLED
+    case GPIO_TYPE_I2C_PCA9534:
+    case GPIO_TYPE_I2C_PCA9554:
+      LOG_INFO("gpio i2c port=%d addr=%u timeout=%d int_pin=%d",
+        user_leds_gpio.i2c.port,
+        user_leds_gpio.i2c.addr,
+        user_leds_gpio.i2c.timeout,
+        user_leds_gpio.i2c.int_pin
+      );
+      break;
+  #endif
   }
 
   if ((err = user_leds_new(&user_leds, &user_leds_gpio, USER_LEDS_COUNT, user_leds_options))) {

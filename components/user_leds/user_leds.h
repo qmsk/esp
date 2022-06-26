@@ -34,7 +34,6 @@
 
 enum user_leds_input_state {
   USER_LEDS_READ_IDLE,
-  USER_LEDS_READ_WAIT,
   USER_LEDS_READ,
 };
 
@@ -46,32 +45,40 @@ struct user_led {
   xQueueHandle queue;
 
   // owned by task
+  bool output_bit;
   enum user_leds_state output_state;
   unsigned output_state_index;
   TickType_t output_tick; // next scheduled tick()
 
   // input
+  bool input_bit;
   enum user_leds_input_state input_state;
   TickType_t input_state_tick;
   TickType_t input_tick; // next scheduled input_tick()
-
-  // interrupts
-  EventGroupHandle_t leds_event_group;
   SemaphoreHandle_t input_interrupt;
 };
 
 struct user_leds {
-  unsigned count;
+  // gpio
+  const struct gpio_options *gpio_options;
 
+  // state
+  unsigned count;
   struct user_led *leds;
 
   // set() updates
   EventGroupHandle_t event_group;
 };
 
-/* user_led.c */
-int user_led_init(struct user_led *led, unsigned index, struct user_leds_options options, EventGroupHandle_t leds_event_group);
+/* user_leds_gpio.c */
+int user_leds_gpio_init(struct user_leds *leds, struct gpio_options *gpio_options);
+int user_leds_gpio_input(struct user_leds *leds);
+int user_leds_gpio_output(struct user_leds *leds);
 
+/* user_led.c */
+int user_led_init(struct user_led *led, unsigned index, struct gpio_options *gpio_options, struct user_leds_options options);
+
+void user_led_input_init(struct user_led *led);
 TickType_t user_led_input_tick(struct user_led *led);
 TickType_t user_led_input_schedule(struct user_led *led, TickType_t period);
 
@@ -82,9 +89,3 @@ void user_led_update(struct user_led *led);
 
 /* gpio.c */
 int user_led_init_gpio(struct user_led *led, unsigned index, struct user_leds_options options);
-void user_led_output_mode(struct user_led *led);
-void user_led_output_idle(struct user_led *led);
-void user_led_output_off(struct user_led *led);
-void user_led_output_on(struct user_led *led);
-void user_led_input_mode(struct user_led *led);
-int user_led_input_read(struct user_led *led);

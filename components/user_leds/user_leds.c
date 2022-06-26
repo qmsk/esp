@@ -5,7 +5,7 @@
 
 #include <esp_err.h>
 
-static int user_leds_init(struct user_leds *leds, const struct user_leds_options options[])
+static int user_leds_init(struct user_leds *leds, struct gpio_options *gpio_options, const struct user_leds_options options[])
 {
   int err;
 
@@ -15,7 +15,7 @@ static int user_leds_init(struct user_leds *leds, const struct user_leds_options
   }
 
   for (unsigned i = 0; i < leds->count; i++) {
-    if ((err = user_led_init(&leds->leds[i], i, options[i], leds->event_group))) {
+    if ((err = user_led_init(&leds->leds[i], i, gpio_options, options[i]))) {
       LOG_ERROR("user_led_init[%u]", i);
       return err;
     }
@@ -24,7 +24,23 @@ static int user_leds_init(struct user_leds *leds, const struct user_leds_options
   return 0;
 }
 
-int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds_options options[])
+static int user_leds_init_input(struct user_leds *leds)
+{
+  int err;
+
+  if ((err = user_leds_gpio_input(leds))) {
+    LOG_ERROR("user_leds_gpio_input");
+    return err;
+  }
+
+  for (unsigned i = 0; i < leds->count; i++) {
+    user_led_input_init(&leds->leds[i]);
+  }
+
+  return 0;
+}
+
+int user_leds_new(struct user_leds **ledsp, struct gpio_options *gpio_options, size_t count, const struct user_leds_options options[])
 {
   struct user_leds *leds;
   int err;
@@ -36,14 +52,24 @@ int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds
 
   leds->count = count;
 
-  if (!(leds->leds = calloc(count, sizeof(*leds->leds)))) {
+  if (!(leds->leds = calloc(count, sizeof(*leds->leds))) && count) {
     LOG_ERROR("calloc");
     err = -1;
     goto error;
   }
 
-  if ((err = user_leds_init(leds, options))) {
+  if ((err = user_leds_init(leds, gpio_options, options))) {
     LOG_ERROR("user_leds_init");
+    goto error;
+  }
+
+  if ((err = user_leds_gpio_init(leds, gpio_options))) {
+    LOG_ERROR("user_leds_gpio_init");
+    goto error;
+  }
+
+  if ((err = user_leds_init_input(leds))) {
+    LOG_ERROR("user_leds_init_input");
     goto error;
   }
 
@@ -63,6 +89,8 @@ TickType_t user_leds_tick(struct user_leds *leds)
   TickType_t this_tick = xTaskGetTickCount();
   TickType_t next_tick = portMAX_DELAY;
 
+  user_leds_gpio_input(leds);
+
   for (unsigned i = 0; i < leds->count; i++) {
     struct user_led *led = &leds->leds[i];
 
@@ -70,14 +98,14 @@ TickType_t user_leds_tick(struct user_leds *leds)
       TickType_t period = user_led_input_tick(led);
       TickType_t led_tick = user_led_input_schedule(led, period);
 
-      LOG_DEBUG("[%u] mode=%d input state=%d tick=%u -> period=%u tick=%u", i, led->options.mode, led->input_state, led->input_state_tick, period, led_tick);
+      LOG_DEBUG("[%u] mode=%d input bit=%d state=%d tick=%u -> period=%u tick=%u", i, led->options.mode, led->input_bit, led->input_state, led->input_state_tick, period, led_tick);
     }
 
     if (led->output_tick <= this_tick) {
       TickType_t period = user_led_output_tick(led);
       TickType_t led_tick = user_led_output_schedule(led, period);
 
-      LOG_DEBUG("[%u] mode=%d output state=%d index=%u -> period=%u tick=%u", i, led->options.mode, led->output_state, led->output_state_index, period, led_tick);
+      LOG_DEBUG("[%u] mode=%d output bit=%d state=%d index=%u -> period=%u tick=%u", i, led->options.mode, led->output_bit, led->output_state, led->output_state_index, period, led_tick);
     }
 
     if (led->input_tick < next_tick) {
@@ -87,6 +115,8 @@ TickType_t user_leds_tick(struct user_leds *leds)
       next_tick = led->output_tick;
     }
   }
+
+  user_leds_gpio_output(leds);
 
   return next_tick;
 }
@@ -129,7 +159,7 @@ void user_leds_main(void *arg)
       continue;
     }
 
-    LOG_DEBUG("bits=%08x", bits);
+    LOG_DEBUG("update bits=%08x", bits);
 
     for (unsigned i = 0; i < leds->count; i++) {
       if (bits & USER_LEDS_EVENT_BIT(i)) {
@@ -153,9 +183,9 @@ int user_leds_get(struct user_leds *leds, unsigned index)
     return -1;
   }
 
-  LOG_DEBUG("[%u] gpio=%d mode=%04x", index, led->options.gpio, led->options.mode);
+  LOG_DEBUG("[%u] gpio_pin=%d mode=%04x", index, led->options.gpio_pin, led->options.mode);
 
-  if (led->input_state_tick) {
+  if (led->input_bit) {
     return 1;
   } else {
     return 0;
@@ -176,7 +206,7 @@ int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state s
     return -1;
   }
 
-  LOG_DEBUG("[%u] gpio=%d mode=%04x state=%d", index, led->options.gpio, led->options.mode, state);
+  LOG_DEBUG("[%u] gpio_pin=%d mode=%04x state=%d", index, led->options.gpio_pin, led->options.mode, state);
 
   if (xQueueOverwrite(led->queue, &state) <= 0) {
     LOG_ERROR("xQueueOverwrite");

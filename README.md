@@ -13,6 +13,7 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 * Support for WS2811/WS2812B, SK6812 RGBW, SK9822 and APA102/P9813 LED protocols
 * Up to four separate SPI, UART or I2S outputs with different protocols
 * GPIO output-enable multiplexing for multiple outputs with a single output peripheral
+* I2C GPIO expander (PCA9534/9554) support for status LEDs, DMX/LED output enables
 * I2S output with a bit-clock signal (SK9822)
 * I2S parallel outputs using ESP-32 I2S1 8-bit mode (memory-efficient)
 * Multiple Art-NET universes per output for >170 LEDs
@@ -142,9 +143,9 @@ Flashes for ~10ms on each LED output / update.
 
 The FLASH button on GPIO0 (ESP8266) / GPIO4 (ESP32) is used to trigger config mode or a config reset.
 
-Press the FLASH button briefly until the USER LED starts flashing, and release to enter configuration mode. The UART0 console will be activated if stopped, which will block any I2S output.
+Press the FLASH button briefly until the ALERT LED starts flashing, and release to enter configuration mode. The UART0 console will be activated if stopped, which will block any I2S output.
 
-Press and hold FLASH button for >5s until the USER LED stops flashing, and the system will reset the configuration and restart.
+Press and hold FLASH button for >5s until the ALERT LED stops flashing, and the system will reset the configuration and restart.
 
 If the FLASH button is held pressed at app boot, the configuration will not be loaded, and the Alert LED will flash slowly to indicate that the default configuration is active. Note that this only applies on a soft reset, if the FLASH button is held at power reset, the bootloader will enter UART flashing mode.
 

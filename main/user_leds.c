@@ -3,6 +3,7 @@
 #include "user_leds_input.h"
 #include "user_leds_output.h"
 #include "user.h"
+#include "i2c_config.h"
 #include "tasks.h"
 
 #include <user_leds.h>
@@ -39,6 +40,9 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
+#define USER_LEDS_GPIO_I2C_TIMEOUT (1 / portTICK_RATE_MS)
+
+
 #define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_USER_MODE_TEST
   #define USER_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
@@ -75,45 +79,79 @@ QueueHandle_t user_leds_input_queue;
   #define ALERT_LED_MODE_INVERTED_BITS 0
 #endif
 
+#if CONFIG_STATUS_LEDS_CONFIG_ENABLED
+  #define CONFIG_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
+#endif
+#if CONFIG_STATUS_LEDS_CONFIG_GPIO_INVERTED
+  #define CONFIG_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
+#else
+  #define CONFIG_BUTTON_MODE_INVERTED_BITS 0
+#endif
+
+#if CONFIG_STATUS_LEDS_TEST_ENABLED
+  #define TEST_BUTTON_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
+#endif
+#if CONFIG_STATUS_LEDS_TEST_GPIO_INVERTED
+  #define TEST_BUTTON_MODE_INVERTED_BITS (USER_LEDS_MODE_INVERTED_BIT)
+#else
+  #define TEST_BUTTON_MODE_INVERTED_BITS 0
+#endif
+
+static struct gpio_options user_leds_gpio = {
+#if CONFIG_STATUS_LEDS_GPIO_TYPE_HOST
+  .type = GPIO_TYPE_HOST,
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
+  .type = GPIO_TYPE_I2C_PCA9534,
+  .i2c.port = I2C_MASTER_PORT,
+  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9534,
+  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+  .type = GPIO_TYPE_I2C_PCA9554,
+  .i2c.port = I2C_MASTER_PORT,
+  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9554,
+  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
+  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
+#else
+  #error "No CONFIG_STATUS_LEDS_GPIO_TYPE_* configured"
+#endif
+};
+
 static struct user_leds_options user_leds_options[] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   [USER_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
-    .mode = USER_LED_MODE_INPUT_BITS | USER_LED_MODE_OUTPUT_BITS | USER_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
+    .mode     = USER_LED_MODE_INPUT_BITS | USER_LED_MODE_OUTPUT_BITS | USER_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
   [FLASH_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
-    .mode = FLASH_LED_MODE_INPUT_BITS | FLASH_LED_MODE_OUTPUT_BITS | FLASH_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
+    .mode     = FLASH_LED_MODE_INPUT_BITS | FLASH_LED_MODE_OUTPUT_BITS | FLASH_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
   [ALERT_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
-    .mode = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
+    .mode     = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
+  },
+#endif
+#if CONFIG_STATUS_LEDS_CONFIG_ENABLED
+  [CONFIG_BUTTON] = {
+    .gpio_pin = CONFIG_STATUS_LEDS_CONFIG_GPIO_NUM,
+    .mode     = CONFIG_BUTTON_MODE_INPUT_BITS | CONFIG_BUTTON_MODE_INVERTED_BITS,
+  },
+#endif
+#if CONFIG_STATUS_LEDS_TEST_ENABLED
+  [TEST_BUTTON] = {
+    .gpio_pin = CONFIG_STATUS_LEDS_TEST_GPIO_NUM,
+    .mode     = TEST_BUTTON_MODE_INPUT_BITS | TEST_BUTTON_MODE_INVERTED_BITS,
   },
 #endif
 };
 
-static int init_user_leds_gpio_interrupts()
-{
-  esp_err_t err;
-
-  LOG_INFO("enabling gpio interrupts");
-
-  // TODO: common across different modules?
-  if ((err = gpio_install_isr_service(0))) {
-    LOG_ERROR("gpio_install_isr_service: %s", esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
 int init_user_leds()
 {
-  bool interrupts = false;
   int err;
 
   if ((user_leds_input_queue = xQueueCreate(1, sizeof(struct user_leds_input))) == NULL) {
@@ -123,18 +161,27 @@ int init_user_leds()
 
   for (unsigned i = 0; i < USER_LEDS_COUNT; i++) {
     user_leds_options[i].input_queue = user_leds_input_queue;
-
-    if (user_leds_options[i].mode & USER_LEDS_MODE_INTERRUPT_BIT) {
-      interrupts = true;
-    }
   }
 
-  if (interrupts && (err = init_user_leds_gpio_interrupts())) {
-    LOG_ERROR("init_user_leds_gpio_interrupts");
-    return err;
+  switch(user_leds_gpio.type) {
+    case GPIO_TYPE_HOST:
+      LOG_INFO("gpio host");
+      break;
+
+  #if GPIO_I2C_ENABLED
+    case GPIO_TYPE_I2C_PCA9534:
+    case GPIO_TYPE_I2C_PCA9554:
+      LOG_INFO("gpio i2c port=%d addr=%u timeout=%d int_pin=%d",
+        user_leds_gpio.i2c.port,
+        user_leds_gpio.i2c.addr,
+        user_leds_gpio.i2c.timeout,
+        user_leds_gpio.i2c.int_pin
+      );
+      break;
+  #endif
   }
 
-  if ((err = user_leds_new(&user_leds, USER_LEDS_COUNT, user_leds_options))) {
+  if ((err = user_leds_new(&user_leds, &user_leds_gpio, USER_LEDS_COUNT, user_leds_options))) {
     LOG_ERROR("user_leds_new");
     return err;
   }
@@ -227,7 +274,7 @@ void set_user_leds_state(enum user_state state)
 
 void set_user_leds_activity(enum user_activity activity)
 {
-#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY || CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
   if (set_user_led(FLASH_LED, USER_LEDS_FLASH)) {
     // just skip this FLASH activity
     LOG_DEBUG("set_user_led");
@@ -250,6 +297,6 @@ void set_user_leds_alert(enum user_alert alert)
     LOG_WARN("set_user_led");
   }
 #else
-  (void) state;
+  (void) leds_state;
 #endif
 }

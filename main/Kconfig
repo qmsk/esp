@@ -1,4 +1,39 @@
 menu "qmsk-esp"
+  choice STATUS_LEDS_GPIO_TYPE
+    prompt "LED/button GPIO type"
+    default STATUS_LEDS_GPIO_TYPE_HOST
+
+    config STATUS_LEDS_GPIO_TYPE_HOST
+      bool "Host/Internal GPIO"
+
+    config STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
+      depends on I2C_MASTER_ENABLED
+      bool "External I2C PCA9534 GPIO expander"
+
+    config STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+      depends on I2C_MASTER_ENABLED
+      bool "External I2C PCA9554 GPIO expander"
+
+  endchoice
+
+  config STATUS_LEDS_GPIO_I2C_ADDR_PCA9534
+    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
+    int "Configurable I2C address bits (0-16)"
+    range 0 15
+    default 0
+
+  config STATUS_LEDS_GPIO_I2C_ADDR_PCA9554
+    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+    int "Configurable I2C address bits (0-16)"
+    range 0 15
+    default 0
+
+  config STATUS_LEDS_GPIO_I2C_INT_PIN
+    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9534 || STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
+    int "HOST GPIO pin for I2S bus interrupt"
+    range 0 39
+    default 0
+
   choice STATUS_LEDS_USER
     prompt "USER LED/button mode"
     default STATUS_LEDS_USER_MODE
@@ -20,37 +55,19 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_USER_MODE
       default y if STATUS_LEDS_USER_MODE_TEST
 
-  choice STATUS_LEDS_USER_GPIO
-    prompt "USER LED/button GPIO"
-    default STATUS_LEDS_USER_GPIO_16 if IDF_TARGET="esp8266"
-    default STATUS_LEDS_USER_GPIO_2 if IDF_TARGET="esp32"
-
-    config STATUS_LEDS_USER_GPIO_2
-      bool "GPIO2 (active-low)"
-      help
-        ESP32 strpping pin with weak-pull-down.
-
-    config STATUS_LEDS_USER_GPIO_16
-      bool "GPIO16 (active-low)"
-      help
-        ESP8266 RTC GPIO with integrated LED on NodeMCU.
-
-        Active-low with external pull-up and LED from +3V3 on NodeMCU.
-
-  endchoice
-
   config STATUS_LEDS_USER_GPIO_NUM
-      int
-      default 2  if STATUS_LEDS_USER_GPIO_2
-      default 16 if STATUS_LEDS_USER_GPIO_16
+      depends on STATUS_LEDS_USER_ENABLED
+      int "USER LED GPIO pin"
+
+      default 2   if IDF_TARGET="esp32"
+      default 16  if IDF_TARGET="esp8266"
 
   config STATUS_LEDS_USER_GPIO_INVERTED
-      bool
-      default y if STATUS_LEDS_USER_GPIO_2
-      default y if STATUS_LEDS_USER_GPIO_16
+      depends on STATUS_LEDS_USER_ENABLED
+      bool "USER LED GPIO active-low"
 
-
-
+      default y   if IDF_TARGET="esp32"
+      default y   if IDF_TARGET="esp8266"
 
 
   choice STATUS_LEDS_FLASH
@@ -59,6 +76,9 @@ menu "qmsk-esp"
 
     config STATUS_LEDS_FLASH_DISABLED
       bool "Disabled"
+
+    config STATUS_LEDS_FLASH_MODE_ACTIVITY
+      bool "Activity LED"
 
     config STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
       bool "Activity LED, Config button"
@@ -71,41 +91,21 @@ menu "qmsk-esp"
   config STATUS_LEDS_FLASH_ENABLED
       bool
       default n if STATUS_LEDS_FLASH_DISABLED
+      default y if STATUS_LEDS_FLASH_MODE_ACTIVITY
       default y if STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
       default y if STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
 
-  choice STATUS_LEDS_FLASH_GPIO
-    prompt "FLASH LED/button GPIO pin"
-    default STATUS_LEDS_FLASH_GPIO_0 if IDF_TARGET="esp8266"
-    default STATUS_LEDS_FLASH_GPIO_0 if IDF_TARGET="esp32"
-
-    config STATUS_LEDS_FLASH_GPIO_0
-      bool "GPIO0 (active-low)"
-      help
-        ESP8266 strapping pin for selecting FLASH (high) / UART (low) boot mode.
-        ESP32 straping pin for FLASH mode.
-
-        Active-low with internal weak-pull-up, external pull-up and integrated button to GND on NodeMCU.
-
-    config STATUS_LEDS_FLASH_GPIO_4
-      bool "GPIO4 (active-low)"
-      help
-        For 30-pin ESP32 board without any GPIO0 pin.
-
-  endchoice
-
   config STATUS_LEDS_FLASH_GPIO_NUM
-      int
-      default 0 if STATUS_LEDS_FLASH_GPIO_0
-      default 4 if STATUS_LEDS_FLASH_GPIO_4
+      depends on STATUS_LEDS_FLASH_ENABLED
+      int "FLASH LED GPIO pin"
+      default 0   if IDF_TARGET="esp8266"
+      default 4   if IDF_TARGET="esp32"
 
   config STATUS_LEDS_FLASH_GPIO_INVERTED
-      bool
-      default y if STATUS_LEDS_FLASH_GPIO_0
-      default y if STATUS_LEDS_FLASH_GPIO_4
-
-
-
+      depends on STATUS_LEDS_FLASH_ENABLED
+      bool "FLASH LED GPIO active-low"
+      default y   if IDF_TARGET="esp8266"
+      default y   if IDF_TARGET="esp32"
 
 
   choice STATUS_LEDS_ALERT
@@ -130,88 +130,73 @@ menu "qmsk-esp"
       default y if STATUS_LEDS_ALERT_MODE
       default y if STATUS_LEDS_ALERT_MODE_TEST
 
-  choice STATUS_LEDS_ALERT_GPIO
-    prompt "GPIO for ALERT LED/button"
-    default STATUS_LEDS_ALERT_GPIO_15 if IDF_TARGET="esp8266" && (ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0)
-    default STATUS_LEDS_ALERT_GPIO_15_INVERTED if IDF_TARGET="esp32"
+  config STATUS_LEDS_ALERT_GPIO_NUM
+      depends on STATUS_LEDS_ALERT_ENABLED
+      int "ALERT LED GPIO pin"
 
-    config STATUS_LEDS_ALERT_GPIO_1
-      bool "GPIO1 (active-low)"
-      help
-        ESP8266 strapping pin for chip_test_mode (active-low).
+      default 15  if IDF_TARGET="esp8266" && (ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM_NUM_0)
+      default 15  if IDF_TARGET="esp32"
 
-        Active-low with internal weak-pull-up.
+  config STATUS_LEDS_ALERT_GPIO_INVERTED
+      depends on STATUS_LEDS_ALERT_ENABLED
+      bool "ALERT LED GPIO active-low"
 
-    config STATUS_LEDS_ALERT_GPIO_2
-      bool "GPIO2 (active-low)"
-      help
-        ESP8266 strapping pin for boot_sel[0], should be pulled high.
+      default n   if IDF_TARGET="esp8266"
+      default y   if IDF_TARGET="esp32"
 
-        UART071 TXD_BK pin.
 
-        Active-low with external pull-up.
+  choice STATUS_LEDS_CONFIG
+    prompt "CONFIG button mode"
+    default STATUS_LEDS_CONFIG_DISABLED
 
-    config STATUS_LEDS_ALERT_GPIO_4
-      bool "GPIO4 (active-low)"
-      help
-        Active-low with internal weak-pull-up on ESP8266.
-    config STATUS_LEDS_ALERT_GPIO_5
-      bool "GPIO5 (active-low)"
-      help
-        Active-low with internal weak-pull-up on ESP8266.
+    config STATUS_LEDS_CONFIG_DISABLED
+      bool "Disabled"
 
-    config STATUS_LEDS_ALERT_GPIO_12
-      bool "GPIO12 (active-low)"
-      help
-        Active-low with internal weak-pull-up on ESP8266.
-    config STATUS_LEDS_ALERT_GPIO_13
-      bool "GPIO13 (active-low)"
-      help
-        Active-low with internal weak-pull-up on ESP8266.
-    config STATUS_LEDS_ALERT_GPIO_14
-      bool "GPIO14 (active-low)"
-      help
-        Active-low with internal weak-pull-up on ESP8266.
-
-    config STATUS_LEDS_ALERT_GPIO_15
-      bool "GPIO15 (active-high)"
-      help
-        ESP8266 strapping pin for selecting SDIO boot mode.
-
-        Active-high with external pull-down on NodeMCU.
-
-    config STATUS_LEDS_ALERT_GPIO_15_INVERTED
-      bool "GPIO15 (active-low)"
-      help
-        ESP32 strapping pin with weak-pull-up.
+    config STATUS_LEDS_CONFIG_MODE
+      bool "CONFIG button"
 
   endchoice
 
-  config STATUS_LEDS_ALERT_GPIO_NUM
-      int
-
-      default 1 if STATUS_LEDS_ALERT_GPIO_1
-      default 2 if STATUS_LEDS_ALERT_GPIO_2
-      default 4 if STATUS_LEDS_ALERT_GPIO_4
-      default 5 if STATUS_LEDS_ALERT_GPIO_5
-      default 12 if STATUS_LEDS_ALERT_GPIO_12
-      default 13 if STATUS_LEDS_ALERT_GPIO_13
-      default 14 if STATUS_LEDS_ALERT_GPIO_14
-      default 15 if STATUS_LEDS_ALERT_GPIO_15
-      default 15 if STATUS_LEDS_ALERT_GPIO_15_INVERTED
-
-  config STATUS_LEDS_ALERT_GPIO_INVERTED
+  config STATUS_LEDS_CONFIG_ENABLED
       bool
 
-      default y if STATUS_LEDS_ALERT_GPIO_1
-      default y if STATUS_LEDS_ALERT_GPIO_2
-      default y if STATUS_LEDS_ALERT_GPIO_4
-      default y if STATUS_LEDS_ALERT_GPIO_5
-      default y if STATUS_LEDS_ALERT_GPIO_12
-      default y if STATUS_LEDS_ALERT_GPIO_13
-      default y if STATUS_LEDS_ALERT_GPIO_14
-      default n if STATUS_LEDS_ALERT_GPIO_15
-      default y if STATUS_LEDS_ALERT_GPIO_15_INVERTED
+      default n if STATUS_LEDS_CONFIG_DISABLED
+      default y if STATUS_LEDS_CONFIG_MODE
+
+  config STATUS_LEDS_CONFIG_GPIO_NUM
+      depends on STATUS_LEDS_CONFIG_ENABLED
+      int "CONFIG Button GPIO pin"
+
+  config STATUS_LEDS_CONFIG_GPIO_INVERTED
+      depends on STATUS_LEDS_CONFIG_ENABLED
+      bool "CONFIG Button GPIO active-low"
+
+
+  choice STATUS_LEDS_TEST
+    prompt "TEST button mode"
+    default STATUS_LEDS_TEST_DISABLED
+
+    config STATUS_LEDS_TEST_DISABLED
+      bool "Disabled"
+
+    config STATUS_LEDS_TEST_MODE
+      bool "TEST button"
+
+  endchoice
+
+  config STATUS_LEDS_TEST_ENABLED
+      bool
+
+      default n if STATUS_LEDS_TEST_DISABLED
+      default y if STATUS_LEDS_TEST_MODE
+
+  config STATUS_LEDS_TEST_GPIO_NUM
+      depends on STATUS_LEDS_TEST_ENABLED
+      int "TEST Button GPIO pin"
+
+  config STATUS_LEDS_TEST_GPIO_INVERTED
+      depends on STATUS_LEDS_TEST_ENABLED
+      bool "TEST Button GPIO active-low"
 
 endmenu
 
@@ -230,37 +215,76 @@ menu "qmsk-esp-eth"
 
   config ETH_ENABLED
       bool
-      
+
       default n if ETH_BOARD_NONE
       default y if ETH_BOARD_WT32_ETH01
 
   config ETH_MAC_MDC_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default 23  if ETH_BOARD_WT32_ETH01
       default 23
 
   config ETH_MAC_MDIO_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default 18  if ETH_BOARD_WT32_ETH01
       default 18
 
   config ETH_PHY_LAN87XX
+      depends on ETH_ENABLED
       bool
 
       default y if ETH_BOARD_WT32_ETH01
       default n
 
   config ETH_PHY_ADDR
+      depends on ETH_ENABLED
       int
 
       default  1  if ETH_BOARD_WT32_ETH01
       default -1
 
   config ETH_PHY_RESET_GPIO_NUM
+      depends on ETH_ENABLED
       int
 
       default  16 if ETH_BOARD_WT32_ETH01
       default -1
+endmenu
+
+menu "qmsk-esp-i2c"
+  config I2C_MASTER_ENABLED
+    prompt "Use I2C bus for IO peripherals"
+    bool
+
+  config I2C_MASTER_SDA_IO_NUM
+    depends on I2C_MASTER_ENABLED
+    int
+    prompt "IO pin for I2C SDA"
+
+    default 15 if IDF_TARGET="esp32"
+
+  config I2C_MASTER_SCL_IO_NUM
+    depends on I2C_MASTER_ENABLED
+    int
+    prompt "IO pin for I2C SCL"
+
+    default 2 if IDF_TARGET="esp32"
+
+  config I2C_MASTER_INTERNAL_PULLUP_ENABLED
+    depends on I2C_MASTER_ENABLED
+    bool
+    prompt "Enable internal pull-up"
+
+    default false
+
+  config I2C_MASTER_CLK_SPEED
+    depends on I2C_MASTER_ENABLED
+    int
+    prompt "Clock frequency"
+
+    default 400000
 endmenu

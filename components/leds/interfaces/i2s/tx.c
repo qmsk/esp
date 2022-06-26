@@ -299,8 +299,8 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio.gpio_out) {
-    gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
+  if (options->gpio.gpio_options) {
+    gpio_out_set(options->gpio.gpio_options, options->gpio.gpio_out_pins);
   }
 #endif
 
@@ -319,8 +319,8 @@ int leds_interface_i2s_tx(const struct leds_interface_i2s_options *options, enum
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio.gpio_out) {
-    gpio_out_clear(options->gpio.gpio_out);
+  if (options->gpio.gpio_options) {
+    gpio_out_clear(options->gpio.gpio_options);
   }
 #endif
 

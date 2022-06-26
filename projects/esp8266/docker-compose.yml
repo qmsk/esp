@@ -26,7 +26,7 @@ services:
     init: true
     environment:
       SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
-      SDKCONFIG_DEFAULTS: sdkconfig.defaults /build/boardconfig/${BOARDCONFIG:-qmsk-esp}
+      SDKCONFIG_DEFAULTS: sdkconfig.defaults boardconfig/${BOARDCONFIG:-qmsk-esp}
 
   flash:
     image: qmsk/esp8266-rtos-sdk:dev

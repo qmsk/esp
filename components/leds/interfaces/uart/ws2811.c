@@ -91,8 +91,8 @@ int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio.gpio_out) {
-    gpio_out_set(options->gpio.gpio_out, options->gpio.gpio_out_pins);
+  if (options->gpio.gpio_options) {
+    gpio_out_set(options->gpio.gpio_options, options->gpio.gpio_out_pins);
   }
 #endif
 
@@ -127,8 +127,8 @@ int leds_tx_uart_ws2811(const struct leds_interface_uart_options *options, union
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (options->gpio.gpio_out) {
-    gpio_out_clear(options->gpio.gpio_out);
+  if (options->gpio.gpio_options) {
+    gpio_out_clear(options->gpio.gpio_options);
   }
 #endif
 

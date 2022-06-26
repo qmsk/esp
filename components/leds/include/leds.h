@@ -3,7 +3,7 @@
 #include <sdkconfig.h>
 
 #if CONFIG_LEDS_GPIO_ENABLED
-# include <gpio_out.h>
+# include <gpio.h>
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
@@ -125,11 +125,11 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     /**
      * GPIO used for output multiplexing.
      * The `gpio_out_pins` will be set before TX start, and cleared after TX end.
-     * Any other `gpio_out->pins` will be cleared.
+     * Any other `gpio_options->pins` will be cleared.
      */
-    struct gpio_out *gpio_out;
+    struct gpio_options *gpio_options;
 
-    gpio_out_pins_t gpio_out_pins;
+    gpio_pins_t gpio_out_pins;
   };
 #endif
 

@@ -236,6 +236,10 @@ int update_artnet_network()
 
 void notify_artnet_outputs(EventBits_t bits)
 {
+  if (!artnet) {
+    return;
+  }
+
   unsigned output_count = artnet_get_output_count(artnet);
 
   for (int i = 0; i < output_count; i++) {

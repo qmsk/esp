@@ -31,8 +31,8 @@ int init_dmx_gpio()
 
         LOG_INFO("dmx-output%d: gpio mode=LOW pin=%d", i + 1, config->gpio_pin);
 
-        dmx_gpio_options.pins |= gpio_host_pin(config->gpio_pin);
-        dmx_gpio_options.inverted |= gpio_host_pin(config->gpio_pin);
+        dmx_gpio_options.out_pins |= gpio_host_pin(config->gpio_pin);
+        dmx_gpio_options.inverted_pins |= gpio_host_pin(config->gpio_pin);
         break;
 
       case DMX_GPIO_MODE_HIGH:
@@ -40,7 +40,7 @@ int init_dmx_gpio()
 
         LOG_INFO("dmx-output%d: gpio mode=HIGH pin=%d", i + 1, config->gpio_pin);
 
-        dmx_gpio_options.pins |= gpio_host_pin(config->gpio_pin);
+        dmx_gpio_options.out_pins |= gpio_host_pin(config->gpio_pin);
         break;
 
       default:
@@ -54,9 +54,9 @@ int init_dmx_gpio()
     return 0;
   }
 
-  LOG_INFO("dmx: gpio -> pins=" GPIO_PINS_FMT " inverted=" GPIO_PINS_FMT,
-    GPIO_PINS_ARGS(dmx_gpio_options.pins),
-    GPIO_PINS_ARGS(dmx_gpio_options.inverted)
+  LOG_INFO("dmx: gpio -> out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
+    GPIO_PINS_ARGS(dmx_gpio_options.out_pins),
+    GPIO_PINS_ARGS(dmx_gpio_options.inverted_pins)
   );
 
   if ((err = gpio_setup(&dmx_gpio_options))) {

@@ -89,10 +89,10 @@
           i, config->gpio_pin[i]
         );
 
-        leds_gpio_options[interface].pins |= gpio_host_pin(config->gpio_pin[i]);
+        leds_gpio_options[interface].out_pins |= gpio_host_pin(config->gpio_pin[i]);
 
         if (config->gpio_mode == LEDS_GPIO_MODE_LOW) {
-          leds_gpio_options[interface].inverted |= gpio_host_pin(config->gpio_pin[i]);
+          leds_gpio_options[interface].inverted_pins |= gpio_host_pin(config->gpio_pin[i]);
         }
       }
     }
@@ -136,11 +136,11 @@
       }
 
 
-      LOG_INFO("leds: gpio[%s] -> type=%d pins=" GPIO_PINS_FMT " inverted=" GPIO_PINS_FMT,
+      LOG_INFO("leds: gpio[%s] -> type=%d out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
         config_enum_to_string(leds_interface_enum, interface),
         options->type,
-        GPIO_PINS_ARGS(options->pins),
-        GPIO_PINS_ARGS(options->inverted)
+        GPIO_PINS_ARGS(options->out_pins),
+        GPIO_PINS_ARGS(options->inverted_pins)
       );
 
       if ((err = gpio_setup(options))) {

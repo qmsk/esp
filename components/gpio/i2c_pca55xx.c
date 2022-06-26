@@ -15,7 +15,7 @@ enum pca55xx_cmd {
 
 static inline uint8_t pca55x_pins(gpio_pins_t pins)
 {
-  return pins & GPIO_I2C_PCA9554_PINS_MASK;
+  return (pins) & GPIO_I2C_PCA9554_PINS_MASK;
 }
 
 static int gpio_i2c_pc54xx_write(const struct gpio_i2c_options *options, enum pca55xx_cmd cmd, uint8_t value)
@@ -50,22 +50,46 @@ static int gpio_i2c_pc54xx_read(const struct gpio_i2c_options *options, enum pca
 int gpio_i2c_pc54xx_setup(const struct gpio_options *options)
 {
   return (
-        gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, 0 ^ options->inverted)
-    ||  gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~options->pins))
+        gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, 0 ^ options->inverted_pins)
+    ||  gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~options->out_pins))
   );
+}
+
+int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins)
+{
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(options->in_pins & pins));
+}
+
+int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
+{
+  uint8_t value;
+  int err;
+
+  if ((err = gpio_i2c_pc54xx_read(&options->i2c, PCA55XX_CMD_INPUT_PORT, &value))) {
+    return err;
+  }
+
+  *pins = ((gpio_pins_t) value) ^ options->inverted_pins;
+
+  return 0;
+}
+
+int gpio_i2c_pc54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins)
+{
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~(options->out_pins & pins)));
 }
 
 int gpio_i2c_pc54xx_clear(const struct gpio_options *options)
 {
-  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(0 ^ options->inverted));
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(0 ^ options->inverted_pins));
 }
 
 int gpio_i2c_pc54xx_set(const struct gpio_options *options, gpio_pins_t pins)
 {
-  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(pins ^ options->inverted));
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(pins ^ options->inverted_pins));
 }
 
 int gpio_i2c_pc54xx_set_all(const struct gpio_options *options)
 {
-  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(GPIO_I2C_PCA9554_PINS_MASK ^ options->inverted));
+  return gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, pca55x_pins(GPIO_I2C_PCA9554_PINS_MASK ^ options->inverted_pins));
 }

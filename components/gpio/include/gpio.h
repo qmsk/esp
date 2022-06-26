@@ -31,7 +31,7 @@ enum gpio_type {
   GPIO_TYPE_HOST,
 #if GPIO_I2C_ENABLED
   GPIO_TYPE_I2C_PCA9534,
-  GPIO_TYPE_I2C_PCA9554,
+  GPIO_TYPE_I2C_PCA9554,  /* With weak internal pull-up on inputs */
 #endif
 };
 
@@ -139,15 +139,27 @@ struct gpio_options {
   #endif
   };
 
-  // bitmask of pins to enable
-  gpio_pins_t pins;
+  // bitmask of input pins to enable
+  gpio_pins_t in_pins;
+
+  // bitmask of outputs pins to enable
+  gpio_pins_t out_pins;
 
   // invert output for pins
-  gpio_pins_t inverted;
+  gpio_pins_t inverted_pins;
 };
 
 /* Setup output pins */
 int gpio_setup(const struct gpio_options *options);
+
+/* Disable output pins, leaving inputs floating */
+int gpio_in_setup(const struct gpio_options *options, gpio_pins_t pins);
+
+/* Read all input pins */
+int gpio_in_get(const struct gpio_options *options, gpio_pins_t *pins);
+
+/* Enable output pins */
+int gpio_out_setup(const struct gpio_options *options, gpio_pins_t pins);
 
 /* Clear all output pins */
 int gpio_out_clear(const struct gpio_options *options);

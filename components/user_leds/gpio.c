@@ -32,7 +32,13 @@ static IRAM_ATTR void user_leds_gpio_interrupt(gpio_pins_t pins, void *arg)
     }
   }
 
+#if CONFIG_IDF_TARGET_ESP8266
+  if (xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
+#else
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+#endif
 }
 
 int user_leds_gpio_init(struct user_leds *leds, struct gpio_options *gpio_options)

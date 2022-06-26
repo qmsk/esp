@@ -22,13 +22,14 @@
 
   // newlib-nano printf does not support 64-bit formatting
   #define GPIO_PINS_FMT "%02x%08x"
-  #define GPIO_PINS_ARGS(x) (uint32_t)(x >> 32), (uint32_t)(x & 0xffffffff)
+  #define GPIO_PINS_ARGS(x) (uint32_t)((x) >> 32), (uint32_t)((x) & 0xffffffff)
 
   #define GPIO_I2C_ENABLED 1
 #endif
 
 // gpio_pin_t -> gpio_pins_t bitmask
 #define GPIO_PINS(x) (((gpio_pins_t)(1)) << x)
+#define GPIO_PINS_NONE ((gpio_pins_t)(0))
 
 enum gpio_type {
   GPIO_TYPE_HOST,

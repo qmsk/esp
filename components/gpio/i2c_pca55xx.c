@@ -69,7 +69,7 @@ int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
     return err;
   }
 
-  *pins = ((gpio_pins_t) value) ^ options->inverted_pins;
+  *pins = ((gpio_pins_t) value) ^ (options->inverted_pins & options->in_pins);
 
   return 0;
 }

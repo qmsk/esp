@@ -9,7 +9,7 @@
 static void gpio_host_setup_pin(gpio_pin_t gpio, bool input, bool output, bool inverted)
 {
   // clear
-  gpio_ll_set_level(&GPIO, gpio, inverted ? true : false);
+  gpio_ll_set_level(&GPIO, gpio, inverted ? 1 : 0);
 
   if (input) {
     gpio_ll_input_enable(&GPIO, gpio);
@@ -53,14 +53,14 @@ int gpio_host_setup(const struct gpio_options *options)
 
 int gpio_host_setup_input(const struct gpio_options *options, gpio_pins_t pins)
 {
-  gpio_host_setup_pins(options->in_pins, pins);
+  gpio_host_setup_pins(options->in_pins, ~pins);
 
   return 0;
 }
 
 int gpio_host_get(const struct gpio_options *options, gpio_pins_t *pins)
 {
-  *pins = gpio_host_get_pins(options->in_pins) ^ options->inverted_pins;
+  *pins = gpio_host_get_pins(options->in_pins) ^ (options->inverted_pins & options->in_pins);
 
   return 0;
 }

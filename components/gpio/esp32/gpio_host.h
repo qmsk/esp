@@ -9,7 +9,7 @@
 
 static inline gpio_pins_t gpio_host_get_pins(gpio_pins_t pins)
 {
-  return (GPIO_HOST_PINS_LOW((gpio_pins_t) GPIO.in) | GPIO_HOST_PINS_HIGH((gpio_pins_t) GPIO.in1.val)) & pins;
+  return ((((gpio_pins_t) GPIO.in) & 0xffffffff) | (((gpio_pins_t) GPIO.in1.val) << 32)) & pins;
 }
 
 static inline void gpio_host_setup_pins(gpio_pins_t pins, gpio_pins_t outputs)

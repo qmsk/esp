@@ -71,9 +71,10 @@ struct user_leds {
   EventGroupHandle_t event_group;
 };
 
-/* user_leds.c */
-int user_leds_input(struct user_leds *leds);
-int user_leds_output(struct user_leds *leds);
+/* user_leds_gpio.c */
+int user_leds_gpio_init(struct user_leds *leds, struct gpio_options *gpio_options);
+int user_leds_gpio_input(struct user_leds *leds);
+int user_leds_gpio_output(struct user_leds *leds);
 
 /* user_led.c */
 int user_led_init(struct user_led *led, unsigned index, struct gpio_options *gpio_options, struct user_leds_options options);

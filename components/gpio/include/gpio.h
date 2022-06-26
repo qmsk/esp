@@ -138,6 +138,7 @@ struct gpio_options {
       i2c_port_t port;
       uint8_t addr;
       TickType_t timeout;
+      gpio_pin_t int_pin;
     } i2c;
   #endif
   };

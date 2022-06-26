@@ -49,10 +49,27 @@ static int gpio_i2c_pc54xx_read(const struct gpio_i2c_options *options, enum pca
 
 int gpio_i2c_pc54xx_setup(const struct gpio_options *options)
 {
-  return (
-        gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, 0 ^ options->inverted_pins)
-    ||  gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~options->out_pins))
-  );
+  int err;
+
+
+  if ((err = gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_OUTPUT_PORT, 0 ^ options->inverted_pins))) {
+    LOG_ERROR("gpio_i2c_pc54xx_write");
+    return err;
+  }
+
+  if ((err = gpio_i2c_pc54xx_write(&options->i2c, PCA55XX_CMD_CONFIG_PORT, pca55x_pins(~options->out_pins)))) {
+    LOG_ERROR("gpio_i2c_pc54xx_write");
+    return err;
+  }
+
+  if (options->i2c.int_pin > 0) {
+    if ((err = gpio_host_setup_intr_pin(options, options->i2c.int_pin, GPIO_INTR_NEGEDGE))) {
+      LOG_ERROR("gpio_host_setup_intr_pin");
+      return err;
+    }
+  }
+
+  return 0;
 }
 
 int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins)

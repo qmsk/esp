@@ -103,6 +103,47 @@ static void gpio_host_disable_interrupts(const struct gpio_options *options, gpi
   gpio_host_intr_clear(options->interrupt_pins & pins);
 }
 
+int gpio_host_setup_intr_pin(const struct gpio_options *options, gpio_pin_t gpio, gpio_int_type_t int_type)
+{
+  int core = gpio_host_intr_core();
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+  int rtc_ionum;
+
+  if ((rtc_ionum = rtc_io_num_map[gpio]) >= 0) {
+    rtcio_ll_pulldown_disable(rtc_ionum);
+    rtcio_ll_pullup_disable(rtc_ionum);
+
+    // configure RTC IOMUX as digital GPIO
+    rtcio_ll_function_select(rtc_ionum, RTCIO_FUNC_DIGITAL);
+  }
+#endif
+
+  gpio_ll_pulldown_dis(&GPIO, gpio);
+  gpio_ll_pullup_dis(&GPIO, gpio);
+
+  gpio_ll_input_enable(&GPIO, gpio);
+  gpio_ll_output_disable(&GPIO, gpio);
+  gpio_ll_od_disable(&GPIO, gpio);
+
+  gpio_ll_set_intr_type(&GPIO, gpio, int_type);
+
+  // configure GPIO matrix as GPIO, to ensure that GPIO_FUNC is not driven by some other output signal
+  esp_rom_gpio_connect_out_signal(gpio, SIG_GPIO_OUT_IDX, false, false);
+
+  // configure IOMUX as GPIO
+  gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+
+  gpio_host_intr_setup_pin(options, gpio);
+
+  LOG_DEBUG("GPIO_PIN_MUX_REG[%d]@%#010x = %08x", gpio, GPIO_PIN_MUX_REG[gpio], REG_READ(GPIO_PIN_MUX_REG[gpio]));
+  LOG_DEBUG("GPIO_FUNC%d_OUT_SEL_CFG_REG@%p = %08x", gpio, &GPIO.func_out_sel_cfg[gpio].val, GPIO.func_out_sel_cfg[gpio].val);
+
+  gpio_ll_intr_enable_on_core(&GPIO, core, gpio);
+
+  return 0;
+}
+
 int gpio_host_setup(const struct gpio_options *options)
 {
   for (gpio_pin_t gpio = 0; gpio < GPIO_HOST_PIN_COUNT; gpio++) {
@@ -115,9 +156,10 @@ int gpio_host_setup(const struct gpio_options *options)
       gpio_host_setup_pin(gpio, input, output, inverted, interrupt);
       gpio_host_setup_rtc(gpio, inverted);
     }
+    if (interrupt) {
+      gpio_host_intr_setup_pin(options, gpio);
+    }
   }
-
-  gpio_host_intr_setup(options);
 
   return 0;
 }

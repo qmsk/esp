@@ -75,7 +75,7 @@ static void gpio_host_setup_pin(gpio_pin_t gpio, bool input, bool output, bool i
   LOG_DEBUG("GPIO_FUNC%d_OUT_SEL_CFG_REG@%p = %08x", gpio, &GPIO.func_out_sel_cfg[gpio].val, GPIO.func_out_sel_cfg[gpio].val);
 }
 
-static void gpio_host_setup_interrupts(const struct gpio_options *options, gpio_pins_t pins)
+static void gpio_host_enable_interrupts(const struct gpio_options *options, gpio_pins_t pins)
 {
   int core = gpio_host_intr_core();
 
@@ -85,13 +85,22 @@ static void gpio_host_setup_interrupts(const struct gpio_options *options, gpio_
     if (options->interrupt_pins & GPIO_PINS(gpio)) {
       if (pins & GPIO_PINS(gpio)) {
         gpio_ll_intr_enable_on_core(&GPIO, core, gpio);
-      } else {
+      }
+    }
+  }
+}
+
+static void gpio_host_disable_interrupts(const struct gpio_options *options, gpio_pins_t pins)
+{
+  for (gpio_pin_t gpio = 0; gpio < GPIO_HOST_PIN_COUNT; gpio++) {
+    if (options->interrupt_pins & GPIO_PINS(gpio)) {
+      if (pins & GPIO_PINS(gpio)) {
         gpio_ll_intr_disable(&GPIO, gpio);
       }
     }
   }
 
-  gpio_host_intr_clear(options->interrupt_pins & ~pins);
+  gpio_host_intr_clear(options->interrupt_pins & pins);
 }
 
 int gpio_host_setup(const struct gpio_options *options)
@@ -116,7 +125,7 @@ int gpio_host_setup(const struct gpio_options *options)
 int gpio_host_setup_input(const struct gpio_options *options, gpio_pins_t pins)
 {
   gpio_host_setup_pins(options->in_pins & options->out_pins, ~pins);
-  gpio_host_setup_interrupts(options, pins);
+  gpio_host_enable_interrupts(options, pins);
 
   LOG_DEBUG("enable=%08x", GPIO.enable);
 
@@ -134,7 +143,7 @@ int gpio_host_get(const struct gpio_options *options, gpio_pins_t *pins)
 
 int gpio_host_setup_output(const struct gpio_options *options, gpio_pins_t pins)
 {
-  gpio_host_setup_interrupts(options, ~pins);
+  gpio_host_disable_interrupts(options, pins);
   gpio_host_setup_pins(options->out_pins, pins);
 
   LOG_DEBUG("enable=%08x", GPIO.enable);

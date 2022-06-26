@@ -27,7 +27,7 @@ static int user_leds_init(struct user_leds *leds, struct gpio_options *gpio_opti
 static int user_leds_init_input(struct user_leds *leds)
 {
   int err;
-  
+
   if ((err = user_leds_gpio_input(leds))) {
     LOG_ERROR("user_leds_gpio_input");
     return err;

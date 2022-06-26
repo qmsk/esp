@@ -254,7 +254,7 @@ void set_user_leds_state(enum user_state state)
 
 void set_user_leds_activity(enum user_activity activity)
 {
-#if STATUS_LEDS_FLASH_MODE_ACTIVITY || CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
+#if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY || CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG
   if (set_user_led(FLASH_LED, USER_LEDS_FLASH)) {
     // just skip this FLASH activity
     LOG_DEBUG("set_user_led");

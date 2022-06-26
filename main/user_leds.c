@@ -75,38 +75,43 @@ QueueHandle_t user_leds_input_queue;
   #define ALERT_LED_MODE_INVERTED_BITS 0
 #endif
 
+static struct gpio_options user_leds_gpio = {
+  .type = GPIO_TYPE_HOST,
+};
+
 static struct user_leds_options user_leds_options[] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   [USER_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
-    .mode = USER_LED_MODE_INPUT_BITS | USER_LED_MODE_OUTPUT_BITS | USER_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_USER_GPIO_NUM,
+    .mode     = USER_LED_MODE_INPUT_BITS | USER_LED_MODE_OUTPUT_BITS | USER_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_FLASH_ENABLED
   [FLASH_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
-    .mode = FLASH_LED_MODE_INPUT_BITS | FLASH_LED_MODE_OUTPUT_BITS | FLASH_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_FLASH_GPIO_NUM,
+    .mode     = FLASH_LED_MODE_INPUT_BITS | FLASH_LED_MODE_OUTPUT_BITS | FLASH_LED_MODE_INVERTED_BITS,
   },
 #endif
 #if CONFIG_STATUS_LEDS_ALERT_ENABLED
   [ALERT_LED] = {
-    .gpio = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
-    .mode = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
+    .gpio_pin = CONFIG_STATUS_LEDS_ALERT_GPIO_NUM,
+    .mode     = ALERT_LED_MODE_INPUT_BITS | ALERT_LED_MODE_OUTPUT_BITS | ALERT_LED_MODE_INVERTED_BITS,
   },
 #endif
 };
 
 static int init_user_leds_gpio_interrupts()
 {
-  esp_err_t err;
-
   LOG_INFO("enabling gpio interrupts");
 
   // TODO: common across different modules?
+  /*
+  esp_err_t err;
   if ((err = gpio_install_isr_service(0))) {
     LOG_ERROR("gpio_install_isr_service: %s", esp_err_to_name(err));
     return -1;
   }
+  */
 
   return 0;
 }
@@ -134,7 +139,7 @@ int init_user_leds()
     return err;
 
   }
-  if ((err = user_leds_new(&user_leds, USER_LEDS_COUNT, user_leds_options))) {
+  if ((err = user_leds_new(&user_leds, &user_leds_gpio, USER_LEDS_COUNT, user_leds_options))) {
     LOG_ERROR("user_leds_new");
     return err;
   }

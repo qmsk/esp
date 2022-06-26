@@ -1,11 +1,12 @@
 #pragma once
 
+#include <gpio.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
-#include <driver/gpio.h>
 #include <stdbool.h>
 
 #define USER_LEDS_MAX 8
@@ -58,7 +59,7 @@ struct user_leds_input {
 };
 
 struct user_leds_options {
-  gpio_num_t gpio;
+  gpio_pin_t gpio_pin;
 
   enum user_leds_mode mode;
 
@@ -70,7 +71,7 @@ struct user_leds_options {
 
 struct user_leds;
 
-int user_leds_new(struct user_leds **ledsp, size_t count, const struct user_leds_options options[]);
+int user_leds_new(struct user_leds **ledsp, struct gpio_options *gpio_options, size_t count, const struct user_leds_options options[]);
 
 /*
  * Run user_leds mainloop.

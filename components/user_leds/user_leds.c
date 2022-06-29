@@ -171,7 +171,7 @@ void user_leds_main(void *arg)
 
 int user_leds_get(struct user_leds *leds, unsigned index)
 {
-  if (index > leds->count) {
+  if (index >= leds->count) {
     LOG_ERROR("invalid index=%u for count=%u", index, leds->count);
     return -1;
   }
@@ -194,7 +194,7 @@ int user_leds_get(struct user_leds *leds, unsigned index)
 
 int user_leds_set(struct user_leds *leds, unsigned index, enum user_leds_state state)
 {
-  if (index > leds->count) {
+  if (index >= leds->count) {
     LOG_ERROR("invalid index=%u for count=%u", index, leds->count);
     return -1;
   }

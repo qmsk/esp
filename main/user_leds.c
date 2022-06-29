@@ -117,7 +117,7 @@ static struct gpio_options user_leds_gpio = {
 #endif
 };
 
-static struct user_leds_options user_leds_options[] = {
+static struct user_leds_options user_leds_options[USER_LEDS_COUNT] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
   [USER_LED] = {
     .gpio_pin = CONFIG_STATUS_LEDS_USER_GPIO_NUM,

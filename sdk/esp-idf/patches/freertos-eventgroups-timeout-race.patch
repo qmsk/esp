@@ -1,0 +1,23 @@
+commit 1183eedc56ff36eabff23c4f0067b6325c19f400
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Sat Jul 2 22:59:51 2022 +0300
+
+    freertos: fix eventgroup xEventListItem SMP race with timeout tick interrupt
+
+diff --git a/components/freertos/tasks.c b/components/freertos/tasks.c
+index 40a07839e7..86a3778019 100644
+--- a/components/freertos/tasks.c
++++ b/components/freertos/tasks.c
+@@ -3741,6 +3741,12 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+ 
+     taskENTER_CRITICAL();
+ 
++    if ( listLIST_ITEM_CONTAINER( pxEventListItem ) == NULL ) {
++      // XXX: https://github.com/espressif/esp-idf/issues/8336
++      taskEXIT_CRITICAL();
++      return;
++    }
++
+     /* Store the new item value in the event list. */
+     listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
+ 

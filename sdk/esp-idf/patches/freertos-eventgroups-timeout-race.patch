@@ -1,23 +1,100 @@
-commit 1183eedc56ff36eabff23c4f0067b6325c19f400
-Author: Tero Marttila <terom@fixme.fi>
-Date:   Sat Jul 2 22:59:51 2022 +0300
-
-    freertos: fix eventgroup xEventListItem SMP race with timeout tick interrupt
-
+diff --git a/components/freertos/event_groups.c b/components/freertos/event_groups.c
+index f7f38c4607..8b02464ba0 100644
+--- a/components/freertos/event_groups.c
++++ b/components/freertos/event_groups.c
+@@ -589,7 +589,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
+     List_t const * pxList;
+     EventBits_t uxBitsToClear = 0, uxBitsWaitedFor, uxControlBits;
+     EventGroup_t * pxEventBits = xEventGroup;
+-    BaseType_t xMatchFound = pdFALSE;
++    BaseType_t xMatchFound = pdFALSE, xTaskUnblocked = pdFALSE;
+ 
+     /* Check the user is not attempting to set the bits used by the kernel
+      * itself. */
+@@ -646,8 +646,15 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
+ 
+             if( xMatchFound != pdFALSE )
+             {
++                /* Store the actual event flag value in the task's event list
++                * item before removing the task from the event list.  The
++                * eventUNBLOCKED_DUE_TO_BIT_SET bit is set so the task knows
++                * that is was unblocked due to its required bits matching, rather
++                * than because it timed out. */
++                xTaskUnblocked = xTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
++
+                 /* The bits match.  Should the bits be cleared on exit? */
+-                if( ( uxControlBits & eventCLEAR_EVENTS_ON_EXIT_BIT ) != ( EventBits_t ) 0 )
++                if( ( uxControlBits & eventCLEAR_EVENTS_ON_EXIT_BIT ) != ( EventBits_t ) 0 && xTaskUnblocked != pdFALSE )
+                 {
+                     uxBitsToClear |= uxBitsWaitedFor;
+                 }
+@@ -655,13 +662,6 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
+                 {
+                     mtCOVERAGE_TEST_MARKER();
+                 }
+-
+-                /* Store the actual event flag value in the task's event list
+-                 * item before removing the task from the event list.  The
+-                 * eventUNBLOCKED_DUE_TO_BIT_SET bit is set so the task knows
+-                 * that is was unblocked due to its required bits matching, rather
+-                 * than because it timed out. */
+-                vTaskRemoveFromUnorderedEventList( pxListItem, pxEventBits->uxEventBits | eventUNBLOCKED_DUE_TO_BIT_SET );
+             }
+ 
+             /* Move onto the next list item.  Note pxListItem->pxNext is not
+@@ -699,7 +699,7 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
+             /* Unblock the task, returning 0 as the event list is being deleted
+              * and cannot therefore have any bits set. */
+             configASSERT( pxTasksWaitingForBits->xListEnd.pxNext != ( const ListItem_t * ) &( pxTasksWaitingForBits->xListEnd ) );
+-            vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
++            xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
+         }
+     }
+     taskEXIT_CRITICAL();
+diff --git a/components/freertos/include/freertos/task.h b/components/freertos/include/freertos/task.h
+index 125a924d06..9cf55841a4 100644
+--- a/components/freertos/include/freertos/task.h
++++ b/components/freertos/include/freertos/task.h
+@@ -3389,7 +3389,7 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
+  * making the call, otherwise pdFALSE.
+  */
+ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList ) PRIVILEGED_FUNCTION;
+-void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
++BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+                                         const TickType_t xItemValue ) PRIVILEGED_FUNCTION;
+ 
+ /*
 diff --git a/components/freertos/tasks.c b/components/freertos/tasks.c
-index 40a07839e7..86a3778019 100644
+index 40a07839e7..cbe96962cd 100644
 --- a/components/freertos/tasks.c
 +++ b/components/freertos/tasks.c
-@@ -3741,6 +3741,12 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+@@ -3734,13 +3734,19 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
+ }
+ /*-----------------------------------------------------------*/
+ 
+-void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
++BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+                                         const TickType_t xItemValue )
+ {
+     TCB_t * pxUnblockedTCB;
  
      taskENTER_CRITICAL();
  
 +    if ( listLIST_ITEM_CONTAINER( pxEventListItem ) == NULL ) {
 +      // XXX: https://github.com/espressif/esp-idf/issues/8336
 +      taskEXIT_CRITICAL();
-+      return;
++      return pdFALSE;
 +    }
 +
      /* Store the new item value in the event list. */
      listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
+ 
+@@ -3768,6 +3774,8 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+     }
+ 
+     taskEXIT_CRITICAL();
++
++    return pdTRUE;
+ }
+ /*-----------------------------------------------------------*/
  

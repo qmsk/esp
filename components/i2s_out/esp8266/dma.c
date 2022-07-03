@@ -335,7 +335,6 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
     // copy data to desc buf
     LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
 
-
     memcpy(ptr, data, len);
 
     i2s_out_dma_commit(i2s_out, len, 1);

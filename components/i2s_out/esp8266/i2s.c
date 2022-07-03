@@ -62,7 +62,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   I2S0.conf.clkm_div_num = options->clock.clkm_div;
   I2S0.conf.bck_div_num = options->clock.bck_div;
 
-  switch (options.mode) {
+  switch (options->mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:
       I2S0.conf.right_first = 0; // TX LEFT, RIGHT
       I2S0.conf.msb_right = 1; // FIFO is RIGHT, LEFT

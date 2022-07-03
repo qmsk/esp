@@ -183,6 +183,10 @@ int configtab_init(const struct configtab *tab)
 
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
+      if (snprintf(tab->string_type.value, tab->string_type.size, "%s", tab->string_type.default_value ? tab->string_type.default_value : "") >= tab->string_type.size) {
+        LOG_ERROR("invalid default_value=%s", tab->string_type.default_value);
+        return -1;
+      }
       break;
 
     case CONFIG_TYPE_UINT16:

@@ -148,7 +148,7 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, 
  *
  * Returns <0 on error, 0 on success.
  */
-int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 
 /**
  * Copy exactly `count` 16-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.

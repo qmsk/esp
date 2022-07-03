@@ -85,7 +85,7 @@ void IRAM_ATTR i2s_intr_handler(void *arg)
   }
 }
 
-int i2s_out_intr_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_intr_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
   esp_err_t err = 0;
 

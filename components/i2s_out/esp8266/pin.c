@@ -8,14 +8,14 @@ int i2s_out_pin_init(struct i2s_out *i2s_out)
   return 0;
 }
 
-int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
-  if (options.pin_mutex) {
-    if (!xSemaphoreTake(options.pin_mutex, options.pin_timeout)) {
+  if (options->pin_mutex) {
+    if (!xSemaphoreTake(options->pin_mutex, options->pin_timeout)) {
       LOG_ERROR("xSemaphoreTake");
       return -1;
     } else {
-      i2s_out->pin_mutex = options.pin_mutex;
+      i2s_out->pin_mutex = options->pin_mutex;
     }
   }
 

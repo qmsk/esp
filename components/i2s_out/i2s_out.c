@@ -77,7 +77,7 @@ error:
   return err;
 }
 
-int i2s_out_open(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
   int err = 0;
 

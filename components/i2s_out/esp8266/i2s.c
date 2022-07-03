@@ -47,7 +47,7 @@ int i2s_out_i2s_init(struct i2s_out *i2s_out)
   return 0;
 }
 
-int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
   taskENTER_CRITICAL();
 
@@ -59,8 +59,8 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
 
   I2S0.conf.tx_slave_mod = 0; // generate output clock
   I2S0.conf.rx_slave_mod = 0;
-  I2S0.conf.clkm_div_num = options.clock.clkm_div;
-  I2S0.conf.bck_div_num = options.clock.bck_div;
+  I2S0.conf.clkm_div_num = options->clock.clkm_div;
+  I2S0.conf.bck_div_num = options->clock.bck_div;
 
   switch (options.mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:

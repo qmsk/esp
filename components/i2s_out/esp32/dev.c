@@ -15,16 +15,16 @@ static const periph_module_t i2s_periph_module[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = PERIPH_I2S1_MODULE,
 };
 
-int i2s_out_dev_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_dev_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
-  if (options.dev_mutex) {
-    LOG_DEBUG("take dev_mutex=%p", options.dev_mutex);
+  if (options->dev_mutex) {
+    LOG_DEBUG("take dev_mutex=%p", options->dev_mutex);
 
-    if (!xSemaphoreTake(options.dev_mutex, portMAX_DELAY)) {
+    if (!xSemaphoreTake(options->dev_mutex, portMAX_DELAY)) {
       LOG_ERROR("xSemaphoreTake");
       return -1;
     } else {
-      i2s_out->dev_mutex = options.dev_mutex;
+      i2s_out->dev_mutex = options->dev_mutex;
 
       LOG_DEBUG("have dev_mutex=%p", i2s_out->dev_mutex);
     }

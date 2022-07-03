@@ -11,9 +11,9 @@ int i2s_out_i2s_init(struct i2s_out *i2s_out)
   return 0;
 }
 
-int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
-  LOG_DEBUG("clock(clkm=1/%d bck=1/%d)", options.clock.clkm_div, options.clock.bck_div);
+  LOG_DEBUG("clock(clkm=1/%d bck=1/%d)", options->clock.clkm_div, options->clock.bck_div);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -30,7 +30,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   // TODO: SOC_I2S_SUPPORTS_PDM_RX/TX, SOC_I2S_SUPPORTS_TDM?
   i2s_ll_tx_enable_pdm(i2s_out->dev, false);
 
-  switch (options.mode) {
+  switch (options->mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:
       i2s_ll_enable_lcd(i2s_out->dev, false);
 
@@ -98,11 +98,11 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
   i2s_ll_tx_bypass_pcm(i2s_out->dev, true);
 
   // using 160MHz I2S_CLK_D2CLK
-  i2s_ll_mclk_div_t mclk_set = { .mclk_div = options.clock.clkm_div, .b = 0, .a = 1 };
+  i2s_ll_mclk_div_t mclk_set = { .mclk_div = options->clock.clkm_div, .b = 0, .a = 1 };
 
   i2s_ll_tx_clk_set_src(i2s_out->dev, I2S_CLK_D2CLK);
   i2s_ll_tx_set_clk(i2s_out->dev, &mclk_set);
-  i2s_ll_tx_set_bck_div_num(i2s_out->dev, options.clock.bck_div);
+  i2s_ll_tx_set_bck_div_num(i2s_out->dev, options->clock.bck_div);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 

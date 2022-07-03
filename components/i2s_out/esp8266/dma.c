@@ -205,17 +205,17 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
   slc_intr_clear(&SLC0);
 }
 
-int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options)
+int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
   LOG_DEBUG("...");
 
-  if (options.eof_count * sizeof(options.eof_value) > DMA_EOF_BUF_SIZE) {
-    LOG_ERROR("eof_count=%u is too large for eof buf size=%u", options.eof_count, DMA_EOF_BUF_SIZE);
+  if (options->eof_count * sizeof(options->eof_value) > DMA_EOF_BUF_SIZE) {
+    LOG_ERROR("eof_count=%u is too large for eof buf size=%u", options->eof_count, DMA_EOF_BUF_SIZE);
     return -1;
   }
 
   // init EOF buffer
-  init_dma_eof_desc(i2s_out->dma_eof_desc, options.eof_value, options.eof_count);
+  init_dma_eof_desc(i2s_out->dma_eof_desc, options->eof_value, options->eof_count);
 
   // init RX desc
   reinit_dma_desc(i2s_out->dma_rx_desc, i2s_out->dma_rx_count, i2s_out->dma_eof_desc);

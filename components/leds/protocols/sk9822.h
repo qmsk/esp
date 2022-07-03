@@ -19,13 +19,6 @@ union __attribute__((packed)) sk9822_pixel {
   uint32_t xbgr;
 };
 
-// one frame of 0-bits
-#define SK9822_START_FRAME_UINT32 (uint32_t) 0x00000000
-
-// one bit per LED, in frames of 32 bits
-#define SK9822_END_FRAME_UINT32 (uint32_t) 0x00000000
-#define SK9822_END_FRAME_COUNT(count) (1 + count / 32)
-
 #define LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
 
 #define SK9822_PIXEL_POWER_DIVISOR (3 * 255 * 31) // one pixel at full brightness

@@ -54,12 +54,33 @@ static void leds_protocol_ws2812b_i2s_out(uint16_t buf[6], void *data, unsigned 
 
 int leds_protocol_ws2812b_init(struct leds_protocol_ws2812b *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
+  int err;
+
   if (!(protocol->pixels = calloc(options->count, sizeof(*protocol->pixels)))) {
     LOG_ERROR("malloc");
     return -1;
   }
 
   protocol->count = options->count;
+
+    switch (options->interface) {
+      case LEDS_INTERFACE_NONE:
+        break;
+
+    #if CONFIG_LEDS_I2S_ENABLED
+      case LEDS_INTERFACE_I2S:
+        if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL, protocol->count))) {
+          LOG_ERROR("leds_interface_i2s_init");
+          return err;
+        }
+
+        break;
+    #endif
+
+      default:
+        LOG_ERROR("unsupported interface=%#x", options->interface);
+        return -1;
+    }
 
   return 0;
 }
@@ -77,13 +98,7 @@ int leds_protocol_ws2812b_tx(struct leds_protocol_ws2812b *protocol, union leds_
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_interface_i2s_tx(&options->i2s, LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL, (struct leds_interface_i2s_tx) {
-        .data   = protocol->pixels,
-        .count  = protocol->count,
-        .limit  = limit,
-
-        .func.i2s_mode_24bit_4x4 = leds_protocol_ws2812b_i2s_out,
-      });
+      return leds_interface_i2s_tx(&interface->i2s, LEDS_INTERFACE_I2S_FUNC(i2s_mode_24bit_4x4, leds_protocol_ws2812b_i2s_out), protocol->pixels, limit);
   #endif
 
     default:

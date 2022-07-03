@@ -7,6 +7,9 @@
 #if CONFIG_LEDS_SPI_ENABLED
 # include "interfaces/spi.h"
 #endif
+#if CONFIG_LEDS_I2S_ENABLED
+# include "interfaces/i2s.h"
+#endif
 
 #include "protocol.h"
 #include "protocols/apa102.h"
@@ -19,6 +22,9 @@
 union leds_interface_state {
 #if CONFIG_LEDS_SPI_ENABLED
   struct leds_interface_spi spi;
+#endif
+#if CONFIG_LEDS_I2S_ENABLED
+  struct leds_interface_i2s i2s;
 #endif
 };
 

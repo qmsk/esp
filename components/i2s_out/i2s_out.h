@@ -53,7 +53,7 @@ struct i2s_out {
 
 /* dma.c */
 int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align);
-int i2s_out_dma_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size);
 void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size);
 int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size);
@@ -63,20 +63,20 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out);
 
 /* i2s.c */
 int i2s_out_i2s_init(struct i2s_out *i2s_out);
-int i2s_out_i2s_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_i2s_start(struct i2s_out *i2s_out);
 int i2s_out_i2s_flush(struct i2s_out *i2s_out);
 void i2s_out_i2s_stop(struct i2s_out *i2s_out);
 
 /* dev.c */
-int i2s_out_dev_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_dev_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_dev_teardown(struct i2s_out *i2s_out);
 
 /* pin.c */
 int i2s_out_pin_init(struct i2s_out *i2s_out);
-int i2s_out_pin_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_pin_teardown(struct i2s_out *i2s_out);
 
 /* intr.c */
-int i2s_out_intr_setup(struct i2s_out *i2s_out, struct i2s_out_options options);
+int i2s_out_intr_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_intr_teardown(struct i2s_out *i2s_out);

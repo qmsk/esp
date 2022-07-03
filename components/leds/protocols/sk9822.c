@@ -17,12 +17,33 @@ static void leds_protocol_sk9822_i2s_out(uint32_t buf[1], void *data, unsigned i
 
 int leds_protocol_sk9822_init(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options)
 {
+  int err;
+
   if (!(protocol->pixels = calloc(options->count, sizeof(*protocol->pixels)))) {
     LOG_ERROR("malloc");
     return -1;
   }
 
   protocol->count = options->count;
+
+  switch (options->interface) {
+    case LEDS_INTERFACE_NONE:
+      break;
+
+  #if CONFIG_LEDS_I2S_ENABLED
+    case LEDS_INTERFACE_I2S:
+      if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_INTERFACE_I2S_MODE_32BIT_BCK, protocol->count))) {
+        LOG_ERROR("leds_interface_i2s_init");
+        return err;
+      }
+
+      break;
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", options->interface);
+      return -1;
+  }
 
   return 0;
 }
@@ -35,14 +56,8 @@ int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_in
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_interface_i2s_tx(&options->i2s, LEDS_INTERFACE_I2S_MODE_32BIT_BCK, (struct leds_interface_i2s_tx) {
-        .data   = protocol->pixels,
-        .count  = protocol->count,
-        .limit  = limit,
-
-        .start_frame.i2s_mode_32bit = SK9822_START_FRAME_UINT32,
-        .func.i2s_mode_32bit        = leds_protocol_sk9822_i2s_out,
-      });
+      // TODO: SK9822_START_FRAME_UINT32
+      return leds_interface_i2s_tx(&interface->i2s, LEDS_INTERFACE_I2S_FUNC(i2s_mode_32bit, leds_protocol_sk9822_i2s_out), protocol->pixels, limit);
   #endif
 
     default:

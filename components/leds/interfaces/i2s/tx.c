@@ -272,6 +272,9 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
       interface->i2s_out_options.data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->data_pins[i] : GPIO_NUM_NC;
       interface->i2s_out_options.inv_data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->inv_data_pins[i] : GPIO_NUM_NC;
     }
+
+    // XXX: for some reason, 8-bit parallel mode seems to have BCK inverted?
+    interface->i2s_out_options.bck_inv = true;
   } else {
     interface->i2s_out_options.bck_gpio = options->clock_pin;
     interface->i2s_out_options.data_gpio = options->data_pin;

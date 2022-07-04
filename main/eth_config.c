@@ -16,8 +16,37 @@
   #define ETH_HOSTNAME_FMT "qmsk-esp-%02x%02x%02x"
   #define ETH_HOSTNAME_MAX_SIZE 32
 
+#if CONFIG_ETH_MODE_DEFAULT_STATIC
+  #define ETH_CONFIG_ENABLED_DEFAULT true
+  #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_STATIC
+#elif CONFIG_ETH_MODE_DEFAULT_DHCP_CLIENT
+  #define ETH_CONFIG_ENABLED_DEFAULT true
   #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_DHCP_CLIENT
+#elif CONFIG_ETH_MODE_DEFAULT_DHCP_SERVER
+  #define ETH_CONFIG_ENABLED_DEFAULT true
+  #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_DHCP_SERVER
+#else
+  #define ETH_CONFIG_ENABLED_DEFAULT false
+  #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_NONE
+#endif
 
+#ifdef CONFIG_ETH_IP_DEFAULT
+  #define ETH_CONFIG_IP_DEFAULT CONFIG_ETH_IP_DEFAULT
+#else
+  #define ETH_CONFIG_IP_DEFAULT NULL
+#endif
+
+#ifdef CONFIG_ETH_NETMASK_DEFAULT
+  #define ETH_CONFIG_NETMASK_DEFAULT CONFIG_ETH_NETMASK_DEFAULT
+#else
+  #define ETH_CONFIG_NETMASK_DEFAULT NULL
+#endif
+
+#ifdef CONFIG_ETH_GW_DEFAULT
+  #define ETH_CONFIG_GW_DEFAULT CONFIG_ETH_GW_DEFAULT
+#else
+  #define ETH_CONFIG_GW_DEFAULT NULL
+#endif
 
   const struct config_enum eth_mode_enum[] = {
     { "NONE",         ETH_MODE_NONE         },
@@ -32,7 +61,7 @@
       .description = (
         "Setup the Ethernet interface."
       ),
-      .bool_type = { .value = &eth_config.enabled },
+      .bool_type = { .value = &eth_config.enabled, .default_value = ETH_CONFIG_ENABLED_DEFAULT },
     },
     { CONFIG_TYPE_STRING, "hostname",
       .string_type = { .value = eth_config.hostname, .size = sizeof(eth_config.hostname) },
@@ -41,13 +70,13 @@
       .enum_type = { .value = &eth_config.mode, .values = eth_mode_enum, .default_value = ETH_CONFIG_MODE_DEFAULT },
     },
     { CONFIG_TYPE_STRING, "ip",
-      .string_type = { .value = eth_config.ip, .size = sizeof(eth_config.ip) },
+      .string_type = { .value = eth_config.ip, .size = sizeof(eth_config.ip), .default_value = ETH_CONFIG_IP_DEFAULT },
     },
     { CONFIG_TYPE_STRING, "netmask",
-      .string_type = { .value = eth_config.netmask, .size = sizeof(eth_config.netmask) },
+      .string_type = { .value = eth_config.netmask, .size = sizeof(eth_config.netmask), .default_value = ETH_CONFIG_NETMASK_DEFAULT },
     },
     { CONFIG_TYPE_STRING, "gw",
-      .string_type = { .value = eth_config.gw, .size = sizeof(eth_config.gw) },
+      .string_type = { .value = eth_config.gw, .size = sizeof(eth_config.gw), .default_value = ETH_CONFIG_GW_DEFAULT },
     },
     {}
   };

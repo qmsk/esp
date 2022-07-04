@@ -210,14 +210,38 @@ menu "qmsk-esp-eth"
 
     config ETH_BOARD_WT32_ETH01
       bool "WT32-ETH01"
+      select ETH_ENABLED
+      select ETH_USE_ESP32_EMAC
 
   endchoice
 
-  config ETH_ENABLED
-      bool
+  choice ETH_MODE_DEFAULT
+      optional
+      prompt "Ethernet mode default"
+      default ETH_MODE_DEFAULT_DHCP_SERVER
 
-      default n if ETH_BOARD_NONE
-      default y if ETH_BOARD_WT32_ETH01
+      config ETH_MODE_DEFAULT_STATIC
+        bool "Static IPv4"
+
+      config ETH_MODE_DEFAULT_DHCP_CLIENT
+        bool "DHCP Client"
+
+      config ETH_MODE_DEFAULT_DHCP_SERVER
+        bool "DHCP Server"
+
+  endchoice
+
+  config ETH_IP_DEFAULT
+      string "IPv4 address"
+      default "192.168.5.1"
+
+  config ETH_NETMASK_DEFAULT
+      string "IPv4 netmask"
+      default "255.255.255.0"
+
+  config ETH_GW_DEFAULT
+      string "IPv4 gateway"
+      default "0.0.0.0"
 
   config ETH_MAC_MDC_GPIO_NUM
       depends on ETH_ENABLED

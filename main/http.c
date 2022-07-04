@@ -41,16 +41,14 @@ struct http_config {
   uint16_t port;
   char     username[32];
   char     password[32];
-} http_config = {
-  .host     = HTTP_CONFIG_HOST,
-};
+} http_config = {};
 
 const struct configtab http_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &http_config.enabled, .default_value = HTTP_CONFIG_ENABLED },
   },
   { CONFIG_TYPE_STRING, "host",
-    .string_type = { .value = http_config.host, .size = sizeof(http_config.host) },
+    .string_type = { .value = http_config.host, .size = sizeof(http_config.host), .default_value = HTTP_CONFIG_HOST },
   },
   { CONFIG_TYPE_UINT16, "port",
     .uint16_type = { .value = &http_config.port, .default_value = HTTP_CONFIG_PORT },

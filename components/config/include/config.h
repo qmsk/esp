@@ -52,6 +52,7 @@ struct configtab {
     struct {
       char *value;
       size_t size;
+      const char *default_value;
     } string_type;
 
     struct {

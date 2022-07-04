@@ -31,6 +31,12 @@ CONFIG_ESP_MAIN_TASK_AFFINITY=0x0
 # Optimize memory usage
 CONFIG_MDNS_TASK_STACK_SIZE=2048
 
+# Do not enable ETH by default
+CONFIG_ETH_ENABLED=n
+CONFIG_ETH_USE_ESP32_EMAC=n
+CONFIG_ETH_USE_SPI_ETHERNET=n
+CONFIG_ETH_USE_OPENETH=n
+
 # Tune ethernet -> lwip receive stack to handle UDP bursts for 16 artnet universes
 CONFIG_ETH_DMA_BUFFER_SIZE=1600
 CONFIG_ETH_DMA_RX_BUFFER_NUM=20

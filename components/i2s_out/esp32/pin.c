@@ -89,7 +89,6 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-
   switch (options->mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:
     case I2S_OUT_MODE_32BIT_SERIAL:

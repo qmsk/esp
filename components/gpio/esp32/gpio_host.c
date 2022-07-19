@@ -152,8 +152,8 @@ int gpio_host_setup_intr_pin(const struct gpio_options *options, gpio_pin_t gpio
 int gpio_host_setup(const struct gpio_options *options)
 {
   for (gpio_pin_t gpio = 0; gpio < GPIO_HOST_PIN_COUNT; gpio++) {
-    bool input = options->in_pins & GPIO_PINS(gpio);
-    bool output = options->out_pins & GPIO_PINS(gpio);
+    bool input = options->in_pins & GPIO_PINS(gpio) & GPIO_HOST_PINS_INPUT;
+    bool output = options->out_pins & GPIO_PINS(gpio) & GPIO_HOST_PINS_OUTPUT;
     bool inverted = options->inverted_pins & GPIO_PINS(gpio);
     bool interrupt = options->interrupt_pins & GPIO_PINS(gpio);
 

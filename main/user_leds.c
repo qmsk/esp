@@ -40,7 +40,7 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
-#define USER_LEDS_GPIO_I2C_TIMEOUT (1 / portTICK_RATE_MS)
+#define USER_LEDS_GPIO_I2C_TIMEOUT (10 / portTICK_RATE_MS)
 
 
 #define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)

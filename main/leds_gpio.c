@@ -7,7 +7,7 @@
 
 #include <logging.h>
 
-#define LEDS_GPIO_I2C_TIMEOUT (1 / portTICK_RATE_MS)
+#define LEDS_GPIO_I2C_TIMEOUT (10 / portTICK_RATE_MS)
 
 #if CONFIG_LEDS_GPIO_ENABLED
   // config

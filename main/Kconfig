@@ -213,6 +213,11 @@ menu "qmsk-esp-eth"
       select ETH_ENABLED
       select ETH_USE_ESP32_EMAC
 
+    config ETH_BOARD_QMSK_ESP32_LAN87XX
+      bool "QMSK-ESP32-LAN87XX"
+      select ETH_ENABLED
+      select ETH_USE_ESP32_EMAC
+
   endchoice
 
   choice ETH_MODE_DEFAULT
@@ -248,6 +253,7 @@ menu "qmsk-esp-eth"
       int
 
       default 23  if ETH_BOARD_WT32_ETH01
+      default 23  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default 23
 
   config ETH_MAC_MDIO_GPIO_NUM
@@ -255,6 +261,7 @@ menu "qmsk-esp-eth"
       int
 
       default 18  if ETH_BOARD_WT32_ETH01
+      default 18  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default 18
 
   config ETH_PHY_LAN87XX
@@ -262,6 +269,7 @@ menu "qmsk-esp-eth"
       bool
 
       default y if ETH_BOARD_WT32_ETH01
+      default y if ETH_BOARD_QMSK_ESP32_LAN87XX
       default n
 
   config ETH_PHY_ADDR
@@ -269,6 +277,7 @@ menu "qmsk-esp-eth"
       int
 
       default  1  if ETH_BOARD_WT32_ETH01
+      default  1  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default -1
 
   config ETH_PHY_RESET_GPIO_NUM
@@ -276,6 +285,7 @@ menu "qmsk-esp-eth"
       int
 
       default  16 if ETH_BOARD_WT32_ETH01
+      default  4  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default -1
 endmenu
 

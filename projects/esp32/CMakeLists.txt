@@ -16,7 +16,7 @@ set(EXCLUDE_COMPONENTS "wifi_provisioning")
 # use custom sdkconfig defaults from BOARDCONFIG env
 set(BOARDCONFIG "$ENV{BOARDCONFIG}")
 if(NOT BOARDCONFIG)
-  set(BOARDCONFIG "qmsk-esp")
+  set(BOARDCONFIG "qmsk-esp32")
 endif()
 
 set(SDKCONFIG "sdkconfig@${BOARDCONFIG}")

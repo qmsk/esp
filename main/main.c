@@ -62,7 +62,6 @@ void app_main(void)
   if ((err = init_user_leds())) {
     LOG_ERROR("init_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
-    abort();
   }
 
   if ((err = init_user_events())) {
@@ -86,7 +85,6 @@ void app_main(void)
   if ((err = start_user_leds())) {
     LOG_ERROR("start_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
-    abort();
   }
 
   if ((err = start_user_events())) {

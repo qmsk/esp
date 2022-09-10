@@ -217,6 +217,10 @@ int start_user_leds()
 
 int get_user_led(enum user_led led)
 {
+  if (!user_leds) {
+    return 0;
+  }
+
   return user_leds_get(user_leds, led);
 }
 
@@ -231,6 +235,10 @@ int read_user_leds_input(struct user_leds_input *inputp, TickType_t timeout)
 
 int override_user_led(enum user_led led, enum user_leds_state state)
 {
+  if (!user_leds) {
+    return 0;
+  }
+  
   user_leds_override[led] = true;
 
   return user_leds_set(user_leds, led, state);
@@ -239,6 +247,10 @@ int override_user_led(enum user_led led, enum user_leds_state state)
 int revert_user_led(enum user_led led)
 {
   enum user_leds_state state = user_leds_state[led];
+
+  if (!user_leds) {
+    return 0;
+  }
 
   user_leds_override[led] = false;
 

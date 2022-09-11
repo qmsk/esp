@@ -14,7 +14,7 @@ const struct configtab DMX_OUTPUT_CONFIGTAB[] = {
  },
  { CONFIG_TYPE_ENUM, "gpio_mode",
    .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",
-   .enum_type = { .value = &DMX_OUTPUT_CONFIG.gpio_mode, .values = dmx_gpio_mode_enum },
+   .enum_type = { .value = &DMX_OUTPUT_CONFIG.gpio_mode, .values = dmx_gpio_mode_enum, .default_value = DMX_GPIO_MODE_DISABLED },
  },
 
  { CONFIG_TYPE_BOOL, "artnet_enabled",

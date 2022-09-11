@@ -18,6 +18,8 @@
   #define UART_PORT_MAX   (2)
   #define UART_PORT_MASK  0x0ff
 
+  #define UART_IO_PINS_SUPPORTED 0
+
   // flag bits
   #define UART_SWAP_BIT   0x100   // swap RTS/CST AND RX/TX pins
   #define UART_TXDBK_BIT  0x200   // use alternate TX pin
@@ -50,6 +52,7 @@
 
 #elif CONFIG_IDF_TARGET_ESP32
   #include <hal/uart_types.h>
+  #include <hal/gpio_types.h>
 
   // uart_port_t values
   #define UART_0  (0)     // GPIO1 TX, GPIO3 RX
@@ -59,6 +62,9 @@
   // number of physical UART ports
   #define UART_PORT_MAX 3
   #define UART_PORT_MASK  0x0ff
+
+  #define UART_IO_PINS_SUPPORTED 1
+
 #else
   #error Unsupported target
 #endif
@@ -101,6 +107,11 @@ struct uart_options {
 
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
+
+#ifdef UART_IO_PINS_SUPPORTED
+  // -1 to disable, 0 to use iomux direct io
+  gpio_num_t rx_pin, tx_pin;
+#endif
 };
 
 struct uart;

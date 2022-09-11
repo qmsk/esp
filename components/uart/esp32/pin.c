@@ -56,7 +56,7 @@ int uart_pin_setup(struct uart *uart, struct uart_options options)
     }
   }
 
-  LOG_DEBUG("port=%d", port);
+  LOG_DEBUG("port=%d: rx_pin=%d tx_pin=%d", port, options.rx_pin, options.tx_pin);
 
   taskENTER_CRITICAL(&uart->mux);
 

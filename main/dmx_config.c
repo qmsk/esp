@@ -50,6 +50,16 @@ const struct configtab dmx_uart_configtab[] = {
     .description = "Select host peripherial for UART interface.",
     .enum_type = { .value = &dmx_uart_config.port, .values = dmx_uart_enum, .default_value = DMX_UART_CONFIG_PORT_DEFAULT_VALUE },
   },
+#ifdef DMX_UART_IO_PINS_SUPPORTED
+  { CONFIG_TYPE_UINT16, "rx_pin",
+    .description = "Input UART RX data from GPIO pin. Default 0 = direct IO via iomux",
+    .uint16_type = { .value = &dmx_uart_config.rx_pin, .max = (GPIO_NUM_MAX - 1), .default_value = 0 },
+  },
+  { CONFIG_TYPE_UINT16, "tx_pin",
+    .description = "Output UART TX data to GPIO pin. Default 0 = direct IO via iomux",
+    .uint16_type = { .value = &dmx_uart_config.tx_pin, .max = (GPIO_NUM_MAX - 1), .default_value = 0 },
+  },
+#endif
   {}
 };
 

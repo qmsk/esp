@@ -12,6 +12,14 @@
 struct dmx_output_state;
 struct dmx_output_config;
 
+/* dmx.c */
+
+// dmx-input enabled in config?
+bool dmx_input_enabled();
+
+// dmx-outputs enabled in config?
+bool dmx_outputs_enabled();
+
 /* dmx_uart.c */
 int init_dmx_uart();
 

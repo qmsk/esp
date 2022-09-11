@@ -11,6 +11,9 @@
 #define DMX_UART_MTBP_MIN (4 * DMX_UART_MTBP_UNIT)
 #define DMX_UART_MTBP_MAX (UART_RX_TIMEOUT_MAX * DMX_UART_MTBP_UNIT)
 
+// SOC supports mapping IO pins
+#define DMX_UART_IO_PINS_SUPPORTED UART_IO_PINS_SUPPORTED
+
 struct dmx_uart_options {
   // buffer RX FIFO until line idle for this many ~8-bit periods
   // this must be short enough to trigger in the MTBP, or the final bytes in the packet will be lost...
@@ -21,6 +24,11 @@ struct dmx_uart_options {
 
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
+
+#ifdef DMX_UART_IO_PINS_SUPPORTED
+  // -1 to disable, 0 to use iomux direct io
+  gpio_num_t rx_pin, tx_pin;
+#endif
 };
 
 int dmx_uart_setup(struct uart *uart, struct dmx_uart_options options);

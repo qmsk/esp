@@ -3,7 +3,7 @@
 #include "dmx.h"
 
 #include <config.h>
-#include <uart.h>
+#include <dmx_uart.h>
 
 enum dmx_gpio_mode {
   DMX_GPIO_MODE_DISABLED  = -1,
@@ -15,6 +15,10 @@ extern const struct config_enum dmx_gpio_mode_enum[];
 
 struct dmx_uart_config {
   int port;
+
+#ifdef DMX_UART_IO_PINS_SUPPORTED
+  uint16_t rx_pin, tx_pin;
+#endif
 };
 
 struct dmx_input_config {

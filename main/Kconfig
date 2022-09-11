@@ -285,7 +285,6 @@ menu "qmsk-esp-eth"
       int
 
       default  16 if ETH_BOARD_WT32_ETH01
-      default  4  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default -1
 endmenu
 

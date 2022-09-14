@@ -24,6 +24,7 @@
   };
 
   struct gpio_i2c_dev {
+    enum gpio_i2c_type type;
     struct gpio_i2c_options options;
     SemaphoreHandle_t mutex;
     union gpio_i2c_state state;
@@ -55,12 +56,15 @@ void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio);
 void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_pins_t pins);
 
 void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *options);
+int gpio_i2c_setup(const struct gpio_options *options);
+int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins);
+int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins);
+int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins);
+int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins);
 
 /* gpio_i2c_pc54xx.c */
 int gpio_i2c_pc54xx_setup(const struct gpio_options *options);
 int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins);
 int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins);
 int gpio_i2c_pc54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_pc54xx_clear(const struct gpio_options *options);
 int gpio_i2c_pc54xx_set(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_pc54xx_set_all(const struct gpio_options *options);

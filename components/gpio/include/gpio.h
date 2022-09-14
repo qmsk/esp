@@ -34,8 +34,7 @@
 enum gpio_type {
   GPIO_TYPE_HOST,
 #if GPIO_I2C_ENABLED
-  GPIO_TYPE_I2C_PCA9534,
-  GPIO_TYPE_I2C_PCA9554,  /* With weak internal pull-up on inputs */
+  GPIO_TYPE_I2C,
 #endif
 };
 
@@ -124,6 +123,7 @@ enum gpio_type {
 
   #define GPIO_I2C_ADDR_MAX 0xff
   #define GPIO_I2C_PINS_MAX 8
+  #define GPIO_I2C_PINS_ALL 0xff
 
   #define GPIO_I2C_PCA9554_PIN_COUNT 8
   #define GPIO_I2C_PCA9554_PINS_MASK 0xff
@@ -132,7 +132,14 @@ enum gpio_type {
   #define GPIO_I2C_PCA9554_ADDR_BASE 0x20
   #define GPIO_I2C_PCA9554_ADDR_MASK 0x07
 
+  enum gpio_i2c_type {
+    GPIO_I2C_TYPE_NONE,
+    GPIO_I2C_TYPE_PCA9534,
+    GPIO_I2C_TYPE_PCA9554,  /* With weak internal pull-up on inputs */
+  };
+
   struct gpio_i2c_options {
+    enum gpio_i2c_type type;
     i2c_port_t port;
     uint8_t addr;
     gpio_pin_t int_pin;

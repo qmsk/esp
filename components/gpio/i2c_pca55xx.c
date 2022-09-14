@@ -149,18 +149,8 @@ error:
     return gpio_i2c_pca54xx_config(options->i2c_dev, pca55x_pins(options->in_pins | options->out_pins), pca55x_pins(~(options->out_pins & pins)), options->i2c_timeout);
   }
 
-  int gpio_i2c_pc54xx_clear(const struct gpio_options *options)
-  {
-    return gpio_i2c_pca54xx_output(options->i2c_dev, pca55x_pins(options->out_pins), pca55x_pins(0 ^ options->inverted_pins), options->i2c_timeout);
-  }
-
   int gpio_i2c_pc54xx_set(const struct gpio_options *options, gpio_pins_t pins)
   {
     return gpio_i2c_pca54xx_output(options->i2c_dev, pca55x_pins(options->out_pins), pca55x_pins(pins ^ options->inverted_pins), options->i2c_timeout);
-  }
-
-  int gpio_i2c_pc54xx_set_all(const struct gpio_options *options)
-  {
-    return gpio_i2c_pca54xx_output(options->i2c_dev, pca55x_pins(options->out_pins), pca55x_pins(GPIO_I2C_PCA9554_PINS_MASK ^ options->inverted_pins), options->i2c_timeout);
   }
 #endif

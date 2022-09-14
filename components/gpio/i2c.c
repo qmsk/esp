@@ -21,7 +21,7 @@ IRAM_ATTR void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_p
   }
 }
 
-int gpio_i2c_init (struct gpio_i2c_dev *dev, const struct gpio_i2c_options *options)
+int gpio_i2c_init (struct gpio_i2c_dev *dev,  const struct gpio_i2c_options *options)
 {
   int err;
 
@@ -76,6 +76,67 @@ void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *op
       }
     }
 
+    // XXX: multiple gpio_i2c_dev sharing the same int_pin?
     gpio_intr_setup_pin(options, options->i2c_dev->options.int_pin);
+  }
+}
+
+int gpio_i2c_setup(const struct gpio_options *options)
+{
+  switch(options->i2c_dev->options.type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pc54xx_setup(options);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
+  }
+}
+
+int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins)
+{
+  switch(options->i2c_dev->options.type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pc54xx_setup_input(options, pins);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
+  }
+}
+
+int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins)
+{
+  switch(options->i2c_dev->options.type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pc54xx_get(options, pins);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
+  }
+}
+
+int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins)
+{
+  switch(options->i2c_dev->options.type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pc54xx_setup_output(options, pins);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
+  }
+}
+
+int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins)
+{
+  switch(options->i2c_dev->options.type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pc54xx_set(options, pins);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
   }
 }

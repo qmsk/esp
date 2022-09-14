@@ -29,8 +29,7 @@ static IRAM_ATTR void gpio_isr (void *arg)
           gpio_host_intr_handler(options, pins);
           break;
 
-        case GPIO_TYPE_I2C_PCA9534:
-        case GPIO_TYPE_I2C_PCA9554:
+        case GPIO_TYPE_I2C:
           gpio_i2c_intr_handler(options, pins);
           break;
       }

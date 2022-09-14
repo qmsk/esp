@@ -123,6 +123,7 @@ enum gpio_type {
   #include <hal/i2c_types.h>
 
   #define GPIO_I2C_ADDR_MAX 0xff
+  #define GPIO_I2C_PINS_MAX 8
 
   #define GPIO_I2C_PCA9554_PIN_COUNT 8
   #define GPIO_I2C_PCA9554_PINS_MASK 0xff
@@ -130,6 +131,16 @@ enum gpio_type {
   #define GPIO_I2C_PCA9554_ADDR(addr) (GPIO_I2C_PCA9554_ADDR_BASE | ((addr) & GPIO_I2C_PCA9554_ADDR_MASK))
   #define GPIO_I2C_PCA9554_ADDR_BASE 0x20
   #define GPIO_I2C_PCA9554_ADDR_MASK 0x07
+
+  struct gpio_i2c_options {
+    i2c_port_t port;
+    uint8_t addr;
+    gpio_pin_t int_pin;
+  };
+
+  struct gpio_i2c_dev;
+
+  int gpio_i2c_new(struct gpio_i2c_dev **devp, const struct gpio_i2c_options *options);
 #endif
 
 /* Return gpio_out_pins bitmask for numbered pin, or 0 if invalid */
@@ -142,12 +153,7 @@ struct gpio_options {
 
   union {
   #if GPIO_I2C_ENABLED
-    struct gpio_i2c_options {
-      i2c_port_t port;
-      uint8_t addr;
-      TickType_t timeout;
-      gpio_pin_t int_pin;
-    } i2c;
+     struct gpio_i2c_dev *i2c_dev;
   #endif
   };
 
@@ -166,6 +172,9 @@ struct gpio_options {
   // interrupt handler
   gpio_interrupt_func_t interrupt_func;
   void *interrupt_arg;
+
+  // for i2c devices
+  TickType_t i2c_timeout;
 };
 
 /* Setup input interrupt handler */

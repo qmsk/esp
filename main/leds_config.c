@@ -1,6 +1,7 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "gpio_type.h"
 
 #include <artnet.h>
 #include <leds.h>

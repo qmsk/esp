@@ -1,5 +1,5 @@
+#include "i2c.h"
 #include "i2c_master.h"
-#include "i2c_config.h"
 
 #include <logging.h>
 

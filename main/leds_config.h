@@ -12,6 +12,8 @@
 struct leds_state *state;
 
 #if CONFIG_LEDS_GPIO_ENABLED
+  #include "i2c_gpio.h"
+
   #define LEDS_GPIO_SIZE 8
 
   enum leds_gpio_mode {
@@ -20,22 +22,6 @@ struct leds_state *state;
     LEDS_GPIO_MODE_HIGH     = 1,
   };
 
-  #if GPIO_I2C_ENABLED && CONFIG_I2C_MASTER_ENABLED
-    #define LEDS_GPIO_I2C_ENABLED 1
-  #else
-    #define LEDS_GPIO_I2C_ENABLED 0
-  #endif
-
-  struct leds_gpio_config {
-    int type;
-  #if LEDS_GPIO_I2C_ENABLED
-    uint16_t i2c_addr;
-  #endif
-  };
-
-  extern struct leds_gpio_config leds_gpio_config;
-
-  extern const struct config_enum leds_gpio_type_enum[];
   extern const struct config_enum leds_gpio_mode_enum[];
 #endif
 
@@ -147,6 +133,7 @@ struct leds_config {
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED
+  int gpio_type;
   int gpio_mode;
   uint16_t gpio_pin[LEDS_GPIO_SIZE];
   unsigned gpio_count;

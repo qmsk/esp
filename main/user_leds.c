@@ -3,7 +3,7 @@
 #include "user_leds_input.h"
 #include "user_leds_output.h"
 #include "user.h"
-#include "i2c_config.h"
+#include "i2c_gpio.h"
 #include "tasks.h"
 
 #include <user_leds.h>
@@ -100,20 +100,11 @@ QueueHandle_t user_leds_input_queue;
 static struct gpio_options user_leds_gpio = {
 #if CONFIG_STATUS_LEDS_GPIO_TYPE_HOST
   .type = GPIO_TYPE_HOST,
-#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
-  .type = GPIO_TYPE_I2C_PCA9534,
-  .i2c.port = I2C_MASTER_PORT,
-  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9534,
-  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
-  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
-#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
-  .type = GPIO_TYPE_I2C_PCA9554,
-  .i2c.port = I2C_MASTER_PORT,
-  .i2c.addr = CONFIG_STATUS_LEDS_GPIO_I2C_ADDR_PCA9554,
-  .i2c.timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
-  .i2c.int_pin = CONFIG_STATUS_LEDS_GPIO_I2C_INT_PIN,
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C
+  .type = GPIO_TYPE_I2C,
+  .i2c_timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
 #else
-  #error "No CONFIG_STATUS_LEDS_GPIO_TYPE_* configured"
+  #error "Invalid STATUS_LEDS_GPIO_TYPE"
 #endif
 };
 
@@ -165,17 +156,18 @@ int init_user_leds()
 
   switch(user_leds_gpio.type) {
     case GPIO_TYPE_HOST:
-      LOG_INFO("gpio host");
+      LOG_INFO("host gpio");
       break;
 
   #if GPIO_I2C_ENABLED
-    case GPIO_TYPE_I2C_PCA9534:
-    case GPIO_TYPE_I2C_PCA9554:
-      LOG_INFO("gpio i2c port=%d addr=%u timeout=%d int_pin=%d",
-        user_leds_gpio.i2c.port,
-        user_leds_gpio.i2c.addr,
-        user_leds_gpio.i2c.timeout,
-        user_leds_gpio.i2c.int_pin
+    case GPIO_TYPE_I2C:
+      user_leds_gpio.i2c_dev = i2c_gpio_devs[0]; // XXX?
+
+      LOG_INFO("i2c-gpio0: port=%d addr=%u int_pin=%d: timeout=%d",
+        i2c_gpio_options0.port,
+        i2c_gpio_options0.addr,
+        i2c_gpio_options0.int_pin,
+        user_leds_gpio.i2c_timeout
       );
       break;
   #endif

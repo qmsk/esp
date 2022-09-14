@@ -6,33 +6,12 @@ menu "qmsk-esp"
     config STATUS_LEDS_GPIO_TYPE_HOST
       bool "Host/Internal GPIO"
 
-    config STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
-      depends on I2C_MASTER_ENABLED
-      bool "External I2C PCA9534 GPIO expander"
-
-    config STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
-      depends on I2C_MASTER_ENABLED
-      bool "External I2C PCA9554 GPIO expander"
+    config STATUS_LEDS_GPIO_TYPE_I2C
+      depends on I2C_GPIO_ENABLED
+      bool "External I2C GPIO expander"
 
   endchoice
 
-  config STATUS_LEDS_GPIO_I2C_ADDR_PCA9534
-    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9534
-    int "Configurable I2C address bits (0-16)"
-    range 0 15
-    default 0
-
-  config STATUS_LEDS_GPIO_I2C_ADDR_PCA9554
-    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
-    int "Configurable I2C address bits (0-16)"
-    range 0 15
-    default 0
-
-  config STATUS_LEDS_GPIO_I2C_INT_PIN
-    depends on STATUS_LEDS_GPIO_TYPE_I2C_PCA9534 || STATUS_LEDS_GPIO_TYPE_I2C_PCA9554
-    int "HOST GPIO pin for I2S bus interrupt"
-    range 0 39
-    default 0
 
   choice STATUS_LEDS_USER
     prompt "USER LED/button mode"
@@ -320,4 +299,45 @@ menu "qmsk-esp-i2c"
     prompt "Clock frequency"
 
     default 400000
+
+  config I2C_GPIO_ENABLED
+    select I2C_MASTER_ENABLED
+    prompt "Use I2C GPIO expanders"
+    bool
+
+  choice I2C_GPIO_TYPE
+    depends on I2C_GPIO_ENABLED
+    prompt "Primary I2C GPIO type"
+
+    config I2C_GPIO_TYPE_NONE
+      bool "No external I2C GPIO expander"
+
+    config I2C_GPIO_TYPE_PCA9534
+      depends on I2C_GPIO_ENABLED
+      bool "External I2C PCA9534 GPIO expander"
+
+    config I2C_GPIO_TYPE_PCA9554
+      depends on I2C_GPIO_ENABLED
+      bool "External I2C PCA9554 GPIO expander"
+
+  endchoice
+
+  config I2C_GPIO_ADDR_PCA9534
+    depends on I2C_GPIO_TYPE_PCA9534
+    int "Configurable I2C address bits (0-16)"
+    range 0 15
+    default 0
+
+  config I2C_GPIO_ADDR_PCA9554
+    depends on I2C_GPIO_TYPE_PCA9554
+    int "Configurable I2C address bits (0-16)"
+    range 0 15
+    default 0
+
+  config I2C_GPIO_INT_PIN
+    depends on I2C_GPIO_TYPE_PCA9534 || I2C_GPIO_TYPE_PCA9554
+    int "HOST GPIO pin for I2C bus interrupt, 0 to disable"
+    range 0 39
+    default 0
+
 endmenu

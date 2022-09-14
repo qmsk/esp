@@ -5,6 +5,7 @@
 #include "dmx.h"
 #include "eth.h"
 #include "http.h"
+#include "i2c.h"
 #include "leds.h"
 #include "wifi.h"
 
@@ -30,6 +31,13 @@ const struct configmod config_modules[] = {
     ),
     .table = console_configtab,
   },
+#if CONFIG_I2C_GPIO_ENABLED
+  { "i2c-gpio",
+    .description = "I2C GPIO",
+    .tables = i2c_gpio_configtabs,
+    .tables_count = I2C_GPIO_COUNT,
+  },
+#endif
   { "wifi",
     .description = (
       "WiFi AP/STA mode, using static/dynamic IPv4 addressing."
@@ -74,10 +82,6 @@ const struct configmod config_modules[] = {
     .description = "DMX output",
     .tables = dmx_output_configtabs,
     .tables_count = DMX_OUTPUT_COUNT,
-  },
-  { "leds-gpio",
-    .description = "LEDS GPIO interface",
-    .table = leds_gpio_configtab,
   },
   { "leds-spi",
     .description = "LEDS SPI interface",

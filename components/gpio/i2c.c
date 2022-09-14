@@ -83,6 +83,11 @@ void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *op
 
 int gpio_i2c_setup(const struct gpio_options *options)
 {
+  if (!options->i2c_dev) {
+    LOG_ERROR("Invalid i2c_dev=NULL");
+    return -1;
+  }
+
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:

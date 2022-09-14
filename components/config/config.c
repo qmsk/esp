@@ -52,64 +52,44 @@ int config_enum_to_value(const struct config_enum *e, const char *name)
   return -1;
 }
 
-/* Parse section like foo1 into len=3, index=1 */
-int configmod_parse_name(const char *name, int *lenp, int *indexp)
-{
-  int len = 0;
-  const char *ptr;
-
-  for (ptr = name; *ptr; ptr++) {
-    if (isdigit(*ptr)) {
-      break;
-    } else {
-      len++;
-    }
-  }
-
-  char *end;
-  int index = strtol(ptr, &end, 10);
-
-  if (!*ptr) {
-    index = 0;
-  } else if (end == ptr) {
-    LOG_WARN("Invalid suffix for name: %s", name);
-    return 1;
-  } else if (*end) {
-    LOG_WARN("Invalid suffix for name: %s", name);
-    return 1;
-  }
-
-  LOG_DEBUG("parse name=%s -> len=%d index=%d", name, len, index);
-
-  *lenp = len;
-  *indexp = index;
-
-  return 0;
-}
-
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep)
 {
   for (const struct configmod *mod = modules; mod->name; mod++) {
     if (mod->tables_count) {
-      int len, index;
+      // match name prefix
+      const char *suffix;
 
-      if (configmod_parse_name(name, &len, &index)) {
-        continue;
-      }
+      if (strncmp(mod->name, name, strlen(mod->name)) == 0) {
+        suffix = name + strlen(mod->name);
 
-      // match first len characters of name
-      if (strncmp(mod->name, name, len) == 0) {
-        LOG_DEBUG("match name=%s -> mod name=%s index=%d", name, mod->name, index);
+        LOG_DEBUG("match name=%s -> mod name=%s suffix=%s", name, mod->name, suffix);
 
-      } else if (mod->alias && strncmp(mod->alias, name, len) == 0) {
-        LOG_DEBUG("match name=%s -> mod alias=%s index=%d", name, mod->alias, index);
+      } else if (mod->alias && strncmp(mod->alias, name, strlen(mod->alias)) == 0) {
+        suffix = name + strlen(mod->alias);
+
+        LOG_DEBUG("match name=%s -> mod alias=%s suffix=%s ", name, mod->alias, suffix);
         LOG_WARN("deprecated alias %s, renamed to %s", name, mod->name);
       } else {
         continue;
       }
 
-      if (!index) {
+      // decode index
+      char *end;
+      int index = strtol(suffix, &end, 10);
+
+      if (!*suffix) {
         LOG_WARN("invalid %s, missing suffix", name);
+        continue;
+      } else if (end == suffix) {
+        LOG_WARN("Invalid suffix for name: %s", name);
+        continue;
+      } else if (*end) {
+        LOG_WARN("Invalid suffix for name: %s", name);
+        continue;
+      }
+
+      if (!index) {
+        LOG_WARN("invalid %s, min suffix is 1", name);
         break;
       } else if (index > mod->tables_count) {
         LOG_WARN("invalid %s, max count is %d", name, mod->tables_count);

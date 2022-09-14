@@ -40,8 +40,9 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
-#define USER_LEDS_GPIO_I2C_TIMEOUT (20 / portTICK_RATE_MS)
-
+#if GPIO_I2C_ENABLED
+  #define USER_LEDS_GPIO_I2C_TIMEOUT (20 / portTICK_RATE_MS)
+#endif
 
 #define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_USER_MODE_TEST
@@ -100,13 +101,18 @@ QueueHandle_t user_leds_input_queue;
 static struct gpio_options user_leds_gpio = {
 #if CONFIG_STATUS_LEDS_GPIO_TYPE_HOST
   .type = GPIO_TYPE_HOST,
-#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C
+#elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_GPIO_0
   .type = GPIO_TYPE_I2C,
   .i2c_timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
 #else
   #error "Invalid STATUS_LEDS_GPIO_TYPE"
 #endif
 };
+
+#if CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_GPIO_0
+  #define USER_LEDS_I2C_GPIO_DEV_ID 0
+  #define USER_LEDS_I2C_GPIO_DEV I2C_GPIO_DEV(0)
+#endif
 
 static struct user_leds_options user_leds_options[USER_LEDS_COUNT] = {
 #if CONFIG_STATUS_LEDS_USER_ENABLED
@@ -161,15 +167,14 @@ int init_user_leds()
 
   #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
-      user_leds_gpio.i2c_dev = i2c_gpio_devs[0]; // XXX?
+    #ifdef USER_LEDS_I2C_GPIO_DEV
+      user_leds_gpio.i2c_dev = USER_LEDS_I2C_GPIO_DEV;
 
-      LOG_INFO("i2c-gpio0: port=%d addr=%u int_pin=%d: timeout=%d",
-        i2c_gpio_options0.port,
-        i2c_gpio_options0.addr,
-        i2c_gpio_options0.int_pin,
+      LOG_INFO("i2c-gpio%d: timeout=%d", USER_LEDS_I2C_GPIO_DEV_ID,
         user_leds_gpio.i2c_timeout
       );
       break;
+    #endif
   #endif
   }
 

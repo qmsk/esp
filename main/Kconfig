@@ -6,9 +6,9 @@ menu "qmsk-esp"
     config STATUS_LEDS_GPIO_TYPE_HOST
       bool "Host/Internal GPIO"
 
-    config STATUS_LEDS_GPIO_TYPE_I2C
+    config STATUS_LEDS_GPIO_TYPE_I2C_GPIO_0
       depends on I2C_GPIO_ENABLED
-      bool "External I2C GPIO expander"
+      bool "External I2C-GPIO0 expander"
 
   endchoice
 

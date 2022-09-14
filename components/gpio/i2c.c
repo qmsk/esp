@@ -67,6 +67,11 @@ error:
   return err;
 }
 
+const struct gpio_i2c_options *gpio_i2c_options(struct gpio_i2c_dev *dev)
+{
+  return &dev->options;
+}
+
 void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *options)
 {
   if (options->interrupt_pins && options->i2c_dev->options.int_pin > 0) {

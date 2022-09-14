@@ -59,18 +59,18 @@
         return err;
       }
 
-      for (unsigned i = 0; i < config->gpio_count; i++) {
+      for (unsigned j = 0; j < config->gpio_count; j++) {
         LOG_INFO("leds%d: gpio[%s] type=%s mode=%s pin[%u]=%d", i + 1,
           config_enum_to_string(leds_interface_enum, interface) ?: "?",
           config_enum_to_string(gpio_type_enum, config->gpio_type) ?: "?",
           config_enum_to_string(leds_gpio_mode_enum, config->gpio_mode) ?: "?",
-          i, config->gpio_pin[i]
+          j, config->gpio_pin[j]
         );
 
-        leds_gpio_options[interface].out_pins |= gpio_host_pin(config->gpio_pin[i]);
+        leds_gpio_options[interface].out_pins |= gpio_host_pin(config->gpio_pin[j]);
 
         if (config->gpio_mode == LEDS_GPIO_MODE_LOW) {
-          leds_gpio_options[interface].inverted_pins |= gpio_host_pin(config->gpio_pin[i]);
+          leds_gpio_options[interface].inverted_pins |= gpio_host_pin(config->gpio_pin[j]);
         }
       }
     }
@@ -82,6 +82,7 @@
 
     for (enum leds_interface interface = 0; interface < LEDS_INTERFACE_COUNT; interface++) {
       struct gpio_options *options = &leds_gpio_options[interface];
+      const struct gpio_i2c_options *i2c_options;
 
       if (!interfaces_enabled[interface]) {
         continue;
@@ -93,12 +94,16 @@
 
       #if GPIO_I2C_ENABLED
         case GPIO_TYPE_I2C:
+          i2c_options = gpio_i2c_options(options->i2c_dev);
+
           options->i2c_timeout = LEDS_GPIO_I2C_TIMEOUT;
 
-          LOG_INFO("leds: gpio[%s] i2c port=? addr=? timeout=%d",
+          LOG_INFO("leds gpio[%s]: i2c type=%s port=%u addr=%u int_pin=%u",
             config_enum_to_string(leds_interface_enum, interface),
-            // XXX: options from dev?
-            options->i2c_timeout
+            config_enum_to_string(i2c_gpio_type_enum, i2c_options->type) ?: "?",
+            i2c_options->port,
+            i2c_options->addr,
+            i2c_options->int_pin
           );
 
           break;

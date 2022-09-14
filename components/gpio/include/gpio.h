@@ -148,6 +148,8 @@ enum gpio_type {
   struct gpio_i2c_dev;
 
   int gpio_i2c_new(struct gpio_i2c_dev **devp, const struct gpio_i2c_options *options);
+
+  const struct gpio_i2c_options *gpio_i2c_options(struct gpio_i2c_dev *dev);
 #endif
 
 /* Return gpio_out_pins bitmask for numbered pin, or 0 if invalid */

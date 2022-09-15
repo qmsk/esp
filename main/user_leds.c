@@ -110,7 +110,6 @@ static struct gpio_options user_leds_gpio = {
 };
 
 #if CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_GPIO_0
-  #define USER_LEDS_I2C_GPIO_DEV_ID 0
   #define USER_LEDS_I2C_GPIO_DEV I2C_GPIO_DEV(0)
 #endif
 
@@ -160,6 +159,11 @@ int init_user_leds()
     user_leds_options[i].input_queue = user_leds_input_queue;
   }
 
+#ifdef USER_LEDS_I2C_GPIO_DEV
+  // requires init_i2c_gpio()
+  user_leds_gpio.i2c_dev = USER_LEDS_I2C_GPIO_DEV;
+#endif
+
   switch(user_leds_gpio.type) {
     case GPIO_TYPE_HOST:
       LOG_INFO("host gpio");
@@ -167,14 +171,10 @@ int init_user_leds()
 
   #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
-    #ifdef USER_LEDS_I2C_GPIO_DEV
-      user_leds_gpio.i2c_dev = USER_LEDS_I2C_GPIO_DEV;
-
-      LOG_INFO("i2c-gpio%d: timeout=%d", USER_LEDS_I2C_GPIO_DEV_ID,
+      LOG_INFO("i2c gpio: timeout=%d",
         user_leds_gpio.i2c_timeout
       );
       break;
-    #endif
   #endif
   }
 

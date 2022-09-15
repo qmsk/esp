@@ -17,6 +17,4 @@
 
   extern struct i2c_gpio_config i2c_gpio_config;
   extern struct i2c_gpio_config i2c_gpio_configs[I2C_GPIO_COUNT];
-
-  extern const struct config_enum i2c_gpio_type_enum[];
 #endif

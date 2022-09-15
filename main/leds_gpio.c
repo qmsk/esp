@@ -90,6 +90,12 @@
 
       switch (options->type) {
         case GPIO_TYPE_HOST:
+          LOG_INFO("leds: gpio[%s] host: out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
+            config_enum_to_string(leds_interface_enum, interface),
+            GPIO_PINS_ARGS(options->out_pins),
+            GPIO_PINS_ARGS(options->inverted_pins)
+          );
+
           break;
 
       #if GPIO_I2C_ENABLED
@@ -98,12 +104,13 @@
 
           options->i2c_timeout = LEDS_GPIO_I2C_TIMEOUT;
 
-          LOG_INFO("leds gpio[%s]: i2c type=%s port=%u addr=%u int_pin=%u",
+          LOG_INFO("leds gpio[%s]: i2c type=%s port=%u addr=%u: out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
             config_enum_to_string(leds_interface_enum, interface),
             config_enum_to_string(i2c_gpio_type_enum, i2c_options->type) ?: "?",
             i2c_options->port,
             i2c_options->addr,
-            i2c_options->int_pin
+            GPIO_PINS_ARGS(options->out_pins),
+            GPIO_PINS_ARGS(options->inverted_pins)
           );
 
           break;
@@ -114,13 +121,6 @@
           return -1;
       }
 
-
-      LOG_INFO("leds: gpio[%s] -> type=%d out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
-        config_enum_to_string(leds_interface_enum, interface),
-        options->type,
-        GPIO_PINS_ARGS(options->out_pins),
-        GPIO_PINS_ARGS(options->inverted_pins)
-      );
 
       if ((err = gpio_setup(options))) {
         LOG_ERROR("gpio_setup");

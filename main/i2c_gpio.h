@@ -5,7 +5,10 @@
 #include <sdkconfig.h>
 
 #if CONFIG_I2C_GPIO_ENABLED
+  #include <config.h>
   #include <gpio.h>
+
+  extern const struct config_enum i2c_gpio_type_enum[];
 
   extern const struct gpio_i2c_options i2c_gpio_options0;
 

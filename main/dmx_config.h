@@ -5,6 +5,8 @@
 #include <config.h>
 #include <dmx_uart.h>
 
+#define DMX_GPIO_COUNT 4
+
 enum dmx_gpio_mode {
   DMX_GPIO_MODE_DISABLED  = -1,
   DMX_GPIO_MODE_LOW       = 0,
@@ -33,8 +35,10 @@ struct dmx_input_config {
 struct dmx_output_config {
   bool enabled;
 
-  uint16_t gpio_pin;
+  int gpio_type;
   int gpio_mode;
+  uint16_t gpio_pins[DMX_GPIO_COUNT];
+  unsigned gpio_count;
 
   bool artnet_enabled;
   uint16_t artnet_universe;

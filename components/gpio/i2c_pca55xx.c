@@ -71,7 +71,9 @@
       return 1;
     }
 
-    dev->state.pca54xx.output = (dev->state.pca54xx.output & (~mask)) | value;
+    dev->state.pca54xx.output = (dev->state.pca54xx.output & ~mask) | (value & mask);
+
+    LOG_DEBUG("dev=%p mask=%02x value=%02x -> output=%02x", dev, mask, value, dev->state.pca54xx.output);
 
     if ((err = gpio_i2c_pca54xx_write(&dev->options, PCA55XX_CMD_OUTPUT_PORT, dev->state.pca54xx.output, timeout))) {
       LOG_ERROR("gpio_i2c_pca54xx_write");
@@ -93,7 +95,9 @@ error:
       return 1;
     }
 
-    dev->state.pca54xx.config = (dev->state.pca54xx.config & (~mask)) | value;
+    dev->state.pca54xx.config = (dev->state.pca54xx.config & ~mask) | (value & mask);
+
+    LOG_DEBUG("dev=%p mask=%02x value=%02x -> config=%02x", dev, mask, value, dev->state.pca54xx.config);
 
     if ((err = gpio_i2c_pca54xx_write(&dev->options, PCA55XX_CMD_CONFIG_PORT, dev->state.pca54xx.config, timeout))) {
       LOG_ERROR("gpio_i2c_pca54xx_write");
@@ -104,6 +108,15 @@ error:
     xSemaphoreGive(dev->mutex);
 
     return err;
+  }
+
+  int gpio_i2c_pca54xx_init(struct gpio_i2c_pca54xx_state *state)
+  {
+    state->output = 0xff;
+    state->inversion = 0x00;
+    state->config = 0xff;
+
+    return 0;
   }
 
   int gpio_i2c_pca54xx_setup(const struct gpio_options *options)

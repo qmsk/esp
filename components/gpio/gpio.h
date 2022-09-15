@@ -13,7 +13,6 @@
   #include <freertos/semphr.h>
 
   struct gpio_i2c_pca54xx_state {
-    uint8_t input;
     uint8_t output;
     uint8_t inversion;
     uint8_t config;
@@ -62,6 +61,7 @@ int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins);
 int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins);
 
 /* gpio_i2c_pca54xx.c */
+int gpio_i2c_pca54xx_init(struct gpio_i2c_pca54xx_state *state);
 int gpio_i2c_pca54xx_setup(const struct gpio_options *options);
 int gpio_i2c_pca54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins);
 int gpio_i2c_pca54xx_get(const struct gpio_options *options, gpio_pins_t *pins);

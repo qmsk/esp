@@ -25,7 +25,7 @@ IRAM_ATTR void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_p
   }
 }
 
-int gpio_i2c_init (struct gpio_i2c_dev *dev,  const struct gpio_i2c_options *options)
+int gpio_i2c_init (struct gpio_i2c_dev *dev, const struct gpio_i2c_options *options)
 {
   int err;
 
@@ -41,6 +41,15 @@ int gpio_i2c_init (struct gpio_i2c_dev *dev,  const struct gpio_i2c_options *opt
       LOG_ERROR("gpio_host_setup_intr_pin");
       return err;
     }
+  }
+
+  switch(options->type) {
+    case GPIO_I2C_TYPE_PCA9534:
+    case GPIO_I2C_TYPE_PCA9554:
+      return gpio_i2c_pca54xx_init(&dev->state.pca54xx);
+
+    default:
+      LOG_FATAL("unsupported type=%d", options->type);
   }
 
   return 0;

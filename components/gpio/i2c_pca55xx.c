@@ -120,8 +120,6 @@ error:
       return err;
     }
 
-    gpio_i2c_setup_intr(options->i2c_dev, options);
-
     return 0;
   }
 

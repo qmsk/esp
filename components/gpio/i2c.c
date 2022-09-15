@@ -14,6 +14,10 @@ IRAM_ATTR void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_p
       continue;
     }
 
+    if (!options->interrupt_pins) {
+      continue;
+    }
+
     if (options->interrupt_func) {
       // external GPIO interrupt, unknown pins
       options->interrupt_func(options->interrupt_pins, options->interrupt_arg);
@@ -72,25 +76,27 @@ const struct gpio_i2c_options *gpio_i2c_options(struct gpio_i2c_dev *dev)
   return &dev->options;
 }
 
-void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *options)
-{
-  if (options->interrupt_pins && options->i2c_dev->options.int_pin > 0) {
-    for (gpio_pin_t pin = 0; pin < GPIO_I2C_PINS_MAX; pin++) {
-      if (options->interrupt_pins & GPIO_PINS(pin)) {
-        dev->intr_pins[pin] = options;
-      }
-    }
-
-    // XXX: multiple gpio_i2c_dev sharing the same int_pin?
-    gpio_intr_setup_pin(options, options->i2c_dev->options.int_pin);
-  }
-}
-
 int gpio_i2c_setup(const struct gpio_options *options)
 {
   if (!options->i2c_dev) {
     LOG_ERROR("Invalid i2c_dev=NULL");
     return -1;
+  }
+
+  if (options->interrupt_pins) {
+    if (options->i2c_dev->options.int_pin > 0) {
+      // XXX: multiple gpio_i2c_dev sharing the same int_pin?
+      gpio_intr_setup_pin(options, options->i2c_dev->options.int_pin);
+    } else {
+      LOG_ERROR("interrupt_pins without i2c_dev int_pin");
+      return -1;
+    }
+
+    for (gpio_pin_t pin = 0; pin < GPIO_I2C_PINS_MAX; pin++) {
+      if (options->interrupt_pins & GPIO_PINS(pin)) {
+        options->i2c_dev->intr_pins[pin] = options;
+      }
+    }
   }
 
   switch(options->i2c_dev->options.type) {

@@ -55,7 +55,6 @@ void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio);
 /* i2c.cc */
 void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_pins_t pins);
 
-void gpio_i2c_setup_intr(struct gpio_i2c_dev *dev, const struct gpio_options *options);
 int gpio_i2c_setup(const struct gpio_options *options);
 int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins);
 int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins);

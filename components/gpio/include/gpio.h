@@ -10,6 +10,8 @@
   typedef int gpio_pin_t;
   typedef uint32_t gpio_pins_t;
 
+  #define GPIO_PIN_MAX 16
+
   #define GPIO_PINS_FMT "%08x"
   #define GPIO_PINS_ARGS(x) x
 
@@ -19,6 +21,8 @@
   // more than 32 GPIOs
   typedef int gpio_pin_t;
   typedef uint64_t gpio_pins_t;
+
+  #define GPIO_PIN_MAX 39
 
   // newlib-nano printf does not support 64-bit formatting
   #define GPIO_PINS_FMT "%02x%08x"

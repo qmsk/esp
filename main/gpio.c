@@ -47,31 +47,47 @@ int set_gpio_type(struct gpio_options *options, int type)
   #if CONFIG_I2C_GPIO_ENABLED
     case GPIO_TYPE_I2C_DEV(0):
       options->type = GPIO_TYPE_I2C;
-      options->i2c_dev = i2c_gpio_devs[0];
+
+      if (!(options->i2c_dev = i2c_gpio_devs[0])) {
+        LOG_ERROR("I2C-GPIO0 not initialized");
+        return -1;
+      }
 
       return 0;
 
     case GPIO_TYPE_I2C_DEV(1):
       options->type = GPIO_TYPE_I2C;
-      options->i2c_dev = i2c_gpio_devs[1];
+      if (!(options->i2c_dev = i2c_gpio_devs[1])) {
+        LOG_ERROR("I2C-GPIO1 not initialized");
+        return -1;
+      }
 
       return 0;
 
     case GPIO_TYPE_I2C_DEV(2):
       options->type = GPIO_TYPE_I2C;
-      options->i2c_dev = i2c_gpio_devs[2];
+      if (!(options->i2c_dev = i2c_gpio_devs[2])) {
+        LOG_ERROR("I2C-GPIO2 not initialized");
+        return -1;
+      }
 
       return 0;
 
     case GPIO_TYPE_I2C_DEV(3):
       options->type = GPIO_TYPE_I2C;
-      options->i2c_dev = i2c_gpio_devs[3];
+      if (!(options->i2c_dev = i2c_gpio_devs[3])) {
+        LOG_ERROR("I2C-GPIO3 not initialized");
+        return -1;
+      }
 
       return 0;
 
     case GPIO_TYPE_I2C_DEV(4):
       options->type = GPIO_TYPE_I2C;
-      options->i2c_dev = i2c_gpio_devs[4];
+      if (!(options->i2c_dev = i2c_gpio_devs[4])) {
+        LOG_ERROR("I2C-GPIO4 not initialized");
+        return -1;
+      }
 
       return 0;
   #endif

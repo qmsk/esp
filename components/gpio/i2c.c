@@ -96,7 +96,7 @@ int gpio_i2c_setup(const struct gpio_options *options)
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:
-      return gpio_i2c_pc54xx_setup(options);
+      return gpio_i2c_pca54xx_setup(options);
 
     default:
       LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
@@ -108,7 +108,7 @@ int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins)
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:
-      return gpio_i2c_pc54xx_setup_input(options, pins);
+      return gpio_i2c_pca54xx_setup_input(options, pins);
 
     default:
       LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
@@ -120,7 +120,7 @@ int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins)
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:
-      return gpio_i2c_pc54xx_get(options, pins);
+      return gpio_i2c_pca54xx_get(options, pins);
 
     default:
       LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
@@ -132,7 +132,7 @@ int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins)
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:
-      return gpio_i2c_pc54xx_setup_output(options, pins);
+      return gpio_i2c_pca54xx_setup_output(options, pins);
 
     default:
       LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
@@ -144,7 +144,7 @@ int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins)
   switch(options->i2c_dev->options.type) {
     case GPIO_I2C_TYPE_PCA9534:
     case GPIO_I2C_TYPE_PCA9554:
-      return gpio_i2c_pc54xx_set(options, pins);
+      return gpio_i2c_pca54xx_set(options, pins);
 
     default:
       LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);

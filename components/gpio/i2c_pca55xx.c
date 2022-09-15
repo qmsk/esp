@@ -106,7 +106,7 @@ error:
     return err;
   }
 
-  int gpio_i2c_pc54xx_setup(const struct gpio_options *options)
+  int gpio_i2c_pca54xx_setup(const struct gpio_options *options)
   {
     int err;
 
@@ -125,12 +125,12 @@ error:
     return 0;
   }
 
-  int gpio_i2c_pc54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins)
+  int gpio_i2c_pca54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins)
   {
     return gpio_i2c_pca54xx_config(options->i2c_dev, pca55x_pins(options->in_pins | options->out_pins), pca55x_pins(~(options->out_pins & ~pins)), options->i2c_timeout);
   }
 
-  int gpio_i2c_pc54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
+  int gpio_i2c_pca54xx_get(const struct gpio_options *options, gpio_pins_t *pins)
   {
     uint8_t value;
     int err;
@@ -144,12 +144,12 @@ error:
     return 0;
   }
 
-  int gpio_i2c_pc54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins)
+  int gpio_i2c_pca54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins)
   {
     return gpio_i2c_pca54xx_config(options->i2c_dev, pca55x_pins(options->in_pins | options->out_pins), pca55x_pins(~(options->out_pins & pins)), options->i2c_timeout);
   }
 
-  int gpio_i2c_pc54xx_set(const struct gpio_options *options, gpio_pins_t pins)
+  int gpio_i2c_pca54xx_set(const struct gpio_options *options, gpio_pins_t pins)
   {
     return gpio_i2c_pca54xx_output(options->i2c_dev, pca55x_pins(options->out_pins), pca55x_pins(pins ^ options->inverted_pins), options->i2c_timeout);
   }

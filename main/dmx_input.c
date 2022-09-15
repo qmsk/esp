@@ -35,6 +35,11 @@ int init_dmx_input()
 
   LOG_INFO("dmx-input: enabled data=%p size=%u", options.data, options.size);
 
+  if ((err = config_dmx_input_gpio(state, config, &options))) {
+    LOG_ERROR("dmx-input: config_dmx_input_gpio");
+    return err;
+  }
+
   if ((err = dmx_input_new(&state->dmx_input, options))) {
     LOG_ERROR("dmx_input_new");
     return err;

@@ -52,8 +52,13 @@ int init_dmx()
     return err;
   }
 
-  if ((err = init_dmx_gpio())) {
-    LOG_ERROR("init_dmx_gpio");
+  if ((err = init_dmx_input_gpio())) {
+    LOG_ERROR("init_dmx_input_gpio");
+    return err;
+  }
+
+  if ((err = init_dmx_output_gpio())) {
+    LOG_ERROR("init_dmx_output_gpio");
     return err;
   }
 

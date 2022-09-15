@@ -28,6 +28,10 @@ struct dmx_input_config {
 
   uint16_t mtbp_min;
 
+  int gpio_type;
+  int gpio_mode;
+  uint16_t gpio_pin;
+
   bool artnet_enabled;
   uint16_t artnet_universe;
 };

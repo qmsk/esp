@@ -65,10 +65,10 @@ const struct configtab dmx_uart_configtab[] = {
 };
 
 const struct configtab dmx_input_configtab[] = {
- { CONFIG_TYPE_BOOL, "enabled",
+  { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &dmx_input_config.enabled },
- },
- { CONFIG_TYPE_UINT16, "mtbp_min",
+  },
+  { CONFIG_TYPE_UINT16, "mtbp_min",
     .description = (
       "Minimum mark-time-between-packets (us, approximately).\n"
       "Values ~128us or above are recommended. Default 0 -> 128us\n"
@@ -76,30 +76,30 @@ const struct configtab dmx_input_configtab[] = {
       "DMX input may fail with UART RX break desynchronization errors if this is too high.\n"
     ),
     .uint16_type = { .value = &dmx_input_config.mtbp_min, .max = DMX_UART_MTBP_MAX },
- },
- { CONFIG_TYPE_ENUM, "gpio_type",
+  },
+  { CONFIG_TYPE_ENUM, "gpio_type",
    .description = "Use built-in (HOST) GPIO pins, or external I2C GPIO expander via i2c-gpio config",
    .enum_type = { .value = &dmx_input_config.gpio_type, .values = gpio_type_enum, .default_value = GPIO_TYPE_HOST },
- },
- { CONFIG_TYPE_ENUM, "gpio_mode",
+  },
+  { CONFIG_TYPE_ENUM, "gpio_mode",
    .description = "GPIO pin will be driven high/low to enable the UART RX input.",
    .enum_type = { .value = &dmx_input_config.gpio_mode, .values = dmx_gpio_mode_enum, .default_value = DMX_GPIO_MODE_DISABLED },
- },
-{ CONFIG_TYPE_UINT16, "gpio_pin",
-  .description = (
-    "GPIO pin to drive high/low."
-  ),
-  .uint16_type = { .value = &dmx_input_config.gpio_pin, .max = (GPIO_HOST_PIN_COUNT - 1) },
-},
- { CONFIG_TYPE_BOOL, "artnet_enabled",
+  },
+  { CONFIG_TYPE_UINT16, "gpio_pin",
+    .description = (
+      "GPIO pin to drive high/low."
+    ),
+    .uint16_type = { .value = &dmx_input_config.gpio_pin, .max = (GPIO_HOST_PIN_COUNT - 1) },
+  },
+  { CONFIG_TYPE_BOOL, "artnet_enabled",
     .description = "Configure Art-NET input port.",
     .bool_type = { .value = &dmx_input_config.artnet_enabled },
- },
- { CONFIG_TYPE_UINT16, "artnet_universe",
+  },
+  { CONFIG_TYPE_UINT16, "artnet_universe",
     .description = "Input to universe (0-15) within [artnet] net/subnet.",
     .uint16_type = { .value = &dmx_input_config.artnet_universe, .max = ARTNET_UNIVERSE_MAX },
- },
- {}
+  },
+  {}
 };
 
 #define DMX_OUTPUT_CONFIGTAB dmx_output_configtab0

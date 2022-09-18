@@ -4,7 +4,13 @@
 
 #include <logging.h>
 
-struct gpio_options atx_psu_gpio_options;
+#if GPIO_I2C_ENABLED
+  #define ATX_PSU_GPIO_I2C_TIMEOUT (20 / portTICK_RATE_MS)
+#endif
+
+struct gpio_options atx_psu_gpio_options = {
+
+};
 
 int init_atx_psu_gpio(const struct atx_psu_config *config)
 {
@@ -57,10 +63,13 @@ int init_atx_psu_gpio(const struct atx_psu_config *config)
     case GPIO_TYPE_I2C:
       i2c_options = gpio_i2c_options(atx_psu_gpio_options.i2c_dev);
 
-      LOG_INFO("gpio i2c type=%s port=%d addr=%u: in_pins=" GPIO_PINS_FMT " out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
+      atx_psu_gpio_options.i2c_timeout = ATX_PSU_GPIO_I2C_TIMEOUT;
+
+      LOG_INFO("gpio i2c type=%s port=%d addr=%u timeout=%u: in_pins=" GPIO_PINS_FMT " out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
         config_enum_to_string(i2c_gpio_type_enum, i2c_options->type) ?: "?",
         i2c_options->port,
         i2c_options->addr,
+        atx_psu_gpio_options.i2c_timeout,
         GPIO_PINS_ARGS(atx_psu_gpio_options.in_pins),
         GPIO_PINS_ARGS(atx_psu_gpio_options.out_pins),
         GPIO_PINS_ARGS(atx_psu_gpio_options.inverted_pins)

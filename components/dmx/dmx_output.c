@@ -5,8 +5,8 @@
 
 #include <stdlib.h>
 
-#define DMX_BREAK_US 92
-#define DMX_MARK_US 12
+#define DMX_BREAK_BITS 23 // 4us per bit, 92us min break
+#define DMX_MARK_AFTER_BREAK_BITS 3 // 4us per bit, 12us MAB
 
 int dmx_output_init (struct dmx_output *out, struct dmx_output_options options)
 {
@@ -79,7 +79,7 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
   }
 
   // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
-  if ((err = uart_break(out->uart, DMX_BREAK_US, DMX_MARK_US))) {
+  if ((err = uart_break(out->uart, DMX_BREAK_BITS, DMX_MARK_AFTER_BREAK_BITS))) {
     LOG_ERROR("uart1_break");
     return err;
   }

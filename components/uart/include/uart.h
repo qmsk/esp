@@ -221,24 +221,23 @@ ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len);
 int uart_flush_write(struct uart *uart);
 
 /**
- * Flush, send break and hold for >= break_us.
- * After break, hold mark for >= mark_us.
+ * Flush -> idle, hold line low for >= `break_bits` bauds to signal break, and return line high (idle) for >= `mark_bits`.
  *
- * Blocks until TX, break and mark are complete.
+ * Blocks until TX idle, break and mark are complete.
  * Timing is approximate, not bit-exact.
  *
  * Return <0 on error.
  */
-int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us);
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits);
 
 /**
- * Flush, and hold mark for >= break_us once TX is complete.
+ * Flush, and hold mark for >= `mark_bits` bauds once TX is complete.
  *
  * Timing is approximate, not bit-exact.
  *
  * Return <0 on error.
  */
-int uart_mark(struct uart *uart, unsigned mark_us);
+int uart_mark(struct uart *uart, unsigned mark_bits);
 
 /**
  * Flush TX and release TX mutex acquire dusing `uart_open_tx()`.

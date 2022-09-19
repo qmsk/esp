@@ -1,7 +1,17 @@
 #include "i2c_config.h"
 #include "i2c_master.h"
+#include "i2c_gpio.h"
 
 #include <logging.h>
+
+#if GPIO_I2C_ENABLED
+  const struct config_enum i2c_gpio_type_enum[] = {
+    { "",         GPIO_I2C_TYPE_NONE        },
+    { "PCA9534",  GPIO_I2C_TYPE_PCA9534     },
+    { "PCA9554",  GPIO_I2C_TYPE_PCA9554     },
+    {},
+  };
+#endif
 
 #if CONFIG_I2C_GPIO_ENABLED
   // sdkconfig
@@ -25,13 +35,6 @@
 
   // config
   struct i2c_gpio_config i2c_gpio_configs[I2C_GPIO_COUNT] = {};
-
-  const struct config_enum i2c_gpio_type_enum[] = {
-    { "",         GPIO_I2C_TYPE_NONE        },
-    { "PCA9534",  GPIO_I2C_TYPE_PCA9534     },
-    { "PCA9554",  GPIO_I2C_TYPE_PCA9554     },
-    {},
-  };
 
   #define I2C_GPIO_CONFIGTAB i2c_gpio_configtab0
   #define I2C_GPIO_CONFIG i2c_gpio_configs[0]

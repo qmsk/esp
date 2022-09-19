@@ -106,7 +106,7 @@ void dmx_output_main(void *ctx)
 
   for (;;) {
     // blocking read
-    if (!artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
+    if (artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
       LOG_WARN("dmx-output%d: artnet_output empty", state->index + 1);
       continue;
     }

@@ -49,7 +49,9 @@ int init_atx_psu_gpio(const struct atx_psu_config *config)
     }
   }
 
+#if GPIO_I2C_ENABLED
   const struct gpio_i2c_options *i2c_options;
+#endif
 
   switch(atx_psu_gpio_options.type) {
     case GPIO_TYPE_HOST:
@@ -60,6 +62,7 @@ int init_atx_psu_gpio(const struct atx_psu_config *config)
       );
       break;
 
+  #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
       i2c_options = gpio_i2c_options(atx_psu_gpio_options.i2c_dev);
 
@@ -75,6 +78,7 @@ int init_atx_psu_gpio(const struct atx_psu_config *config)
         GPIO_PINS_ARGS(atx_psu_gpio_options.inverted_pins)
       );
       break;
+  #endif
   }
 
   if ((err = gpio_setup(&atx_psu_gpio_options))) {

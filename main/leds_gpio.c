@@ -82,7 +82,9 @@
 
     for (enum leds_interface interface = 0; interface < LEDS_INTERFACE_COUNT; interface++) {
       struct gpio_options *options = &leds_gpio_options[interface];
+    #if GPIO_I2C_ENABLED
       const struct gpio_i2c_options *i2c_options;
+    #endif
 
       if (!interfaces_enabled[interface]) {
         continue;

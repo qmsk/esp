@@ -36,7 +36,9 @@ int init_dmx_input_gpio()
     dmx_input_gpio_options.inverted_pins |= gpio_host_pin(config->gpio_pin);
   }
 
+#if GPIO_I2C_ENABLED
   const struct gpio_i2c_options *i2c_options;
+#endif
 
   switch(dmx_input_gpio_options.type) {
     case GPIO_TYPE_HOST:
@@ -46,6 +48,7 @@ int init_dmx_input_gpio()
       );
       break;
 
+  #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
       i2c_options = gpio_i2c_options(dmx_input_gpio_options.i2c_dev);
 
@@ -57,6 +60,7 @@ int init_dmx_input_gpio()
         GPIO_PINS_ARGS(dmx_input_gpio_options.inverted_pins)
       );
       break;
+  #endif
   }
 
   if ((err = gpio_setup(&dmx_input_gpio_options))) {
@@ -108,7 +112,9 @@ int init_dmx_output_gpio()
     return 0;
   }
 
+#if GPIO_I2C_ENABLED
   const struct gpio_i2c_options *i2c_options;
+#endif
 
   switch(dmx_output_gpio_options.type) {
     case GPIO_TYPE_HOST:
@@ -118,6 +124,7 @@ int init_dmx_output_gpio()
       );
       break;
 
+  #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
       i2c_options = gpio_i2c_options(dmx_output_gpio_options.i2c_dev);
 
@@ -129,6 +136,7 @@ int init_dmx_output_gpio()
         GPIO_PINS_ARGS(dmx_output_gpio_options.inverted_pins)
       );
       break;
+  #endif
   }
 
   if ((err = gpio_setup(&dmx_output_gpio_options))) {

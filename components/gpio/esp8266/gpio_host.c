@@ -5,6 +5,7 @@
 #include <logging.h>
 
 #include <driver/gpio.h>
+#include <esp_attr.h>
 #include <esp_err.h>
 #include <esp8266/gpio_struct.h>
 
@@ -68,6 +69,13 @@ static const uint32_t gpio_mux_func[16] = {
   [14]  = FUNC_GPIO14,
   [15]  = FUNC_GPIO15,
 };
+
+IRAM_ATTR void gpio_host_intr_handler (const struct gpio_options *options, gpio_pins_t pins)
+{
+  if (options->interrupt_func) {
+    options->interrupt_func(pins & options->interrupt_pins, options->interrupt_arg);
+  }
+}
 
 static void gpio_host_setup_rtc(bool output, bool inverted)
 {
@@ -163,7 +171,7 @@ int gpio_host_setup(const struct gpio_options *options)
     }
     if (interrupt) {
       if (GPIO_HOST_PINS_HOST & GPIO_PINS(gpio)) {
-        gpio_host_intr_setup_pin(options, gpio);
+        gpio_intr_setup_pin(options, gpio);
       }
     }
   }

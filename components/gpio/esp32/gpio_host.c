@@ -13,6 +13,13 @@
 #include <soc/gpio_periph.h>
 #include <soc/rtc_io_periph.h>
 
+IRAM_ATTR void gpio_host_intr_handler (const struct gpio_options *options, gpio_pins_t pins)
+{
+  if (options->interrupt_func) {
+    options->interrupt_func(pins & options->interrupt_pins, options->interrupt_arg);
+  }
+}
+
 static void gpio_host_setup_rtc(gpio_pin_t gpio, bool pullup, bool pulldown)
 {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

@@ -188,8 +188,10 @@ struct gpio_options {
   gpio_interrupt_func_t interrupt_func;
   void *interrupt_arg;
 
+#if GPIO_I2C_ENABLED
   // for i2c devices
   TickType_t i2c_timeout;
+#endif
 };
 
 /* Setup input interrupt handler */

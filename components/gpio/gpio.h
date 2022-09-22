@@ -51,19 +51,21 @@ void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio);
   int gpio_intr_core();
 #endif
 
-/* i2c.cc */
-void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_pins_t pins);
+#if GPIO_I2C_ENABLED
+  /* i2c.cc */
+  void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_pins_t pins);
 
-int gpio_i2c_setup(const struct gpio_options *options);
-int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins);
-int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins);
+  int gpio_i2c_setup(const struct gpio_options *options);
+  int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins);
+  int gpio_i2c_get(const struct gpio_options *options, gpio_pins_t *pins);
+  int gpio_i2c_setup_output(const struct gpio_options *options, gpio_pins_t pins);
+  int gpio_i2c_set(const struct gpio_options *options, gpio_pins_t pins);
 
-/* gpio_i2c_pca54xx.c */
-int gpio_i2c_pca54xx_init(struct gpio_i2c_pca54xx_state *state);
-int gpio_i2c_pca54xx_setup(const struct gpio_options *options);
-int gpio_i2c_pca54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_pca54xx_get(const struct gpio_options *options, gpio_pins_t *pins);
-int gpio_i2c_pca54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins);
-int gpio_i2c_pca54xx_set(const struct gpio_options *options, gpio_pins_t pins);
+  /* gpio_i2c_pca54xx.c */
+  int gpio_i2c_pca54xx_init(struct gpio_i2c_pca54xx_state *state);
+  int gpio_i2c_pca54xx_setup(const struct gpio_options *options);
+  int gpio_i2c_pca54xx_setup_input(const struct gpio_options *options, gpio_pins_t pins);
+  int gpio_i2c_pca54xx_get(const struct gpio_options *options, gpio_pins_t *pins);
+  int gpio_i2c_pca54xx_setup_output(const struct gpio_options *options, gpio_pins_t pins);
+  int gpio_i2c_pca54xx_set(const struct gpio_options *options, gpio_pins_t pins);
+#endif

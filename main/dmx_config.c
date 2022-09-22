@@ -89,7 +89,7 @@ const struct configtab dmx_input_configtab[] = {
     .description = (
       "GPIO pin to drive high/low."
     ),
-    .uint16_type = { .value = &dmx_input_config.gpio_pin, .max = (GPIO_HOST_PIN_COUNT - 1) },
+    .uint16_type = { .value = &dmx_input_config.gpio_pin, .max = GPIO_PIN_MAX },
   },
   { CONFIG_TYPE_BOOL, "artnet_enabled",
     .description = "Configure Art-NET input port.",

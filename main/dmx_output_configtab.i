@@ -19,7 +19,7 @@ const struct configtab DMX_OUTPUT_CONFIGTAB[] = {
     "GPIO pin will be taken high to enable output once the UART1 TX output is safe."
   ),
   .count = &DMX_OUTPUT_CONFIG.gpio_count, .size = DMX_GPIO_COUNT,
-  .uint16_type = { .value = DMX_OUTPUT_CONFIG.gpio_pins, .max = (GPIO_HOST_PIN_COUNT - 1) },
+  .uint16_type = { .value = DMX_OUTPUT_CONFIG.gpio_pins, .max = GPIO_PIN_MAX },
 },
 
  { CONFIG_TYPE_BOOL, "artnet_enabled",

@@ -1,5 +1,6 @@
 #include <uart.h>
 #include "../uart.h"
+#include "dev.h"
 #include "tx.h"
 
 #include <logging.h>
@@ -168,24 +169,43 @@ int uart_tx_flush(struct uart *uart)
   return 0;
 }
 
-void uart_tx_break(struct uart *uart)
+static void uart_tx_wait(struct uart *uart, unsigned bits)
 {
-  taskENTER_CRITICAL();
+  uint32_t baud = uart_dev_get_baudrate(uart->dev);
+  uint32_t us = 1000000 * bits / baud;
 
-  LOG_ISR_DEBUG(" ");
+  LOG_DEBUG("baud=%u bits=%u -> us=%u", baud, bits, us);
+
+  // ESP8266_RTOS_SDK timers are shit:
+  // * FreeRTOS timers only do 10ms ticks
+  // * esp_timer is just a wrapper for FreeRTOS timers
+  // * os_timer only does msec
+  // * there's no shared timer implementation for FRC1/2
+  // * there's no FRC2?
+  // so we just busyloop, 'cause that's what everybody else does. It's really dumb.
+  ets_delay_us(us);
+}
+
+// called after uart_tx_flush() with tx mutex held
+int uart_tx_break(struct uart *uart, unsigned bits)
+{
+  LOG_DEBUG("bits=%u", bits);
 
   uart_tx_break_enable(uart->dev);
 
-  taskEXIT_CRITICAL();
-}
-
-void uart_tx_mark(struct uart *uart)
-{
-  taskENTER_CRITICAL();
-
-  LOG_ISR_DEBUG(" ");
+  uart_tx_wait(uart, bits);
 
   uart_tx_break_disable(uart->dev);
 
-  taskEXIT_CRITICAL();
+  return 0;
+}
+
+// called after uart_tx_flush() with tx mutex held
+int uart_tx_mark(struct uart *uart, unsigned bits)
+{
+  LOG_DEBUG("bits=%u", bits);
+
+  uart_tx_wait(uart, bits);
+
+  return 0;
 }

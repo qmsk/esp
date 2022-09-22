@@ -46,7 +46,7 @@ int uart_dev_setup(struct uart *uart, struct uart_options options)
 
   taskENTER_CRITICAL();
 
-  uart->dev->clk_div.div_int = UART_CLK_FREQ / options.baud_rate;
+  uart_dev_set_baudrate(uart->dev, options.baud_rate);
 
   uart->dev->conf0.parity = options.parity_bits & 0x1;
   uart->dev->conf0.parity_en = options.parity_bits ? 1 : 0;

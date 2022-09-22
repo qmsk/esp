@@ -13,7 +13,7 @@ int dmx_uart_setup(struct uart *uart, struct dmx_uart_options options)
     .dev_mutex   = options.dev_mutex,
 
     .pin_mutex   = options.pin_mutex,
-  #ifdef DMX_UART_IO_PINS_SUPPORTED
+  #if DMX_UART_IO_PINS_SUPPORTED
     .rx_pin      = options.rx_pin,
     .tx_pin      = options.tx_pin,
   #endif
@@ -36,7 +36,7 @@ int dmx_uart_setup(struct uart *uart, struct dmx_uart_options options)
     uart_options.rx_timeout,
     uart_options.rx_buffered
   );
-#ifdef DMX_UART_IO_PINS_SUPPORTED
+#if DMX_UART_IO_PINS_SUPPORTED
   LOG_DEBUG("rx_pin=%d, tx_pin=%d", uart_options.rx_pin, uart_options.tx_pin);
 #endif
 

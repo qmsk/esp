@@ -18,7 +18,7 @@ extern const struct config_enum dmx_gpio_mode_enum[];
 struct dmx_uart_config {
   int port;
 
-#ifdef DMX_UART_IO_PINS_SUPPORTED
+#if DMX_UART_IO_PINS_SUPPORTED
   uint16_t rx_pin, tx_pin;
 #endif
 };

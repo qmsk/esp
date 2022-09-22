@@ -25,7 +25,7 @@ struct dmx_uart_options {
   // Acquire mutex before setting pin funcs
   SemaphoreHandle_t pin_mutex;
 
-#ifdef DMX_UART_IO_PINS_SUPPORTED
+#if DMX_UART_IO_PINS_SUPPORTED
   // -1 to disable, 0 to use iomux direct io
   gpio_num_t rx_pin, tx_pin;
 #endif

@@ -87,7 +87,7 @@ int start_dmx_uart()
     options.mtbp_min = dmx_input_config.mtbp_min;
   }
 
-#ifdef DMX_UART_IO_PINS_SUPPORTED
+#if DMX_UART_IO_PINS_SUPPORTED
   if (input_enabled) {
     options.rx_pin = config->rx_pin;
   } else {
@@ -101,6 +101,8 @@ int start_dmx_uart()
   }
 
   LOG_INFO("use uart rx_pin=%d tx_pin=%d", options.rx_pin, options.tx_pin);
+#else
+  (void) (outputs_enabled); // unused
 #endif
 
   if ((err = dmx_uart_setup(dmx_uart, options))) {

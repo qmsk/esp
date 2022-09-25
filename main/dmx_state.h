@@ -9,8 +9,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+struct dmx_input_state;
+struct dmx_input_config;
 struct dmx_output_state;
 struct dmx_output_config;
+
+/* dmx.c */
+
+// dmx-input enabled in config?
+bool dmx_input_enabled();
+
+// dmx-outputs enabled in config?
+bool dmx_outputs_enabled();
 
 /* dmx_uart.c */
 int init_dmx_uart();
@@ -25,8 +35,10 @@ bool query_dmx_uart0();
 void stop_dmx_uart();
 
 /* dmx_gpio.c */
-int init_dmx_gpio();
+int init_dmx_input_gpio();
+int init_dmx_output_gpio();
 
+int config_dmx_input_gpio(struct dmx_input_state *state, const struct dmx_input_config *config, struct dmx_input_options *options);
 int config_dmx_output_gpio(struct dmx_output_state *state, const struct dmx_output_config *config, struct dmx_output_options *options);
 
 /* dmx_input.c */

@@ -85,6 +85,11 @@ int dmx_input_open (struct dmx_input *in, struct uart *uart)
   in->state = DMX_INPUT_STATE_BREAK;
   in->state_len = 0;
 
+  // enable input
+  if (in->options.gpio_options) {
+    gpio_out_set(in->options.gpio_options, in->options.gpio_out_pins);
+  }
+
   return 0;
 }
 
@@ -273,6 +278,11 @@ int dmx_input_close (struct dmx_input *in)
   }
 
   LOG_DEBUG("dmx_input=%p uart=%p", in, in->uart);
+
+  // disable input
+  if (in->options.gpio_options) {
+    gpio_out_clear(in->options.gpio_options);
+  }
 
   if ((err = uart_close_rx(in->uart))) {
     LOG_ERROR("uart_close_rx");

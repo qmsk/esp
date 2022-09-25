@@ -2,11 +2,7 @@
 
 #include <sdkconfig.h>
 
-#if CONFIG_IDF_TARGET_ESP8266
-# include <driver/gpio.h>
-#elif CONFIG_IDF_TARGET_ESP32
-# include <hal/gpio_types.h>
-#endif
+#include <gpio.h>
 #include <freertos/FreeRTOS.h>
 
 enum atx_psu_bit {
@@ -26,24 +22,22 @@ struct atx_psu;
 
 struct atx_psu_options {
   /*
-   * Assumes an active-high NPN transistor:
+   * Assumes an active-high NPN transistor on any gpio output pin:
    *  ATX POWER_EN -> collector
    *  gpio -> 1k ohm -> base
    *  GND <- emitter
    *
    * Use <0 to disable.
    */
-  gpio_num_t power_enable_gpio;
-
   /*
-   * Assumes an active-low NPN transistor:
+   * Assumes an active-low NPN transistor on any inverted gpio input pin:
    *  gpio -> collector -> 10k -> 3V3
    *  ATX POWER_GOOD -> 1k -> base
    *  emitter -> GND
    *
    * Use <0 to disable.
    */
-  gpio_num_t power_good_gpio;
+  const struct gpio_options *gpio_options;
 
   /*
    * Return ATX PSU into standby mode once all bits are inactive, and the timeout has passed.

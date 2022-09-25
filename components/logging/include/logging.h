@@ -5,11 +5,11 @@
 
 #include <stdlib.h>
 
-#ifdef DEBUG
-# define IF_DEBUG(x) do { if (1) x } while(0)
-#else
-# define IF_DEBUG(x) do { if (0) x } while(0)
+#ifndef DEBUG
+#define DEBUG 0
 #endif
+
+#define IF_DEBUG(x) do { if (DEBUG) x } while(0)
 
 #define LOG_ISR_DEBUG(...)  IF_DEBUG({ ESP_EARLY_LOGI(__func__, __VA_ARGS__); })
 #define LOG_ISR_INFO(...)  IF_DEBUG({ ESP_EARLY_LOGI(__func__, __VA_ARGS__); })

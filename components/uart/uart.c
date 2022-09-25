@@ -514,19 +514,7 @@ int uart_flush_write(struct uart *uart)
   return err;
 }
 
-static inline void uart_wait(unsigned us)
-{
-  // ESP8266_RTOS_SDK timers are shit:
-  // * FreeRTOS timers only do 10ms ticks
-  // * esp_timer is just a wrapper for FreeRTOS timers
-  // * os_timer only does msec
-  // * there's no shared timer implementation for FRC1/2
-  // * there's no FRC2?
-  // so we just busyloop, 'cause that's what everybody else does. It's really dumb.
-  ets_delay_us(us);
-}
-
-int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us)
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits)
 {
   int err;
 
@@ -534,28 +522,40 @@ int uart_break(struct uart *uart, unsigned break_us, unsigned mark_us)
     return err;
   }
 
-  LOG_DEBUG("break_us=%u mark_us=%u", break_us, mark_us);
+  LOG_DEBUG("break_bits=%u mark_bits=%u", break_bits, mark_bits);
 
-  uart_tx_break(uart);
   if ((err = uart_tx_flush(uart))) {
     LOG_ERROR("uart_tx_flush");
-    uart_tx_mark(uart);
     goto error;
   }
-  uart_wait(break_us);
 
-  uart_tx_mark(uart);
-  uart_wait(mark_us);
+  if (break_bits) {
+    LOG_DEBUG("break...");
+
+    if ((err = uart_tx_break(uart, break_bits))) {
+      LOG_ERROR("uart_tx_break");
+      goto error;
+    }
+  }
+
+  if (mark_bits) {
+    LOG_DEBUG("mark...");
+
+    if ((err = uart_tx_mark(uart, mark_bits))) {
+      LOG_ERROR("uart_tx_mark");
+      goto error;
+    }
+  }
 
   LOG_DEBUG("done");
 
 error:
-uart_release_tx(uart);
+  uart_release_tx(uart);
 
   return err;
 }
 
-int uart_mark(struct uart *uart, unsigned mark_us)
+int uart_mark(struct uart *uart, unsigned mark_bits)
 {
   int err;
 
@@ -563,14 +563,17 @@ int uart_mark(struct uart *uart, unsigned mark_us)
     return err;
   }
 
-  LOG_DEBUG("mark_us=%u", mark_us);
+  LOG_DEBUG("mark_bits=%u", mark_bits);
 
   if ((err = uart_tx_flush(uart))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
 
-  uart_wait(mark_us);
+  if ((err = uart_tx_mark(uart, mark_bits))) {
+    LOG_ERROR("uart_tx_mark");
+    goto error;
+  }
 
   LOG_DEBUG("done");
 

@@ -87,6 +87,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED
+  { CONFIG_TYPE_ENUM, "gpio_type",
+    .description = "Use built-in (HOST) GPIO pins, or external I2C GPIO expander via i2c-gpio config",
+    .enum_type = { .value = &LEDS_CONFIG.gpio_type, .values = gpio_type_enum, .default_value = GPIO_TYPE_HOST },
+  },
   { CONFIG_TYPE_ENUM, "gpio_mode",
     .description = "Multiplex between multiple active-high/low GPIO-controlled outputs",
     .enum_type = { .value = &LEDS_CONFIG.gpio_mode, .values = leds_gpio_mode_enum, .default_value = LEDS_GPIO_MODE_DISABLED },
@@ -94,7 +98,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   { CONFIG_TYPE_UINT16, "gpio_pin",
     .description = "GPIO pin to activate when transmitting on this output",
     .count = &LEDS_CONFIG.gpio_count, .size = LEDS_GPIO_SIZE,
-    .uint16_type = { .value = LEDS_CONFIG.gpio_pin, .max = (GPIO_HOST_PIN_COUNT - 1) },
+    .uint16_type = { .value = LEDS_CONFIG.gpio_pin, .max = GPIO_PIN_MAX },
   },
 #endif
 

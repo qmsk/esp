@@ -53,16 +53,25 @@ void app_main(void)
     abort();
   }
 
+#if CONFIG_I2C_MASTER_ENABLED
   if ((err = init_i2c_master())) {
     LOG_ERROR("init_i2c_master");
     user_alert(USER_ALERT_ERROR_BOOT);
     abort();
   }
+#endif
+
+#if CONFIG_I2C_GPIO_ENABLED
+  if ((err = init_i2c_gpio())) {
+    LOG_ERROR("init_i2c_gpio");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+#endif
 
   if ((err = init_user_leds())) {
     LOG_ERROR("init_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
-    abort();
   }
 
   if ((err = init_user_events())) {
@@ -86,7 +95,6 @@ void app_main(void)
   if ((err = start_user_leds())) {
     LOG_ERROR("start_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);
-    abort();
   }
 
   if ((err = start_user_events())) {
@@ -109,6 +117,13 @@ void app_main(void)
     LOG_ERROR("start_console");
     user_alert(USER_ALERT_ERROR_START);
   }
+
+#if CONFIG_I2C_GPIO_ENABLED
+  if ((err = start_i2c_gpio())) {
+    LOG_ERROR("start_i2c_gpio");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+#endif
 
   LOG_INFO("setup");
 

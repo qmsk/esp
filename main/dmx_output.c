@@ -106,7 +106,7 @@ void dmx_output_main(void *ctx)
 
   for (;;) {
     // blocking read
-    if (!artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
+    if (artnet_output_read(state->artnet_output, state->artnet_dmx, portMAX_DELAY)) {
       LOG_WARN("dmx-output%d: artnet_output empty", state->index + 1);
       continue;
     }
@@ -136,19 +136,18 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
   };
   int err;
 
-
   snprintf(options.name, sizeof(options.name), "dmx-output%u", state->index + 1);
+
+  if ((err = add_artnet_output(&state->artnet_output, options))) {
+    LOG_ERROR("add_artnet_output");
+    return err;
+  }
 
   if (start_taskf(task_options, state->index + 1)) {
     LOG_ERROR("start_taskf");
     return -1;
   } else {
     LOG_DEBUG("task=%p", state->artnet_task);
-  }
-
-  if ((err = add_artnet_output(&state->artnet_output, options))) {
-    LOG_ERROR("add_artnet_output");
-    return err;
   }
 
   return 0;

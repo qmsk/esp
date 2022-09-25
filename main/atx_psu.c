@@ -1,50 +1,20 @@
 #include "atx_psu.h"
+#include "atx_psu_config.h"
+#include "atx_psu_gpio.h"
 #include "atx_psu_state.h"
 #include "tasks.h"
 
 #include <atx_psu.h>
 #include <logging.h>
 
-#define ATX_PSU_TIMEOUT_DEFAULT 10
-
-struct atx_psu_config {
-  bool enabled;
-  uint16_t power_enable_gpio;
-  uint16_t power_good_gpio;
-  uint16_t timeout;
-};
-
-struct atx_psu_config atx_psu_config = {
-
-};
-
-const struct configtab atx_psu_configtab[] = {
-  { CONFIG_TYPE_BOOL, "enabled",
-    .bool_type = { .value = &atx_psu_config.enabled },
-  },
-  { CONFIG_TYPE_UINT16, "power_enable_gpio",
-    .alias = "gpio",
-    .uint16_type = { .value = &atx_psu_config.power_enable_gpio, .max = (GPIO_NUM_MAX - 1) },
-  },
-  { CONFIG_TYPE_UINT16, "power_good_gpio",
-    .uint16_type = { .value = &atx_psu_config.power_good_gpio, .max = (GPIO_NUM_MAX - 1) },
-  },
-  { CONFIG_TYPE_UINT16, "timeout",
-    .description = "Power off ATX PSU after timeout seconds of idle",
-    .uint16_type = { .value = &atx_psu_config.timeout, .default_value = ATX_PSU_TIMEOUT_DEFAULT },
-  },
-  {}
-};
-
 struct atx_psu *atx_psu;
 xTaskHandle atx_psu_task;
 
 int init_atx_psu()
 {
-  struct atx_psu_options options = {
-    .power_enable_gpio  = atx_psu_config.power_enable_gpio ? atx_psu_config.power_enable_gpio : -1,
-    .power_good_gpio    = atx_psu_config.power_good_gpio ? atx_psu_config.power_good_gpio : -1,
+  int err;
 
+  struct atx_psu_options options = {
     .timeout  = (atx_psu_config.timeout * 1000) / portTICK_PERIOD_MS,
   };
 
@@ -53,7 +23,14 @@ int init_atx_psu()
     return 0;
   }
 
-  LOG_INFO("power_enable_gpio=%u power_good_gpio=%u timeout=%u", options.power_enable_gpio, options.power_good_gpio, options.timeout);
+  if ((err = init_atx_psu_gpio(&atx_psu_config))) {
+    LOG_ERROR("init_atx_psu_gpio");
+    return err;
+  }
+
+  config_atx_psu_gpio(&atx_psu_config, &options);
+
+  LOG_INFO("timeout=%u", options.timeout);
 
   if (atx_psu_new(&atx_psu, options)) {
     LOG_ERROR("atx_psu_new");

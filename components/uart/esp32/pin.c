@@ -3,11 +3,46 @@
 
 #include <logging.h>
 
-#include <hal/gpio_ll.h>
-#include <soc/uart_channel.h>
+#include <driver/gpio.h>
+#include <esp_rom_gpio.h>
+#include <soc/uart_periph.h>
+
+static void setup_tx_pin_iomux(uart_port_t port)
+{
+  const uart_periph_sig_t *uart_periph_sig = &uart_periph_signal[port].pins[SOC_UART_TX_PIN_IDX];
+
+  gpio_iomux_out(uart_periph_sig->default_gpio, uart_periph_sig->iomux_func, false);
+}
+
+static void setup_rx_pin_iomux(uart_port_t port)
+{
+  const uart_periph_sig_t *uart_periph_sig = &uart_periph_signal[port].pins[SOC_UART_RX_PIN_IDX];
+
+  gpio_iomux_out(uart_periph_sig->default_gpio, uart_periph_sig->iomux_func, false);
+  gpio_iomux_in(uart_periph_sig->default_gpio, uart_periph_sig->signal);
+}
+
+static void setup_tx_pin_gpio(uart_port_t port, gpio_num_t gpio)
+{
+  gpio_set_level(gpio, 1);
+  gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
+  gpio_iomux_out(gpio, PIN_FUNC_GPIO, false);
+
+  esp_rom_gpio_connect_out_signal(gpio, UART_PERIPH_SIGNAL(port, SOC_UART_TX_PIN_IDX), false, false);
+}
+
+static void setup_rx_pin_gpio(uart_port_t port, gpio_num_t gpio)
+{
+  gpio_iomux_out(gpio, PIN_FUNC_GPIO, false);
+  gpio_set_direction(gpio, GPIO_MODE_INPUT);
+  gpio_set_pull_mode(gpio, GPIO_PULLUP_ONLY);
+
+  esp_rom_gpio_connect_in_signal(gpio, UART_PERIPH_SIGNAL(port, SOC_UART_RX_PIN_IDX), false);
+}
 
 int uart_pin_setup(struct uart *uart, struct uart_options options)
 {
+  uart_port_t port = uart->port & UART_PORT_MASK;
   int err = 0;
 
   if (options.pin_mutex) {
@@ -21,39 +56,25 @@ int uart_pin_setup(struct uart *uart, struct uart_options options)
     }
   }
 
-  LOG_DEBUG("port=%d", (uart->port & UART_PORT_MASK));
+  LOG_DEBUG("port=%d: rx_pin=%d tx_pin=%d", port, options.rx_pin, options.tx_pin);
 
   taskENTER_CRITICAL(&uart->mux);
 
-  switch(uart->port & UART_PORT_MASK) {
-    case UART_0:
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
+  if (options.rx_pin == 0) {
+    // XXX: not compatible with flash qio mode?
+    setup_rx_pin_iomux(port);
 
-      gpio_ll_iomux_in(&GPIO, UART_NUM_0_RXD_DIRECT_GPIO_NUM, U0RXD_IN_IDX);
+  } else if (options.rx_pin > 0) {
+    setup_rx_pin_gpio(port, options.rx_pin);
+  }
 
-      break;
+  if (options.tx_pin == 0) {
+    // XXX: not compatible with flash qio mode?
+    setup_tx_pin_iomux(port);
 
-    case UART_1:
-      // XXX: not compatible with flash qio mode?
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_SD_DATA2_U1RXD);
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_SD_DATA3_U1TXD);
-
-      gpio_ll_iomux_in(&GPIO, UART_NUM_1_RXD_DIRECT_GPIO_NUM, U1RXD_IN_IDX);
-
-      break;
-
-    case UART_2:
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_U2RXD);
-      gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_U2TXD);
-
-      gpio_ll_iomux_in(&GPIO, UART_NUM_2_RXD_DIRECT_GPIO_NUM, U2RXD_IN_IDX);
-
-      break;
-
-    default:
-      err = -1;
-      break;
+  } else if (options.tx_pin > 0) {
+    // via GPIO matrix
+    setup_tx_pin_gpio(port, options.tx_pin);
   }
 
   taskEXIT_CRITICAL(&uart->mux);

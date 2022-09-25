@@ -10,6 +10,30 @@
 
 xTaskHandle dmx_task;
 
+bool dmx_input_enabled()
+{
+  if (dmx_input_config.enabled) {
+    return true;
+  }
+
+  return false;
+}
+
+bool dmx_outputs_enabled()
+{
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
+    const struct dmx_output_config *output_config = &dmx_output_configs[i];
+
+    if (!output_config->enabled) {
+      continue;
+    };
+
+    return true;
+  }
+
+  return false;
+}
+
 unsigned count_dmx_artnet_inputs()
 {
   if (dmx_input_config.enabled) {
@@ -28,8 +52,13 @@ int init_dmx()
     return err;
   }
 
-  if ((err = init_dmx_gpio())) {
-    LOG_ERROR("init_dmx_gpio");
+  if ((err = init_dmx_input_gpio())) {
+    LOG_ERROR("init_dmx_input_gpio");
+    return err;
+  }
+
+  if ((err = init_dmx_output_gpio())) {
+    LOG_ERROR("init_dmx_output_gpio");
     return err;
   }
 

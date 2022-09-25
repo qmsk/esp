@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dmx.h>
+#include <gpio.h>
 #include <uart.h>
 
 struct dmx_input;
@@ -11,6 +12,10 @@ struct dmx_input_options {
 
   /* Offset start of data to 1-indexed channel address*/
   unsigned address;
+
+  /* Optional */
+  struct gpio_options *gpio_options;
+  gpio_pins_t gpio_out_pins;
 };
 
 int dmx_input_new (struct dmx_input **inp, struct dmx_input_options options);

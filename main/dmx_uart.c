@@ -11,31 +11,13 @@ struct uart *dmx_uart;
 int init_dmx_uart()
 {
   const struct dmx_uart_config *uart_config = &dmx_uart_config;
-  bool input_enabled = false;
-  bool outputs_enabled = false;
+  bool input_enabled = dmx_input_enabled();
+  bool outputs_enabled = dmx_outputs_enabled();
   int err;
 
   if (uart_config->port < 0) {
     LOG_INFO("dmx-uart: uart disabled");
     return 0;
-  }
-
-  if (dmx_input_config.enabled) {
-    input_enabled = true;
-
-    LOG_INFO("dmx-input: uart%d configured", uart_config->port);
-  }
-
-  for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
-    const struct dmx_output_config *output_config = &dmx_output_configs[i];
-
-    if (!output_config->enabled) {
-      continue;
-    };
-
-    LOG_INFO("dmx-output%d: uart%d configured", i+1, uart_config->port);
-
-    outputs_enabled = true;
   }
 
   if (!input_enabled && !outputs_enabled) {
@@ -72,10 +54,12 @@ int init_dmx_uart()
 
 int start_dmx_uart()
 {
-  const struct dmx_uart_config *uart_config = &dmx_uart_config;
+  const struct dmx_uart_config *config = &dmx_uart_config;
   struct dmx_uart_options options = {
     .mtbp_min = DMX_UART_MTBP_MIN,
   };
+  bool input_enabled = dmx_input_enabled();
+  bool outputs_enabled = dmx_outputs_enabled();
   int err;
 
   if (!dmx_uart) {
@@ -83,7 +67,7 @@ int start_dmx_uart()
     return 1;
   }
 
-  switch(uart_config->port & UART_PORT_MASK) {
+  switch(config->port & UART_PORT_MASK) {
     case UART_0:
       options.dev_mutex = dev_mutex[DEV_MUTEX_UART0];
       break;
@@ -97,13 +81,29 @@ int start_dmx_uart()
     LOG_WARN("UART dev_mutex=%p will wait for UART to become available...", options.dev_mutex);
   }
 
-  if (dmx_input_config.enabled && dmx_input_config.mtbp_min) {
-    LOG_INFO("dmx-input: use uart mtbp_min=%u", dmx_input_config.mtbp_min);
+  if (input_enabled && dmx_input_config.mtbp_min) {
+    LOG_INFO("use uart mtbp_min=%u for dmx-input", dmx_input_config.mtbp_min);
 
     options.mtbp_min = dmx_input_config.mtbp_min;
   }
 
-  LOG_INFO("setup mtbp_min=%d dev_mutex=%p", options.mtbp_min, options.dev_mutex);
+#if DMX_UART_IO_PINS_SUPPORTED
+  if (input_enabled) {
+    options.rx_pin = config->rx_pin;
+  } else {
+    options.rx_pin = -1; // disabled
+  }
+
+  if (outputs_enabled) {
+    options.tx_pin = config->tx_pin;
+  } else {
+    options.tx_pin = -1; // disabled
+  }
+
+  LOG_INFO("use uart rx_pin=%d tx_pin=%d", options.rx_pin, options.tx_pin);
+#else
+  (void) (outputs_enabled); // unused
+#endif
 
   if ((err = dmx_uart_setup(dmx_uart, options))) {
     LOG_ERROR("dmx_uart_setup");

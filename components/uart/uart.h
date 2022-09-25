@@ -88,8 +88,8 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len);
 
 int uart_tx_flush(struct uart *uart);
 
-void uart_tx_break(struct uart *uart);
-void uart_tx_mark(struct uart *uart);
+int uart_tx_break(struct uart *uart, unsigned bits);
+int uart_tx_mark(struct uart *uart, unsigned bits);
 
 /* intr.c */
 int uart_intr_setup(struct uart *uart);

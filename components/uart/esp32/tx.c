@@ -207,22 +207,44 @@ int uart_tx_flush(struct uart *uart)
   return 0;
 }
 
-// TODO: using UART_TX_BRK_NUM + UART_TX_BRK_DONE_INT?
-void uart_tx_break(struct uart *uart)
+static void uart_tx_wait(struct uart *uart, unsigned bits)
 {
-  taskENTER_CRITICAL(&uart->mux);
+  uint32_t baud = uart_ll_get_baudrate(uart->dev);
+  uint32_t us = 1000000 * bits / baud;
 
-  uart_ll_tx_break(uart->dev, 255); // XXX: arbitrary number, needs interface change
+  LOG_DEBUG("baud=%u bits=%u -> us=%u", baud, bits, us);
 
-  taskEXIT_CRITICAL(&uart->mux);
+  // ESP8266_RTOS_SDK timers are shit:
+  // * FreeRTOS timers only do 10ms ticks
+  // * esp_timer is just a wrapper for FreeRTOS timers
+  // * os_timer only does msec
+  // * there's no shared timer implementation for FRC1/2
+  // * there's no FRC2?
+  // so we just busyloop, 'cause that's what everybody else does. It's really dumb.
+  ets_delay_us(us);
 }
 
-// TODO: using UART_TX_IDLE_NUM + UART_TX_BRK_IDLE_DONE_INT?
-void uart_tx_mark(struct uart *uart)
+// ESP-32 txd_brk is tied to TX_DONE, and does nothing if TX idle
+// called after uart_tx_flush() with tx mutex held
+int uart_tx_break(struct uart *uart, unsigned bits)
 {
-  taskENTER_CRITICAL(&uart->mux);
+  LOG_DEBUG("bits=%u", bits);
 
-  uart_ll_tx_break(uart->dev, 0);
+  uart->dev->conf0.txd_inv = 1;
 
-  taskEXIT_CRITICAL(&uart->mux);
+  uart_tx_wait(uart, bits);
+
+  uart->dev->conf0.txd_inv = 0;
+
+  LOG_DEBUG("done");
+
+  return 0;
+}
+
+// called after uart_tx_flush() with tx mutex held
+int uart_tx_mark(struct uart *uart, unsigned bits)
+{
+  uart_tx_wait(uart, bits);
+
+  return 0;
 }

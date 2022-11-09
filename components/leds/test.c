@@ -61,7 +61,6 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
       break;
 
     case LEDS_COLOR_WHITE:
-      color.white = 0;
       break;
   }
 
@@ -229,6 +228,11 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
     case TEST_MODE_RED_BLACK:
       return leds_test_color_frame(leds, frame, (struct leds_color){
         .r = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
+      });
+
+    case TEST_MODE_BLACK_WHITE:
+      return leds_test_color_frame(leds, frame, (struct leds_color){
+        .white = (255 * frame / TEST_MODE_COLOR_FRAMES),
       });
 
     case TEST_MODE_RAINBOW:

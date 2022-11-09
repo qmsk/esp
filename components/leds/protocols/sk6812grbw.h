@@ -8,7 +8,9 @@
 
 #define LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL
 
-#define SK6812_GRBW_PIXEL_POWER_DIVISOR (4 * 255) // one pixel at full brightness
+// one pixel at full brightness
+// the W channel consumes about ~2x as much current as each R/G/B channel
+#define SK6812_GRBW_PIXEL_POWER_DIVISOR (5 * 255)
 
 union sk6812grbw_pixel {
   struct {
@@ -26,7 +28,7 @@ static inline bool sk6812grbw_pixel_active(const union sk6812grbw_pixel pixel)
 
 static inline unsigned sk6812grbw_pixel_power(const union sk6812grbw_pixel pixel)
 {
-  return pixel.w + pixel.b + pixel.r + pixel.g;
+  return 2 * pixel.w + pixel.b + pixel.r + pixel.g;
 }
 
 static inline union sk6812grbw_pixel sk6812grbw_pixel_limit(const union sk6812grbw_pixel pixel, unsigned index, const struct leds_limit *limit)

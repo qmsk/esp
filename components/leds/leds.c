@@ -117,9 +117,21 @@ uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
   }
 }
 
-static inline bool leds_color_active (struct leds_color color)
+static bool leds_color_active (struct leds_color color, enum leds_color_parameter parameter_type)
 {
-  return (color.r) || (color.g) || (color.b);
+  switch (parameter_type) {
+    case LEDS_COLOR_NONE:
+      return color.r || color.g || color.b;
+
+    case LEDS_COLOR_DIMMER:
+      return (color.r || color.g || color.b) && color.dimmer;
+
+    case LEDS_COLOR_WHITE:
+      return color.r || color.g || color.b || color.white;
+
+    default:
+      LOG_FATAL("invalid parameter_type=%u", parameter_type);
+  }
 }
 
 int leds_init(struct leds *leds, const struct leds_options *options)
@@ -261,7 +273,7 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
     return -1;
   }
 
-  if (leds_color_active(color)) {
+  if (leds_color_active(color, leds_color_parameter_for_protocol(leds->options.protocol))) {
     leds->active = true;
   }
 
@@ -303,7 +315,7 @@ int leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);
 
-  if (leds_color_active(color)) {
+  if (leds_color_active(color, leds_color_parameter_for_protocol(leds->options.protocol))) {
     leds->active = true;
   } else {
     leds->active = false;

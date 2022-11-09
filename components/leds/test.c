@@ -235,6 +235,30 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
         .white = (255 * frame / TEST_MODE_COLOR_FRAMES),
       });
 
+    case TEST_MODE_WHITE_RGBW:
+      return leds_test_color_frame(leds, frame, (struct leds_color){
+        .r     = (255 * frame / TEST_MODE_COLOR_FRAMES),
+        .g     = (255 * frame / TEST_MODE_COLOR_FRAMES),
+        .b     = (255 * frame / TEST_MODE_COLOR_FRAMES),
+        .white = 255,
+      });
+
+    case TEST_MODE_RGBW_RGB:
+      return leds_test_color_frame(leds, frame, (struct leds_color){
+        .r     = 255,
+        .g     = 255,
+        .b     = 255,
+        .white = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
+      });
+
+    case TEST_MODE_RGB_BLACK:
+      return leds_test_color_frame(leds, frame, (struct leds_color){
+        .r     = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
+        .g     = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
+        .b     = (255 * (TEST_MODE_COLOR_FRAMES - frame) / TEST_MODE_COLOR_FRAMES),
+        .white = 0,
+      });
+
     case TEST_MODE_RAINBOW:
       return leds_test_rainbow_frame(leds, frame);
 

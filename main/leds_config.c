@@ -112,6 +112,9 @@ const struct config_enum leds_test_mode_enum[] = {
   { "MAGENTA_RED",    TEST_MODE_MAGENTA_RED   },
   { "RED_BLACK",      TEST_MODE_RED_BLACK     },
   { "BLACK_WHITE",    TEST_MODE_BLACK_WHITE   },
+  { "WHITE_RGBW",     TEST_MODE_WHITE_RGBW    },
+  { "RGBW_RGB",       TEST_MODE_RGBW_RGB      },
+  { "RGB_BLACK",      TEST_MODE_RGB_BLACK     },
   { "RAINBOW",        TEST_MODE_RAINBOW       },
   { "END",            TEST_MODE_END           },
   {}

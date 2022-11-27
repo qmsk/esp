@@ -40,36 +40,6 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
   }
 }
 
-enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol protocol)
-{
-  switch (protocol) {
-    case LEDS_PROTOCOL_NONE:
-      return LEDS_COLOR_NONE;
-
-    case LEDS_PROTOCOL_APA102:
-      return LEDS_COLOR_DIMMER;
-
-    case LEDS_PROTOCOL_P9813:
-      return LEDS_COLOR_NONE;
-
-    case LEDS_PROTOCOL_WS2812B:
-      return LEDS_COLOR_NONE;
-
-    case LEDS_PROTOCOL_SK6812_GRBW:
-      return LEDS_COLOR_WHITE;
-
-    case LEDS_PROTOCOL_WS2811:
-      return LEDS_COLOR_NONE;
-
-    case LEDS_PROTOCOL_SK9822:
-      return LEDS_COLOR_DIMMER;
-
-    default:
-      // unknown
-      return 0;
-  }
-}
-
 #if CONFIG_LEDS_SPI_ENABLED
   size_t leds_spi_buffer_for_protocol(enum leds_protocol protocol, unsigned count)
   {
@@ -87,7 +57,37 @@ enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol p
   }
 #endif
 
-uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
+enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol)
+{
+  switch (protocol) {
+    case LEDS_PROTOCOL_NONE:
+      return LEDS_PARAMETER_NONE;
+
+    case LEDS_PROTOCOL_APA102:
+      return LEDS_PARAMETER_DIMMER;
+
+    case LEDS_PROTOCOL_P9813:
+      return LEDS_PARAMETER_NONE;
+
+    case LEDS_PROTOCOL_WS2812B:
+      return LEDS_PARAMETER_NONE;
+
+    case LEDS_PROTOCOL_SK6812_GRBW:
+      return LEDS_PARAMETER_WHITE;
+
+    case LEDS_PROTOCOL_WS2811:
+      return LEDS_PARAMETER_NONE;
+
+    case LEDS_PROTOCOL_SK9822:
+      return LEDS_PARAMETER_DIMMER;
+
+    default:
+      // unknown
+      return 0;
+  }
+}
+
+uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
 {
   switch (protocol) {
     case LEDS_PROTOCOL_NONE:
@@ -117,16 +117,16 @@ uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol)
   }
 }
 
-static bool leds_color_active (struct leds_color color, enum leds_color_parameter parameter_type)
+static bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type)
 {
   switch (parameter_type) {
-    case LEDS_COLOR_NONE:
+    case LEDS_PARAMETER_NONE:
       return color.r || color.g || color.b;
 
-    case LEDS_COLOR_DIMMER:
+    case LEDS_PARAMETER_DIMMER:
       return (color.r || color.g || color.b) && color.dimmer;
 
-    case LEDS_COLOR_WHITE:
+    case LEDS_PARAMETER_WHITE:
       return color.r || color.g || color.b || color.white;
 
     default:
@@ -273,7 +273,7 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
     return -1;
   }
 
-  if (leds_color_active(color, leds_color_parameter_for_protocol(leds->options.protocol))) {
+  if (leds_color_active(color, leds_parameter_type_for_protocol(leds->options.protocol))) {
     leds->active = true;
   }
 
@@ -315,7 +315,7 @@ int leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);
 
-  if (leds_color_active(color, leds_color_parameter_for_protocol(leds->options.protocol))) {
+  if (leds_color_active(color, leds_parameter_type_for_protocol(leds->options.protocol))) {
     leds->active = true;
   } else {
     leds->active = false;

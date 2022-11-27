@@ -88,10 +88,10 @@ enum leds_protocol {
 };
 
 /* interpretation of leds_color.parameter by protocol */
-enum leds_color_parameter {
-  LEDS_COLOR_NONE         = 0,
-  LEDS_COLOR_DIMMER,
-  LEDS_COLOR_WHITE,
+enum leds_parameter_type {
+  LEDS_PARAMETER_NONE         = 0,
+  LEDS_PARAMETER_DIMMER,
+  LEDS_PARAMETER_WHITE,
 };
 
 enum leds_format {
@@ -279,12 +279,12 @@ struct leds_options {
 /*
  * Returns leds_color.parameter interpretation for protocol.
  */
-enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol protocol);
+enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol);
 
 /*
  * Returns default leds_color.parameter to use for protocol.
  */
-uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol);
+uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol);
 
 struct leds_color {
   uint8_t r, g, b;

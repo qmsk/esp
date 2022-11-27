@@ -18,7 +18,7 @@ static int leds_api_write_object_options(struct json_writer *w, struct leds_stat
   return (
         JSON_WRITE_MEMBER_STRING(w, "interface", config_enum_to_string(leds_interface_enum, options->interface))
     ||  JSON_WRITE_MEMBER_STRING(w, "protocol", config_enum_to_string(leds_protocol_enum, options->protocol))
-    ||  JSON_WRITE_MEMBER_STRING(w, "color_parameter", config_enum_to_string(leds_color_parameter_enum, leds_color_parameter_for_protocol(options->protocol)))
+    ||  JSON_WRITE_MEMBER_STRING(w, "parameter_type", config_enum_to_string(leds_parameter_enum, leds_parameter_type_for_protocol(options->protocol)))
     ||  JSON_WRITE_MEMBER_UINT(w, "count", options->count)
     ||  JSON_WRITE_MEMBER_UINT(w, "limit_total", options->limit_total)
     ||  JSON_WRITE_MEMBER_UINT(w, "limit_group", options->limit_group)
@@ -125,7 +125,7 @@ struct leds_api_req {
 int leds_api_color_parse(struct leds_color *color, enum leds_protocol protocol, const char *value)
 {
   int rgb;
-  int parameter = leds_default_color_parameter_for_protocol(protocol);
+  int parameter = leds_parameter_default_for_protocol(protocol);
 
   if (!value) {
     return HTTP_UNPROCESSABLE_ENTITY;

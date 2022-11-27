@@ -26,3 +26,47 @@ const struct leds_protocol_type *leds_protocol_type(enum leds_protocol protocol)
     LOG_FATAL("invalid protocol=%d", protocol);
   }
 }
+
+enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
+{
+  const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
+
+#if CONFIG_LEDS_I2S_ENABLED
+  if (protocol_type->i2s_interface_mode) {
+    return LEDS_INTERFACE_I2S;
+  }
+#endif
+
+#if CONFIG_LEDS_UART_ENABLED
+  if (protocol_type->uart_interface_mode) {
+    return LEDS_INTERFACE_UART;
+  }
+#endif
+
+#if CONFIG_LEDS_SPI_ENABLED
+  if (protocol_type->spi_interface_mode) {
+    return LEDS_INTERFACE_SPI;
+  }
+#endif
+
+  return LEDS_INTERFACE_NONE;
+}
+
+enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol)
+{
+  const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
+
+  return protocol_type->parameter_type;
+}
+
+uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
+{
+  return leds_parameter_default_for_type(leds_parameter_type_for_protocol(protocol));
+}
+
+enum leds_power_mode leds_power_mode_for_protocol(enum leds_protocol protocol)
+{
+  const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
+
+  return protocol_type->power_mode;
+}

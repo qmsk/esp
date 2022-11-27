@@ -8,64 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
-{
-  const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
-
-#if CONFIG_LEDS_I2S_ENABLED
-  if (protocol_type->i2s_interface_mode) {
-    return LEDS_INTERFACE_I2S;
-  }
-#endif
-
-#if CONFIG_LEDS_UART_ENABLED
-  if (protocol_type->uart_interface_mode) {
-    return LEDS_INTERFACE_UART;
-  }
-#endif
-
-#if CONFIG_LEDS_SPI_ENABLED
-  if (protocol_type->spi_interface_mode) {
-    return LEDS_INTERFACE_SPI;
-  }
-#endif
-
-  return LEDS_INTERFACE_NONE;
-}
-
-enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol)
-{
-  return leds_protocol_type(protocol)->parameter_type;
-}
-
-uint8_t leds_parameter_default_for_type(enum leds_parameter_type parameter_type)
-{
-  switch (parameter_type) {
-    case LEDS_PARAMETER_NONE:
-      return 0;
-
-    case LEDS_PARAMETER_DIMMER:
-      return 255;
-
-    case LEDS_PARAMETER_WHITE:
-      return 0;
-
-    default:
-      // unknown
-      return 0;
-  }
-}
-
-uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
-{
-  return leds_parameter_default_for_type(leds_parameter_type_for_protocol(protocol));
-}
-
-enum leds_power_mode leds_power_mode_for_protocol(enum leds_protocol protocol)
-{
-  return leds_protocol_type(protocol)->power_mode;
-}
-
 int leds_init(struct leds *leds, const struct leds_options *options)
 {
   int err;
@@ -156,23 +98,6 @@ enum leds_interface leds_interface(struct leds *leds)
 unsigned leds_count(struct leds *leds)
 {
   return leds->options.count;
-}
-
-static bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type)
-{
-  switch (parameter_type) {
-    case LEDS_PARAMETER_NONE:
-      return color.r || color.g || color.b;
-
-    case LEDS_PARAMETER_DIMMER:
-      return (color.r || color.g || color.b) && color.dimmer;
-
-    case LEDS_PARAMETER_WHITE:
-      return color.r || color.g || color.b || color.white;
-
-    default:
-      LOG_FATAL("invalid parameter_type=%u", parameter_type);
-  }
 }
 
 int leds_clear_all(struct leds *leds)
@@ -273,11 +198,7 @@ unsigned leds_count_active(struct leds *leds)
   unsigned active = 0;
 
   if (leds->active) {
-    for (unsigned i = 0; i < leds->options.count; i++) {
-      if (leds_color_active(leds->pixels[i], leds->protocol_type->parameter_type)) {
-        active++;
-      }
-    }
+    active = leds_colors_active(leds->pixels, leds->options.count, leds->protocol_type->parameter_type);
 
     if (!active) {
       leds->active = false;
@@ -287,96 +208,20 @@ unsigned leds_count_active(struct leds *leds)
   return active;
 }
 
-static inline unsigned leds_power_rgb(struct leds_color color)
-{
-  return color.r + color.g + color.b;
-}
-
-static inline unsigned leds_power_rgba(struct leds_color color)
-{
-  // use brightness to 0..31 to not overflow a 32-bit uint for a 16-bit LEDS_COUNT_MAX
-  return (color.r + color.g + color.b) * (color.dimmer >> 3);
-}
-
-static inline unsigned leds_power_rgbw(struct leds_color color)
-{
-  return color.r + color.g + color.b + color.white;
-}
-
-static inline unsigned leds_power_rgb2w(struct leds_color color)
-{
-  // white channel uses 200% power
-  return color.r + color.g + color.b + (2 * color.white);
-}
-
-static unsigned leds_count_power(struct leds *leds, unsigned index, unsigned count)
-{
-  unsigned power = 0;
-
-  for (unsigned i = index; i < index + count; i++) {
-    switch (leds->protocol_type->power_mode) {
-      case LEDS_POWER_NONE:
-        break;
-
-      case LEDS_POWER_RGB:
-        power += leds_power_rgb(leds->pixels[i]);
-        break;
-
-      case LEDS_POWER_RGBA:
-        power += leds_power_rgba(leds->pixels[i]);
-        break;
-
-      case LEDS_POWER_RGBW:
-        power += leds_power_rgbw(leds->pixels[i]);
-        break;
-
-      case LEDS_POWER_RGB2W:
-        power += leds_power_rgb2w(leds->pixels[i]);
-        break;
-    }
-  }
-
-  switch (leds->protocol_type->power_mode) {
-    case LEDS_POWER_NONE:
-      return 0;
-
-    case LEDS_POWER_RGB:
-      return power / (3 * 255);
-
-    case LEDS_POWER_RGBA:
-      return power / (3 * 255 * 31);
-
-    case LEDS_POWER_RGBW:
-      return power / (4 * 255);
-
-    case LEDS_POWER_RGB2W:
-      return power / (5 * 255);
-
-    default:
-      LOG_FATAL("invalid power_mode=%d for protocol=%d", leds->protocol_type->power_mode, leds->options.protocol);
-  }
-}
-
 unsigned leds_count_total_power(struct leds *leds)
 {
-  return leds_count_power(leds, 0, leds->options.count);
+  return leds_power_total(leds->pixels, 0, leds->options.count, leds->protocol_type->power_mode);
 }
 
-static unsigned leds_count_group_power(struct leds *leds, unsigned group)
-{
-  unsigned count = leds->limit.group_size;
-  unsigned index = leds->limit.group_size * group;
-
-  return leds_count_power(leds, index, count);
-}
-
-void leds_update_limit(struct leds *leds)
+static void leds_update_limit(struct leds *leds)
 {
   unsigned total_power = 0;
 
   if (leds->limit.group_count && leds->options.limit_group) {
     for (unsigned group = 0; group < leds->limit.group_count; group++) {
-      unsigned group_power = leds_count_group_power(leds, group);
+      unsigned count = leds->limit.group_size;
+      unsigned index = leds->limit.group_size * group;
+      unsigned group_power = leds_power_total(leds->pixels, index, count, leds->protocol_type->power_mode);
       unsigned output_power = leds_limit_set_group(&leds->limit, group, leds->options.limit_group, group_power);
 
       total_power += output_power;
@@ -388,14 +233,14 @@ void leds_update_limit(struct leds *leds)
       );
 
       leds->limit_groups_status[group] = (struct leds_limit_status) {
-        .count  = leds->limit.group_size,
+        .count  = count,
         .limit  = leds->options.limit_group,
         .power  = group_power,
         .output = output_power,
       };
     }
   } else {
-    total_power = leds_count_total_power(leds);
+    total_power = leds_power_total(leds->pixels, 0, leds->options.count, leds->protocol_type->power_mode);
   }
 
   // apply total limit

@@ -32,9 +32,9 @@ enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol pro
   return leds_protocol_type(protocol)->parameter_type;
 }
 
-uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
+uint8_t leds_parameter_default_for_type(enum leds_parameter_type parameter_type)
 {
-  switch (leds_parameter_type_for_protocol(protocol)) {
+  switch (parameter_type) {
     case LEDS_PARAMETER_NONE:
       return 0;
 
@@ -48,6 +48,11 @@ uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
       // unknown
       return 0;
   }
+}
+
+uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol)
+{
+  return leds_parameter_default_for_type(leds_parameter_type_for_protocol(protocol));
 }
 
 enum leds_power_mode leds_power_mode_for_protocol(enum leds_protocol protocol)
@@ -120,6 +125,16 @@ const struct leds_options *leds_options(struct leds *leds)
 enum leds_protocol leds_protocol(struct leds *leds)
 {
   return leds->options.protocol;
+}
+
+enum leds_parameter_type leds_parameter_type(struct leds *leds)
+{
+  return leds->protocol_type->parameter_type;
+}
+
+uint8_t leds_parameter_default(struct leds *leds)
+{
+  return leds_parameter_default_for_type(leds->protocol_type->parameter_type);
 }
 
 enum leds_interface leds_interface(struct leds *leds)

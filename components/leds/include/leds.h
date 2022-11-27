@@ -284,6 +284,11 @@ enum leds_parameter_type {
 enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol);
 
 /*
+ * Returns default leds_color.parameter value to use for parameter type.
+ */
+uint8_t leds_parameter_default_for_type(enum leds_parameter_type parameter_type);
+
+/*
  * Returns default leds_color.parameter to use for protocol.
  */
 uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol);
@@ -336,6 +341,9 @@ int leds_new(struct leds **ledsp, const struct leds_options *options);
 const struct leds_options *leds_options(struct leds *leds);
 
 enum leds_protocol leds_protocol(struct leds *leds);
+enum leds_parameter_type leds_parameter_type(struct leds *leds);
+uint8_t leds_parameter_default(struct leds *leds);
+
 
 enum leds_interface leds_interface(struct leds *leds);
 

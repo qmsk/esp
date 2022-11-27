@@ -18,7 +18,7 @@ static int leds_api_write_object_options(struct json_writer *w, struct leds_stat
   return (
         JSON_WRITE_MEMBER_STRING(w, "interface", config_enum_to_string(leds_interface_enum, options->interface))
     ||  JSON_WRITE_MEMBER_STRING(w, "protocol", config_enum_to_string(leds_protocol_enum, options->protocol))
-    ||  JSON_WRITE_MEMBER_STRING(w, "parameter_type", config_enum_to_string(leds_parameter_enum, leds_parameter_type_for_protocol(options->protocol)))
+    ||  JSON_WRITE_MEMBER_STRING(w, "parameter_type", config_enum_to_string(leds_parameter_enum, leds_parameter_type(state->leds)))
     ||  JSON_WRITE_MEMBER_UINT(w, "count", options->count)
     ||  JSON_WRITE_MEMBER_UINT(w, "limit_total", options->limit_total)
     ||  JSON_WRITE_MEMBER_UINT(w, "limit_group", options->limit_group)
@@ -122,10 +122,10 @@ struct leds_api_req {
   struct leds_state *state;
 };
 
-int leds_api_color_parse(struct leds_color *color, enum leds_protocol protocol, const char *value)
+int leds_api_color_parse(struct leds_color *color, enum leds_parameter_type parameter_type, const char *value)
 {
   int rgb;
-  int parameter = leds_parameter_default_for_protocol(protocol);
+  int parameter = leds_parameter_default_for_type(parameter_type);
 
   if (!value) {
     return HTTP_UNPROCESSABLE_ENTITY;
@@ -150,7 +150,7 @@ int leds_api_color_parse(struct leds_color *color, enum leds_protocol protocol, 
 int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *value)
 {
   struct leds *leds = NULL;
-  enum leds_protocol protocol = 0;
+  enum leds_parameter_type parameter_type = 0;
   struct leds_color color;
   unsigned index;
   int ret;
@@ -176,18 +176,18 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
     return HTTP_UNPROCESSABLE_ENTITY;
   } else {
     leds = req->state->leds;
-    protocol = leds_protocol(req->state->leds);
+    parameter_type = leds_parameter_type(req->state->leds);
   }
 
   if (strcmp(key, "all") == 0) {
-    if ((ret = leds_api_color_parse(&color, protocol, value))) {
+    if ((ret = leds_api_color_parse(&color, parameter_type, value))) {
       return ret;
     }
 
     return leds_set_all(leds, color);
 
   } else if (sscanf(key, "%u", &index) > 0) {
-    if ((ret = leds_api_color_parse(&color, protocol, value))) {
+    if ((ret = leds_api_color_parse(&color, parameter_type, value))) {
       return ret;
     }
 

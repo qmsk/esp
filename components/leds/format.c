@@ -4,7 +4,7 @@
 
 void leds_set_format_rgb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params)
 {
-  uint8_t parameter = leds_parameter_default_for_protocol(leds->options.protocol);
+  uint8_t parameter = leds_parameter_default(leds);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -23,7 +23,7 @@ void leds_set_format_rgb(struct leds *leds, uint8_t *data, size_t len, struct le
 
 void leds_set_format_bgr(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params)
 {
-  uint8_t parameter = leds_parameter_default_for_protocol(leds->options.protocol);
+  uint8_t parameter = leds_parameter_default(leds);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -42,7 +42,7 @@ void leds_set_format_bgr(struct leds *leds, uint8_t *data, size_t len, struct le
 
 void leds_set_format_grb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params)
 {
-  uint8_t parameter = leds_parameter_default_for_protocol(leds->options.protocol);
+  uint8_t parameter = leds_parameter_default(leds);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -61,8 +61,8 @@ void leds_set_format_grb(struct leds *leds, uint8_t *data, size_t len, struct le
 
 void leds_set_format_rgba(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params)
 {
-  enum leds_parameter_type parameter = leds_parameter_type_for_protocol(leds->options.protocol);
-  uint8_t parameter_default = leds_parameter_default_for_protocol(leds->options.protocol);
+  enum leds_parameter_type parameter = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 
@@ -81,8 +81,8 @@ void leds_set_format_rgba(struct leds *leds, uint8_t *data, size_t len, struct l
 
 void leds_set_format_rgbw(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params)
 {
-  enum leds_parameter_type parameter = leds_parameter_type_for_protocol(leds->options.protocol);
-  uint8_t parameter_default = leds_parameter_default_for_protocol(leds->options.protocol);
+  enum leds_parameter_type parameter = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
 
   LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
 

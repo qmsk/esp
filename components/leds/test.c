@@ -19,7 +19,7 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
 {
   int err;
 
-  switch (leds_parameter_type_for_protocol(leds->options.protocol)) {
+  switch (leds_parameter_type(leds)) {
     case LEDS_PARAMETER_NONE:
       break;
 
@@ -52,7 +52,7 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
 {
   int err;
 
-  switch (leds_parameter_type_for_protocol(leds->options.protocol)) {
+  switch (leds_parameter_type(leds)) {
     case LEDS_PARAMETER_NONE:
       break;
 
@@ -114,7 +114,7 @@ int leds_test_rainbow_frame(struct leds *leds, unsigned frame)
   unsigned count = leds->options.count;
   struct leds_color color;
 
-  switch (leds_parameter_type_for_protocol(leds->options.protocol)) {
+  switch (leds_parameter_type(leds)) {
     case LEDS_PARAMETER_NONE:
       break;
 

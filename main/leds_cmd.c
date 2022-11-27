@@ -29,7 +29,7 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
 
     printf("\t%-20s: %s\n", "Interface", config_enum_to_string(leds_interface_enum, options->interface));
     printf("\t%-20s: %s\n", "Protocol", config_enum_to_string(leds_protocol_enum, options->protocol));
-    printf("\t%-20s: %s\n", "Parameter", config_enum_to_string(leds_parameter_enum, leds_parameter_type_for_protocol(options->protocol)));
+    printf("\t%-20s: %s\n", "Parameter", config_enum_to_string(leds_parameter_enum, leds_parameter_type(state->leds)));
     printf("\t%-20s: %5u\n", "Count", options->count);
     printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
     printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);
@@ -152,7 +152,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
       continue;
     }
 
-    switch (leds_parameter_type_for_protocol(config->protocol)) {
+    switch (leds_parameter_type(state->leds)) {
       case LEDS_PARAMETER_NONE:
         break;
 
@@ -208,7 +208,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     .b = (rgb >>  0) & 0xFF,
   };
 
-  switch (leds_parameter_type_for_protocol(config->protocol)) {
+  switch (leds_parameter_type(state->leds)) {
     case LEDS_PARAMETER_NONE:
       break;
 

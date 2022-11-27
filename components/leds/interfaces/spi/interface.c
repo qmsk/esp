@@ -195,47 +195,48 @@ int leds_interface_spi_init(struct leds_interface_spi *interface, const struct l
   return 0;
 }
 
-static int leds_interface_spi_map_32bit(struct leds_interface_spi *interface, unsigned *offp)
+static uint32_t *leds_interface_spi_map_32bit(struct leds_interface_spi *interface, unsigned *offp)
 {
-  int err;
-
-  if (*offp * sizeof(uint32_t) >= interface->buf_size) {
-    if ((err = leds_interface_spi_master_write(interface, *offp * sizeof(uint32_t)))) {
-      LOG_ERROR("leds_interface_spi_master_write");
-      return err;
-    } else {
-      *offp = 0;
-    }
-  }
-
-  (*offp)++;
-
-  return 0;
-}
-
-static int leds_interface_spi_write_32bit(struct leds_interface_spi *interface, uint32_t data, unsigned *offp)
-{
-  interface->buf.spi_mode_32bit[*offp] = data;
-
-  unsigned len = *offp * sizeof(uint32_t);
+  size_t len = (*offp) * sizeof(uint32_t);
 
   if (len >= interface->buf_size) {
     *offp = 0;
 
-    return leds_interface_spi_master_write(interface, len);
-  } else {
-    (*offp)++;
-
-    return 0;
+    if (leds_interface_spi_master_write(interface, len)) {
+      LOG_ERROR("leds_interface_spi_master_write");
+      return NULL;
+    }
   }
+
+  return &interface->buf.spi_mode_32bit[(*offp)++];
+}
+
+static int leds_interface_spi_write_32bit(struct leds_interface_spi *interface, uint32_t data, unsigned *offp)
+{
+  size_t len = (*offp) * sizeof(uint32_t);
+  int err;
+
+  if (len >= interface->buf_size) {
+    *offp = 0;
+
+    if ((err = leds_interface_spi_master_write(interface, len))) {
+      LOG_ERROR("leds_interface_spi_master_write");
+      return err;
+    }
+  }
+
+  interface->buf.spi_mode_32bit[(*offp)++] = data;
+
+  return 0;
 }
 
 static int leds_interface_spi_flush_32bit(struct leds_interface_spi *interface, unsigned *offp)
 {
+  size_t len = (*offp) * sizeof(uint32_t);
   int err;
 
-  if (*offp) {
-    if ((err = leds_interface_spi_master_write(interface, *offp * sizeof(uint32_t)))) {
+  if (len > 0) {
+    if ((err = leds_interface_spi_master_write(interface, len))) {
       LOG_ERROR("leds_interface_spi_master_write");
       return err;
     }
@@ -255,23 +256,34 @@ static int leds_interface_spi_tx_32bit(struct leds_interface_spi *interface, con
   int err;
 
   // start frame
-  leds_interface_spi_write_32bit(interface, LEDS_INTERFACE_SPI_MODE_32BIT_START_FRAME, &off);
+  if ((err = leds_interface_spi_write_32bit(interface, LEDS_INTERFACE_SPI_MODE_32BIT_START_FRAME, &off))) {
+    LOG_ERROR("leds_interface_spi_write_32bit");
+    return err;
+  }
 
   // pixel frames
   for (unsigned i = 0; i < count; i++) {
-    leds_interface_spi_map_32bit(interface, &off);
+    uint32_t *ptr;
 
-    interface->func.spi_mode_32bit(&interface->buf.spi_mode_32bit[off], pixels, i, limit);
+    if (!(ptr = leds_interface_spi_map_32bit(interface, &off))) {
+      LOG_ERROR("leds_interface_spi_map_32bit");
+      return -1;
+    }
+
+    interface->func.spi_mode_32bit(ptr, pixels, i, limit);
   }
 
   // end frames
   for (unsigned i = 0; i < leds_interface_spi_mode_32bit_end_frames(count); i++) {
-    leds_interface_spi_write_32bit(interface, LEDS_INTERFACE_SPI_MODE_32BIT_END_FRAME, &off);
+    if ((err = leds_interface_spi_write_32bit(interface, LEDS_INTERFACE_SPI_MODE_32BIT_END_FRAME, &off))) {
+      LOG_ERROR("leds_interface_spi_write_32bit");
+      return err;
+    }
   }
 
   if ((err = leds_interface_spi_flush_32bit(interface, &off))) {
     LOG_ERROR("leds_interface_spi_flush_32bit");
-    return -1;
+    return err;
   }
 
   return 0;

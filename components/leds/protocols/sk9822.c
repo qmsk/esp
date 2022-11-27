@@ -40,28 +40,6 @@ static int leds_protocol_sk9822_init(union leds_interface_state *interface, cons
   return 0;
 }
 
-static int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct leds_options *options, const struct leds_color *pixels, const struct leds_limit *limit)
-{
-  switch (options->interface) {
-    case LEDS_INTERFACE_NONE:
-      return 0;
-
-  #if CONFIG_LEDS_SPI_ENABLED
-    case LEDS_INTERFACE_SPI:
-      return leds_interface_spi_tx(&interface->spi, pixels, options->count, limit);
-  #endif
-
-  #if CONFIG_LEDS_I2S_ENABLED
-    case LEDS_INTERFACE_I2S:
-      return leds_interface_i2s_tx(&interface->i2s, pixels, options->count, limit);
-  #endif
-
-    default:
-      LOG_ERROR("unsupported interface=%#x", options->interface);
-      return -1;
-  }
-}
-
 struct leds_protocol_type leds_protocol_sk9822 = {
 #if CONFIG_LEDS_SPI_ENABLED
   .spi_interface_mode = LEDS_PROTOCOL_SK9822_INTERFACE_SPI_MODE,
@@ -73,5 +51,4 @@ struct leds_protocol_type leds_protocol_sk9822 = {
   .power_mode         = LEDS_POWER_RGBA,
 
   .init               = &leds_protocol_sk9822_init,
-  .tx                 = &leds_protocol_sk9822_tx,
 };

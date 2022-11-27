@@ -19,7 +19,6 @@ struct leds_protocol_type {
   enum leds_power_mode power_mode;
 
   int (*init)(union leds_interface_state *interface, const struct leds_options *options);
-  int (*tx)(union leds_interface_state *interface, const struct leds_options *options, const struct leds_color *pixels, const struct leds_limit *limit);
 };
 
 extern const struct leds_protocol_type *leds_protocol_types[LEDS_PROTOCOLS_COUNT];

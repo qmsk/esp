@@ -416,5 +416,27 @@ int leds_tx(struct leds *leds)
 {
   leds_update_limit(leds);
 
-  return leds->protocol_type->tx(&leds->interface, &leds->options, leds->pixels, &leds->limit);
+  switch (leds->options.interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      return leds_interface_spi_tx(&leds->interface.spi, leds->pixels, leds->options.count, &leds->limit);
+  #endif
+
+  #if CONFIG_LEDS_UART_ENABLED
+    case LEDS_INTERFACE_UART:
+      return leds_interface_uart_tx(&leds->interface.uart, leds->pixels, leds->options.count, &leds->limit);
+  #endif
+
+  #if CONFIG_LEDS_I2S_ENABLED
+    case LEDS_INTERFACE_I2S:
+      return leds_interface_i2s_tx(&leds->interface.i2s, leds->pixels, leds->options.count, &leds->limit);
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", options->interface);
+      return -1;
+  }
 }

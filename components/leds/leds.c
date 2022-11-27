@@ -287,7 +287,7 @@ static unsigned leds_count_power(struct leds *leds, unsigned index, unsigned cou
 {
   unsigned power = 0;
 
-  for (unsigned i = index; i < i + count; i++) {
+  for (unsigned i = index; i < index + count; i++) {
     switch (leds->protocol_type->power_mode) {
       case LEDS_POWER_NONE:
         break;

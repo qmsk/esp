@@ -181,7 +181,7 @@ int leds_interface_spi_init(struct leds_interface_spi *interface, const struct l
   interface->func = func;
   interface->buf_size = leds_interface_spi_buffer_size(mode, 0); // XXX: count is unknown?!
 
-  LOG_INFO("using buf_size=%zu", interface->buf_size);
+  LOG_INFO("using buf_size=%u", interface->buf_size);
 
   // TODO: use larger buffer for more efficient transactions?
   if ((err = leds_interface_spi_master_init(interface, options))) {

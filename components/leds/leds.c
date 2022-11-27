@@ -24,6 +24,12 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
   }
 #endif
 
+#if CONFIG_LEDS_SPI_ENABLED
+  if (protocol_type->spi_interface_mode) {
+    return LEDS_INTERFACE_SPI;
+  }
+#endif
+
   return LEDS_INTERFACE_NONE;
 }
 

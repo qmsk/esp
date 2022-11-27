@@ -6,6 +6,9 @@
 // not configurable, this is the only supported SPI host
 #define SPI1_HOST 1
 
+// SPI FIFO length
+#define SPI_WRITE_MAX 64
+
 enum spi_mode {
   SPI_MODE_CPOL_LOW     = 0x00,
   SPI_MODE_CPOL_HIGH    = 0x01,
@@ -101,7 +104,7 @@ int spi_master_new(struct spi_master **spi_masterp, const struct spi_options opt
 int spi_master_open(struct spi_master *spi_master, struct spi_write_options options);
 
 /*
- * Send up to 64 bytes of data out via SPI MOSI.
+ * Send up to SPI_WRITE_MAX bytes of data out via SPI MOSI.
  *
  * Does not wait for transfer to complete when returning. When called, waits for any in-progress transfer to complete.
  *

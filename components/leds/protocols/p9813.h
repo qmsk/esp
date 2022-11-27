@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../limit.h"
 
 #define P9813_CONTROL_BYTE(b, g, r) (0xC0 | ((~(b) & 0xC0) >> 2) | ((~(g) & 0xC0) >> 4) | ((~(r) & 0xC0) >> 6))
 
@@ -27,8 +28,8 @@ static inline union p9813_pixel p9813_pixel(struct leds_color color, unsigned in
 
 extern struct leds_protocol_type leds_protocol_p9813;
 
-#if CONFIG_LEDS_I2S_ENABLED
-  #include "../interfaces/i2s.h"
+#if CONFIG_LEDS_SPI_ENABLED
+  #include "../interfaces/spi.h"
 
   #define LEDS_PROTOCOL_P9813_INTERFACE_SPI_MODE LEDS_INTERFACE_SPI_MODE0_32BIT
 

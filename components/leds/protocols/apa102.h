@@ -2,7 +2,6 @@
 
 #include <leds.h>
 #include "../protocol.h"
-#include "../interface.h"
 #include "../limit.h"
 
 #define APA102_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
@@ -30,8 +29,8 @@ static inline union apa102_pixel apa102_pixel(struct leds_color color, unsigned 
 
 extern struct leds_protocol_type leds_protocol_apa102;
 
-#if CONFIG_LEDS_I2S_ENABLED
-  #include "../interfaces/i2s.h"
+#if CONFIG_LEDS_SPI_ENABLED
+  #include "../interfaces/spi.h"
 
   #define LEDS_PROTOCOL_APA102_INTERFACE_SPI_MODE LEDS_INTERFACE_SPI_MODE3_32BIT
 

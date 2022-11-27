@@ -3,13 +3,13 @@
 #include "spi_dev.h"
 #include <logging.h>
 
-static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data, unsigned bits)
+static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data, unsigned count)
 {
-  LOG_DEBUG("spi_master=%p data=%p bits=%u", spi_master, data, bits);
+  LOG_DEBUG("spi_master=%p data=%p count=%u", spi_master, data, count);
 
-  SPI_DEV.user1.usr_mosi_bitlen = bits - 1;
+  SPI_DEV.user1.usr_mosi_bitlen = count * 32 - 1;
 
-  for (unsigned i = 0; i < bits / 32 && i < 16; i++) {
+  for (unsigned i = 0; i < count && i < 16; i++) {
     SPI_DEV.data_buf[i] = data[i];
   }
 }
@@ -92,6 +92,8 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 
   if (len > SPI_WRITE_MAX) {
     len = SPI_WRITE_MAX;
+  } else if (len % 4) {
+    len = len & ~4;
   }
 
   // wait
@@ -108,7 +110,7 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
   SPI_DEV.user.usr_miso = 0;
 
   // TODO: assumes uint32_t alignment, support non-aligned?
-  spi_master_mosi(spi_master, data, len * 8);
+  spi_master_mosi(spi_master, data, len / 4);
 
   spi_master_start(spi_master);
 

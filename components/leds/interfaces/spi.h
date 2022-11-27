@@ -1,11 +1,10 @@
 #pragma once
 
 #include <leds.h>
-#include "../interface.h"
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
-// using custom spi_master driver
-# include <spi_master.h>
+  // using custom spi_master driver
+  #include <spi_master.h>
 
   struct leds_interface_spi {
     struct spi_master *spi_master;
@@ -14,13 +13,13 @@
 
 
 #elif CONFIG_LEDS_SPI_ENABLED
-// using esp-idf spi_master driver
-# include <driver/spi_master.h>
+  // using esp-idf spi_master driver
+  #include <driver/spi_master.h>
 
-# define SPI_MODE_0 (0)
-# define SPI_MODE_1 (1)
-# define SPI_MODE_2 (2)
-# define SPI_MODE_3 (3)
+  #define SPI_MODE_0 (0)
+  #define SPI_MODE_1 (1)
+  #define SPI_MODE_2 (2)
+  #define SPI_MODE_3 (3)
 
   struct leds_interface_spi {
     spi_device_handle_t device;

@@ -1,10 +1,14 @@
 #pragma once
 
-#include "../interface.h"
+#include <leds.h>
+
+#include "../limit.h"
 
 #if CONFIG_LEDS_I2S_ENABLED
 
 enum leds_interface_i2s_mode {
+  LEDS_INTERFACE_I2S_MODE_NONE = 0,
+
   LEDS_INTERFACE_I2S_MODE_32BIT_BCK,          // 32-bit with bit-clock, 32x0-bit start frame + 32x0-bit end frame with at least one bit per pixel
 
   LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL, // 24 bits @ 1.250us/bit, 4-bit symbols * 4-bit LUT, 80us low reset -> uint16_t[6]
@@ -75,9 +79,9 @@ static inline size_t leds_interface_i2s_buf_size(enum leds_interface_i2s_mode mo
 }
 
 union leds_interface_i2s_func {
-  void (*i2s_mode_32bit)(uint32_t buf[1], void *data, unsigned index, const struct leds_limit *limit);
-  void (*i2s_mode_24bit_4x4)(uint16_t buf[6], void *data, unsigned index, const struct leds_limit *limit);
-  void (*i2s_mode_32bit_4x4)(uint16_t buf[8], void *data, unsigned index, const struct leds_limit *limit);
+  void (*i2s_mode_32bit)(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+  void (*i2s_mode_24bit_4x4)(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+  void (*i2s_mode_32bit_4x4)(uint16_t buf[8], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
 };
 
 #define LEDS_INTERFACE_I2S_FUNC(type, func) ((union leds_interface_i2s_func) { .type = func })
@@ -100,6 +104,6 @@ size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigne
 size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsigned pin_count);
 
 int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, unsigned count);
-int leds_interface_i2s_tx(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, void *data, const struct leds_limit *limit);
+int leds_interface_i2s_tx(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit);
 
 #endif

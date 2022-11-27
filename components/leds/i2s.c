@@ -4,50 +4,27 @@
 #include <logging.h>
 
 #if CONFIG_LEDS_I2S_ENABLED
-
   size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count)
   {
-    switch (protocol) {
-      case LEDS_PROTOCOL_APA102:
-      case LEDS_PROTOCOL_P9813:
-        // not defined
-        return 0;
+    const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
 
-      case LEDS_PROTOCOL_WS2812B:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, led_count, 0);
-      case LEDS_PROTOCOL_SK6812_GRBW:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE, led_count, 0);
-      case LEDS_PROTOCOL_WS2811:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_WS2811_INTERFACE_I2S_MODE, led_count, 0);
-      case LEDS_PROTOCOL_SK9822:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, led_count, 0);
-
-      default:
-        // unknown
-        LOG_FATAL("invalid protocol=%d", protocol);
+    if (protocol_type->i2s_interface_mode) {
+      return leds_interface_i2s_buffer_size(protocol_type->i2s_interface_mode, led_count, 0);
+    } else {
+      // not defined
+      return 0;
     }
   }
 
   size_t leds_i2s_serial_buffer_align(enum leds_protocol protocol)
   {
-    switch (protocol) {
-      case LEDS_PROTOCOL_APA102:
-      case LEDS_PROTOCOL_P9813:
-        // not defined
-        return 0;
+    const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
 
-      case LEDS_PROTOCOL_WS2812B:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, 0);
-      case LEDS_PROTOCOL_SK6812_GRBW:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE, 0);
-      case LEDS_PROTOCOL_WS2811:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_WS2811_INTERFACE_I2S_MODE, 0);
-      case LEDS_PROTOCOL_SK9822:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, 0);
-
-      default:
-        // unknown
-        LOG_FATAL("invalid protocol=%d", protocol);
+    if (protocol_type->i2s_interface_mode) {
+      return leds_interface_i2s_buffer_align(protocol_type->i2s_interface_mode, 0);
+    } else {
+      // not defined
+      return 0;
     }
   }
 #endif
@@ -55,47 +32,25 @@
 #if CONFIG_LEDS_I2S_ENABLED && I2S_OUT_PARALLEL_SUPPORTED
   size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count)
   {
-    switch (protocol) {
-      case LEDS_PROTOCOL_APA102:
-      case LEDS_PROTOCOL_P9813:
-        // not defined
-        return 0;
+    const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
 
-      case LEDS_PROTOCOL_WS2812B:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, led_count, pin_count);
-      case LEDS_PROTOCOL_SK6812_GRBW:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE, led_count, pin_count);
-      case LEDS_PROTOCOL_WS2811:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_WS2811_INTERFACE_I2S_MODE, led_count, pin_count);
-      case LEDS_PROTOCOL_SK9822:
-        return leds_interface_i2s_buffer_size(LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, led_count, pin_count);
-
-      default:
-        // unknown
-        LOG_FATAL("invalid protocol=%d", protocol);
+    if (protocol_type->i2s_interface_mode) {
+      return leds_interface_i2s_buffer_size(protocol_type->i2s_interface_mode, led_count, pin_count);
+    } else {
+      // not defined
+      return 0;
     }
   }
 
   size_t leds_i2s_parallel_buffer_align(enum leds_protocol protocol, unsigned pin_count)
   {
-    switch (protocol) {
-      case LEDS_PROTOCOL_APA102:
-      case LEDS_PROTOCOL_P9813:
-        // not defined
-        return 0;
+    const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);
 
-      case LEDS_PROTOCOL_WS2812B:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, pin_count);
-      case LEDS_PROTOCOL_SK6812_GRBW:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_SK6812_GRBW_INTERFACE_I2S_MODE, pin_count);
-      case LEDS_PROTOCOL_WS2811:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_WS2811_INTERFACE_I2S_MODE, pin_count);
-      case LEDS_PROTOCOL_SK9822:
-        return leds_interface_i2s_buffer_align(LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, pin_count);
-
-      default:
-        // unknown
-        LOG_FATAL("invalid protocol=%d", protocol);
+    if (protocol_type->i2s_interface_mode) {
+      return leds_interface_i2s_buffer_align(protocol_type->i2s_interface_mode, pin_count);
+    } else {
+      // not defined
+      return 0;
     }
   }
 #endif

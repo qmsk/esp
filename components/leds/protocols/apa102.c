@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #if CONFIG_LEDS_SPI_ENABLED
-# define APA102_SPI_MODE (SPI_MODE_3)
+ #define APA102_SPI_MODE (SPI_MODE_3)
 #endif
 
 struct __attribute__((packed)) apa102_frame {

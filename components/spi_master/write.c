@@ -3,6 +3,9 @@
 #include "spi_dev.h"
 #include <logging.h>
 
+// shrink size to aligment
+#define TRUNC(size, align) ((size) & ~((align) - 1))
+
 static inline void spi_master_mosi(struct spi_master *spi_master, uint32_t *data, unsigned count)
 {
   LOG_DEBUG("spi_master=%p data=%p count=%u", spi_master, data, count);
@@ -92,8 +95,8 @@ int spi_master_write(struct spi_master *spi_master, void *data, size_t len)
 
   if (len > SPI_WRITE_MAX) {
     len = SPI_WRITE_MAX;
-  } else if (len % 4) {
-    len = len & ~4;
+  } else {
+    len = TRUNC(len, sizeof(uint32_t));
   }
 
   // wait

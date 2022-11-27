@@ -23,6 +23,8 @@ int leds_interface_uart_init(struct leds_interface_uart *interface, const struct
         .data_bits    = UART_DATA_7_BITS,
         .parity_bits  = UART_PARITY_DISABLE,
         .stop_bits    = UART_STOP_BITS_1,
+
+        .tx_inverted  = true
       };
       break;
 
@@ -32,6 +34,8 @@ int leds_interface_uart_init(struct leds_interface_uart *interface, const struct
         .data_bits    = UART_DATA_8_BITS,
         .parity_bits  = UART_PARITY_DISABLE,
         .stop_bits    = UART_STOP_BITS_1,
+
+        .tx_inverted  = true
       };
       break;
 
@@ -41,6 +45,8 @@ int leds_interface_uart_init(struct leds_interface_uart *interface, const struct
         .data_bits    = UART_DATA_6_BITS,
         .parity_bits  = UART_PARITY_DISABLE,
         .stop_bits    = UART_STOP_BITS_1,
+
+        .tx_inverted  = true
       };
       break;
 

@@ -30,6 +30,7 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %s\n", "Interface", config_enum_to_string(leds_interface_enum, options->interface));
     printf("\t%-20s: %s\n", "Protocol", config_enum_to_string(leds_protocol_enum, options->protocol));
     printf("\t%-20s: %s\n", "Parameter", config_enum_to_string(leds_parameter_enum, leds_parameter_type(state->leds)));
+    printf("\t%-20s: %5u\n", "Active", state->active);
     printf("\t%-20s: %5u\n", "Count", options->count);
     printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
     printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);
@@ -51,6 +52,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
 
     printf("leds%d:\n", i + 1);
 
+    unsigned active = leds_count_active(state->leds);
     struct leds_limit_status limit_total_status;
     struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
     size_t groups = LEDS_LIMIT_GROUPS_MAX;
@@ -58,7 +60,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     leds_get_limit_total_status(state->leds, &limit_total_status);
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
-    printf("\tActive   : %5u\n", state->active);
+    printf("\tActive   : %5u\n", active);
     printf("\tTotal    : config %5.1f%% util %5.1f%% applied %5.1f%%\n",
       leds_limit_status_configured(&limit_total_status) * 100.0f,
       leds_limit_status_utilization(&limit_total_status) * 100.0f,

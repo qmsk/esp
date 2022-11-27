@@ -7,7 +7,7 @@
 #if CONFIG_LEDS_UART_ENABLED
   /*
    * Using 6-bit TX-inverted UART at 3.33333333M baud (0.3us per bit) to generate a SK6812 signal,
-   * at two bits per (8-bit) byte.
+   * at two bits per (6-bit) byte.
    *
    * The ESP8266 UART uses least-significant-bit first bit order, ignoring the most-significant-bits per byte in 6-bit mode.
    *

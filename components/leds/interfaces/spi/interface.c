@@ -28,7 +28,7 @@
     }
   }
 
-  static int leds_interface_spi_master_init(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options, size_t buf_size)
+  static int leds_interface_spi_master_init(struct leds_interface_spi *interface, const struct leds_interface_spi_options *options)
   {
     interface->spi_master = options->spi_master;
     interface->spi_write_options = (struct spi_write_options) {

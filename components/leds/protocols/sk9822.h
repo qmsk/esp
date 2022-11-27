@@ -2,9 +2,9 @@
 
 #include <leds.h>
 #include "../protocol.h"
+#include "../limit.h"
 
 #define SK9822_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
-#define SK9822_BRIGHTNESS(global) (global & 0x1F) // 0..31
 
 union sk9822_pixel {
   struct {
@@ -28,6 +28,14 @@ static inline union sk9822_pixel sk9822_pixel(struct leds_color color, unsigned 
 }
 
 extern struct leds_protocol_type leds_protocol_sk9822;
+
+#if CONFIG_LEDS_SPI_ENABLED
+  #include "../interfaces/spi.h"
+
+  #define LEDS_PROTOCOL_SK9822_INTERFACE_SPI_MODE LEDS_INTERFACE_SPI_MODE3_32BIT
+
+  void leds_protocol_sk9822_spi_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+#endif
 
 #if CONFIG_LEDS_I2S_ENABLED
   #include "../interfaces/i2s.h"

@@ -4,13 +4,23 @@
 
 #include <logging.h>
 
-int leds_protocol_sk9822_init(union leds_interface_state *interface, const struct leds_options *options)
+static int leds_protocol_sk9822_init(union leds_interface_state *interface, const struct leds_options *options)
 {
   int err;
 
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
       break;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      if ((err = leds_interface_spi_init(&interface->spi, &options->spi, LEDS_PROTOCOL_SK9822_INTERFACE_SPI_MODE, LEDS_INTERFACE_SPI_FUNC(spi_mode_32bit, leds_protocol_sk9822_spi_out)))) {
+        LOG_ERROR("leds_interface_spi_init");
+        return err;
+      }
+
+      break;
+  #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
@@ -30,11 +40,16 @@ int leds_protocol_sk9822_init(union leds_interface_state *interface, const struc
   return 0;
 }
 
-int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct leds_options *options, const struct leds_color *pixels, const struct leds_limit *limit)
+static int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct leds_options *options, const struct leds_color *pixels, const struct leds_limit *limit)
 {
   switch (options->interface) {
     case LEDS_INTERFACE_NONE:
       return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      return leds_interface_spi_tx(&interface->spi, pixels, options->count, limit);
+  #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
@@ -48,8 +63,11 @@ int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct 
 }
 
 struct leds_protocol_type leds_protocol_sk9822 = {
+#if CONFIG_LEDS_SPI_ENABLED
+  .spi_interface_mode = LEDS_PROTOCOL_SK9822_INTERFACE_SPI_MODE,
+#endif
 #if CONFIG_LEDS_I2S_ENABLED
-  .i2s_interface_mode  = LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE,
+  .i2s_interface_mode = LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE,
 #endif
   .parameter_type     = LEDS_PARAMETER_DIMMER,
   .power_mode         = LEDS_POWER_RGBA,

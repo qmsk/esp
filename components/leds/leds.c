@@ -18,7 +18,11 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
   }
 #endif
 
-  // TODO: UART
+#if CONFIG_LEDS_UART_ENABLED
+  if (protocol_type->uart_interface_mode) {
+    return LEDS_INTERFACE_UART;
+  }
+#endif
 
   return LEDS_INTERFACE_NONE;
 }

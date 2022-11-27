@@ -34,7 +34,7 @@ static inline union sk9822_pixel sk9822_pixel(struct leds_color color, unsigned 
 #if CONFIG_LEDS_I2S_ENABLED
   #define LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
 
-  static void leds_protocol_sk9822_i2s_out(uint32_t buf[1], struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
+  static void leds_protocol_sk9822_i2s_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
     union sk9822_pixel pixel = sk9822_pixel(pixels[index], index, limit);
 

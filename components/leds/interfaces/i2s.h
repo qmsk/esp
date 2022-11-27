@@ -88,22 +88,22 @@ union leds_interface_i2s_func {
 
 struct leds_interface_i2s {
   enum leds_interface_i2s_mode mode;
+  union leds_interface_i2s_func func;
+  union leds_interface_i2s_buf *buf;
+
   unsigned parallel;
-  unsigned count;
 
   struct i2s_out *i2s_out;
   struct i2s_out_options i2s_out_options;
 
   struct gpio_options *gpio_options;
   gpio_pins_t gpio_out_pins;
-
-  union leds_interface_i2s_buf *buf;
 };
 
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);
 size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsigned pin_count);
 
-int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, unsigned count);
-int leds_interface_i2s_tx(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit);
+int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func);
+int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit);
 
 #endif

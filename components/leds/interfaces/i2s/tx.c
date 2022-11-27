@@ -4,7 +4,7 @@
 
 #include <logging.h>
 
-static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
   int err;
 
@@ -17,9 +17,9 @@ static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *i
   }
 
   // pixel frames
-  for (unsigned i = 0; i < interface->count; i++) {
+  for (unsigned i = 0; i < count; i++) {
     // 32-bit pixel data
-    func.i2s_mode_32bit(interface->buf->i2s_mode_32bit, pixels, i, limit);
+    interface->func.i2s_mode_32bit(interface->buf->i2s_mode_32bit, pixels, i, limit);
 
     if ((err = i2s_out_write_serial32(interface->i2s_out, interface->buf->i2s_mode_32bit, 1))) {
       LOG_ERROR("i2s_out_write_serial32");
@@ -30,13 +30,13 @@ static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *i
   return 0;
 }
 
-static int leds_interface_i2s_tx_24bit_4x4_serial16(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+static int leds_interface_i2s_tx_24bit_4x4_serial16(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
   int err;
 
-  for (unsigned i = 0; i < interface->count; i++) {
+  for (unsigned i = 0; i < count; i++) {
     // 6x16-bit pixel data
-    func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4, pixels, i, limit);
+    interface->func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4, pixels, i, limit);
 
     if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_24bit_4x4, 6))) {
       LOG_ERROR("i2s_out_write_serial16");
@@ -47,13 +47,13 @@ static int leds_interface_i2s_tx_24bit_4x4_serial16(struct leds_interface_i2s *i
   return 0;
 }
 
-static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
   int err;
 
-  for (unsigned i = 0; i < interface->count; i++) {
+  for (unsigned i = 0; i < count; i++) {
     // 8x16-bit pixel data
-    func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4, pixels, i, limit);
+    interface->func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4, pixels, i, limit);
 
     if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_32bit_4x4, 8))) {
       LOG_ERROR("i2s_out_write_serial16");
@@ -65,9 +65,9 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
 }
 
 #if I2S_OUT_PARALLEL_SUPPORTED
-  static int leds_interface_i2s_tx_32bit_bck_parallel8(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+  static int leds_interface_i2s_tx_32bit_bck_parallel8(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
   {
-    unsigned length = interface->count / interface->parallel;
+    unsigned length = count / interface->parallel;
     int err;
 
     // start frame
@@ -81,7 +81,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
     for (unsigned i = 0; i < length; i++) {
       // 8 sets of 32-bit pixel data
       for (unsigned j = 0; j < interface->parallel && j < 8; j++) {
-        func.i2s_mode_32bit(interface->buf->i2s_mode_32bit_parallel8[j], pixels, j * length + i, limit);
+        interface->func.i2s_mode_32bit(interface->buf->i2s_mode_32bit_parallel8[j], pixels, j * length + i, limit);
       }
 
       if ((err = i2s_out_write_parallel8x32(interface->i2s_out, (uint32_t *) interface->buf->i2s_mode_32bit_parallel8, 1))) {
@@ -93,15 +93,15 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
     return 0;
   }
 
-  static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+  static int leds_interface_i2s_tx_24bit_4x4_parallel8(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
   {
-    unsigned length = interface->count / interface->parallel;
+    unsigned length = count / interface->parallel;
     int err;
 
     for (unsigned i = 0; i < length; i++) {
       // 8 sets of 6x16-bit pixel data
       for (unsigned j = 0; j < interface->parallel && j < 8; j++) {
-        func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4_parallel8[j], pixels, j * length + i, limit);
+        interface->func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4_parallel8[j], pixels, j * length + i, limit);
       }
 
       if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_24bit_4x4_parallel8, 6))) {
@@ -113,15 +113,15 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
     return 0;
   }
 
-  static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+  static int leds_interface_i2s_tx_32bit_4x4_parallel8(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
   {
-    unsigned length = interface->count / interface->parallel;
+    unsigned length = count / interface->parallel;
     int err;
 
     for (unsigned i = 0; i < length; i++) {
       // 8 sets of 8x16-bit pixel data
       for (unsigned j = 0; j < interface->parallel && j < 8; j++) {
-        func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4_parallel8[j], pixels, j * length + i, limit);
+        interface->func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4_parallel8[j], pixels, j * length + i, limit);
       }
 
       if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_32bit_4x4_parallel8, 8))) {
@@ -134,40 +134,40 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
   }
 #endif
 
-static int leds_interface_i2s_tx_write(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+static int leds_interface_i2s_tx_write(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
   switch(interface->mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
     #if I2S_OUT_PARALLEL_SUPPORTED
       if (interface->parallel) {
-        return leds_interface_i2s_tx_32bit_bck_parallel8(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_32bit_bck_parallel8(interface, pixels, count, limit);
       } else {
-        return leds_interface_i2s_tx_32bit_bck_serial32(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_32bit_bck_serial32(interface, pixels, count, limit);
       }
     #else
-      return leds_interface_i2s_tx_32bit_bck_serial32(interface, func, pixels, limit);
+      return leds_interface_i2s_tx_32bit_bck_serial32(interface, pixels, count, limit);
     #endif
 
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED
       if (interface->parallel) {
-        return leds_interface_i2s_tx_24bit_4x4_parallel8(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_24bit_4x4_parallel8(interface, pixels, count, limit);
       } else {
-        return leds_interface_i2s_tx_24bit_4x4_serial16(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_24bit_4x4_serial16(interface, pixels, count, limit);
       }
     #else
-      return leds_interface_i2s_tx_24bit_4x4_serial16(interface, func, pixels, limit);
+      return leds_interface_i2s_tx_24bit_4x4_serial16(interface, pixels, count, limit);
     #endif
 
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED
       if (interface->parallel) {
-        return leds_interface_i2s_tx_32bit_4x4_parallel8(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_32bit_4x4_parallel8(interface, pixels, count, limit);
       } else {
-        return leds_interface_i2s_tx_32bit_4x4_serial16(interface, func, pixels, limit);
+        return leds_interface_i2s_tx_32bit_4x4_serial16(interface, pixels, count, limit);
       }
     #else
-      return leds_interface_i2s_tx_32bit_4x4_serial16(interface, func, pixels, limit);
+      return leds_interface_i2s_tx_32bit_4x4_serial16(interface, pixels, count, limit);
     #endif
 
     default:
@@ -175,15 +175,21 @@ static int leds_interface_i2s_tx_write(struct leds_interface_i2s *interface, uni
   }
 }
 
-int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, unsigned count)
+int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func)
 {
   interface->mode = mode;
-  interface->count = count;
+  interface->func = func;
+
 #if LEDS_I2S_DATA_PINS_ENABLED
   interface->parallel = options->data_pins_count;
 #else
   interface->parallel = 0;
 #endif
+
+  if (!(interface->buf = calloc(1, leds_interface_i2s_buf_size(interface->mode, interface->parallel)))) {
+    LOG_ERROR("calloc");
+    return -1;
+  }
 
   interface->i2s_out = options->i2s_out;
   interface->i2s_out_options = (struct i2s_out_options) {
@@ -249,30 +255,6 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
       LOG_FATAL("unknown mode=%d", mode);
   }
 
-  switch(mode) {
-    case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-      // XXX: required to workaround I2S start glitch looping previous data bits
-      interface->i2s_out_options.eof_value = 0x00000000;
-
-      // one clock cycle per pixel, min 32 cycles
-      interface->i2s_out_options.eof_count = (1 + interface->count / 32);
-
-      break;
-
-    case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
-    case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
-      // 1.25us per 4-bit = 2.5us per byte * four bytes per I2S sample = 10us per 32-bit I2S sample
-      interface->i2s_out_options.eof_value = 0x00000000;
-
-      // hold low for 8 * 10us
-      interface->i2s_out_options.eof_count = 8;
-
-      break;
-
-    default:
-      LOG_FATAL("unknown mode=%d", mode);
-  }
-
 #if LEDS_I2S_DATA_PINS_ENABLED
   if (interface->parallel) {
     for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
@@ -297,18 +279,37 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
   interface->gpio_options = options->gpio.gpio_options;
   interface->gpio_out_pins = options->gpio.gpio_out_pins;
 
-  if (!(interface->buf = calloc(1, leds_interface_i2s_buf_size(interface->mode, interface->parallel)))) {
-    LOG_ERROR("calloc");
-    return -1;
-  }
-
   return 0;
 }
 
-int leds_interface_i2s_tx(struct leds_interface_i2s *interface, union leds_interface_i2s_func func, const struct leds_color *pixels, const struct leds_limit *limit)
+int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
   struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   int err;
+
+  switch (interface->mode) {
+    case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
+      // XXX: required to workaround I2S start glitch looping previous data bits
+      interface->i2s_out_options.eof_value = 0x00000000;
+
+      // one clock cycle per pixel, min 32 cycles
+      interface->i2s_out_options.eof_count = (1 + count / 32);
+
+      break;
+
+    case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
+    case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
+      // 1.25us per 4-bit = 2.5us per byte * four bytes per I2S sample = 10us per 32-bit I2S sample
+      interface->i2s_out_options.eof_value = 0x00000000;
+
+      // hold low for 8 * 10us
+      interface->i2s_out_options.eof_count = 8;
+
+      break;
+
+    default:
+      LOG_FATAL("unknown mode=%d", interface->mode);
+  }
 
   WITH_STATS_TIMER(&stats->open) {
     if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options))) {
@@ -324,7 +325,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, union leds_inter
 #endif
 
   WITH_STATS_TIMER(&stats->write) {
-    if ((err = leds_interface_i2s_tx_write(interface, func, pixels, limit))) {
+    if ((err = leds_interface_i2s_tx_write(interface, pixels, count, limit))) {
       goto error;
     }
   }

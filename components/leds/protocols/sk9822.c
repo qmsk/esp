@@ -53,7 +53,7 @@ int leds_protocol_sk9822_init(union leds_interface_state *interface, const struc
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, options->count))) {
+      if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE, LEDS_INTERFACE_I2S_FUNC(i2s_mode_32bit, leds_protocol_sk9822_i2s_out)))) {
         LOG_ERROR("leds_interface_i2s_init");
         return err;
       }
@@ -78,7 +78,7 @@ int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
       // TODO: SK9822_START_FRAME_UINT32
-      return leds_interface_i2s_tx(&interface->i2s, LEDS_INTERFACE_I2S_FUNC(i2s_mode_32bit, leds_protocol_sk9822_i2s_out), pixels, limit);
+      return leds_interface_i2s_tx(&interface->i2s, pixels, options->count, limit);
   #endif
 
     default:

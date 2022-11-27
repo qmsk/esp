@@ -25,7 +25,7 @@ int leds_protocol_ws2812b_init(union leds_interface_state *interface, const stru
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, options->count))) {
+      if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, LEDS_PROTOCOL_WS2812B_INTERFACE_I2S_MODE, LEDS_INTERFACE_I2S_FUNC(i2s_mode_24bit_4x4, leds_protocol_ws2812b_i2s_out)))) {
         LOG_ERROR("leds_interface_i2s_init");
         return err;
       }
@@ -54,7 +54,7 @@ int leds_protocol_ws2812b_tx(union leds_interface_state *interface, const struct
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      return leds_interface_i2s_tx(&interface->i2s, LEDS_INTERFACE_I2S_FUNC(i2s_mode_24bit_4x4, leds_protocol_ws2812b_i2s_out), pixels, limit);
+      return leds_interface_i2s_tx(&interface->i2s, pixels, options->count, limit);
   #endif
 
     default:

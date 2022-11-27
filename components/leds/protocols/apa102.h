@@ -10,12 +10,12 @@
 
 union __attribute__((packed)) apa102_pixel {
   struct {
-    uint8_t r, g, b;
     uint8_t global;
+    uint8_t b, g, r;
   };
 
-  // aligned with 0xXXBBGGRR on little-endian architectures
-  uint32_t xbgr;
+  // aligned with 0xRRGGBBXX -> XX BB GG RR on little-endian architectures
+  uint32_t rgbx;
 };
 
 static inline union apa102_pixel apa102_pixel(struct leds_color color, unsigned index, const struct leds_limit *limit)

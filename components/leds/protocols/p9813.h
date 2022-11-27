@@ -7,12 +7,12 @@
 
 union __attribute__((packed)) p9813_pixel {
   struct {
-    uint8_t r, g, b;
     uint8_t control;
+    uint8_t b, g, r;
   };
 
-  // aligned with 0xXXBBGGRR on little-endian architectures
-  uint32_t xbgr;
+  // aligned with 0xRRGGBBXX -> XX BB GG RR on little-endian architectures
+  uint32_t rgbx;
 };
 
 static inline union p9813_pixel p9813_pixel(struct leds_color color, unsigned index, const struct leds_limit *limit)

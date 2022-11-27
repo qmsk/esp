@@ -38,7 +38,6 @@ int leds_protocol_sk9822_tx(union leds_interface_state *interface, const struct 
 
   #if CONFIG_LEDS_I2S_ENABLED
     case LEDS_INTERFACE_I2S:
-      // TODO: SK9822_START_FRAME_UINT32
       return leds_interface_i2s_tx(&interface->i2s, pixels, options->count, limit);
   #endif
 

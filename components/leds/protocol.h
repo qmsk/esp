@@ -9,6 +9,9 @@ struct leds_protocol_type {
 #if CONFIG_LEDS_I2S_ENABLED
   enum leds_interface_i2s_mode i2s_interface_mode;
 #endif
+#if CONFIG_LEDS_SPI_ENABLED
+  enum leds_interface_spi_mode spi_interface_mode;
+#endif
 #if CONFIG_LEDS_UART_ENABLED
   enum leds_interface_uart_mode uart_interface_mode;
 #endif

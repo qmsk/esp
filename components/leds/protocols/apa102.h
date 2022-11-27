@@ -32,15 +32,11 @@ extern struct leds_protocol_type leds_protocol_apa102;
 #if CONFIG_LEDS_SPI_ENABLED
   #include "../interfaces/spi.h"
 
-  #define LEDS_PROTOCOL_APA102_INTERFACE_SPI_MODE LEDS_INTERFACE_SPI_MODE3_32BIT
-
   void leds_protocol_apa102_spi_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED
   #include "../interfaces/spi.h"
-
-  #define LEDS_PROTOCOL_APA102_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
 
   void leds_protocol_apa102_i2s_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
 #endif

@@ -32,6 +32,9 @@ struct leds {
 
 int leds_init(struct leds *leds, const struct leds_options *options);
 
+/* interface.c */
+int leds_interface_init(union leds_interface_state *interface, const struct leds_protocol_type *protocol_type, const struct leds_options *options);
+
 /* format.c */
 void leds_set_format_rgb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
 void leds_set_format_bgr(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);

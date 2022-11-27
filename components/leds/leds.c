@@ -95,7 +95,12 @@ int leds_init(struct leds *leds, const struct leds_options *options)
     return err;
   }
 
-  return leds->protocol_type->init(&leds->interface, options);
+  if ((err = leds_interface_init(&leds->interface, leds->protocol_type, &leds->options))) {
+    LOG_ERROR("leds_interface_init");
+    return err;
+  }
+
+  return 0;
 }
 
 int leds_new(struct leds **ledsp, const struct leds_options *options)
@@ -436,7 +441,7 @@ int leds_tx(struct leds *leds)
   #endif
 
     default:
-      LOG_ERROR("unsupported interface=%#x", options->interface);
+      LOG_ERROR("unsupported interface=%#x", leds->options.interface);
       return -1;
   }
 }

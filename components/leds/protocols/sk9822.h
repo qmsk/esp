@@ -6,14 +6,14 @@
 #define SK9822_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
 #define SK9822_BRIGHTNESS(global) (global & 0x1F) // 0..31
 
-union __attribute__((packed)) sk9822_pixel {
+union sk9822_pixel {
   struct {
-    uint8_t r, g, b;
     uint8_t global;
+    uint8_t b, g, r;
   };
 
-  // aligned with 0xXXBBGGRR on little-endian architectures
-  uint32_t xbgr;
+  // aligned with 0xRRGGBBXX -> XX BB GG RR on little-endian architectures
+  uint32_t rgbx;
 };
 
 static inline union sk9822_pixel sk9822_pixel(struct leds_color color, unsigned index, const struct leds_limit *limit)

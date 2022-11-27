@@ -10,6 +10,6 @@
     union sk9822_pixel pixel = sk9822_pixel(pixels[index], index, limit);
 
     // 32-bit little-endian
-    buf[0] = pixel.xbgr;
+    buf[0] = pixel.rgbx;
   }
 #endif

@@ -52,8 +52,8 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     case I2S_OUT_MODE_32BIT_SERIAL:
       i2s_ll_enable_lcd(i2s_out->dev, false);
 
-      // use 16-bit dual channel mode with uint32 LSB word ordering
-      // write(0x76543210) -> FIFO 0x10, 0x32, 0x54, 0x76 -> TX 76543210
+      // use 16-bit dual channel mode with uint32 big-endian byte ordering
+      // write(0x76543210) -> FIFO 0x10, 0x32, 0x54, 0x76 -> TX 76 54 32 10
       i2s_ll_tx_enable_msb_right(i2s_out->dev, false);
       i2s_ll_tx_enable_right_first(i2s_out->dev, false);
 

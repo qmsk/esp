@@ -5,7 +5,7 @@
 
 struct leds_protocol_type leds_protocol_ws2811 = {
 #if CONFIG_LEDS_I2S_ENABLED
-  .i2s_interface_mode  = LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL,
+  .i2s_interface_mode  = LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL,
   .i2s_interface_func  = LEDS_INTERFACE_I2S_FUNC(i2s_mode_24bit_4x4, leds_protocol_ws2811_i2s_out),
 #endif
 #if CONFIG_LEDS_UART_ENABLED

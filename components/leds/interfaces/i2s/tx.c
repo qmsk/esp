@@ -209,7 +209,6 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
       if (interface->parallel) {
         interface->i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
       } else {
-        // raw 32-bit samples
         interface->i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
       }
     #else
@@ -263,12 +262,16 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
       interface->i2s_out_options.inv_data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->inv_data_pins[i] : GPIO_NUM_NC;
     }
 
-    // XXX: for some reason, 8-bit parallel mode seems to have BCK inverted?
+    // I2S LCD mode requires the BCK/WS signal to be inverted when routed through the GPIO matrix
+    // invert BCK to idle high, transition on falling edge, and sample data on rising edge
     interface->i2s_out_options.bck_inv = true;
   } else {
     interface->i2s_out_options.bck_gpio = options->clock_pin;
     interface->i2s_out_options.data_gpio = options->data_pin;
     interface->i2s_out_options.inv_data_gpio = options->inv_data_pin;
+
+    // BCK is idle low, transition on falling edge, and sample data on rising edge
+    interface->i2s_out_options.bck_inv = false;
   }
 #elif LEDS_I2S_GPIO_PINS_ENABLED
   interface->i2s_out_options.bck_gpio = options->clock_pin;

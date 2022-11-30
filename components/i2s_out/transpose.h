@@ -33,7 +33,7 @@ static inline void i2s_out_transpose_uint32(uint32_t *x, uint32_t *y)
 
 static inline void i2s_out_transpose_serial32(uint32_t data, uint32_t buf[1])
 {
-  buf[1] = __builtin_bswap32(data);
+  buf[0] = __builtin_bswap32(data);
 }
 
 // transpose an array of data[8][step] parallel 8x8-bit values at [0..8][index] -> 2x32-bit I2S 8-bit FIFO values at *buf

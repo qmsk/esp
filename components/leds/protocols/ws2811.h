@@ -2,13 +2,6 @@
 
 #include <leds.h>
 #include "../protocol.h"
-#include "../interface.h"
-#include "../interfaces/i2s.h"
-#include "../limit.h"
-
-#define LEDS_PROTOCOL_WS2811_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL
-
-#define WS2811_PIXEL_POWER_DIVISOR (3 * 255) // one pixel at full brightness
 
 union ws2811_pixel {
   struct {
@@ -19,35 +12,25 @@ union ws2811_pixel {
   uint32_t _rgb;
 };
 
-static inline bool ws2811_pixel_active(const union ws2811_pixel pixel)
-{
-  return pixel.b || pixel.g || pixel.r;
-}
-
-static inline unsigned ws2811_pixel_power(const union ws2811_pixel pixel)
-{
-  return pixel.b + pixel.r + pixel.g;
-}
-
-static inline union ws2811_pixel ws2811_pixel_limit(const union ws2811_pixel pixel, unsigned index, const struct leds_limit *limit)
+static inline union ws2811_pixel ws2811_pixel(struct leds_color color, unsigned index, const struct leds_limit *limit)
 {
   return (union ws2811_pixel) {
-    .b  = leds_limit_uint8(limit, index, pixel.b),
-    .g  = leds_limit_uint8(limit, index, pixel.g),
-    .r  = leds_limit_uint8(limit, index, pixel.r),
+    .b  = leds_limit_uint8(limit, index, color.b),
+    .g  = leds_limit_uint8(limit, index, color.g),
+    .r  = leds_limit_uint8(limit, index, color.r),
   };
 }
 
-struct leds_protocol_ws2811 {
-  union ws2811_pixel *pixels;
-  unsigned count;
-};
+extern struct leds_protocol_type leds_protocol_ws2811;
 
-int leds_protocol_ws2811_init(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options);
-int leds_protocol_ws2811_tx(struct leds_protocol_ws2811 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit);
+#if CONFIG_LEDS_I2S_ENABLED
+  #include "../interfaces/i2s.h"
 
-void leds_protocol_ws2811_set(struct leds_protocol_ws2811 *protocol, unsigned index, struct leds_color color);
-void leds_protocol_ws2811_set_all(struct leds_protocol_ws2811 *protocol, struct leds_color color);
+  void leds_protocol_ws2811_i2s_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+#endif
 
-unsigned leds_protocol_ws2811_count_active(struct leds_protocol_ws2811 *protocol);
-unsigned leds_protocol_ws2811_count_power(struct leds_protocol_ws2811 *protocol, unsigned index, unsigned count);
+#if CONFIG_LEDS_UART_ENABLED
+  #include "../interfaces/uart.h"
+
+  void leds_protocol_ws2811_uart_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+#endif

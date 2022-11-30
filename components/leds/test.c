@@ -19,15 +19,15 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
 {
   int err;
 
-  switch (leds_color_parameter_for_protocol(leds->options.protocol)) {
-    case LEDS_COLOR_NONE:
+  switch (leds_parameter_type(leds)) {
+    case LEDS_PARAMETER_NONE:
       break;
 
-    case LEDS_COLOR_DIMMER:
+    case LEDS_PARAMETER_DIMMER:
       color.dimmer = 255;
       break;
 
-    case LEDS_COLOR_WHITE:
+    case LEDS_PARAMETER_WHITE:
       color.white = 0;
       break;
   }
@@ -52,15 +52,15 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
 {
   int err;
 
-  switch (leds_color_parameter_for_protocol(leds->options.protocol)) {
-    case LEDS_COLOR_NONE:
+  switch (leds_parameter_type(leds)) {
+    case LEDS_PARAMETER_NONE:
       break;
 
-    case LEDS_COLOR_DIMMER:
+    case LEDS_PARAMETER_DIMMER:
       color.dimmer = 255;
       break;
 
-    case LEDS_COLOR_WHITE:
+    case LEDS_PARAMETER_WHITE:
       break;
   }
 
@@ -114,15 +114,15 @@ int leds_test_rainbow_frame(struct leds *leds, unsigned frame)
   unsigned count = leds->options.count;
   struct leds_color color;
 
-  switch (leds_color_parameter_for_protocol(leds->options.protocol)) {
-    case LEDS_COLOR_NONE:
+  switch (leds_parameter_type(leds)) {
+    case LEDS_PARAMETER_NONE:
       break;
 
-    case LEDS_COLOR_DIMMER:
+    case LEDS_PARAMETER_DIMMER:
       color.dimmer = 255;
       break;
 
-    case LEDS_COLOR_WHITE:
+    case LEDS_PARAMETER_WHITE:
       color.white = 0;
       break;
   }

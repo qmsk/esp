@@ -155,9 +155,47 @@ int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_
   return i2s_out_write(i2s_out, data, count * sizeof(*data));
 }
 
-int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_t count)
+int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count)
 {
-  return i2s_out_write(i2s_out, data, count * sizeof(*data));
+  int ret = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  uint32_t (*buf)[1];
+  unsigned index = 0;
+
+  while (index < count) {
+    // get DMA buffer for remaining blocks
+    void *ptr;
+    size_t len;
+
+    if (!(len = i2s_out_dma_buffer(i2s_out, &ptr, count - index, sizeof(*buf)))) {
+      LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
+      ret = 1;
+      goto error;
+    }
+
+    // transpose each 32-bit block -> 32-bit buffer that fits into the DMA buffer
+    buf = ptr;
+
+    for (int i = 0; i < len; i++) {
+      LOG_DEBUG("index=%u: buf[%d]=%p ", index, i, buf[i]);
+
+      i2s_out_transpose_serial32(data[index++], buf[i]);
+    }
+
+    i2s_out_dma_commit(i2s_out, len, sizeof(*buf));
+  }
+
+error:
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_ERROR("xSemaphoreGiveRecursive");
+  }
+
+  return ret;
 }
 
 #if I2S_OUT_PARALLEL_SUPPORTED

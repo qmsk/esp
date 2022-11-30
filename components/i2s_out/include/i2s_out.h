@@ -176,7 +176,7 @@ int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_
  *
  * Returns <0 error, 0 on success, >0 if TX buffer is full.
  */
-int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t data[], size_t count);
+int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count);
 
 #if I2S_OUT_PARALLEL_SUPPORTED
   /**

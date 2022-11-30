@@ -120,10 +120,10 @@ const struct config_enum leds_test_mode_enum[] = {
   {}
 };
 
-const struct config_enum leds_color_parameter_enum[] = {
-  { "NONE",     LEDS_COLOR_NONE     },
-  { "DIMMER",   LEDS_COLOR_DIMMER   },
-  { "WHITE",    LEDS_COLOR_WHITE    },
+const struct config_enum leds_parameter_enum[] = {
+  { "NONE",     LEDS_PARAMETER_NONE   },
+  { "DIMMER",   LEDS_PARAMETER_DIMMER },
+  { "WHITE",    LEDS_PARAMETER_WHITE  },
   {}
 };
 

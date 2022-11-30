@@ -85,13 +85,8 @@ enum leds_protocol {
   LEDS_PROTOCOL_SK6812_GRBW,
   LEDS_PROTOCOL_WS2811,
   LEDS_PROTOCOL_SK9822,
-};
 
-/* interpretation of leds_color.parameter by protocol */
-enum leds_color_parameter {
-  LEDS_COLOR_NONE         = 0,
-  LEDS_COLOR_DIMMER,
-  LEDS_COLOR_WHITE,
+  LEDS_PROTOCOLS_COUNT,
 };
 
 enum leds_format {
@@ -276,15 +271,37 @@ struct leds_options {
   };
 };
 
+/* interpretation of leds_color.parameter by protocol */
+enum leds_parameter_type {
+  LEDS_PARAMETER_NONE         = 0,
+  LEDS_PARAMETER_DIMMER,
+  LEDS_PARAMETER_WHITE,
+};
+
 /*
  * Returns leds_color.parameter interpretation for protocol.
  */
-enum leds_color_parameter leds_color_parameter_for_protocol(enum leds_protocol protocol);
+enum leds_parameter_type leds_parameter_type_for_protocol(enum leds_protocol protocol);
+
+/*
+ * Returns default leds_color.parameter value to use for parameter type.
+ */
+uint8_t leds_parameter_default_for_type(enum leds_parameter_type parameter_type);
 
 /*
  * Returns default leds_color.parameter to use for protocol.
  */
-uint8_t leds_default_color_parameter_for_protocol(enum leds_protocol protocol);
+uint8_t leds_parameter_default_for_protocol(enum leds_protocol protocol);
+
+enum leds_power_mode {
+  LEDS_POWER_NONE,
+  LEDS_POWER_RGB,
+  LEDS_POWER_RGBA,
+  LEDS_POWER_RGBW,
+  LEDS_POWER_RGB2W,
+};
+
+enum leds_power_mode leds_power_mode_for_protocol(enum leds_protocol protocol);
 
 struct leds_color {
   uint8_t r, g, b;
@@ -295,6 +312,8 @@ struct leds_color {
     uint8_t white; // 0-255
   };
 };
+
+bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
 
 enum leds_test_mode {
   TEST_MODE_BLACK,
@@ -324,6 +343,9 @@ int leds_new(struct leds **ledsp, const struct leds_options *options);
 const struct leds_options *leds_options(struct leds *leds);
 
 enum leds_protocol leds_protocol(struct leds *leds);
+enum leds_parameter_type leds_parameter_type(struct leds *leds);
+uint8_t leds_parameter_default(struct leds *leds);
+
 
 enum leds_interface leds_interface(struct leds *leds);
 

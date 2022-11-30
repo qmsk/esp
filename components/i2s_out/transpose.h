@@ -31,6 +31,11 @@ static inline void i2s_out_transpose_uint32(uint32_t *x, uint32_t *y)
   *y = ((*y << 8) & 0xFF00FF00) | ((*y >> 8) & 0x00FF00FF);
 }
 
+static inline void i2s_out_transpose_serial32(uint32_t data, uint32_t buf[1])
+{
+  buf[0] = __builtin_bswap32(data);
+}
+
 // transpose an array of data[8][step] parallel 8x8-bit values at [0..8][index] -> 2x32-bit I2S 8-bit FIFO values at *buf
 static inline void i2s_out_transpose_parallel8x8(const uint8_t data[8], unsigned step, unsigned index, uint32_t buf[2])
 {
@@ -55,14 +60,14 @@ static inline void i2s_out_transpose_parallel8x16(uint16_t data[], unsigned step
 // transpose an array of data[8][step] parallel 8x32-bit values at [0..8][index] -> 8x32-bit I2S 8-bit FIFO values at *buf
 static inline void i2s_out_transpose_parallel8x32(uint32_t data[], unsigned step, unsigned index, uint32_t buf[8])
 {
-  buf[0] = UNPACK_UINT32_L(data, step, index, 24);
-  buf[1] = UNPACK_UINT32_H(data, step, index, 24);
-  buf[2] = UNPACK_UINT32_L(data, step, index, 16);
-  buf[3] = UNPACK_UINT32_H(data, step, index, 16);
-  buf[4] = UNPACK_UINT32_L(data, step, index, 8);
-  buf[5] = UNPACK_UINT32_H(data, step, index, 8);
-  buf[6] = UNPACK_UINT32_L(data, step, index, 0);
-  buf[7] = UNPACK_UINT32_H(data, step, index, 0);
+  buf[0] = UNPACK_UINT32_L(data, step, index, 0);
+  buf[1] = UNPACK_UINT32_H(data, step, index, 0);
+  buf[2] = UNPACK_UINT32_L(data, step, index, 8);
+  buf[3] = UNPACK_UINT32_H(data, step, index, 8);
+  buf[4] = UNPACK_UINT32_L(data, step, index, 16);
+  buf[5] = UNPACK_UINT32_H(data, step, index, 16);
+  buf[6] = UNPACK_UINT32_L(data, step, index, 24);
+  buf[7] = UNPACK_UINT32_H(data, step, index, 24);
 
   i2s_out_transpose_uint32(&buf[0], &buf[1]);
   i2s_out_transpose_uint32(&buf[2], &buf[3]);

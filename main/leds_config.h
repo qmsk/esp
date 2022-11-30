@@ -158,7 +158,7 @@ extern const struct config_enum leds_interface_enum[];
 extern const struct config_enum leds_protocol_enum[];
 extern const struct config_enum leds_format_enum[];
 extern const struct config_enum leds_test_mode_enum[];
-extern const struct config_enum leds_color_parameter_enum[];
+extern const struct config_enum leds_parameter_enum[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
 

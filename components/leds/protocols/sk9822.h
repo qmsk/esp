@@ -2,58 +2,41 @@
 
 #include <leds.h>
 #include "../protocol.h"
-#include "../interface.h"
-#include "../interfaces/i2s.h"
 #include "../limit.h"
 
 #define SK9822_GLOBAL_BYTE(brightness) (0xE0 | ((brightness) >> 3))
-#define SK9822_BRIGHTNESS(global) (global & 0x1F) // 0..31
 
-union __attribute__((packed)) sk9822_pixel {
+union sk9822_pixel {
   struct {
-    uint8_t r, g, b;
     uint8_t global;
+    uint8_t b, g, r;
   };
 
-  // aligned with 0xXXBBGGRR on little-endian architectures
-  uint32_t xbgr;
+  // aligned with 0xRRGGBBXX -> XX BB GG RR on little-endian architectures
+  uint32_t rgbx;
 };
 
-#define LEDS_PROTOCOL_SK9822_INTERFACE_I2S_MODE LEDS_INTERFACE_I2S_MODE_32BIT_BCK
-
-#define SK9822_PIXEL_POWER_DIVISOR (3 * 255 * 31) // one pixel at full brightness
-
-static inline bool sk9822_pixel_active(const union sk9822_pixel pixel)
+static inline union sk9822_pixel sk9822_pixel(struct leds_color color, unsigned index, const struct leds_limit *limit)
 {
-  return (pixel.b || pixel.g || pixel.r) && SK9822_BRIGHTNESS(pixel.global) > 0;
-}
-
-static inline unsigned sk9822_pixel_power(const union sk9822_pixel pixel)
-{
-  // use brightness to 0..31 to not overflow a 32-bit uint for a 16-bit LEDS_COUNT_MAX
-  return (pixel.b + pixel.g + pixel.r) * SK9822_BRIGHTNESS(pixel.global);
-}
-
-static inline union sk9822_pixel sk9822_pixel_limit(const union sk9822_pixel pixel, unsigned index, const struct leds_limit *limit)
-{
+  // TODO: use driving current instead of PWM for power limit?
   return (union sk9822_pixel) {
-    .global = pixel.global, // TODO: use driving current instead of PWM for power limit?
-    .b      = leds_limit_uint8(limit, index, pixel.b),
-    .g      = leds_limit_uint8(limit, index, pixel.g),
-    .r      = leds_limit_uint8(limit, index, pixel.r),
+    .global = SK9822_GLOBAL_BYTE(color.dimmer),
+    .b      = leds_limit_uint8(limit, index, color.b),
+    .g      = leds_limit_uint8(limit, index, color.g),
+    .r      = leds_limit_uint8(limit, index, color.r),
   };
 }
 
-struct leds_protocol_sk9822 {
-  union sk9822_pixel *pixels;
-  unsigned count;
-};
+extern struct leds_protocol_type leds_protocol_sk9822;
 
-int leds_protocol_sk9822_init(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options);
-int leds_protocol_sk9822_tx(struct leds_protocol_sk9822 *protocol, union leds_interface_state *interface, const struct leds_options *options, const struct leds_limit *limit);
+#if CONFIG_LEDS_SPI_ENABLED
+  #include "../interfaces/spi.h"
 
-void leds_protocol_sk9822_set(struct leds_protocol_sk9822 *protocol, unsigned index, struct leds_color color);
-void leds_protocol_sk9822_set_all(struct leds_protocol_sk9822 *protocol, struct leds_color color);
+  void leds_protocol_sk9822_spi_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+#endif
 
-unsigned leds_protocol_sk9822_count_active(struct leds_protocol_sk9822 *protocol);
-unsigned leds_protocol_sk9822_count_power(struct leds_protocol_sk9822 *protocol, unsigned index, unsigned count);
+#if CONFIG_LEDS_I2S_ENABLED
+  #include "../interfaces/i2s.h"
+
+  void leds_protocol_sk9822_i2s_out(uint32_t buf[1], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit);
+#endif

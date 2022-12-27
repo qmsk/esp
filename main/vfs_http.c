@@ -8,8 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#define VFS_HTTP_PATH_MAX 64
+#define VFS_HTTP_URL_PATH "vfs/"
+
 #define VFS_HTTP_PATH_PREFIX "/config/"
+#define VFS_HTTP_PATH_MAX 64
+
 #define VFS_HTTP_CONTENT_TYPE "application/octet-stream"
 
 struct vfs_http_params {
@@ -18,23 +21,23 @@ struct vfs_http_params {
 
 static int vfs_http_params(struct http_request *request, struct vfs_http_params *params)
 {
-  char *key, *value;
-  int err;
+  const struct url *url = http_request_url(request);
+  const char *path = url->path;
 
-  while (!(err = http_request_query(request, &key, &value))) {
-    if (strcasecmp(key, "path") == 0) {
-      LOG_INFO("path=%s", value);
-
-      params->path = value;
+  // strip prefix
+  for (const char *p = VFS_HTTP_URL_PATH; *p; p++) {
+    if (*path && *path == *p) {
+      path++;
     } else {
-      LOG_WARN("Unknown query param key=%s", key);
-
-      return HTTP_UNPROCESSABLE_ENTITY;
+      LOG_WARN("Incorrect request path prefix: %s", url->path);
+      return 404;
     }
   }
 
-  if (!params->path) {
-    LOG_WARN("Missing query param path=...");
+  params->path = path;
+
+  if (!*params->path) {
+    LOG_WARN("Missing path=%s", params->path);
 
     return HTTP_UNPROCESSABLE_ENTITY;
   }

@@ -14,6 +14,7 @@
 
 #define CONFIG_FILE_PATH_MAX 64
 #define CONFIG_FILE_PATH_PREFIX "/config/"
+#define CONFIG_FILE_CONTENT_TYPE "application/octet-stream"
 
 int config_get_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
@@ -444,11 +445,11 @@ int config_api_post(struct http_request *request, struct http_response *response
   }
 }
 
-struct config_api_file_post_params {
+struct config_api_file_params {
   const char *path;
 };
 
-int config_api_file_post_params(struct http_request *request, struct config_api_file_post_params *params)
+int config_api_file_params(struct http_request *request, struct config_api_file_params *params)
 {
   char *key, *value;
   int err;
@@ -474,7 +475,7 @@ int config_api_file_post_params(struct http_request *request, struct config_api_
   return 0;
 }
 
-int config_api_file_open(FILE **filep, const struct config_api_file_post_params *params, const char *mode)
+int config_api_file_open(FILE **filep, const struct config_api_file_params *params, const char *mode)
 {
   char path[CONFIG_FILE_PATH_MAX];
   int ret;
@@ -489,32 +490,26 @@ int config_api_file_open(FILE **filep, const struct config_api_file_post_params 
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
-  if (!(*filep = fopen(path, mode))) {
+  if ((*filep = fopen(path, mode))) {
+    return 0;
+  } else if (errno == ENOENT) {
+    LOG_WARN("fopen: %s", strerror(errno));
+    return HTTP_NOT_FOUND;
+  } else {
     LOG_ERROR("fopen: %s", strerror(errno));
     return -1;
   }
-
-  return 0;
 }
 
-int config_api_file_upload(FILE *rf, const struct config_api_file_post_params *params)
+int config_api_file_copy(FILE *read, FILE *write)
 {
-  FILE *wf;
   int c;
   size_t size = 0;
-  int err;
 
-  LOG_INFO("config file upload -> path=%s", params->path);
+  LOG_DEBUG("read=%p, write=%p", read, write);
 
-  if ((err = config_api_file_open(&wf, params, "w"))) {
-    LOG_ERROR("config_api_file_open");
-    return err;
-  }
-
-  LOG_DEBUG("rf=%p, wf=%p", rf, wf);
-
-  while ((c = fgetc(rf)) != EOF) {
-    if (fputc(c, wf) == EOF) {
+  while ((c = fgetc(read)) != EOF) {
+    if (fputc(c, write) == EOF) {
       LOG_ERROR("fputc: %s", strerror(errno));
       return -1;
     }
@@ -524,9 +519,128 @@ int config_api_file_upload(FILE *rf, const struct config_api_file_post_params *p
 
   LOG_INFO("size=%u", size);
 
-  if (ferror(rf)) {
+  if (ferror(read)) {
     LOG_ERROR("fgetc: %s", strerror(errno));
     return -1;
+  }
+
+  return 0;
+}
+
+int config_api_file_read(struct http_response *response, const struct config_api_file_params *params)
+{
+  FILE *http_file, *file;
+  int err;
+
+  LOG_INFO("path=%s", params->path);
+
+  if ((err = config_api_file_open(&file, params, "r")) < 0) {
+    LOG_ERROR("config_api_file_open");
+    return err;
+  } else if (err) {
+    LOG_WARN("config_api_file_open: %d", err);
+    return err;
+  }
+
+  if ((err = http_response_start(response, HTTP_OK, NULL))) {
+    LOG_WARN("http_response_start");
+    goto error;
+  }
+
+  if ((err = http_response_header(response, "Content-Type", "%s", CONFIG_FILE_CONTENT_TYPE))) {
+    LOG_WARN("http_response_header");
+    goto error;
+  }
+
+  if ((err = http_response_header(response, "Content-Disposition", "attachment; filename=\"%s\"", params->path))) {
+    LOG_WARN("http_response_header");
+    goto error;
+  }
+
+  if ((err = http_response_open(response, &http_file))) {
+    LOG_WARN("http_response_open");
+    goto error;
+  }
+
+  if ((err = config_api_file_copy(file, http_file))) {
+    LOG_ERROR("config_api_file_copy");
+    goto file_error;
+  }
+
+file_error:
+  if (fclose(http_file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+error:
+  if (fclose(file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+  return err;
+}
+
+int config_api_file_write(struct http_request *request, const struct config_api_file_params *params)
+{
+  FILE *http_file, *file;
+  int err;
+
+  LOG_INFO("path=%s", params->path);
+
+  if ((err = config_api_file_open(&file, params, "w")) < 0) {
+    LOG_ERROR("config_api_file_open");
+    return err;
+  } else if (err) {
+    LOG_WARN("config_api_file_open: %d", err);
+    return err;
+  }
+
+  if ((err = http_request_open(request, &http_file))) {
+    LOG_WARN("http_request_open");
+    goto error;
+  }
+
+  if ((err = config_api_file_copy(http_file, file))) {
+    LOG_ERROR("config_api_file_copy");
+    goto file_error;
+  }
+
+file_error:
+  if (fclose(http_file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+error:
+  if (fclose(file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+  return err;
+}
+
+int config_api_file_get(struct http_request *request, struct http_response *response, void *ctx)
+{
+  const struct http_request_headers *headers;
+  struct config_api_file_params params = {};
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = config_api_file_params(request, &params))) {
+    LOG_WARN("config_api_file_params");
+    return err;
+  }
+
+  if ((err = config_api_file_read(response, &params))) {
+    LOG_WARN("config_api_file_read");
+    return err;
   }
 
   return 0;
@@ -535,8 +649,7 @@ int config_api_file_upload(FILE *rf, const struct config_api_file_post_params *p
 int config_api_file_post(struct http_request *request, struct http_response *response, void *ctx)
 {
   const struct http_request_headers *headers;
-  struct config_api_file_post_params params = {};
-  FILE *file;
+  struct config_api_file_params params = {};
   int err;
 
   if ((err = http_request_headers(request, &headers))) {
@@ -544,25 +657,14 @@ int config_api_file_post(struct http_request *request, struct http_response *res
     return err;
   }
 
-  if ((err = config_api_file_post_params(request, &params))) {
-    LOG_WARN("config_api_file_post_params");
+  if ((err = config_api_file_params(request, &params))) {
+    LOG_WARN("config_api_file_params");
     return err;
   }
 
-  if ((err = http_request_open(request, &file))) {
-    LOG_WARN("http_request_open");
+  if ((err = config_api_file_write(request, &params))) {
+    LOG_WARN("config_api_file_write");
     return err;
-  }
-
-  if ((err = config_api_file_upload(file, &params))) {
-    LOG_WARN("config_api_file_upload");
-    goto error;
-  }
-
-error:
-  if (fclose(file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
   }
 
   return err;

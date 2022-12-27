@@ -11,6 +11,8 @@ const struct http_route http_routes[] = {
 
   { "GET",  "api/config",         config_api_get,       NULL },
   { "POST", "api/config",         config_api_post,      NULL },
+
+  { "GET",  "api/config/file",    config_api_file_get,  NULL },
   { "POST", "api/config/file",    config_api_file_post, NULL },
 
   /* system_http.c */

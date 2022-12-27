@@ -9,8 +9,9 @@ const struct http_route http_routes[] = {
   { "GET",  "config.ini",      config_get_handler,      NULL },
   { "POST", "config.ini",      config_post_handler,     NULL },
 
-  { "GET",  "api/config",         config_api_get,  NULL },
-  { "POST", "api/config",         config_api_post, NULL },
+  { "GET",  "api/config",         config_api_get,       NULL },
+  { "POST", "api/config",         config_api_post,      NULL },
+  { "POST", "api/config/file",    config_api_file_post, NULL },
 
   /* system_http.c */
   { "GET",  "api/system",         system_api_handler,         NULL },

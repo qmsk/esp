@@ -15,6 +15,7 @@ int config_post_handler(struct http_request *request, struct http_response *resp
 
 int config_api_get(struct http_request *request, struct http_response *response, void *ctx);
 int config_api_post(struct http_request *request, struct http_response *response, void *ctx);
+int config_api_file_post(struct http_request *request, struct http_response *response, void *ctx);
 
 /* system_http.c */
 int system_api_handler(struct http_request *request, struct http_response *response, void *ctx);

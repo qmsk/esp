@@ -12,6 +12,9 @@
 #define CONFIG_HTTP_FILENAME "config.ini"
 #define CONFIG_HTTP_CONTENT_TYPE "text/plain"
 
+#define CONFIG_FILE_PATH_MAX 64
+#define CONFIG_FILE_PATH_PREFIX "/config/"
+
 int config_get_handler(struct http_request *request, struct http_response *response, void *ctx)
 {
   FILE *file;
@@ -439,5 +442,128 @@ int config_api_post(struct http_request *request, struct http_response *response
 
       return HTTP_UNSUPPORTED_MEDIA_TYPE;
   }
+}
 
+struct config_api_file_post_params {
+  const char *path;
+};
+
+int config_api_file_post_params(struct http_request *request, struct config_api_file_post_params *params)
+{
+  char *key, *value;
+  int err;
+
+  while (!(err = http_request_query(request, &key, &value))) {
+    if (strcasecmp(key, "path") == 0) {
+      LOG_INFO("path=%s", value);
+
+      params->path = value;
+    } else {
+      LOG_WARN("Unknown query param key=%s", key);
+
+      return HTTP_UNPROCESSABLE_ENTITY;
+    }
+  }
+
+  if (!params->path) {
+    LOG_WARN("Missing query param path=...");
+
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  return 0;
+}
+
+int config_api_file_open(FILE **filep, const struct config_api_file_post_params *params, const char *mode)
+{
+  char path[CONFIG_FILE_PATH_MAX];
+  int ret;
+
+  ret = snprintf(path, sizeof(path), "%s%s", CONFIG_FILE_PATH_PREFIX, params->path);
+
+  if (ret < 0) {
+    LOG_ERROR("snprintf");
+    return -1;
+  } else if (ret >= sizeof(path)) {
+    LOG_WARN("path len=%d", ret);
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  if (!(*filep = fopen(path, mode))) {
+    LOG_ERROR("fopen: %s", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int config_api_file_upload(FILE *rf, const struct config_api_file_post_params *params)
+{
+  FILE *wf;
+  int c;
+  size_t size = 0;
+  int err;
+
+  LOG_INFO("config file upload -> path=%s", params->path);
+
+  if ((err = config_api_file_open(&wf, params, "w"))) {
+    LOG_ERROR("config_api_file_open");
+    return err;
+  }
+
+  LOG_DEBUG("rf=%p, wf=%p", rf, wf);
+
+  while ((c = fgetc(rf)) != EOF) {
+    if (fputc(c, wf) == EOF) {
+      LOG_ERROR("fputc: %s", strerror(errno));
+      return -1;
+    }
+
+    size++;
+  }
+
+  LOG_INFO("size=%u", size);
+
+  if (ferror(rf)) {
+    LOG_ERROR("fgetc: %s", strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int config_api_file_post(struct http_request *request, struct http_response *response, void *ctx)
+{
+  const struct http_request_headers *headers;
+  struct config_api_file_post_params params = {};
+  FILE *file;
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = config_api_file_post_params(request, &params))) {
+    LOG_WARN("config_api_file_post_params");
+    return err;
+  }
+
+  if ((err = http_request_open(request, &file))) {
+    LOG_WARN("http_request_open");
+    return err;
+  }
+
+  if ((err = config_api_file_upload(file, &params))) {
+    LOG_WARN("config_api_file_upload");
+    goto error;
+  }
+
+error:
+  if (fclose(file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+  return err;
 }

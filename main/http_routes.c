@@ -10,8 +10,9 @@ const struct http_route http_routes[] = {
   { "POST", "config.ini",         config_file_post,     NULL },
 
   /* vfs_http.c */
-  { "GET",  "vfs/",               vfs_http_get,         NULL },
-  { "POST", "vfs/",               vfs_http_post,        NULL },
+  { "GET",    "vfs/",             vfs_http_get,         NULL },
+  { "POST",   "vfs/",             vfs_http_post,        NULL },
+  { "DELETE", "vfs/",             vfs_http_delete,      NULL },
 
   /* config_http.c */
   { "GET",  "api/config",         config_api_get,       NULL },

@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define VFS_HTTP_URL_PATH "vfs/"
 
@@ -16,15 +17,16 @@
 #define VFS_HTTP_CONTENT_TYPE "application/octet-stream"
 
 struct vfs_http_params {
-  const char *path;
+  char path[VFS_HTTP_PATH_MAX];
 };
 
 static int vfs_http_params(struct http_request *request, struct vfs_http_params *params)
 {
   const struct url *url = http_request_url(request);
   const char *path = url->path;
+  int ret;
 
-  // strip prefix
+  // strip http prefix
   for (const char *p = VFS_HTTP_URL_PATH; *p; p++) {
     if (*path && *path == *p) {
       path++;
@@ -34,11 +36,20 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
     }
   }
 
-  params->path = path;
-
-  if (!*params->path) {
+  if (!path[0]) {
     LOG_WARN("Missing path=%s", params->path);
 
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  // add vfs prefix
+  ret = snprintf(params->path, sizeof(params->path), "%s%s", VFS_HTTP_PATH_PREFIX, path);
+
+  if (ret < 0) {
+    LOG_ERROR("snprintf");
+    return -1;
+  } else if (ret >= sizeof(params->path)) {
+    LOG_WARN("path len=%d", ret);
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
@@ -47,20 +58,7 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
 
 static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, const char *mode)
 {
-  char path[VFS_HTTP_PATH_MAX];
-  int ret;
-
-  ret = snprintf(path, sizeof(path), "%s%s", VFS_HTTP_PATH_PREFIX, params->path);
-
-  if (ret < 0) {
-    LOG_ERROR("snprintf");
-    return -1;
-  } else if (ret >= sizeof(path)) {
-    LOG_WARN("path len=%d", ret);
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  if ((*filep = fopen(path, mode))) {
+  if ((*filep = fopen(params->path, mode))) {
     return 0;
   } else if (errno == ENOENT) {
     LOG_WARN("fopen: %s", strerror(errno));
@@ -69,6 +67,21 @@ static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, con
     LOG_ERROR("fopen: %s", strerror(errno));
     return -1;
   }
+}
+
+static int vfs_http_unlink(const struct vfs_http_params *params)
+{
+  if (unlink(params->path)) {
+    if (errno == ENOENT) {
+      LOG_WARN("unlink: %s", strerror(errno));
+      return HTTP_NOT_FOUND;
+    } else {
+      LOG_ERROR("unlink: %s", strerror(errno));
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 static int vfs_copy(FILE *read, FILE *write)
@@ -234,6 +247,30 @@ int vfs_http_post(struct http_request *request, struct http_response *response, 
 
   if ((err = vfs_http_write(request, &params))) {
     LOG_WARN("vfs_http_write");
+    return err;
+  }
+
+  return err;
+}
+
+int vfs_http_delete(struct http_request *request, struct http_response *response, void *ctx)
+{
+  const struct http_request_headers *headers;
+  struct vfs_http_params params = {};
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = vfs_http_params(request, &params))) {
+    LOG_WARN("vfs_http_params");
+    return err;
+  }
+
+  if ((err = vfs_http_unlink(&params))) {
+    LOG_WARN("vfs_http_unlink");
     return err;
   }
 

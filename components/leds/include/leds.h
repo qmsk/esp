@@ -317,7 +317,8 @@ struct leds_color {
 bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
 
 enum leds_test_mode {
-  TEST_MODE_BLACK,
+  TEST_MODE_NONE  = 0,
+
   TEST_MODE_CHASE,
 
   TEST_MODE_BLACK_RED,
@@ -335,8 +336,10 @@ enum leds_test_mode {
   TEST_MODE_RGB_BLACK,
 
   TEST_MODE_RAINBOW,
-  TEST_MODE_END
+  TEST_MODE_BLACK,
 };
+
+#define TEST_MODE_COUNT (TEST_MODE_BLACK + 1)
 
 int leds_new(struct leds **ledsp, const struct leds_options *options);
 

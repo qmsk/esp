@@ -244,7 +244,7 @@ int test_leds(struct leds_state *state)
 {
   int err;
 
-  for (enum leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
+  for (enum leds_test_mode mode = 0; mode < TEST_MODE_COUNT; mode++) {
     if ((err = test_leds_mode(state, mode))) {
       LOG_ERROR("leds%d: test_leds", state->index + 1);
       return err;

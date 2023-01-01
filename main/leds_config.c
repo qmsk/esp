@@ -102,7 +102,6 @@ const struct config_enum leds_format_enum[] = {
 };
 
 const struct config_enum leds_test_mode_enum[] = {
-  { "BLACK",          TEST_MODE_BLACK         },
   { "CHASE",          TEST_MODE_CHASE         },
   { "BLACK_RED",      TEST_MODE_BLACK_RED     },
   { "RED_YELLOW",     TEST_MODE_RED_YELLOW    },
@@ -117,7 +116,7 @@ const struct config_enum leds_test_mode_enum[] = {
   { "RGBW_RGB",       TEST_MODE_RGBW_RGB      },
   { "RGB_BLACK",      TEST_MODE_RGB_BLACK     },
   { "RAINBOW",        TEST_MODE_RAINBOW       },
-  { "END",            TEST_MODE_END           },
+  { "BLACK",          TEST_MODE_BLACK         },
   {}
 };
 

@@ -1,10 +1,15 @@
 #pragma once
 
-#include "leds_artnet.h"
-
 #include <leds.h>
+#include "leds.h"
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/event_groups.h>
+#include <freertos/task.h>
 
 struct leds_config;
+
+struct leds_artnet_state;
 
 struct leds_state {
   int index;
@@ -14,7 +19,11 @@ struct leds_state {
 
   unsigned active;
 
-  struct leds_artnet artnet;
+  xTaskHandle task;
+  EventGroupHandle_t event_group;
+
+  struct leds_test_state *test;
+  struct leds_artnet_state *artnet;
 };
 
 extern struct leds_state leds_states[LEDS_COUNT];

@@ -233,25 +233,3 @@ int update_artnet_network()
 
   return 0;
 }
-
-void notify_artnet_outputs(EventBits_t bits)
-{
-  if (!artnet) {
-    return;
-  }
-
-  unsigned output_count = artnet_get_output_count(artnet);
-
-  for (int i = 0; i < output_count; i++) {
-    struct artnet_output_options options;
-
-    if (artnet_get_output_options(artnet, i, &options)) {
-      LOG_WARN("artnet_get_output_options");
-      continue;
-    }
-
-    if (options.event_group) {
-      xEventGroupSetBits(options.event_group, bits);
-    }
-  }
-}

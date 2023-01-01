@@ -28,15 +28,15 @@ int start_taskf(struct task_options options, ...);
 
 #endif
 
-// used for LEDs ArtNET output -> leds interfaces
-#define LEDS_ARTNET_TASK_NAME_FMT "leds%d"
-#define LEDS_ARTNET_TASK_PRIORITY (tskIDLE_PRIORITY + 20)
-#define LEDS_ARTNET_TASK_AFFINITY TASKS_CPU_APP
+// used for leds interfaces
+#define LEDS_TASK_NAME_FMT "leds%d"
+#define LEDS_TASK_PRIORITY (tskIDLE_PRIORITY + 20)
+#define LEDS_TASK_AFFINITY TASKS_CPU_APP
 
 #if CONFIG_IDF_TARGET_ESP8266
-# define LEDS_ARTNET_TASK_STACK 2048
+# define LEDS_TASK_STACK 2048
 #elif CONFIG_IDF_TARGET_ESP32
-# define LEDS_ARTNET_TASK_STACK 2048
+# define LEDS_TASK_STACK 2048
 #endif
 
 // used for DMX ArtNET output -> uart

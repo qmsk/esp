@@ -285,6 +285,27 @@ int config_set_enum(const struct configmod *mod, const struct configtab *tab, un
   return 0;
 }
 
+int config_set_file(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *value)
+{
+  int err;
+
+  if (!*value) {
+    // empty
+  } else if ((err = config_file_check(tab->file_type.paths, value)) < 0) {
+    LOG_WARN("%s.%s: invalid file: %s", mod->name, tab->name, value);
+    return -1;
+  } else if (err) {
+    LOG_WARN("%s.%s: file not found: %s", mod->name, tab->name, value);
+    return -1;
+  }
+
+  if (snprintf(&tab->file_type.value[index * tab->file_type.size], tab->file_type.size, "%s", value) >= tab->file_type.size) {
+    return -1;
+  }
+
+  return 0;
+}
+
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value)
 {
   unsigned index;
@@ -341,11 +362,7 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
       return config_set_enum(mod, tab, index, value);
 
     case CONFIG_TYPE_FILE:
-      if (snprintf(&tab->file_type.value[index * tab->file_type.size], tab->file_type.size, "%s", value) >= tab->file_type.size) {
-        return -1;
-      } else {
-        break;
-      }
+      return config_set_file(mod, tab, index, value);
 
     default:
       LOG_ERROR("invalid type=%d", tab->type);

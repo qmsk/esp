@@ -112,8 +112,15 @@ const char *config_enum_to_string(const struct config_enum *e, int value);
 /* Return value for enum name, or -1 */
 int config_enum_to_value(const struct config_enum *e, const char *name);
 
-/* Search file paths for file by name */
-FILE *config_file_open(const struct config_file_path *paths, const char *name);
+/*
+ * Search file by name from multiple paths.
+ *
+ * Returns 0 if file found, >0 if not found, <0 on error.
+ */
+int config_file_path(const struct config_file_path *paths, const char *value, char *buf, size_t size);
+int config_file_check(const struct config_file_path *paths, const char *value);
+
+FILE *config_file_open(const struct config_file_path *paths, const char *value);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep);
 int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);

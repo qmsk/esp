@@ -34,7 +34,7 @@ static int fseq_read_header_v2(struct fseq_header_v2 *header, FILE *file)
     return -1;
   }
 
-  LOG_INFO("id=%c%c%c%c minor_version=%u major_version=%u header_length=%u flags=%#04x",
+  LOG_INFO("id=%c%c%c%c minor_version=%u major_version=%u header_length=%u flags=%#02x",
     header->id[0], header->id[1], header->id[2], header->id[3],
     header->minor_version,
     header->major_version,
@@ -58,7 +58,7 @@ static int fseq_read_header_v2(struct fseq_header_v2 *header, FILE *file)
   return 0;
 }
 
-static int fseq_init_header(struct fseq *fseq)
+static int fseq_read_header(struct fseq *fseq)
 {
   int err;
 
@@ -70,7 +70,7 @@ static int fseq_init_header(struct fseq *fseq)
   return 0;
 }
 
-static int fseq_init_compression_blocks(struct fseq *fseq)
+static int fseq_read_compression_blocks(struct fseq *fseq)
 {
   unsigned count = fseq->header.compression_block_count;
 
@@ -94,7 +94,7 @@ static int fseq_init_compression_blocks(struct fseq *fseq)
   return 0;
 }
 
-static int fseq_init_sparse_ranges(struct fseq *fseq)
+static int fseq_read_sparse_ranges(struct fseq *fseq)
 {
   unsigned count = fseq->header.sparse_range_count;
 
@@ -142,7 +142,7 @@ static struct fseq_variable_header *new_fseq_variable_header(struct fseq *fseq, 
   return header;
 }
 
-static int fseq_init_variable_headers(struct fseq *fseq)
+static int fseq_read_variable_headers(struct fseq *fseq)
 {
   while (ftell(fseq->file) + 4 <= fseq->header.data_offset) {
     struct fseq_variable_header header, *h;
@@ -175,30 +175,50 @@ static int fseq_init_variable_headers(struct fseq *fseq)
   return 0;
 }
 
-int fseq_init_file(struct fseq *fseq, FILE *file)
+int fseq_read_headers(struct fseq *fseq)
 {
   int err;
 
-  fseq->file = file;
-
-  if ((err = fseq_init_header(fseq))) {
-    LOG_ERROR("fseq_init_header");
+  if ((err = fseq_read_header(fseq))) {
+    LOG_ERROR("fseq_read_header");
     return err;
   }
 
-  if ((err = fseq_init_compression_blocks(fseq))) {
-    LOG_ERROR("fseq_init_compression_blocks");
+  if ((err = fseq_read_compression_blocks(fseq))) {
+    LOG_ERROR("fseq_read_compression_blocks");
     return -1;
   }
 
-  if ((err = fseq_init_sparse_ranges(fseq))) {
-    LOG_ERROR("fseq_init_sparse_ranges");
+  if ((err = fseq_read_sparse_ranges(fseq))) {
+    LOG_ERROR("fseq_read_sparse_ranges");
     return -1;
   }
 
-  if ((err = fseq_init_variable_headers(fseq))) {
-    LOG_ERROR("fseq_init_variable_headers");
+  if ((err = fseq_read_variable_headers(fseq))) {
+    LOG_ERROR("fseq_read_variable_headers");
     return err;
+  }
+
+  return 0;
+}
+
+int fseq_seek_frame(struct fseq *fseq, unsigned frame)
+{
+  unsigned offset = fseq->header.data_offset + frame * fseq->header.channel_count;
+
+  if (fseek(fseq->file, offset, SEEK_SET)) {
+    LOG_ERROR("fseek %u: %s", offset, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int fseq_read_frame(struct fseq *fseq, struct fseq_frame *frame)
+{
+  if (!fread(frame->buf, frame->size, 1, fseq->file)) {
+    LOG_ERROR("fread %ux1: %s", frame->size, strerror(errno));
+    return -1;
   }
 
   return 0;

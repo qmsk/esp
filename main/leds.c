@@ -3,6 +3,7 @@
 #include "leds_state.h"
 #include "leds_config.h"
 #include "leds_stats.h"
+#include "leds_sequence.h"
 #include "leds_task.h"
 #include "leds_test.h"
 #include "atx_psu_state.h"
@@ -88,6 +89,13 @@ int init_leds()
         return err;
       }
     }
+
+    if (config->sequence_enabled) {
+      if ((err = init_leds_sequence(state, config))) {
+        LOG_ERROR("leds%d: init_leds_sequence", i + 1);
+        return err;
+      }
+    }
   }
 
   return 0;
@@ -119,6 +127,13 @@ int start_leds()
     if (config->artnet_enabled) {
       if ((err = start_leds_artnet(state, config))) {
         LOG_ERROR("leds%d: start_leds_artnet", i + 1);
+        return err;
+      }
+    }
+
+    if (config->sequence_enabled) {
+      if ((err = start_leds_sequence(state, config))) {
+        LOG_ERROR("leds%d: start_leds_sequence", i + 1);
         return err;
       }
     }

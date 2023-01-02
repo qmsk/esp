@@ -1,4 +1,5 @@
 #include "leds_artnet.h"
+#include "leds_sequence.h"
 #include "leds_state.h"
 #include "leds_stats.h"
 #include "leds_task.h"
@@ -10,28 +11,32 @@
 
 static EventBits_t leds_task_wait(struct leds_state *state)
 {
+  TickType_t tick;
+
+  // first tick to wait until
   TickType_t wait_tick = portMAX_DELAY;
-  const bool clear_on_exit = true;
-  const bool wait_for_all_bits = false;
 
-  if (state->test) {
-    TickType_t test_tick = leds_test_wait(state);
-
-    if (test_tick && test_tick < wait_tick) {
-      wait_tick = test_tick;
+  if (state->test && (tick = leds_test_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
     }
   }
 
-  if (state->artnet) {
-    TickType_t artnet_tick = leds_artnet_wait(state);
-
-    if (artnet_tick && artnet_tick < wait_tick) {
-      wait_tick = artnet_tick;
+  if (state->artnet && (tick = leds_artnet_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
     }
   }
 
-  // how long to wait
-  TickType_t tick = xTaskGetTickCount(), wait_ticks = portMAX_DELAY;
+  if (state->sequence && (tick = leds_sequence_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
+    }
+  }
+
+  // how long to wait for
+  TickType_t wait_ticks = portMAX_DELAY;
+  tick = xTaskGetTickCount();
 
   if (wait_tick == portMAX_DELAY) {
     wait_ticks = portMAX_DELAY;
@@ -44,6 +49,8 @@ static EventBits_t leds_task_wait(struct leds_state *state)
 
   LOG_DEBUG("leds%d: wait_tick=%d wait_ticks=%d", state->index + 1, wait_tick, wait_ticks);
 
+  const bool clear_on_exit = true;
+  const bool wait_for_all_bits = false;
   EventBits_t event_bits = xEventGroupWaitBits(state->event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 
   LOG_DEBUG("leds%d: artnet=%04x artnet_sync=%d test=%d", state->index + 1,
@@ -66,7 +73,15 @@ static void leds_main(void *ctx)
 
     loop_sample = stats_timer_start(&stats->loop);
 
-    if (leds_artnet_active(state, event_bits)) {
+    if (state->sequence && leds_sequence_active(state, event_bits)) {
+      WITH_STATS_TIMER(&stats->sequence) {
+        if (leds_sequence_update(state, event_bits)) {
+          update = true;
+        }
+      }
+    }
+
+    if (state->artnet && leds_artnet_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->artnet) {
         if (leds_artnet_update(state, event_bits)) {
           update = true;
@@ -74,7 +89,7 @@ static void leds_main(void *ctx)
       }
     }
 
-    if (leds_test_active(state, event_bits)) {
+    if (state->test && leds_test_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->test) {
         if (leds_test_update(state, event_bits)) {
           update = true;

@@ -345,10 +345,11 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("leds%u:\n", i + 1);
 
-    print_stats_timer("task", "loop",   &stats->loop);
-    print_stats_timer("task", "test",   &stats->test);
-    print_stats_timer("task", "artnet", &stats->artnet);
-    print_stats_timer("task", "update", &stats->update);
+    print_stats_timer("task", "loop",     &stats->loop);
+    print_stats_timer("task", "test",     &stats->test);
+    print_stats_timer("task", "artnet",   &stats->artnet);
+    print_stats_timer("task", "sequence", &stats->sequence);
+    print_stats_timer("task", "update",   &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
     printf("\n");

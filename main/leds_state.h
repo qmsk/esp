@@ -10,6 +10,7 @@
 struct leds_config;
 
 struct leds_artnet_state;
+struct leds_sequence_state;
 
 struct leds_state {
   int index;
@@ -22,6 +23,7 @@ struct leds_state {
 
   struct leds_test_state *test;
   struct leds_artnet_state *artnet;
+  struct leds_sequence_state *sequence;
 };
 
 extern struct leds_state leds_states[LEDS_COUNT];

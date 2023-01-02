@@ -8,12 +8,11 @@ void init_leds_stats()
     struct leds_stats *stats = &leds_stats[i];
 
     stats_timer_init(&stats->loop);
-
     stats_timer_init(&stats->test);
-
     stats_timer_init(&stats->artnet);
-    stats_counter_init(&stats->artnet_timeout);
-
+    stats_timer_init(&stats->sequence);
     stats_timer_init(&stats->update);
+
+    stats_counter_init(&stats->artnet_timeout);
   }
 }

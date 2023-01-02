@@ -8,6 +8,9 @@
 #include <stdbool.h>
 
 #define LEDS_LIMIT_GROUPS_MAX 8
+#define LEDS_SEQUENCE_FILE_MAX 64
+#define LEDS_SEQUENCE_FILE_PATH "/config/leds-sequence"
+#define LEDS_SEQUENCE_FILE_SUFFIX "fseq"
 
 struct leds_state *state;
 
@@ -152,6 +155,16 @@ struct leds_config {
   uint16_t artnet_dmx_timeout;
   int artnet_leds_format;
   uint16_t artnet_leds_segment;
+
+  bool sequence_enabled;
+  bool sequence_loop;
+  char sequence_file[LEDS_SEQUENCE_FILE_MAX];
+  int sequence_format;
+  uint16_t sequence_channel_start;
+  uint16_t sequence_channel_count;
+  uint16_t sequence_leds_count;
+  uint16_t sequence_leds_offset;
+  uint16_t sequence_leds_segment;
 };
 
 extern struct leds_config leds_configs[LEDS_COUNT];
@@ -161,6 +174,8 @@ extern const struct config_enum leds_protocol_enum[];
 extern const struct config_enum leds_format_enum[];
 extern const struct config_enum leds_test_mode_enum[];
 extern const struct config_enum leds_parameter_enum[];
+
+extern const struct config_file_path leds_sequence_paths[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
 

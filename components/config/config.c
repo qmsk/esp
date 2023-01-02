@@ -181,6 +181,10 @@ int configtab_reset(const struct configtab *tab)
       *tab->enum_type.value = tab->enum_type.default_value;
       break;
 
+    case CONFIG_TYPE_FILE:
+      memset(tab->file_type.value, 0, tab->file_type.size);
+      break;
+
     default:
       LOG_ERROR("invalid type=%d", tab->type);
       return -1;
@@ -252,6 +256,10 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
 
       case CONFIG_TYPE_ENUM:
         *tab->enum_type.value = tab->enum_type.default_value;
+        break;
+
+      case CONFIG_TYPE_FILE:
+        memset(tab->file_type.value, 0, tab->file_type.size);
         break;
 
       default:
@@ -332,6 +340,13 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
     case CONFIG_TYPE_ENUM:
       return config_set_enum(mod, tab, index, value);
 
+    case CONFIG_TYPE_FILE:
+      if (snprintf(&tab->file_type.value[index * tab->file_type.size], tab->file_type.size, "%s", value) >= tab->file_type.size) {
+        return -1;
+      } else {
+        break;
+      }
+
     default:
       LOG_ERROR("invalid type=%d", tab->type);
       return -1;
@@ -392,6 +407,13 @@ int config_get(const struct configmod *mod, const struct configtab *tab, unsigne
     case CONFIG_TYPE_ENUM:
       return config_get_enum(mod, tab, index, buf, size);
 
+    case CONFIG_TYPE_FILE:
+      if (snprintf(buf, size, "%s", &tab->file_type.value[index * tab->file_type.size]) >= size) {
+        return -1;
+      } else {
+        break;
+      }
+
     default:
       LOG_ERROR("invalid type=%d", tab->type);
       return -1;
@@ -450,6 +472,12 @@ int config_print(const struct configmod *mod, const struct configtab *tab, unsig
 
   case CONFIG_TYPE_ENUM:
     return config_print_enum(mod, tab, index, file);
+
+  case CONFIG_TYPE_FILE:
+    if (fprintf(file, "%s", &tab->file_type.value[index * tab->file_type.size]) < 0) {
+      return -1;
+    }
+    break;
 
   default:
     LOG_ERROR("invalid type=%d", tab->type);

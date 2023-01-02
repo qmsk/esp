@@ -2,9 +2,51 @@
 #include "logging.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/dirent.h>
+
+FILE *config_file_open(const struct config_file_path *paths, const char *value)
+{
+  const char *suffix = strrchr(value, '.');
+  char path[PATH_MAX];
+  FILE *file = NULL;
+
+  for (const struct config_file_path *p = paths; p->prefix; p++) {
+    if (p->suffix) {
+      if (!suffix) {
+        continue;
+      }
+
+      if (strcmp(suffix + 1, p->suffix)) {
+        continue;
+      }
+    }
+
+    if (snprintf(path, sizeof(path), "%s/%s", p->prefix, value) >= sizeof(path)) {
+      LOG_WARN("sequence_file overflow");
+      return NULL;
+    }
+
+    if ((file = fopen(path, "r"))) {
+      break;
+    } else if (errno == ENOENT) {
+      continue;
+    } else {
+      LOG_ERROR("fopen %s: %s", path, strerror(errno));
+      return NULL;
+    }
+  }
+
+  if (file) {
+    LOG_INFO("%s: %s", value, path);
+  } else {
+    LOG_WARN("%s: not found", value);
+  }
+
+  return file;
+}
 
 static bool match_fileext(const char *filename, const char *ext)
 {

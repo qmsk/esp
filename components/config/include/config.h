@@ -20,12 +20,18 @@ enum config_type {
   CONFIG_TYPE_STRING,
   CONFIG_TYPE_BOOL,
   CONFIG_TYPE_ENUM,
+  CONFIG_TYPE_FILE,
 };
 
 struct config_enum {
   const char *name;
 
   int value;
+};
+
+struct config_file_path {
+  const char *prefix;
+  const char *suffix;
 };
 
 struct configtab {
@@ -68,6 +74,12 @@ struct configtab {
       const struct config_enum *values;
       int default_value;
     } enum_type;
+
+    struct {
+      char *value;
+      size_t size;
+      const struct config_file_path *paths;
+    } file_type;
   };
 };
 
@@ -99,6 +111,9 @@ const char *config_enum_to_string(const struct config_enum *e, int value);
 
 /* Return value for enum name, or -1 */
 int config_enum_to_value(const struct config_enum *e, const char *name);
+
+/* Search file paths for file by name */
+FILE *config_file_open(const struct config_file_path *paths, const char *name);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep);
 int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);

@@ -87,6 +87,23 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
       }
       break;
 
+    case CONFIG_TYPE_FILE:
+      printf("<FILE>[");
+      for (const struct config_file_path *p = tab->file_type.paths; p->prefix; p++) {
+        if (p != tab->file_type.paths) {
+          printf(",");
+        }
+
+        if (p->suffix) {
+          printf("%s/*.%s", p->prefix, p->suffix);
+        } else {
+          printf("%s/*", p->prefix);
+        }
+      }
+      printf("]");
+
+      break;
+
     default:
       printf("???");
       break;

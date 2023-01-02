@@ -103,7 +103,7 @@ static int config_api_write_configtab_enum_values(struct json_writer *w, const s
   return 0;
 }
 
-static int config_api_write_configtab_file_values(struct json_writer *w, const struct config_file_path *p)
+static int config_api_write_configtab_file_paths(struct json_writer *w, const struct config_file_path *p)
 {
   int err;
 
@@ -118,6 +118,18 @@ static int config_api_write_configtab_file_values(struct json_writer *w, const s
   return 0;
 }
 
+static int config_api_write_configtab_file_value(const struct config_file_path *p, const char *name, void *ctx)
+{
+  struct json_writer *w = ctx;
+
+  return json_write_string(w, name);
+}
+
+static int config_api_write_configtab_file_values(struct json_writer *w, const struct config_file_path *p)
+{
+  return config_file_walk(p, config_api_write_configtab_file_value, w);
+}
+
 static int config_api_write_configtab_members_enum(struct json_writer *w, const struct configtab *tab)
 {
   return (
@@ -130,7 +142,8 @@ static int config_api_write_configtab_members_file(struct json_writer *w, const 
 {
   return (
         config_api_write_configtab_type_members(w, tab, "file")
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "file_paths", config_api_write_configtab_file_values(w, tab->file_type.paths))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "file_paths", config_api_write_configtab_file_paths(w, tab->file_type.paths))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "file_values", config_api_write_configtab_file_values(w, tab->file_type.paths))
   );
 }
 

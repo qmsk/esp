@@ -54,6 +54,13 @@ static void print_comment(const char *comment)
   }
 }
 
+static int print_configtab_file(const struct config_file_path *p, const char *name, void *ctx)
+{
+  printf(CLI_FMT_COMMENT "#   * %s @ %s\n", name, p->prefix);
+
+  return 0;
+}
+
 static void print_configtab(const struct configmod *mod, const struct configtab *tab)
 {
   unsigned count = configtab_count(tab);
@@ -113,6 +120,15 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
 
   if (tab->description) {
     print_comment(tab->description);
+  }
+
+  switch(tab->type) {
+    case CONFIG_TYPE_FILE:
+      config_file_walk(tab->file_type.paths, print_configtab_file, NULL);
+      break;
+
+    default:
+      break;
   }
 
   for (unsigned index = 0; index < count; index++) {

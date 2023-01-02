@@ -8,21 +8,29 @@
 #include <sys/dirent.h>
 #include <sys/stat.h>
 
+static bool match_fileext(const char *filename, const char *ext)
+{
+  const char *suffix = strrchr(filename, '.');
+
+  if (!suffix) {
+    return false;
+  }
+
+  if (strcmp(suffix + 1, ext)) {
+    return false;
+  }
+
+  return true;
+}
+
 int config_file_path(const struct config_file_path *paths, const char *value, char *buf, size_t size)
 {
   const struct config_file_path *p = paths;
-  const char *suffix = strrchr(value, '.');
   struct stat st;
 
   for (; p->prefix; p++) {
-    if (p->suffix) {
-      if (!suffix) {
-        continue;
-      }
-
-      if (strcmp(suffix + 1, p->suffix)) {
-        continue;
-      }
+    if (!match_fileext(value, p->suffix)) {
+      continue;
     }
 
     if (snprintf(buf, size, "%s/%s", p->prefix, value) >= size) {
@@ -57,6 +65,42 @@ int config_file_check(const struct config_file_path *paths, const char *value)
   return 0;
 }
 
+int config_file_walk(const struct config_file_path *paths, int (*func)(const struct config_file_path *path, const char *name, void *ctx), void *ctx)
+{
+  DIR *dir;
+  struct dirent *d;
+  int ret = 0;
+
+  for (const struct config_file_path *p = paths; p->prefix; p++) {
+    if (!(dir = opendir(p->prefix))) {
+      LOG_ERROR("opendir %s: %s", p->prefix, strerror(errno));
+      return -1;
+    }
+
+    while ((d = readdir(dir))) {
+      if (d->d_type != DT_REG) {
+        continue;
+      }
+
+      if (!match_fileext(d->d_name, p->suffix)) {
+        continue;
+      }
+
+      if ((ret = func(p, d->d_name, ctx))) {
+        break;
+      }
+    }
+
+    closedir(dir);
+
+    if (ret) {
+      break;
+    }
+  }
+
+  return ret;
+}
+
 FILE *config_file_open(const struct config_file_path *paths, const char *value)
 {
   char path[PATH_MAX];
@@ -75,21 +119,6 @@ FILE *config_file_open(const struct config_file_path *paths, const char *value)
   }
 
   return file;
-}
-
-static bool match_fileext(const char *filename, const char *ext)
-{
-  const char *suffix = strrchr(filename, '.');
-
-  if (!suffix) {
-    return false;
-  }
-
-  if (strcmp(suffix + 1, ext)) {
-    return false;
-  }
-
-  return true;
 }
 
 static int config_path(struct config *config, const char *filename, const char *ext, char *buf, size_t size)

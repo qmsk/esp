@@ -120,6 +120,8 @@ int config_enum_to_value(const struct config_enum *e, const char *name);
 int config_file_path(const struct config_file_path *paths, const char *value, char *buf, size_t size);
 int config_file_check(const struct config_file_path *paths, const char *value);
 
+int config_file_walk(const struct config_file_path *paths, int (*func)(const struct config_file_path *path, const char *name, void *ctx), void *ctx);
+
 FILE *config_file_open(const struct config_file_path *paths, const char *value);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep);

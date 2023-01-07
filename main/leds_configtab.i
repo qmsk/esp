@@ -103,8 +103,8 @@ const struct configtab LEDS_CONFIGTAB[] = {
 #endif
 
   { CONFIG_TYPE_BOOL, "test_enabled",
-    .description = "Output test patterns at boot",
-    .bool_type = { .value = &LEDS_CONFIG.test_enabled },
+    .description = "Output test patterns when TEST button pressed",
+    .bool_type = { .value = &LEDS_CONFIG.test_enabled, .default_value = true },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",

@@ -14,5 +14,6 @@ void init_leds_stats()
     stats_timer_init(&stats->update);
 
     stats_counter_init(&stats->artnet_timeout);
+    stats_counter_init(&stats->sequence_skip);
   }
 }

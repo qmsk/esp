@@ -4,10 +4,15 @@
 
 #include <freertos/FreeRTOS.h>
 
+/* bitmask of FSEQ_MODE_* bits */
 enum fseq_mode {
   FSEQ_MODE_DEFAULT   = 0,
 
-  FSEQ_MODE_LOOP      = 1,
+  // Loop back to first frame after playing last frame
+  FSEQ_MODE_LOOP      = 1 << 0,
+
+  // Skip frames instead of speeding up playback to catch up
+  FSEQ_MODE_SKIP      = 1 << 1,
 };
 
 enum fseq_state {
@@ -55,5 +60,7 @@ bool fseq_ready(struct fseq *fseq);
 
 /*
  * Return next frame data in *frame.
+ *
+ * Returns <0 on error, 0 on valid frame, >0 on skipped frames.
  */
 int fseq_read(struct fseq *fseq, struct fseq_frame *frame);

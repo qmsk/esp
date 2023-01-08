@@ -26,6 +26,12 @@ static inline void stats_counter_increment(struct stats_counter *counter)
   counter->count++;
 }
 
+static inline void stats_counter_add(struct stats_counter *counter, uint32_t value)
+{
+  counter->update = esp_timer_get_time();
+  counter->count += value;
+}
+
 static inline struct stats_counter stats_counter_copy(const struct stats_counter *counter)
 {
   // TODO: locking for concurrent stats updates

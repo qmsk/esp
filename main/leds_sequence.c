@@ -1,6 +1,7 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "leds_stats.h"
 #include "leds_sequence.h"
 #include "leds_task.h"
 
@@ -88,6 +89,9 @@ int start_leds_sequence(struct leds_state *state, const struct leds_config *conf
     return 0;
   }
 
+  // stay in sync instead of slowing down playback
+  mode |= FSEQ_MODE_SKIP;
+
   if (config->sequence_loop) {
     mode |= FSEQ_MODE_LOOP;
   }
@@ -126,12 +130,16 @@ bool leds_sequence_active(struct leds_state *state, EventBits_t event_bits)
 
 int leds_sequence_update(struct leds_state *state, EventBits_t event_bits)
 {
+  struct leds_stats *stats = &leds_stats[state->index];
   int err;
 
-  // TODO: skip frames?
-  if ((err = fseq_read(state->sequence->fseq, &state->sequence->frame))) {
+  if ((err = fseq_read(state->sequence->fseq, &state->sequence->frame)) < 0) {
     LOG_ERROR("fseq_read");
     return err;
+  } else if (err) {
+    LOG_WARN("fseq_read: skip %d frames", err);
+
+    stats_counter_add(&stats->sequence_skip, err);
   }
 
   if ((err = set_leds_sequence(state, &state->sequence->frame))) {

@@ -54,10 +54,13 @@ enum fseq_state fseq_state(struct fseq *fseq)
   }
 }
 
-
-static int fseq_seek(struct fseq *fseq)
+int fseq_start(struct fseq *fseq, enum fseq_mode mode)
 {
   int err;
+
+  fseq->mode = mode;
+  fseq->frame = 0;
+  fseq->tick = xTaskGetTickCount();
 
   if ((err = fseq_seek_frame(fseq, fseq->frame))) {
     LOG_ERROR("fseq_seek_frame %u", fseq->frame);
@@ -67,35 +70,59 @@ static int fseq_seek(struct fseq *fseq)
   return 0;
 }
 
-int fseq_start(struct fseq *fseq, enum fseq_mode mode)
-{
-  fseq->mode = mode;
-  fseq->frame = 0;
-  fseq->tick = xTaskGetTickCount();
-
-  return fseq_seek(fseq);
-}
-
 static int fseq_next(struct fseq *fseq)
 {
+  int err;
+  
   fseq->frame++;
 
   if (fseq->frame < fseq_get_frame_count(fseq)) {
     fseq->tick += fseq_get_frame_ticks(fseq);
 
-    return 0;
 
   } else if (fseq->mode & FSEQ_MODE_LOOP) {
     fseq->frame = 0;
     fseq->tick += fseq_get_frame_ticks(fseq);
 
-    return fseq_seek(fseq);
+    if ((err = fseq_seek_frame(fseq, fseq->frame))) {
+      LOG_ERROR("fseq_seek_frame %u", fseq->frame);
+      return err;
+    }
 
   } else {
     fseq->tick = 0; // stop
+  }
 
+  return 0;
+}
+
+static int fseq_skip(struct fseq *fseq)
+{
+  int err;
+  int ret = 0;
+
+  if (!(fseq->mode & FSEQ_MODE_SKIP)) {
     return 0;
   }
+
+  TickType_t tick = xTaskGetTickCount();
+
+  while (fseq->tick && tick >= fseq->tick + fseq_get_frame_ticks(fseq)) {
+    if ((err = fseq_next(fseq))) {
+      return err;
+    } else {
+      ret++;
+    }
+  }
+
+  if (ret > 0) {
+    if ((err = fseq_seek_frame(fseq, fseq->frame))) {
+      LOG_ERROR("fseq_seek_frame %u", fseq->frame);
+      return err;
+    }
+  }
+
+  return ret;
 }
 
 TickType_t fseq_tick(struct fseq *fseq)
@@ -115,6 +142,11 @@ bool fseq_ready(struct fseq *fseq)
 int fseq_read(struct fseq *fseq, struct fseq_frame *frame)
 {
   int err;
+  int ret = 0;
+
+  if ((ret = fseq_skip(fseq)) < 0) {
+    return ret;
+  }
 
   if ((err = fseq_read_frame(fseq, frame))) {
     return err;
@@ -124,5 +156,5 @@ int fseq_read(struct fseq *fseq, struct fseq_frame *frame)
     return err;
   }
 
-  return 0;
+  return ret;
 }

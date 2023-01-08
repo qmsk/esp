@@ -17,6 +17,15 @@ static int config_api_write_enum_value(struct json_writer *w, const struct confi
   return json_write_string(w, e->name);
 }
 
+static int config_api_write_file_value(struct json_writer *w, const struct configtab *tab, unsigned index)
+{
+  if (tab->file_type.value[index * tab->file_type.size]) {
+    return json_write_nstring(w, &tab->file_type.value[index * tab->file_type.size], tab->file_type.size);
+  } else {
+    return json_write_null(w);
+  }
+}
+
 static int config_api_write_configtab_value(struct json_writer *w, const struct configtab *tab, unsigned index)
 {
 
@@ -34,7 +43,7 @@ static int config_api_write_configtab_value(struct json_writer *w, const struct 
       return config_api_write_enum_value(w, tab, index);
 
     case CONFIG_TYPE_FILE:
-      return json_write_nstring(w, &tab->file_type.value[index * tab->file_type.size], tab->file_type.size);
+      return config_api_write_file_value(w, tab, index);
 
     default:
       LOG_ERROR("unknown type=%d", tab->type);

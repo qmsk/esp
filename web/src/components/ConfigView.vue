@@ -44,6 +44,13 @@
                     :disabled="tab.readonly">
                     <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
+
+                  <select v-if="tab.type == 'file'"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :disabled="tab.readonly">
+                    <option value="" :selected="!value"></option>
+                    <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
+                  </select>
                 </template>
               </div>
             </template>

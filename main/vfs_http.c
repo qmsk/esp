@@ -229,7 +229,7 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
   return 0;
 }
 
-int vfs_http_post(struct http_request *request, struct http_response *response, void *ctx)
+int vfs_http_put(struct http_request *request, struct http_response *response, void *ctx)
 {
   const struct http_request_headers *headers;
   struct vfs_http_params params = {};

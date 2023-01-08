@@ -11,7 +11,7 @@ int http_dist_index_handler(struct http_request *request, struct http_response *
 
 /* vfs_http.c */
 int vfs_http_get(struct http_request *request, struct http_response *response, void *ctx);
-int vfs_http_post(struct http_request *request, struct http_response *response, void *ctx);
+int vfs_http_put(struct http_request *request, struct http_response *response, void *ctx);
 int vfs_http_delete(struct http_request *request, struct http_response *response, void *ctx);
 
 /* config_http_file.c */

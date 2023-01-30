@@ -12,7 +12,7 @@ table.tasks td.stack-free {
 </style>
 
 <template>
-  <main id="config-view" class="split">
+  <main id="system-view" class="split">
     <div class="view">
       <h1>System</h1>
       <progress v-show="loading">Loading...</progress>

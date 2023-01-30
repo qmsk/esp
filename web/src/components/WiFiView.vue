@@ -2,7 +2,7 @@
 
 </style>
 <template>
-  <main id="config-view" class="split">
+  <main id="wifi-view" class="split">
     <div class="view">
       <h1>WiFi</h1>
       <progress v-show="loading">Loading...</progress>

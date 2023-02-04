@@ -11,6 +11,7 @@ enum leds_interface_i2s_mode {
 
   LEDS_INTERFACE_I2S_MODE_32BIT_BCK,          // 32-bit with bit-clock, 32x0-bit start frame + 32x0-bit end frame with at least one bit per pixel
 
+  LEDS_INTERFACE_I2S_MODE_24BIT_1U200_4X4_80UL, // 24 bits @ 1.200us/bit, 4-bit symbols * 4-bit LUT, 80us low reset -> uint16_t[6]
   LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL, // 24 bits @ 1.250us/bit, 4-bit symbols * 4-bit LUT, 80us low reset -> uint16_t[6]
   LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL, // 32 bits @ 1.250us/bit, 4-bit symbols * 4-bit LUT, 80us low reset -> uint16_t[8]
 };

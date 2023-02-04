@@ -17,6 +17,7 @@ size_t leds_interface_i2s_buf_size(enum leds_interface_i2s_mode mode, unsigned p
     #else
       return SIZEOF_LEDS_INTERFACE_I2S_BUF(i2s_mode_32bit);
     #endif
+    case LEDS_INTERFACE_I2S_MODE_24BIT_1U200_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED
       if (parallel) {
@@ -67,6 +68,7 @@ size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigne
       // including start frame, excluding end frame (generated using EOF DMA)
       return parallel * (1 + count) * sizeof(uint32_t);
 
+    case LEDS_INTERFACE_I2S_MODE_24BIT_1U200_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
       return parallel * count * sizeof(uint16_t[6]);
 
@@ -92,6 +94,7 @@ size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsign
       return I2S_OUT_WRITE_SERIAL16_ALIGN;
     #endif
 
+    case LEDS_INTERFACE_I2S_MODE_24BIT_1U200_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
     #if I2S_OUT_PARALLEL_SUPPORTED

@@ -5,6 +5,7 @@
 #include "protocols/ws2811.h"
 #include "protocols/ws2812b.h"
 #include "protocols/sk9822.h"
+#include "protocols/sm16703.h"
 
 #include <logging.h>
 
@@ -16,6 +17,7 @@ const struct leds_protocol_type *leds_protocol_types[LEDS_PROTOCOLS_COUNT] = {
   [LEDS_PROTOCOL_SK6812_GRBW] = &leds_protocol_sk6812grbw,
   [LEDS_PROTOCOL_WS2811]      = &leds_protocol_ws2811,
   [LEDS_PROTOCOL_SK9822]      = &leds_protocol_sk9822,
+  [LEDS_PROTOCOL_SM16703]     = &leds_protocol_sm16703,
 };
 
 const struct leds_protocol_type *leds_protocol_type(enum leds_protocol protocol)

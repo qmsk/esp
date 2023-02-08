@@ -121,7 +121,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
   { CONFIG_TYPE_UINT16, "artnet_universe_step",
     .description = "Output from multiple non-consecutive Art-Net DMX universes, at artnet_universe_start + artnet_universe_step",
-    .uint16_type = { .value = &LEDS_CONFIG.artnet_universe_step, .max = 4 },
+    .uint16_type = { .value = &LEDS_CONFIG.artnet_universe_step, .default_value = 1, .max = 4 },
   },
   { CONFIG_TYPE_UINT16, "artnet_dmx_addr",
     .description = "Start at DMX address within Art-Net DMX universe. Default 0 -> first channel, the first channel is at adress 1",

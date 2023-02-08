@@ -127,7 +127,7 @@ int start_leds_task(struct leds_state *state, const struct leds_config *config)
 
 void notify_leds_task(struct leds_state *state, EventBits_t bits)
 {
-  if (!state->task) {
+  if (!state->event_group) {
     LOG_WARN("leds%d: not initialized", state->index + 1);
     return;
   }

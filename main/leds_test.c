@@ -11,6 +11,16 @@ int init_leds_test(struct leds_state *state, const struct leds_config *config)
     return -1;
   }
 
+  state->test->mode = config->test_mode;
+  state->test->auto_mode = config->test_auto;
+
+  if (state->test->mode || state->test->auto_mode) {
+    LOG_INFO("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+    // required to start initial tick
+    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+  }
+
   return 0;
 }
 

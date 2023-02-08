@@ -102,6 +102,7 @@ const struct config_enum leds_format_enum[] = {
 };
 
 const struct config_enum leds_test_mode_enum[] = {
+  { "NONE",           TEST_MODE_NONE          },
   { "CHASE",          TEST_MODE_CHASE         },
   { "BLACK_RED",      TEST_MODE_BLACK_RED     },
   { "RED_YELLOW",     TEST_MODE_RED_YELLOW    },

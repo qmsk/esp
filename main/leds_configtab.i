@@ -103,8 +103,16 @@ const struct configtab LEDS_CONFIGTAB[] = {
 #endif
 
   { CONFIG_TYPE_BOOL, "test_enabled",
-    .description = "Output test patterns when TEST button pressed",
+    .description = "Enable test pattern output, active when TEST button pressed",
     .bool_type = { .value = &LEDS_CONFIG.test_enabled, .default_value = true },
+  },
+  { CONFIG_TYPE_ENUM, "test_mode",
+    .description = "Output test pattern at boot",
+    .enum_type = { .value = &LEDS_CONFIG.test_mode, .values = leds_test_mode_enum, .default_value = TEST_MODE_NONE },
+  },
+  { CONFIG_TYPE_BOOL, "test_auto",
+    .description = "Cycle test patterns at boot",
+    .bool_type = { .value = &LEDS_CONFIG.test_auto, .default_value = false },
   },
 
   { CONFIG_TYPE_BOOL, "artnet_enabled",

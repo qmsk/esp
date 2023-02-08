@@ -2,6 +2,23 @@
 
 #include <logging.h>
 
+unsigned leds_get_format_count(enum leds_format format, size_t len)
+{
+  switch (format) {
+    case LEDS_FORMAT_RGB:
+    case LEDS_FORMAT_BGR:
+    case LEDS_FORMAT_GRB:
+      return len / 3;
+
+    case LEDS_FORMAT_RGBA:
+    case LEDS_FORMAT_RGBW:
+      return len / 4;
+
+    default:
+      LOG_FATAL("invalid format=%d", format);
+  }
+}
+
 void leds_set_format_rgb(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
 {
   uint8_t parameter = leds_parameter_default(leds);

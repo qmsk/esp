@@ -174,6 +174,27 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
   return unsync || sync || timeout;
 }
 
+static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
+{
+  unsigned artnet_dmx_leds = config->artnet_dmx_leds;
+  unsigned artnet_universe_count = config->artnet_universe_count;
+
+  if (!artnet_dmx_leds) {
+    artnet_dmx_leds = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
+  }
+
+  if (!artnet_universe_count) {
+    // how many universes do we need to fit all of the LEDs?
+    artnet_universe_count = config->count / artnet_dmx_leds;
+
+    if (config->count % artnet_dmx_leds) {
+      artnet_universe_count += 1;
+    }
+  }
+
+  return artnet_universe_count;
+}
+
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
 {
   LOG_INFO("leds%d: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,
@@ -191,11 +212,7 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
-  if (config->artnet_universe_count) {
-    state->artnet->universe_count = config->artnet_universe_count;
-  } else {
-    state->artnet->universe_count = 1;
-  }
+  state->artnet->universe_count = config_leds_artnet_universe_count(config);
 
   if (!(state->artnet->outputs = calloc(state->artnet->universe_count, sizeof(*state->artnet->outputs)))) {
     LOG_ERROR("calloc");

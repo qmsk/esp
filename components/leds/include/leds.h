@@ -101,7 +101,7 @@ enum leds_format {
 /*
  * Return count of LEDs that fit into len bytes using the given format.
  */
-unsigned leds_get_format_count(enum leds_format format, size_t len);
+unsigned leds_format_count(enum leds_format format, size_t len);
 
 struct leds_format_params {
   /* Limit number of LED (segments) to read */

@@ -56,7 +56,7 @@ static int leds_artnet_set(struct leds_state *state, unsigned index, struct artn
   unsigned count = config->artnet_dmx_leds;
 
   if (count == 0) {
-    count = leds_get_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
+    count = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
   }
 
   // set LEDs from artnet data using configured byte format

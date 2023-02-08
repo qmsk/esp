@@ -2,7 +2,7 @@
 
 #include <logging.h>
 
-unsigned leds_get_format_count(enum leds_format format, size_t len)
+unsigned leds_format_count(enum leds_format format, size_t len)
 {
   switch (format) {
     case LEDS_FORMAT_RGB:

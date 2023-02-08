@@ -140,6 +140,8 @@ struct leds_config {
 #endif
 
   bool test_enabled;
+  int test_mode;
+  bool test_auto;
 
   bool artnet_enabled;
   uint16_t artnet_universe_start;

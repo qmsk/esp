@@ -3,6 +3,8 @@
 #include "leds_state.h"
 #include "leds_config.h"
 #include "leds_stats.h"
+#include "leds_task.h"
+#include "leds_test.h"
 #include "atx_psu_state.h"
 #include "user.h"
 
@@ -68,9 +70,14 @@ int init_leds()
       return err;
     }
 
+    if ((err = init_leds_task(state, config))) {
+      LOG_ERROR("leds%d: init_leds_task", i+1);
+      return err;
+    }
+
     if (config->test_enabled) {
-      if ((err = test_leds(state))) {
-        LOG_ERROR("leds%d: test_leds", i + 1);
+      if ((err = init_leds_test(state, config))) {
+        LOG_ERROR("leds%d: init_leds_test", i + 1);
         return err;
       }
     }
@@ -102,6 +109,11 @@ int start_leds()
     if (!state->leds) {
       LOG_WARN("leds%d: not initialized", i + 1);
       continue;
+    }
+
+    if ((err = start_leds_task(state, config))) {
+      LOG_ERROR("leds%d: start_leds_task", i + 1);
+      return err;
     }
 
     if (config->artnet_enabled) {
@@ -244,7 +256,7 @@ int test_leds(struct leds_state *state)
 {
   int err;
 
-  for (enum leds_test_mode mode = 0; mode <= TEST_MODE_END; mode++) {
+  for (enum leds_test_mode mode = 0; mode < TEST_MODE_COUNT; mode++) {
     if ((err = test_leds_mode(state, mode))) {
       LOG_ERROR("leds%d: test_leds", state->index + 1);
       return err;

@@ -148,7 +148,7 @@ int leds_set_all(struct leds *leds, struct leds_color color)
   return 0;
 }
 
-int leds_set_format(struct leds *leds, enum leds_format format, void *data, size_t len, struct leds_format_params params)
+int leds_set_format(struct leds *leds, enum leds_format format, const void *data, size_t len, struct leds_format_params params)
 {
   if (params.count == 0) {
     params.count = leds->options.count;

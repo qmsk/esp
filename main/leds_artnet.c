@@ -5,237 +5,194 @@
 #include "leds_stats.h"
 #include "leds_test.h"
 #include "artnet_state.h"
-#include "tasks.h"
 
 #include <artnet.h>
 #include <logging.h>
 #include <leds.h>
 
-struct leds_artnet_test {
-  enum leds_test_mode mode;
-
-  TickType_t frame_tick;
-  unsigned frame;
-};
-
-static bool leds_artnet_test_active(struct leds_artnet_test *test)
+void leds_artnet_timeout_reset(struct leds_state *state)
 {
-  return test->mode;
+  const struct leds_config *config = state->config;
+
+  if (config->artnet_dmx_timeout) {
+    state->artnet->timeout_tick = xTaskGetTickCount() + config->artnet_dmx_timeout / portTICK_PERIOD_MS;
+  } else {
+    state->artnet->timeout_tick = 0;
+  }
 }
 
-/* Return number of ticks to wait for next test frame, or portMAX_DELAY if not in test mode */
-static TickType_t leds_artnet_wait_ticks(struct leds_artnet_test *test, const struct leds_config *config)
+TickType_t leds_artnet_wait(struct leds_state *state)
 {
-  if (test->frame_tick) {
-    TickType_t tick = xTaskGetTickCount();
-
-    if (test->frame_tick > tick) {
-      // time next test frame
-      return test->frame_tick - tick;
-    } else {
-      // catchup
-      return 0;
-    }
-  } else if (config->artnet_dmx_timeout) {
+  if (state->artnet->timeout_tick && !leds_test_active(state, 0)) {
     // use loss-of-signal timeout
-    return config->artnet_dmx_timeout / portTICK_PERIOD_MS;
-  } else {
-    // not in test mode
-    return portMAX_DELAY;
-  }
-}
-
-static void leds_artnet_test_select(struct leds_artnet_test *test, enum leds_test_mode mode)
-{
-  LOG_INFO("test start mode=%d", mode);
-
-  test->mode = mode;
-  test->frame_tick = xTaskGetTickCount();
-  test->frame = 0;
-}
-static void leds_artnet_test_auto(struct leds_artnet_test *test)
-{
-  LOG_INFO("test auto mode=%d", test->mode);
-
-  test->mode++;
-  test->frame_tick = xTaskGetTickCount();
-  test->frame = 0;
-}
-
-static void leds_artnet_test_reset(struct leds_artnet_test *test)
-{
-  LOG_INFO("test reset");
-
-  test->mode = 0;
-  test->frame_tick = 0;
-  test->frame = 0;
-}
-
-static void leds_artnet_test_frame(struct leds_state *state, struct leds_artnet_test *test, bool auto_mode)
-{
-  int frame_ticks;
-
-  if (test->frame == 0) {
-    LOG_INFO("test mode=%d", test->mode);
+    return state->artnet->timeout_tick;
   }
 
-  if ((frame_ticks = leds_set_test(state->leds, test->mode, test->frame)) < 0) {
-    LOG_ERROR("leds_set_test");
-    leds_artnet_test_reset(test);
-  } else if (frame_ticks) {
-    // tick for next frame
-    test->frame++;
-    test->frame_tick += frame_ticks;
-  } else if (!auto_mode) {
-    // pause
-    test->frame = 0;
-    test->frame_tick = 0;
-  } else if (test->mode < TEST_MODE_END) {
-    // advance to next mode
-    test->mode++;
-    test->frame = 0;
-    test->frame_tick = xTaskGetTickCount();
-  } else {
-    // end
-    leds_artnet_test_reset(test);
-  }
+  return 0;
 }
 
-static void leds_artnet_set(struct leds_state *state, unsigned index, struct artnet_dmx *dmx)
+static int leds_artnet_set(struct leds_state *state, unsigned index, struct artnet_dmx *dmx)
 {
+  const struct leds_config *config = state->config;
+  int err;
+
   // handle DMX address offset
-  uint8_t *data = state->artnet.dmx->data;
-  size_t len = state->artnet.dmx->len;
+  uint8_t *data = state->artnet->dmx.data;
+  size_t len = state->artnet->dmx.len;
 
-  if (state->config->artnet_dmx_addr) {
-    unsigned addr = state->config->artnet_dmx_addr - 1;
+  if (config->artnet_dmx_addr) {
+    unsigned addr = config->artnet_dmx_addr - 1;
 
     if (addr > len) {
       LOG_DEBUG("short universe len=%d for artnet_dmx_addr=(%d + 1)", len, addr);
-      return;
+      return -1;
     }
 
     data += addr;
     len -= addr;
   }
 
+  // count of LEds per universe
+  unsigned count = config->artnet_dmx_leds;
+
+  if (count == 0) {
+    count = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
+  }
+
   // set LEDs from artnet data using configured byte format
   struct leds_format_params params = {
-    .count = state->config->artnet_dmx_leds,
-    .offset = index * state->config->artnet_dmx_leds,
-    .segment = state->config->artnet_leds_segment,
+    .count = count,
+    .offset = index * count,
+    .segment = config->artnet_leds_segment,
   };
 
-  leds_set_format(state->leds, state->config->artnet_leds_format, data, len, params);
+  if ((err = leds_set_format(state->leds, config->artnet_leds_format, data, len, params))) {
+    LOG_WARN("leds_set_format");
+    return err;
+  }
+
+  return 0;
 }
 
-static EventBits_t leds_artnet_wait(struct leds_state *state, struct leds_artnet_test *test_state)
+static int leds_artnet_timeout(struct leds_state *state)
 {
-  TickType_t wait_ticks = leds_artnet_wait_ticks(test_state, state->config);
-  const bool clear_on_exit = true;
-  const bool wait_for_all_bits = false;
+  struct leds_stats *stats = &leds_stats[state->index];
+  int err;
 
-  LOG_DEBUG("leds%d: notify wait ticks=%d", state->index + 1, wait_ticks);
+  LOG_INFO("leds%d: timeout", state->index + 1);
 
-  return xEventGroupWaitBits(state->artnet.event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
+  stats_counter_increment(&stats->artnet_timeout);
+
+  // TODO: flash user alert?
+
+  if ((err = leds_clear_all(state->leds))) {
+    LOG_WARN("leds_clear_all");
+    return err;
+  }
+
+  return 0;
 }
 
-static void leds_artnet_main(void *ctx)
+bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
 {
-  struct leds_state *state = ctx;
-  struct leds_artnet_test test_state = {};
-  struct leds_artnet_stats *stats = &leds_artnet_stats[state->index];
+  if (!state->artnet) {
+    return false;
+  }
 
-  for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
-    EventBits_t event_bits = leds_artnet_wait(state, &test_state);
+  if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
+    return true;
+  }
 
-    LOG_DEBUG("leds%d: notify index=%04x: sync=%d test=%d", state->index + 1,
-      (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS),
-      !!(event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)),
-      !!(event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT))
-    );
+  if (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
+    return true;
+  }
 
-    loop_sample = stats_timer_start(&stats->loop);
-
-    // start/stop test mode
-    bool unsync = false, sync = false, test = false, clear = false;
-
-    if (event_bits & (1 << LEDS_ARTNET_EVENT_TEST_BIT)) {
-      if (leds_test_state.mode) {
-        // force specific test mode
-        leds_artnet_test_select(&test_state, leds_test_state.mode);
-      } else if (leds_test_state.auto_mode && !leds_artnet_test_active(&test_state)) {
-        // start auto test
-        leds_artnet_test_auto(&test_state);
-      }
+  if (state->artnet->timeout_tick && !leds_test_active(state, 0)) {
+    if (xTaskGetTickCount() >= state->artnet->timeout_tick) {
+      return true;
     }
+  }
 
-    if (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
-      sync = true;
+  return false;
+}
+
+int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
+{
+  const struct leds_config *config = state->config;
+
+  bool data = event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS;
+  bool sync = event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT);
+  bool unsync = false;
+  bool timeout = false;
+
+  if (state->test) {
+    if (data || sync) {
+      // clear any test mode output
+      leds_test_clear(state);
     }
+  }
 
-    if (sync || (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
-      if (leds_artnet_test_active(&test_state)) {
-        // have output data, cancel test
-        leds_artnet_test_reset(&test_state);
-
-        if (leds_clear_all(state->leds)) {
-          LOG_WARN("leds_clear_all");
-        }
-      }
-    }
-
-    if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
-      // set output from artnet universe
-      for (uint8_t index = 0; index < state->artnet.universe_count; index++) {
-        if (!(event_bits & (1 << index))) {
-          continue;
-        }
-
-        if (artnet_output_read(state->artnet.outputs[index], state->artnet.dmx, 0)) {
-          LOG_WARN("leds%d: artnet_output[%d] empty", state->index + 1, index);
-          continue;
-        }
-
-        WITH_STATS_TIMER(&stats->set) {
-          leds_artnet_set(state, index, state->artnet.dmx);
-        }
-
-        if (!state->artnet.dmx->sync_mode) {
-          // at least one DMX update is in non-synchronous mode, so force update
-          unsync = true;
-        }
-      }
-    } else if (leds_artnet_test_active(&test_state)) {
-      // set test frame
-      WITH_STATS_TIMER(&stats->test) {
-        leds_artnet_test_frame(state, &test_state, leds_test_state.auto_mode);
+  if (data) {
+    // set output from artnet universe
+    for (uint8_t index = 0; index < state->artnet->universe_count; index++) {
+      if (!(event_bits & (1 << index))) {
+        continue;
       }
 
-      test = true;
-
-    } else if (state->config->artnet_dmx_timeout) {
-      LOG_DEBUG("leds%d: timeout", state->index + 1);
-
-      stats_counter_increment(&stats->timeout);
-
-      if (leds_clear_all(state->leds)) {
-        LOG_WARN("leds_clear_all");
+      if (artnet_output_read(state->artnet->outputs[index], &state->artnet->dmx, 0)) {
+        // this can race under normal conditions, we have already handled the output
+        LOG_DEBUG("leds%d: artnet_output[%d] empty", state->index + 1, index);
+        continue;
       }
 
-      clear = true;
-    }
+      if (leds_artnet_set(state, index, &state->artnet->dmx)) {
+        LOG_WARN("leds%d: leds_artnet_set", state->index + 1);
+        continue;
+      }
 
-    // tx output if required
-    if (unsync || sync || test || clear) {
-      WITH_STATS_TIMER(&stats->update) {
-        if (update_leds(state)) {
-          LOG_WARN("leds%d: update_leds", state->index + 1);
-          continue;
-        }
+      if (!state->artnet->dmx.sync_mode) {
+        // at least one DMX update is in non-synchronous mode, so force update
+        unsync = true;
       }
     }
   }
+
+  if (data || sync) {
+    leds_artnet_timeout_reset(state);
+  } else if (config->artnet_dmx_timeout) {
+    if (xTaskGetTickCount() >= state->artnet->timeout_tick) {
+      if (leds_artnet_timeout(state)) {
+        LOG_WARN("leds_artnet_timeout");
+      }
+
+      timeout = true;
+
+      leds_artnet_timeout_reset(state);
+    }
+  }
+
+  return unsync || sync || timeout;
+}
+
+static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
+{
+  unsigned artnet_dmx_leds = config->artnet_dmx_leds;
+  unsigned artnet_universe_count = config->artnet_universe_count;
+
+  if (!artnet_dmx_leds) {
+    artnet_dmx_leds = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
+  }
+
+  if (!artnet_universe_count) {
+    // how many universes do we need to fit all of the LEDs?
+    artnet_universe_count = config->count / artnet_dmx_leds;
+
+    if (config->count % artnet_dmx_leds) {
+      artnet_universe_count += 1;
+    }
+  }
+
+  return artnet_universe_count;
 }
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
@@ -250,60 +207,36 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     config->artnet_leds_segment
   );
 
-  if (config->artnet_universe_count) {
-    state->artnet.universe_count = config->artnet_universe_count;
-  } else {
-    state->artnet.universe_count = 1;
-  }
-
-  if (!(state->artnet.dmx = calloc(1, sizeof(*state->artnet.dmx)))) {
+  if (!(state->artnet = calloc(1, sizeof(*state->artnet)))) {
     LOG_ERROR("calloc");
     return -1;
   }
 
-  if (!(state->artnet.outputs = calloc(state->artnet.universe_count, sizeof(*state->artnet.outputs)))) {
+  state->artnet->universe_count = config_leds_artnet_universe_count(config);
+
+  if (!(state->artnet->outputs = calloc(state->artnet->universe_count, sizeof(*state->artnet->outputs)))) {
     LOG_ERROR("calloc");
     return -1;
   }
 
-  if (!(state->artnet.event_group = xEventGroupCreate())) {
-    LOG_ERROR("xEventGroupCreate");
-    return -1;
-  }
+  leds_artnet_timeout_reset(state);
 
   return 0;
 }
 
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config)
 {
-  struct task_options task_options = {
-    .main       = leds_artnet_main,
-    .name_fmt   = LEDS_ARTNET_TASK_NAME_FMT,
-    .stack_size = LEDS_ARTNET_TASK_STACK,
-    .arg        = state,
-    .priority   = LEDS_ARTNET_TASK_PRIORITY,
-    .handle     = &state->artnet.task,
-    .affinity   = LEDS_ARTNET_TASK_AFFINITY,
-  };
-
-  if (start_taskf(task_options, state->index + 1)) {
-    LOG_ERROR("start_taskf");
-    return -1;
-  } else {
-    LOG_INFO("leds%d: start artnet task=%p", state->index + 1, state->artnet.task);
-  }
-
-  for (uint8_t i = 0; i < state->artnet.universe_count; i++) {
+  for (uint8_t i = 0; i < state->artnet->universe_count; i++) {
     struct artnet_output_options options = {
       .port = (enum artnet_port) (state->index), // use ledsX index as output port
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
-      .event_group = state->artnet.event_group,
+      .event_group = state->event_group,
     };
 
     snprintf(options.name, sizeof(options.name), "leds%u", state->index + 1);
 
-    if (add_artnet_output(&state->artnet.outputs[i], options)) {
+    if (add_artnet_output(&state->artnet->outputs[i], options)) {
       LOG_ERROR("add_artnet_output");
       return -1;
     }

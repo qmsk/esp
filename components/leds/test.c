@@ -174,8 +174,8 @@ int leds_test_black_frame(struct leds *leds, unsigned frame)
 int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
 {
   switch (mode) {
-    case TEST_MODE_BLACK:
-      return leds_test_black_frame(leds, frame);
+    case TEST_MODE_NONE:
+      return 0;
 
     case TEST_MODE_CHASE:
       return leds_test_chase_frame(leds, frame, (struct leds_color){
@@ -262,7 +262,7 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame)
     case TEST_MODE_RAINBOW:
       return leds_test_rainbow_frame(leds, frame);
 
-    case TEST_MODE_END:
+    case TEST_MODE_BLACK:
       return leds_test_black_frame(leds, frame);
 
     default:

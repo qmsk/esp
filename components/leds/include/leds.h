@@ -98,6 +98,11 @@ enum leds_format {
   LEDS_FORMAT_RGBW,
 };
 
+/*
+ * Return count of LEDs that fit into len bytes using the given format.
+ */
+unsigned leds_format_count(enum leds_format format, size_t len);
+
 struct leds_format_params {
   /* Limit number of LED (segments) to read */
   unsigned count;
@@ -317,7 +322,8 @@ struct leds_color {
 bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
 
 enum leds_test_mode {
-  TEST_MODE_BLACK,
+  TEST_MODE_NONE  = 0,
+
   TEST_MODE_CHASE,
 
   TEST_MODE_BLACK_RED,
@@ -335,8 +341,10 @@ enum leds_test_mode {
   TEST_MODE_RGB_BLACK,
 
   TEST_MODE_RAINBOW,
-  TEST_MODE_END
+  TEST_MODE_BLACK,
 };
+
+#define TEST_MODE_COUNT (TEST_MODE_BLACK + 1)
 
 int leds_new(struct leds **ledsp, const struct leds_options *options);
 
@@ -376,7 +384,7 @@ int leds_set_all(struct leds *leds, struct leds_color color);
  * @param global 5-bit global brightness 0-31
  * @param b, g, r 8-bit RGB value
  */
-int leds_set_format(struct leds *leds, enum leds_format format, void *data, size_t len, struct leds_format_params params);
+int leds_set_format(struct leds *leds, enum leds_format format, const void *data, size_t len, struct leds_format_params params);
 
 /*
  * Set test pattern for mode/tick. Requires `leds_tx()`.

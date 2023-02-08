@@ -42,8 +42,8 @@ unsigned leds_colors_active (const struct leds_color *colors, unsigned count, en
 unsigned leds_power_total(const struct leds_color *pixels, unsigned index, unsigned count, enum leds_power_mode power_mode);
 
 /* format.c */
-void leds_set_format_rgb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
-void leds_set_format_bgr(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
-void leds_set_format_grb(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
-void leds_set_format_rgba(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
-void leds_set_format_rgbw(struct leds *leds, uint8_t *data, size_t len, struct leds_format_params params);
+void leds_set_format_rgb(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);
+void leds_set_format_bgr(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);
+void leds_set_format_grb(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);
+void leds_set_format_rgba(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);
+void leds_set_format_rgbw(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);

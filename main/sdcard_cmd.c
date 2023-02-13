@@ -27,18 +27,19 @@
   static void print_sdcard_info(const sdmmc_card_t* card)
   {
     enum sdmmc_card_type card_type = sdmmc_card_get_type(card);
+    struct sdmmc_card_info card_info = sdmmc_card_get_info(card);
 
   #if CONFIG_SDCARD_SPI_HOST
     printf("Host: SPI\n");
   #endif
     printf("Type: %s\n", sdmmc_card_type_str(card_type));
-    printf("ID: manufacturer %02x OEM [%.2s] product [%.8s] revision %d.%d serial %08d date %4d/%2d\n",
-      SDMMC_CARD_CID_MFG_ID(card),
-      SDMMC_CARD_CID_OEM_ID(card),
-      SDMMC_CARD_CID_NAME(card),
-      SDMMC_CARD_CID_REVISON_MAJOR(card), SDMMC_CARD_CID_REVISON_MINOR(card),
-      SDMMC_CARD_CID_SERIAL(card),
-      SDMMC_CARD_CID_DATE_YEAR(card), SDMMC_CARD_CID_DATE_MONTH(card)
+    printf("ID: manufacturer %02x OEM [%.2s] product [%.5s] revision %d.%d serial %08d date %4d/%2d\n",
+      card_info.mfg_id,
+      card_info.oem_id,
+      card_info.product,
+      card_info.revision_major, card_info.revision_minor,
+      card_info.serial,
+      card_info.date_year, card_info.date_month
     );
     printf("Speed: %3.2fMHz%s\n",
       ((float) sdmmc_card_get_freq(card)) / ((float) (1000 * 1000)),

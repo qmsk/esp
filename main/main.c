@@ -11,6 +11,7 @@
 #include "log.h"
 #include "http.h"
 #include "pin_mutex.h"
+#include "sdcard.h"
 #include "system.h"
 #include "user.h"
 #include "user_events.h"
@@ -126,6 +127,13 @@ void app_main(void)
 #endif
 
   LOG_INFO("setup");
+
+#if CONFIG_SDCARD_ENABLED
+  if ((err = init_sdcard())) {
+    LOG_ERROR("init_sdcard");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+#endif
 
   if ((err = init_wifi())) {
     LOG_ERROR("init_wifi");

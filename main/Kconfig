@@ -341,3 +341,21 @@ menu "qmsk-esp-i2c"
     default 0
 
 endmenu
+
+menu "qmsk-esp-sdcard"
+  choice SDCARD_HOST
+    prompt "SD Card host type"
+
+    config SDCARD_HOST_NONE
+      bool "Disabled"
+
+    config SDCARD_SPI_HOST
+      bool "SD Card SPI Host"
+      select SDCARD_ENABLED
+
+  endchoice
+
+  config SDCARD_ENABLED
+    bool "SD Card support"
+
+endmenu

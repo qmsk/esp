@@ -2,7 +2,28 @@
 
 #include <driver/sdmmc_defs.h>
 
-enum sdmmc_card_type sdmmc_card_get_type(const sdmmc_card_t* card)
+enum sdmmc_host_type sdmmc_host_type(const sdmmc_host_t *host)
+{
+  if (!host) {
+    return SDMMC_HOST_TYPE_NONE;
+  } else if (host->flags & SDMMC_HOST_FLAG_SPI) {
+    return SDMMC_HOST_TYPE_SDSPI;
+  } else {
+    return SDMMC_HOST_TYPE_SDMMC;
+  }
+}
+
+const char *sdmmc_host_type_str(enum sdmmc_host_type type)
+{
+  switch(type) {
+    case SDMMC_HOST_TYPE_NONE:  return "NONE";
+    case SDMMC_HOST_TYPE_SDSPI: return "SDSPI";
+    case SDMMC_HOST_TYPE_SDMMC: return "SDMMC";
+    default:                    return "?";
+  }
+}
+
+enum sdmmc_card_type sdmmc_card_type(const sdmmc_card_t* card)
 {
   if (!card) {
     return SDMMC_CARD_TYPE_NONE;
@@ -54,4 +75,13 @@ struct sdmmc_card_info sdmmc_card_get_info(const sdmmc_card_t *card)
     .date_year  = 2000 + ((card->cid.date >> 4) & 0xff),
     .date_month = (card->cid.date >> 0) & 0xf,
   };
+}
+
+esp_err_t sdmmc_host_deinit(sdmmc_host_t *host)
+{
+  if (host->flags & SDMMC_HOST_FLAG_DEINIT_ARG) {
+    return host->deinit_p(host->slot);
+  } else {
+    return host->deinit();
+  }
 }

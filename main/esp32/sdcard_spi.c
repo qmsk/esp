@@ -6,7 +6,6 @@
   #include <driver/spi_master.h>
   #include <driver/sdspi_host.h>
   #include <driver/sdmmc_types.h>
-  #include <sdmmc_cmd.h>
 
   // TODO: shared? conflict with leds_spi?
   #define SDCARD_SPI_HOST SPI2_HOST
@@ -18,9 +17,9 @@
   #define SDCARD_SPI_MAX_TRANSFER_SZ 4000 // XXX: whence? One DMA buffer?
   #define SDCARD_SPI_MAX_FREQ_KHZ 10000 // 10MHz for crappy breadboard testing
 
-  sdspi_dev_handle_t sdcard_sdspi_dev;
+  sdmmc_host_t sdcard_spi_host = SDSPI_HOST_DEFAULT();
 
-  int init_sdcard_spi(sdmmc_card_t *card)
+  int init_sdcard_spi(sdmmc_host_t **hostp)
   {
     spi_bus_config_t bus_config = {
       .mosi_io_num      = SDCARD_SPI_MOSI_IO_NUM,
@@ -37,7 +36,7 @@
       .gpio_wp          = SDSPI_SLOT_NO_WP,
       .gpio_int         = SDSPI_SLOT_NO_INT,
     };
-    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    sdspi_dev_handle_t dev;
     esp_err_t err;
 
     if ((err = spi_bus_initialize(SDCARD_SPI_HOST, &bus_config, SDCARD_SPI_DMA_CH))) {
@@ -50,23 +49,21 @@
       return -1;
     }
 
-    if ((err = sdspi_host_init_device(&dev_config, &sdcard_sdspi_dev))) {
+    if ((err = sdspi_host_init_device(&dev_config, &dev))) {
       LOG_ERROR("sdspi_host_init_device: %s", esp_err_to_name(err));
       return -1;
     } else {
-      host.slot = sdcard_sdspi_dev;
-      host.max_freq_khz = SDCARD_SPI_MAX_FREQ_KHZ;
+      sdcard_spi_host.slot = dev;
+      sdcard_spi_host.max_freq_khz = SDCARD_SPI_MAX_FREQ_KHZ;
     }
 
-    if ((err = sdmmc_card_init(&host, card))) {
-      if (err == ESP_ERR_TIMEOUT) {
-        LOG_WARN("sdmmc_card_init: timeout, card present?");
-        return 1;
-      } else {
-        LOG_ERROR("sdmmc_card_init: %s", esp_err_to_name(err));
-        return -1;
-      }
-    }
+    LOG_INFO("using spi_host=%d slot=%d max_freq_khz=%d",
+      SDCARD_SPI_HOST,
+      sdcard_spi_host.slot,
+      sdcard_spi_host.max_freq_khz
+    );
+
+    *hostp = &sdcard_spi_host;
 
     return 0;
   }

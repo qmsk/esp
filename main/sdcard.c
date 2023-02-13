@@ -1,4 +1,5 @@
 #include "sdcard.h"
+#include "sdcard_fatfs.h"
 #include "sdcard_state.h"
 #include "sdcard_spi.h"
 
@@ -65,6 +66,11 @@
       }
     } else {
       sdcard_card = card;
+    }
+
+    if ((ret = mount_sdcard_fatfs(card))) {
+      LOG_ERROR("mount_sdcard_fatfs");
+      return ret;
     }
 
     return 0;

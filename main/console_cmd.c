@@ -7,6 +7,7 @@
 #include "eth.h"
 #include "leds.h"
 #include "log.h"
+#include "sdcard.h"
 #include "spiffs.h"
 #include "user_leds.h"
 #include "system.h"
@@ -48,6 +49,11 @@ const struct cmd console_cli_commands[] = {
   { "config",       .describe = "Configuration",
       .subcommands = &config_cmdtab,
   },
+#if CONFIG_SDCARD_ENABLED
+  { "sdcard",       .describe = "SD Card",
+      .subcommands = &sdcard_cmdtab,
+  },
+#endif
   { "wifi",         .describe = "WiFi",
       .subcommands = &wifi_cmdtab,
   },

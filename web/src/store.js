@@ -76,7 +76,7 @@ export default new Vuex.Store({
 
     /* VFS */
     async loadVFS({ commit }) {
-      const data = await vfsService.get();
+      const data = await vfsService.getTree();
 
       commit('updateVFS', data);
     },

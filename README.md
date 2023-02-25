@@ -54,7 +54,7 @@ Access the USB console:
 
 ## ESP32
 
-Using the docker-based [Espressif ESP-IDF](https://github.com/espressif/esp-idf) [v4.4](https://github.com/espressif/esp-idf/releases/tag/v4.4) + patches SDK/toolchain:
+Using the docker-based [Espressif ESP-IDF](https://github.com/espressif/esp-idf) [v4.4](https://github.com/espressif/esp-idf/releases/tag/v4.4.4) + patches SDK/toolchain:
 
     $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose -f projects/esp32/docker-compose.yml build sdk
 

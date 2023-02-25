@@ -1,3 +1,9 @@
+commit 96e7d33a423f2b14aa27d5d86b28cb8d70ceda2b
+Author: Tero Marttila <>
+Date:   Sun Mar 13 15:42:54 2022 +0200
+
+    lwip: omit DHCP_OPTION_DNS_SERVER if dns disabled
+
 diff --git a/components/lwip/apps/dhcpserver/dhcpserver.c b/components/lwip/apps/dhcpserver/dhcpserver.c
 index f23966688f..c27cd7e9ae 100644
 --- a/components/lwip/apps/dhcpserver/dhcpserver.c

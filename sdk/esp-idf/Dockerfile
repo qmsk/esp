@@ -37,13 +37,18 @@ ENTRYPOINT ["/opt/esp-idf-entrypoint.sh"]
 
 # custom patches
 COPY patches/ /tmp/patches
-RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < "$patch" || exit 1; done
+RUN \
+  for patch in /tmp/patches/*.patch; do \
+    echo "Applying ${patch##*/}..."; \
+    patch -d $IDF_PATH -p1 < "$patch" || exit 1; \
+  done
 
 # build
 ARG BUILD_UID
 ARG BUILD_GID
 
 RUN groupadd --gid $BUILD_GID build && useradd -d /build -g $BUILD_GID -G dialout -u $BUILD_UID build
+RUN git config --system --add safe.directory '*'
 
 USER build
 WORKDIR /build

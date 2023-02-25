@@ -9,7 +9,7 @@ services:
     build:
       context: ../../sdk/esp-idf
       args:
-        ESP_IDF_VERSION: v4.4
+        ESP_IDF_VERSION: v4.4.4
         BUILD_UID: ${BUILD_UID}
         BUILD_GID: ${BUILD_GID}
     command: idf.py --version
@@ -21,6 +21,7 @@ services:
     working_dir: /build/projects/esp32
     command: idf.py build
     init: true
+    read_only: true
     environment:
       BOARDCONFIG: "${BOARDCONFIG}"
 
@@ -31,6 +32,7 @@ services:
     working_dir: /build/projects/esp32
     command: idf.py flash
     init: true
+    read_only: true
     devices:
       - "${ESPPORT}"
     environment:
@@ -43,6 +45,7 @@ services:
     working_dir: /build/projects/esp32
     command: idf.py monitor
     init: true
+    read_only: true
     devices:
       - "${ESPPORT}"
     environment:

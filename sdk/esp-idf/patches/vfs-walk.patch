@@ -1,8 +1,8 @@
 diff --git a/components/vfs/include/esp_vfs.h b/components/vfs/include/esp_vfs.h
-index 0498a3aa59..88b6c26f61 100644
+index d2634670d4..cf48b039b1 100644
 --- a/components/vfs/include/esp_vfs.h
 +++ b/components/vfs/include/esp_vfs.h
-@@ -246,6 +246,9 @@ typedef struct
+@@ -250,6 +250,9 @@ typedef struct
  #endif // CONFIG_VFS_SUPPORT_SELECT
  } esp_vfs_t;
  
@@ -13,7 +13,7 @@ index 0498a3aa59..88b6c26f61 100644
   * Register a virtual filesystem for given path prefix.
   *
 diff --git a/components/vfs/vfs.c b/components/vfs/vfs.c
-index 9adafe2208..f810e5f4c8 100644
+index b433c98693..47fbad4b40 100644
 --- a/components/vfs/vfs.c
 +++ b/components/vfs/vfs.c
 @@ -108,6 +108,40 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v

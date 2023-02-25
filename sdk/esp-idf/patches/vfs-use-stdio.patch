@@ -1,8 +1,8 @@
 diff --git a/components/esp_system/CMakeLists.txt b/components/esp_system/CMakeLists.txt
-index 0aa60f72a7..486634e652 100644
+index 966fcb121a..3964d1dfc0 100644
 --- a/components/esp_system/CMakeLists.txt
 +++ b/components/esp_system/CMakeLists.txt
-@@ -40,6 +40,7 @@ else()
+@@ -37,6 +37,7 @@ else()
                                      # link-time registration is used.
                                      esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
                                      espcoredump esp_phy efuse esp_ipc
@@ -11,21 +11,21 @@ index 0aa60f72a7..486634e652 100644
      add_subdirectory(port)
  
 diff --git a/components/esp_system/startup.c b/components/esp_system/startup.c
-index 139ae8b6a2..18608d314e 100644
+index 2bf5a8fbd9..d501e80b81 100644
 --- a/components/esp_system/startup.c
 +++ b/components/esp_system/startup.c
-@@ -54,6 +54,10 @@
- 
- #include "brownout.h"
+@@ -57,6 +57,10 @@
+ #include "esp_rom_caps.h"
+ #include "esp_rom_sys.h"
  
 +#if CONFIG_VFS_USE_STDIO
 +# include <stdio_vfs.h>
 +#endif
 +
- #include "esp_rom_sys.h"
- 
  // [refactor-todo] make this file completely target-independent
-@@ -268,13 +272,24 @@ static void do_core_init(void)
+ #if CONFIG_IDF_TARGET_ESP32
+ #include "esp32/clk.h"
+@@ -282,13 +286,24 @@ static void do_core_init(void)
  
      esp_newlib_time_init();
  
@@ -53,7 +53,7 @@ index 139ae8b6a2..18608d314e 100644
      esp_reent_init(_GLOBAL_REENT);
      _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
 diff --git a/components/vfs/Kconfig b/components/vfs/Kconfig
-index 6b914d8ba3..7f761987a4 100644
+index d3954cb378..155863c96f 100644
 --- a/components/vfs/Kconfig
 +++ b/components/vfs/Kconfig
 @@ -71,6 +71,10 @@ menu "Virtual file system"

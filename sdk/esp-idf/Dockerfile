@@ -37,7 +37,11 @@ ENTRYPOINT ["/opt/esp-idf-entrypoint.sh"]
 
 # custom patches
 COPY patches/ /tmp/patches
-RUN for patch in /tmp/patches/*.patch; do patch -d $IDF_PATH -p1 < "$patch" || exit 1; done
+RUN \
+  for patch in /tmp/patches/*.patch; do \
+    echo "Applying ${patch##*/}..."; \
+    patch -d $IDF_PATH -p1 < "$patch" || exit 1; \
+  done
 
 # build
 ARG BUILD_UID

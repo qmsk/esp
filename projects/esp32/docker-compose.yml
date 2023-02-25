@@ -9,7 +9,7 @@ services:
     build:
       context: ../../sdk/esp-idf
       args:
-        ESP_IDF_VERSION: v4.4
+        ESP_IDF_VERSION: v4.4.4
         BUILD_UID: ${BUILD_UID}
         BUILD_GID: ${BUILD_GID}
     command: idf.py --version

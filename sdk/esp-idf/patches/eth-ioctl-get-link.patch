@@ -1,3 +1,9 @@
+commit 1d8b786c25a63caa7fedc5478c0a4762feb95b65
+Author: Tero Marttila <terom@fixme.fi>
+Date:   Tue Mar 22 00:14:44 2022 +0200
+
+    esp_eth: add ETH_CMD_G_LINK
+
 diff --git a/components/esp_eth/include/esp_eth_com.h b/components/esp_eth/include/esp_eth_com.h
 index 7ce0538fbe..b309e17b78 100644
 --- a/components/esp_eth/include/esp_eth_com.h
@@ -11,10 +17,10 @@ index 7ce0538fbe..b309e17b78 100644
      ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
      ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
 diff --git a/components/esp_eth/src/esp_eth.c b/components/esp_eth/src/esp_eth.c
-index 868dddad3f..c0783860c9 100644
+index a021247552..fb3701adea 100644
 --- a/components/esp_eth/src/esp_eth.c
 +++ b/components/esp_eth/src/esp_eth.c
-@@ -359,6 +359,10 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
+@@ -349,6 +349,10 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
      esp_eth_mac_t *mac = eth_driver->mac;
      esp_eth_phy_t *phy = eth_driver->phy;
      switch (cmd) {

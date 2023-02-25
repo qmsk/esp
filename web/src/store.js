@@ -5,11 +5,13 @@ import { createLogger } from 'vuex'
 import APIService from './services/api.service'
 import ConfigService from './services/config.service'
 import SystemService from './services/system.service'
+import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
 
 const apiService = new APIService();
 const configService = new ConfigService(apiService);
 const systemService = new SystemService(apiService);
+const vfsService = new VFSService(apiService);
 const wifiService = new WiFiService(apiService);
 
 Vue.use(Vuex);
@@ -20,6 +22,7 @@ export default new Vuex.Store({
     system: null,
     wifi: null,
     wifi_scan: null,
+    vfs: null,
   },
   plugins: [
     // XXX: only during development
@@ -70,6 +73,13 @@ export default new Vuex.Store({
 
       commit('updateWiFiScan', data);
     },
+
+    /* VFS */
+    async loadVFS({ commit }) {
+      const data = await vfsService.get();
+
+      commit('updateVFS', data);
+    },
   },
   mutations: {
     loadConfig (state, config) {
@@ -103,6 +113,9 @@ export default new Vuex.Store({
     },
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
+    },
+    updateVFS(state, vfs) {
+      state.vfs = vfs;
     },
   },
 });

@@ -23,6 +23,12 @@ export default {
   methods: {
     async load() {
       this.loading = true;
+
+      try {
+        await this.$store.dispatch('loadVFS');
+      } finally {
+        this.loading = false;
+      }
     }
   }
 }

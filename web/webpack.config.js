@@ -44,6 +44,7 @@ module.exports = (env, argv) => {
       proxy: {
         '/api': process.env.API_URL,
         '/config.ini': process.env.API_URL,
+        '/vfs': process.env.API_URL,
       }
     },
   };

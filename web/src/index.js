@@ -4,6 +4,7 @@ import Vuex from 'vuex'
 
 import App from "./App"
 import ConfigView from "./components/ConfigView"
+import FilesView from "./components/FilesView"
 import SystemView from "./components/SystemView"
 import WiFiView from "./components/WiFiView"
 
@@ -15,6 +16,7 @@ const router = new VueRouter({
   routes: [
     { path: '/config',  component: ConfigView },
     { path: '/wifi',    component: WiFiView },
+    { path: '/files',   component: FilesView },
     { path: '/system',  component: SystemView },
   ],
 });

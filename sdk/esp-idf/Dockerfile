@@ -48,6 +48,7 @@ ARG BUILD_UID
 ARG BUILD_GID
 
 RUN groupadd --gid $BUILD_GID build && useradd -d /build -g $BUILD_GID -G dialout -u $BUILD_UID build
+RUN git config --system --add safe.directory '*'
 
 USER build
 WORKDIR /build

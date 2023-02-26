@@ -80,6 +80,16 @@ export default new Vuex.Store({
 
       commit('updateVFS', data);
     },
+    async uploadFile({ commit }, { vfs, path, file }) {
+      const item = await vfsService.upload(vfs, path, file);
+
+      commit('setVFSFile', { vfs, item });
+    },
+    async deleteFile({ commit }, { vfs, path }) {
+      await vfsService.delete(vfs, path);
+
+      commit('removeVFSFile', { vfs, path });
+    },
   },
   mutations: {
     loadConfig (state, config) {
@@ -116,6 +126,12 @@ export default new Vuex.Store({
     },
     updateVFS(state, vfs) {
       state.vfs = vfs;
+    },
+    setVFSFile(state, { vfs, item }) {
+      vfsService.setFile(vfs, item);
+    },
+    removeVFSFile(state, { vfs, path }) {
+      vfsService.removeFile(vfs, path);
     },
   },
 });

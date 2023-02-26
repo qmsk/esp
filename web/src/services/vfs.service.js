@@ -1,13 +1,26 @@
-function vfsTree(vfs) {
-  const root = {
-    path: vfs.path,
-    tree: new Map(),
-  };
+export default class VFSService {
+  constructor(apiService) {
+    this.apiService = apiService;
+  }
 
-  for (const item of vfs.files) {
-    const path = item.name.split('/');
-    const name = path.pop();
-    let dir = root;
+  makeTree(vfs) {
+    const root = {
+      path: vfs.path,
+      tree: new Map(),
+    };
+
+    for (const item of vfs.files) {
+      this.setFile(root, item);
+    }
+
+    return root;
+  }
+
+  setFile(vfs, item) {
+    const parts = item.name.split('/');
+    const name = parts.pop();
+
+    let dir = vfs;
     let file = {
       type: "file",
       name: name,
@@ -15,7 +28,7 @@ function vfsTree(vfs) {
       mtime: item.mtime,
     };
 
-    for (const part of path) {
+    for (const part of parts) {
       if (!dir.tree.has(part)) {
         dir.tree.set(part, {
           type: "directory",
@@ -30,12 +43,17 @@ function vfsTree(vfs) {
     dir.tree.set(name, file);
   }
 
-  return root;
-}
+  removeFile(vfs, path) {
+    const parts = path.split('/');
+    const name = parts.pop();
 
-export default class VFSService {
-  constructor(apiService) {
-    this.apiService = apiService;
+    let dir = vfs;
+
+    for (const part of parts) {
+      dir = dir.tree.get(part);
+    }
+
+    dir.tree.delete(name);
   }
 
   async get() {
@@ -47,6 +65,16 @@ export default class VFSService {
   async getTree() {
     const data = await this.get();
 
-    return data.map((vfs) => vfsTree(vfs));
+    return data.map((vfs) => this.makeTree(vfs));
+  }
+
+  async upload(vfs, path, file) {
+    const response = await this.apiService.putFile('/vfs' + vfs.path + '/' + path, file);
+
+    return { type: 'file', name: path }; // TODO: size, mtime
+  }
+
+  async delete(vfs, path) {
+    const response = await this.apiService.delete('/vfs' + vfs.path + '/' + path);
   }
 }

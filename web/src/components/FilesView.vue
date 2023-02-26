@@ -12,7 +12,7 @@
       <template v-if="vfs">
         <div class="vfs-tree" v-for="vfs in vfs">
           <h2>{{ vfs.path }}</h2>
-          <files-node :files="vfs.tree.values()" />
+          <files-node :vfs="vfs" dir="" :nodes="Array.from(vfs.tree.values())" />
         </div>
       </template>
     </div>

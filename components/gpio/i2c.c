@@ -88,9 +88,25 @@
 
   int gpio_i2c_setup(const struct gpio_options *options)
   {
+    int err;
+
     if (!options->i2c_dev) {
       LOG_ERROR("Invalid i2c_dev=NULL");
       return -1;
+    }
+
+    switch(options->i2c_dev->options.type) {
+      case GPIO_I2C_TYPE_PCA9534:
+      case GPIO_I2C_TYPE_PCA9554:
+        if ((err = gpio_i2c_pca54xx_setup(options))) {
+          LOG_ERROR("gpio_i2c_pca54xx_setup");
+          return err;
+        }
+
+        break;
+
+      default:
+        LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
     }
 
     if (options->interrupt_pins) {
@@ -109,14 +125,7 @@
       }
     }
 
-    switch(options->i2c_dev->options.type) {
-      case GPIO_I2C_TYPE_PCA9534:
-      case GPIO_I2C_TYPE_PCA9554:
-        return gpio_i2c_pca54xx_setup(options);
-
-      default:
-        LOG_FATAL("unsupported type=%d", options->i2c_dev->options.type);
-    }
+    return 0;
   }
 
   int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins)

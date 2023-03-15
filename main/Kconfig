@@ -355,6 +355,36 @@ menu "qmsk-esp-sdcard"
 
   endchoice
 
+  config SDCARD_SPI_MOSI_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI CMD/MOSI"
+    range 0 39
+    default 15
+
+  config SDCARD_SPI_MISO_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI D0/MSIO"
+    range 0 39
+    default 2
+
+  config SDCARD_SPI_SCLK_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI CLK/SCLK"
+    range 0 39
+    default 14
+
+  config SDCARD_SPI_CS_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI D3/CS"
+    range 0 39
+    default 13
+
+  config SDCARD_SPI_MAX_FREQ_KHZ
+    depends on SDCARD_SPI_HOST
+    int "Maximum SPI bus clock"
+    range 10000 40000
+    default 20000
+
   config SDCARD_ENABLED
     bool "SD Card support"
 

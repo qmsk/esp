@@ -104,6 +104,13 @@ void app_main(void)
     abort();
   }
 
+#if CONFIG_SDCARD_ENABLED
+  if ((err = init_sdcard())) {
+    LOG_ERROR("init_sdcard");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+#endif
+
   LOG_INFO("config");
 
   if ((err = init_config()) < 0) {
@@ -127,13 +134,6 @@ void app_main(void)
 #endif
 
   LOG_INFO("setup");
-
-#if CONFIG_SDCARD_ENABLED
-  if ((err = init_sdcard())) {
-    LOG_ERROR("init_sdcard");
-    user_alert(USER_ALERT_ERROR_SETUP);
-  }
-#endif
 
   if ((err = init_wifi())) {
     LOG_ERROR("init_wifi");

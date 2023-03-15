@@ -55,7 +55,7 @@ int config_file_path(const struct config_file_path *paths, const char *value, ch
 
 int config_file_check(const struct config_file_path *paths, const char *value)
 {
-  char path[PATH_MAX];
+  char path[CONFIG_PATH_SIZE];
   int err;
 
   if ((err = config_file_path(paths, value, path, sizeof(path)))) {

@@ -20,7 +20,7 @@
   #if SOC_SPI_PERIPH_NUM >= 1
     { "SPI1",   SPI1_HOST },
   #endif
-  #if SOC_SPI_PERIPH_NUM >= 2
+  #if (SOC_SPI_PERIPH_NUM >= 2) && !CONFIG_SDCARD_SPI_HOST
     { "SPI2",   SPI2_HOST },
   #endif
   #if SOC_SPI_PERIPH_NUM >= 3

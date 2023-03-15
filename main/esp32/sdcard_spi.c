@@ -7,7 +7,7 @@
   #include <driver/sdspi_host.h>
   #include <driver/sdmmc_types.h>
 
-  #define SDCARD_SPI_HOST SPI2_HOST // TODO: shared? conflict with leds_spi?
+  #define SDCARD_SPI_HOST SPI2_HOST
   #define SDCARD_SPI_DMA_CH SPI_DMA_CH_AUTO
   #define SDCARD_SPI_MAX_TRANSFER_SZ 4000 // XXX: whence? One DMA buffer?
   #define SDCARD_SPI_MAX_FREQ_KHZ CONFIG_SDCARD_SPI_MAX_FREQ_KHZ

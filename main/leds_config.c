@@ -129,7 +129,8 @@ const struct config_enum leds_parameter_enum[] = {
 };
 
 const struct config_file_path leds_sequence_paths[] = {
-  { LEDS_SEQUENCE_FILE_PATH, LEDS_SEQUENCE_FILE_SUFFIX },
+  { "/config/leds-sequence", "fseq" },
+  { "/sdcard/leds-sequence", "fseq" },
   {}
 };
 

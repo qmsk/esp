@@ -9,8 +9,6 @@
 
 #define LEDS_LIMIT_GROUPS_MAX 8
 #define LEDS_SEQUENCE_FILE_MAX 64
-#define LEDS_SEQUENCE_FILE_PATH "/config/leds-sequence"
-#define LEDS_SEQUENCE_FILE_SUFFIX "fseq"
 
 struct leds_state *state;
 

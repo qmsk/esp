@@ -15,17 +15,69 @@
   #include <freertos/event_groups.h>
   #include <freertos/task.h>
 
-  #define SDCARD_TASK_POLL_INTERVAL (1000 / portTICK_PERIOD_MS)
+  #define SDCARD_POLL_TICKS (1000 / portTICK_PERIOD_MS)
+  #define SDCARD_HOTPLUG_TICKS (3000 / portTICK_PERIOD_MS)
 
   xTaskHandle sdcard_task;
   EventGroupHandle_t sdcard_events;
+  TickType_t sdcard_hotplug_tick = 0;
   sdmmc_host_t *sdcard_host;
   sdmmc_card_t *sdcard_card;
+
+  void check_sdcard_hotplug()
+  {
+    int err;
+    TickType_t hotplug_ticks;
+
+    if (sdcard_card) {
+      // already mounted
+      return;
+    }
+
+    if (!sdcard_hotplug_tick) {
+      sdcard_hotplug_tick = xTaskGetTickCount();
+      hotplug_ticks = 0;
+    } else {
+      hotplug_ticks = xTaskGetTickCount() - sdcard_hotplug_tick;
+    }
+
+    if (!hotplug_ticks) {
+      LOG_INFO("detected sdcard...");
+    } else if (hotplug_ticks >= SDCARD_HOTPLUG_TICKS) {
+      LOG_INFO("hotplug sdcard...");
+
+      if ((err = start_sdcard()) < 0) {
+        LOG_ERROR("start_sdcard");
+      } else if (err) {
+        LOG_WARN("start_sdcard");
+      } else {
+        LOG_INFO("start_sdcard");
+
+        sdcard_hotplug_tick = 0;
+      }
+    }
+  }
+
+  void ensure_sdcard_stopped()
+  {
+    if (sdcard_hotplug_tick) {
+      LOG_INFO("cancel hotplug...");
+      sdcard_hotplug_tick = 0;
+    }
+
+    if (sdcard_card) {
+      LOG_INFO("hot-unplug sdcard...");
+
+      if (stop_sdcard()) {
+        LOG_ERROR("stop_sdcard");
+      }
+    }
+  }
 
   void sdcard_main(void *arg)
   {
     for (;;) {
-      TickType_t wait_ticks = SDCARD_TASK_POLL_INTERVAL;
+      TickType_t wait_ticks = SDCARD_POLL_TICKS;
       const bool clear_on_exit = true;
       const bool wait_for_all_bits = false;
       esp_err_t err;
@@ -49,19 +101,10 @@
 
       LOG_DEBUG("event_bits=%08x card_detect=%d", event_bits, card_detect);
 
-      if (card_detect && !sdcard_card) {
-        LOG_INFO("hotplug sdcard...");
-
-        // TODO: delay, initial attempt is likely to fail due to nature of mechanical CD switch?
-        if (start_sdcard()) {
-          LOG_ERROR("start_sdcard");
-        }
-      } else if (!card_detect && sdcard_card) {
-        LOG_INFO("hot-unplug sdcard...");
-
-        if (stop_sdcard()) {
-          LOG_ERROR("stop_sdcard");
-        }
+      if (card_detect) {
+        check_sdcard_hotplug();
+      } else {
+        ensure_sdcard_stopped();
       }
     }
   }

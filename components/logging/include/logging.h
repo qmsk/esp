@@ -5,8 +5,11 @@
 
 #include <stdlib.h>
 
-#ifndef DEBUG
-#define DEBUG 0
+#ifdef DEBUG
+  #undef DEBUG
+  #define DEBUG 1
+#else
+  #define DEBUG 0
 #endif
 
 #define IF_DEBUG(x) do { if (DEBUG) x } while(0)

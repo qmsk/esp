@@ -341,3 +341,78 @@ menu "qmsk-esp-i2c"
     default 0
 
 endmenu
+
+menu "qmsk-esp-sdcard"
+  choice SDCARD_HOST
+    prompt "SD Card host type"
+
+    config SDCARD_HOST_NONE
+      bool "Disabled"
+
+    config SDCARD_SPI_HOST
+      bool "SD Card SPI Host"
+      select SDCARD_ENABLED
+
+  endchoice
+
+  config SDCARD_SPI_MOSI_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI CMD/MOSI"
+    range 0 39
+    default 15
+
+  config SDCARD_SPI_MISO_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI D0/MSIO"
+    range 0 39
+    default 2
+
+  config SDCARD_SPI_SCLK_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI CLK/SCLK"
+    range 0 39
+    default 14
+
+  config SDCARD_SPI_CS_PIN
+    depends on SDCARD_SPI_HOST
+    int "HOST IO pin for SDSPI D3/CS"
+    range 0 39
+    default 13
+
+  choice SDCARD_SPI_CD
+    prompt "SD Card Detect"
+    optional
+
+    config SDCARD_SPI_CD_HOST
+      bool "SD Card Detect Host GPIO"
+
+  endchoice
+
+  choice SDCARD_SPI_CD_POL
+    depends on SDCARD_SPI_CD_HOST
+    prompt "SD Card Detect"
+    optional
+
+    config SDCARD_SPI_CD_POL_NO
+      bool "normally-open signal to GND for SPI CD"
+
+    config SDCARD_SPI_CD_POL_NC
+      bool "normally-closed signal to GND for SPI CD"
+
+  endchoice
+
+  config SDCARD_SPI_CD_PIN
+    depends on SDCARD_SPI_CD_HOST
+    int "HOST IO pin for SPI CD"
+    range 0 39
+
+  config SDCARD_SPI_MAX_FREQ_KHZ
+    depends on SDCARD_SPI_HOST
+    int "Maximum SPI bus clock"
+    range 10000 40000
+    default 20000
+
+  config SDCARD_ENABLED
+    bool "SD Card support"
+
+endmenu

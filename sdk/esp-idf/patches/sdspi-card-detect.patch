@@ -1,0 +1,153 @@
+diff --git a/components/driver/include/driver/sdmmc_types.h b/components/driver/include/driver/sdmmc_types.h
+index cbb796fdbb..fc68e73933 100644
+--- a/components/driver/include/driver/sdmmc_types.h
++++ b/components/driver/include/driver/sdmmc_types.h
+@@ -157,6 +157,7 @@ typedef struct {
+     };
+     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
+     esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
++    esp_err_t (*check_cd)(int slot); /*!< Host function to check for active card-detect line */
+     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
+ } sdmmc_host_t;
+ 
+diff --git a/components/driver/include/driver/sdspi_host.h b/components/driver/include/driver/sdspi_host.h
+index a5d942e9d8..c9db809422 100644
+--- a/components/driver/include/driver/sdspi_host.h
++++ b/components/driver/include/driver/sdspi_host.h
+@@ -49,9 +49,15 @@ typedef int sdspi_dev_handle_t;
+     .deinit_p = &sdspi_host_remove_device, \
+     .io_int_enable = &sdspi_host_io_int_enable, \
+     .io_int_wait = &sdspi_host_io_int_wait, \
++    .check_cd = &sdspi_host_check_cd, \
+     .command_timeout_ms = 0, \
+ }
+ 
++typedef enum {
++  SDSPI_CD_NO,  ///< normally-open contact to GND
++  SDSPI_CD_NC,  ///< normally-closed contact to GND
++} sdspi_cd_t;
++
+ /**
+  * Extra configuration for SD SPI device.
+  */
+@@ -59,6 +65,7 @@ typedef struct {
+     spi_host_device_t host_id; ///< SPI host to use, SPIx_HOST (see spi_types.h).
+     gpio_num_t gpio_cs;     ///< GPIO number of CS signal
+     gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
++    sdspi_cd_t gpio_cd_pol; ///< GPIO card detect signal polarity
+     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
+     gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
+ } sdspi_device_config_t;
+@@ -187,6 +194,18 @@ esp_err_t sdspi_host_io_int_enable(sdspi_dev_handle_t handle);
+  */
+ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_ticks);
+ 
++/**
++ * @brief Check for asserted CD signal.
++ *
++ * @param handle    Handle of the sdspi device
++ *
++ * @return
++ *      - ESP_OK CD is asserted
++ *      - ESP_ERR_NOT_SUPPORTED if no CD available, status unknown
++ *      - ESP_ERR_NOT_FOUND if CD is not asserted
++ */
++esp_err_t sdspi_host_check_cd(sdspi_dev_handle_t handle);
++
+ /*******************************************************************************
+  * Deprecated APIs
+  ******************************************************************************/
+diff --git a/components/driver/sdspi_host.c b/components/driver/sdspi_host.c
+index 591e169b6f..86fb4fe52d 100644
+--- a/components/driver/sdspi_host.c
++++ b/components/driver/sdspi_host.c
+@@ -45,6 +45,7 @@ typedef struct {
+     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
+     uint8_t gpio_cs;            //!< CS GPIO
+     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
++    uint8_t gpio_cd_pol;        //!< Card detect GPIO polarity
+     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
+     uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
+     /// Set to 1 if the higher layer has asked the card to enable CRC checks
+@@ -142,7 +143,7 @@ static bool card_missing(slot_info_t *slot)
+     if (slot->gpio_cd == GPIO_UNUSED) {
+         return false;
+     }
+-    return gpio_get_level(slot->gpio_cd) == 1;
++    return gpio_get_level(slot->gpio_cd) == (!slot->gpio_cd_pol);
+ }
+ 
+ /// Get pointer to a block of DMA memory, allocate if necessary.
+@@ -348,6 +349,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
+     if (slot_config->gpio_cd != SDSPI_SLOT_NO_CD) {
+         io_conf.pin_bit_mask |= (1ULL << slot_config->gpio_cd);
+         slot->gpio_cd = slot_config->gpio_cd;
++        slot->gpio_cd_pol = slot_config->gpio_cd_pol;
+     } else {
+         slot->gpio_cd = GPIO_UNUSED;
+     }
+@@ -947,6 +949,21 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
+     return ESP_OK;
+ }
+ 
++esp_err_t sdspi_host_check_cd(sdspi_dev_handle_t handle)
++{
++    slot_info_t* slot = get_slot_info(handle);
++
++    if (slot->gpio_cd == GPIO_UNUSED) {
++      return ESP_ERR_NOT_SUPPORTED;
++    }
++
++    if (card_missing(slot)) {
++        return ESP_ERR_NOT_FOUND;
++    }
++
++    return ESP_OK;
++}
++
+ //Deprecated, make use of new sdspi_host_init_device
+ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
+ {
+diff --git a/components/sdmmc/include/sdmmc_cmd.h b/components/sdmmc/include/sdmmc_cmd.h
+index 9b7319641e..05571d3458 100644
+--- a/components/sdmmc/include/sdmmc_cmd.h
++++ b/components/sdmmc/include/sdmmc_cmd.h
+@@ -14,6 +14,18 @@
+ extern "C" {
+ #endif
+ 
++/**
++ * Check card detect status of SD/MMC slot
++ *
++ * @param card  pointer to card information structure previously initialized
++ *              using sdmmc_card_init
++ * @return
++ *      - ESP_OK on success
++ *      - ESP_ERR_NOT_SUPPORTED no card-detect available, status unknown
++ *      - ESP_ERR_NOT_FOUND card not present
++ */
++esp_err_t sdmmc_card_detect(sdmmc_host_t* host);
++
+ /**
+  * Probe and initialize SD/MMC card using given host
+  *
+diff --git a/components/sdmmc/sdmmc_init.c b/components/sdmmc/sdmmc_init.c
+index 789e6e5c11..5e5a32e253 100644
+--- a/components/sdmmc/sdmmc_init.c
++++ b/components/sdmmc/sdmmc_init.c
+@@ -31,6 +31,15 @@ static const char* TAG = "sdmmc_init";
+     } while(0);
+ 
+ 
++
++esp_err_t sdmmc_card_detect(sdmmc_host_t* host)
++{
++    if (host->check_cd == NULL) {
++        return ESP_ERR_NOT_SUPPORTED;
++    }
++    return (*host->check_cd)(host->slot);
++}
++
+ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
+ {
+     memset(card, 0, sizeof(*card));

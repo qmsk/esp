@@ -104,6 +104,17 @@ int start_taskf(struct task_options options, ...);
 # define USER_LEDS_TASK_STACK 2048
 #endif
 
+// used for sdcard hotplug
+#define SDCARD_TASK_NAME "sdcard"
+#define SDCARD_TASK_PRIORITY (tskIDLE_PRIORITY + 5)
+#define SDCARD_TASK_AFFINITY TASKS_CPU_PRO
+
+#if CONFIG_IDF_TARGET_ESP8266
+# define SDCARD_TASK_STACK 1024
+#elif CONFIG_IDF_TARGET_ESP32
+# define SDCARD_TASK_STACK 2048
+#endif
+
 // uart configuration and management
 #define CONSOLE_CLI_TASK_NAME "console-cli"
 #define CONSOLE_CLI_TASK_PRIORITY (tskIDLE_PRIORITY + 4)

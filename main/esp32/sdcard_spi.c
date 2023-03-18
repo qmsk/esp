@@ -12,6 +12,15 @@
   #define SDCARD_SPI_MAX_TRANSFER_SZ 4000 // XXX: whence? One DMA buffer?
   #define SDCARD_SPI_MAX_FREQ_KHZ CONFIG_SDCARD_SPI_MAX_FREQ_KHZ
 
+  #if CONFIG_SDCARD_SPI_CD_HOST
+    #define SDCARD_SPI_CD_PIN CONFIG_SDCARD_SPI_CD_PIN
+    #define SDCARD_SPI_CD_INV CONFIG_SDCARD_SPI_CD_INV
+  #else
+    #define SDCARD_SPI_CD_PIN SDSPI_SLOT_NO_CD
+  #endif
+  #define SDCARD_SPI_WP_PIN SDSPI_SLOT_NO_WP
+  #define SDCARD_SPI_INT_PIN SDSPI_SLOT_NO_INT
+
   sdmmc_host_t sdcard_spi_host = SDSPI_HOST_DEFAULT();
 
   int init_sdcard_spi(sdmmc_host_t **hostp)
@@ -27,9 +36,10 @@
     sdspi_device_config_t dev_config = {
       .host_id          = SDCARD_SPI_HOST,
       .gpio_cs          = CONFIG_SDCARD_SPI_CS_PIN,
-      .gpio_cd          = SDSPI_SLOT_NO_CD,
-      .gpio_wp          = SDSPI_SLOT_NO_WP,
-      .gpio_int         = SDSPI_SLOT_NO_INT,
+      .gpio_cd          = SDCARD_SPI_CD_PIN,
+      .gpio_cd_inv      = SDCARD_SPI_CD_INV,
+      .gpio_wp          = SDCARD_SPI_WP_PIN,
+      .gpio_int         = SDCARD_SPI_INT_PIN,
     };
     sdspi_dev_handle_t dev;
     esp_err_t err;

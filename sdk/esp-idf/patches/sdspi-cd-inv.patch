@@ -1,0 +1,41 @@
+diff --git a/components/driver/include/driver/sdspi_host.h b/components/driver/include/driver/sdspi_host.h
+index a5d942e9d8..5125ff2edf 100644
+--- a/components/driver/include/driver/sdspi_host.h
++++ b/components/driver/include/driver/sdspi_host.h
+@@ -59,6 +59,7 @@ typedef struct {
+     spi_host_device_t host_id; ///< SPI host to use, SPIx_HOST (see spi_types.h).
+     gpio_num_t gpio_cs;     ///< GPIO number of CS signal
+     gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
++    bool       gpio_cd_inv; ///< GPIO active-high card detect signal
+     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
+     gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
+ } sdspi_device_config_t;
+diff --git a/components/driver/sdspi_host.c b/components/driver/sdspi_host.c
+index 591e169b6f..fd3988747a 100644
+--- a/components/driver/sdspi_host.c
++++ b/components/driver/sdspi_host.c
+@@ -45,6 +45,7 @@ typedef struct {
+     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
+     uint8_t gpio_cs;            //!< CS GPIO
+     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
++    bool    gpio_cd_inv;
+     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
+     uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
+     /// Set to 1 if the higher layer has asked the card to enable CRC checks
+@@ -142,7 +143,7 @@ static bool card_missing(slot_info_t *slot)
+     if (slot->gpio_cd == GPIO_UNUSED) {
+         return false;
+     }
+-    return gpio_get_level(slot->gpio_cd) == 1;
++    return gpio_get_level(slot->gpio_cd) == (!slot->gpio_cd_inv);
+ }
+ 
+ /// Get pointer to a block of DMA memory, allocate if necessary.
+@@ -348,6 +349,7 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
+     if (slot_config->gpio_cd != SDSPI_SLOT_NO_CD) {
+         io_conf.pin_bit_mask |= (1ULL << slot_config->gpio_cd);
+         slot->gpio_cd = slot_config->gpio_cd;
++        slot->gpio_cd_inv = slot_config->gpio_cd_inv;
+     } else {
+         slot->gpio_cd = GPIO_UNUSED;
+     }

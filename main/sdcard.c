@@ -55,8 +55,12 @@
     }
 
     if ((err = sdmmc_card_init(sdcard_host, card))) {
-      if (err == ESP_ERR_TIMEOUT) {
-        LOG_WARN("sdmmc_card_init: timeout, card present?");
+      if (err == ESP_ERR_NOT_FOUND) {
+        LOG_WARN("sdmmc_card_init: %s, card not detected?", esp_err_to_name(err));
+        ret = 1;
+        goto error;
+      } else if (err == ESP_ERR_TIMEOUT) {
+        LOG_WARN("sdmmc_card_init: %s, card not present?", esp_err_to_name(err));
         ret = 1;
         goto error;
       } else {

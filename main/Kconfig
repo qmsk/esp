@@ -379,6 +379,24 @@ menu "qmsk-esp-sdcard"
     range 0 39
     default 13
 
+  choice SDCARD_SPI_CD
+    prompt "SD Card Detect"
+    optional
+
+    config SDCARD_SPI_CD_HOST
+      bool "SD Card Detect Host GPIO"
+
+  endchoice
+
+  config SDCARD_SPI_CD_PIN
+    depends on SDCARD_SPI_CD_HOST
+    int "HOST IO pin for SPI CD"
+    range 0 39
+
+  config SDCARD_SPI_CD_INV
+    depends on SDCARD_SPI_CD_HOST
+    bool "active-high signal for SPI CD"
+
   config SDCARD_SPI_MAX_FREQ_KHZ
     depends on SDCARD_SPI_HOST
     int "Maximum SPI bus clock"

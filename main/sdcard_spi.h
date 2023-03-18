@@ -6,4 +6,5 @@
   #include <driver/sdmmc_types.h>
 
   int init_sdcard_spi(sdmmc_host_t **hostp);
+  int get_sdcard_spi_cd();
 #endif

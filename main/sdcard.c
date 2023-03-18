@@ -1,7 +1,9 @@
 #include "sdcard.h"
+#include "sdcard_event.h"
 #include "sdcard_fatfs.h"
 #include "sdcard_state.h"
 #include "sdcard_spi.h"
+#include "tasks.h"
 
 #include <logging.h>
 
@@ -9,12 +11,74 @@
   #include <driver/sdmmc_types.h>
   #include <sdmmc_cmd.h>
 
+  #include <freertos/FreeRTOS.h>
+  #include <freertos/event_groups.h>
+  #include <freertos/task.h>
+
+  #define SDCARD_TASK_POLL_INTERVAL (1000 / portTICK_PERIOD_MS)
+
+  xTaskHandle sdcard_task;
+  EventGroupHandle_t sdcard_events;
   sdmmc_host_t *sdcard_host;
   sdmmc_card_t *sdcard_card;
 
+  static int get_sdcard_cd()
+  {
+    #if CONFIG_SDCARD_SPI_HOST
+      return get_sdcard_spi_cd();
+    #else
+      #error "No SD Card host selected"
+    #endif
+  }
+
+  void sdcard_main(void *arg)
+  {
+    for (;;) {
+      TickType_t wait_ticks = SDCARD_TASK_POLL_INTERVAL;
+      const bool clear_on_exit = true;
+      const bool wait_for_all_bits = false;
+
+      EventBits_t event_bits = xEventGroupWaitBits(sdcard_events, (1 << SDCARD_EVENT_CD_GPIO), clear_on_exit, wait_for_all_bits, wait_ticks);
+      int cd = get_sdcard_cd();
+
+      LOG_DEBUG("event_bits=%08x cd=%d", event_bits, cd);
+
+      if (cd < 0) {
+        LOG_ERROR("failed sdcard cd");
+      } else if (cd && !sdcard_card) {
+        LOG_INFO("hotplug sdcard...");
+
+        // TODO: delay, initial attempt is likely to fail due to nature of mechanical CD switch?
+        if (start_sdcard()) {
+          LOG_ERROR("start_sdcard");
+        }
+      } else if (!cd && sdcard_card) {
+        LOG_INFO("hot-unplug sdcard...");
+
+        if (stop_sdcard()) {
+          LOG_ERROR("stop_sdcard");
+        }
+      }
+    }
+  }
+
   int init_sdcard()
   {
+    struct task_options task_options = {
+      .main       = sdcard_main,
+      .name       = SDCARD_TASK_NAME,
+      .stack_size = SDCARD_TASK_STACK,
+      .arg        = NULL,
+      .priority   = SDCARD_TASK_PRIORITY,
+      .handle     = &sdcard_task,
+      .affinity   = SDCARD_TASK_AFFINITY,
+    };
     int err;
+
+    if (!(sdcard_events = xEventGroupCreate())) {
+      LOG_ERROR("xEventGroupCreate");
+      return -1;
+    }
 
   #if CONFIG_SDCARD_SPI_HOST
     if ((err = init_sdcard_spi(&sdcard_host))) {
@@ -25,9 +89,17 @@
     #error "No SD Card host selected"
   #endif
 
-    // attempt to start, TODO: hotplug
+    // attempt to start immediately, otherwise hotplug later from task
     if ((err = start_sdcard())) {
       LOG_WARN("start_sdcard");
+    }
+
+    // task
+    if (start_task(task_options)) {
+      LOG_ERROR("start_task");
+      return -1;
+    } else {
+      LOG_INFO("start task=%p", sdcard_task);
     }
 
     return 0;

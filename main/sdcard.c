@@ -22,37 +22,41 @@
   sdmmc_host_t *sdcard_host;
   sdmmc_card_t *sdcard_card;
 
-  static int get_sdcard_cd()
-  {
-    #if CONFIG_SDCARD_SPI_HOST
-      return get_sdcard_spi_cd();
-    #else
-      #error "No SD Card host selected"
-    #endif
-  }
-
   void sdcard_main(void *arg)
   {
     for (;;) {
       TickType_t wait_ticks = SDCARD_TASK_POLL_INTERVAL;
       const bool clear_on_exit = true;
       const bool wait_for_all_bits = false;
+      esp_err_t err;
 
-      EventBits_t event_bits = xEventGroupWaitBits(sdcard_events, (1 << SDCARD_EVENT_CD_GPIO), clear_on_exit, wait_for_all_bits, wait_ticks);
-      int cd = get_sdcard_cd();
+      EventBits_t event_bits = xEventGroupWaitBits(sdcard_events, (1 << SDCARD_EVENT_CD), clear_on_exit, wait_for_all_bits, wait_ticks);
+      bool card_detect = false;
 
-      LOG_DEBUG("event_bits=%08x cd=%d", event_bits, cd);
+      if ((err = sdmmc_card_detect(sdcard_host))) {
+        if (err == ESP_ERR_NOT_SUPPORTED) {
+          LOG_DEBUG("no CD, assume present");
+          card_detect = true;
+        } else if (err == ESP_ERR_NOT_FOUND) {
+          LOG_DEBUG("CD not asserted");
+          card_detect = false;
+        }
+      } else {
+        LOG_DEBUG("CD asserted");
 
-      if (cd < 0) {
-        LOG_ERROR("failed sdcard cd");
-      } else if (cd && !sdcard_card) {
+        card_detect = true;
+      }
+
+      LOG_DEBUG("event_bits=%08x card_detect=%d", event_bits, card_detect);
+
+      if (card_detect && !sdcard_card) {
         LOG_INFO("hotplug sdcard...");
 
         // TODO: delay, initial attempt is likely to fail due to nature of mechanical CD switch?
         if (start_sdcard()) {
           LOG_ERROR("start_sdcard");
         }
-      } else if (!cd && sdcard_card) {
+      } else if (!card_detect && sdcard_card) {
         LOG_INFO("hot-unplug sdcard...");
 
         if (stop_sdcard()) {

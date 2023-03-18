@@ -76,4 +76,42 @@
 
     return 0;
   }
+
+  int unmount_sdcard_fatfs(sdmmc_card_t *card)
+  {
+    BYTE pdrv = FF_DRV_NOT_USED;
+    char drv[8];
+    FRESULT fres;
+    esp_err_t err;
+
+    // lookup fatfs drive number
+    if ((pdrv = ff_diskio_get_pdrv_card(card)) == FF_DRV_NOT_USED) {
+      LOG_ERROR("ff_diskio_get_pdrv_card(...): not used");
+      return -1;
+    }
+
+    if (snprintf(drv, sizeof(drv), "%u:", pdrv) >= sizeof(drv)) {
+      LOG_ERROR("drv overflow");
+      return -1;
+    }
+
+    // unmount fatfs
+    if ((fres = f_mount(0, drv, 0))) {
+      LOG_ERROR("f_mount: %s", fresult_str(fres));
+      return -1;
+    }
+
+    // unregister fatfs -> sdmmc
+    ff_diskio_unregister(pdrv);
+
+    // unmount vfs
+    if ((err = esp_vfs_fat_unregister_path(SDCARD_FATFS_BASE_PATH))) {
+      LOG_ERROR("esp_vfs_fat_unregister_path: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+    LOG_INFO("unmounted sdcard FATFS at VFS %s", SDCARD_FATFS_BASE_PATH);
+
+    return 0;
+  }
 #endif

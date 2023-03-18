@@ -87,6 +87,12 @@ error:
   int stop_sdcard()
   {
     sdmmc_card_t *card = sdcard_card;
+    int err;
+
+    if ((err = unmount_sdcard_fatfs(card))) {
+      LOG_ERROR("unmount_sdcard_fatfs");
+      return err;
+    }
 
     sdcard_card = NULL;
 

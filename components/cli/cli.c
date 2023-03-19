@@ -154,28 +154,41 @@ static int cli_read(struct cli *cli)
       return 1;
     }
 
-    // echo
-    fputc(c, stdout);
+    switch(c) {
+      case '\b':
+        if (ptr > cli->buf) {
+          // erase one char
+          ptr--;
 
-    // handle CR or LF
-    if (c == '\r') {
-      fputc('\n', stdout);
-    }
+          // echo wipeout
+          fprintf(stdout, "\b \b");
+        }
 
-    if (c == '\b' && ptr > cli->buf) {
-      // erase one char
-      ptr--;
+        break;
 
-      // echo wipeout
-      fprintf(stdout, " \b");
+      case '\r':
+        // echo CR -> CRLF
+        fputc('\r', stdout);
 
-    } else if (c == '\r' || c == '\n') {
-      *ptr = '\0';
+        /* fall-through */
 
-      return 0;
-    } else {
-      // copy
-      *ptr++ = c;
+      case '\n':
+        // echo
+        fputc('\n', stdout);
+
+        // end
+        *ptr = '\0';
+
+        return 0;
+
+      default:
+        // echo
+        fputc(c, stdout);
+
+        // copy
+        *ptr++ = c;
+
+        break;
     }
   }
 

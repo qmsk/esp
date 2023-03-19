@@ -9,10 +9,10 @@
     <div class="view">
       <h1>Files</h1>
       <progress v-show="loading">Loading...</progress>
-      <template v-if="vfs">
-        <div class="vfs-tree" v-for="vfs in vfs">
+      <template v-if="vfsArray">
+        <div class="vfs-tree" v-for="vfs in vfsArray">
           <h2>{{ vfs.path }}</h2>
-          <files-node :vfs="vfs" dir="" :nodes="Array.from(vfs.tree.values())" />
+          <files-node :vfs="vfs" dir="" :items="vfs.array" :loaded="true" />
         </div>
       </template>
     </div>
@@ -32,9 +32,9 @@ export default {
     this.load();
   },
   computed: {
-    vfs() {
+    vfsArray() {
       if (this.$store.state.vfs) {
-        return this.$store.state.vfs;
+        return this.$store.state.vfs.array;
       }
     },
   },

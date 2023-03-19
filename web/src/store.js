@@ -76,19 +76,29 @@ export default new Vuex.Store({
 
     /* VFS */
     async loadVFS({ commit }) {
-      const data = await vfsService.getTree();
+      const data = await vfsService.get();
 
       commit('updateVFS', data);
     },
-    async uploadFile({ commit }, { vfs, path, file }) {
-      const item = await vfsService.upload(vfs, path, file);
+    async loadVFSDirectory({ commit }, { vfsPath, path }) {
+      const item = await vfsService.getDirectory(vfsPath, path);
 
-      commit('setVFSFile', { vfs, item });
+      commit('setVFS', { vfsPath, item });
     },
-    async deleteFile({ commit }, { vfs, path }) {
-      await vfsService.delete(vfs, path);
+    async makeVFSDirectory({ commit }, { vfsPath, path }) {
+      const item = await vfsService.makeDirectory(vfsPath, path);
 
-      commit('removeVFSFile', { vfs, path });
+      commit('setVFS', { vfsPath, item });
+    },
+    async uploadFile({ commit }, { vfsPath, path, file }) {
+      const item = await vfsService.uploadFile(vfsPath, path, file);
+
+      commit('setVFS', { vfsPath, item });
+    },
+    async deleteFile({ commit }, { vfsPath, path }) {
+      await vfsService.delete(vfsPath, path);
+
+      commit('delVFS', { vfsPath, path });
     },
   },
   mutations: {
@@ -127,11 +137,15 @@ export default new Vuex.Store({
     updateVFS(state, vfs) {
       state.vfs = vfs;
     },
-    setVFSFile(state, { vfs, item }) {
-      vfsService.setFile(vfs, item);
+    setVFS(state, { vfsPath, item }) {
+      const vfs = state.vfs.map.get(vfsPath);
+
+      vfsService.setVFS(vfs, item);
     },
-    removeVFSFile(state, { vfs, path }) {
-      vfsService.removeFile(vfs, path);
+    delVFS(state, { vfsPath, path }) {
+      const vfs = state.vfs.map.get(vfsPath);
+
+      vfsService.delVFS(vfs, path);
     },
   },
 });

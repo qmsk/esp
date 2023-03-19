@@ -41,37 +41,38 @@
       },
       cancelTemp() {
         if (this.temp) {
-          this.$emit('remove');
+          this.$emit('clear');
         }
       },
       async uploadFile(event) {
         const input = event.target;
         const file = input.files[0];
         const path = this.buildPath(file.name)
-        const vfs = this.vfs;
+        const vfsPath = this.vfs.path;
 
         this.uploading = true;
 
         try {
-          await this.$store.dispatch('uploadFile', { vfs, path, file });
+          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
         } catch (error) {
           input.setCustomValidity(error.name + ": " + error.message);
-          return;
+          throw error;
         } finally {
           this.uploading = false;
         }
+
+        this.$emit('clear');
       },
       async deleteFile(event) {
-        const vfs = this.vfs;
+        const vfsPath = this.vfs.path;
         const path = this.buildPath(this.node.name);
 
         this.deleting = true;
 
         try {
-          await this.$store.dispatch('deleteFile', { vfs, path });
+          await this.$store.dispatch('deleteFile', { vfsPath, path });
         } catch (error) {
-          // XXX
-          console.log(error);
+          // TODO
           throw error;
         } finally {
           this.deleting = false;

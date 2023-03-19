@@ -3,78 +3,133 @@ export default class VFSService {
     this.apiService = apiService;
   }
 
-  makeTree(vfs) {
-    const root = {
-      path: vfs.path,
-      tree: new Map(),
+  makeState(items) {
+    const state = {
+      array: new Array(),
+      map: new Map(),
     };
 
-    for (const item of vfs.files) {
-      this.setFile(root, item);
+    for (const vfsItem of items) {
+      const vfs = this.makeVFS(vfsItem);
+
+      state.array.push(vfs);
+      state.map.set(vfsItem.path, vfs)
     }
 
-    return root;
+    state.array.sort((a, b) => a.path.localeCompare(b.path));
+
+    return state;
   }
 
-  setFile(vfs, item) {
-    const parts = item.name.split('/');
-    const name = parts.pop();
-
-    let dir = vfs;
-    let file = {
-      type: "file",
-      name: name,
-      size: item.size,
-      mtime: item.mtime,
+  makeVFS(item) {
+    const vfs = {
+      path: item.path,
+      map: new Map(),
+      array: new Array(),
     };
+
+    for (const fileItem of item.files) {
+      this.setVFS(vfs, fileItem);
+    }
+
+    return vfs;
+  }
+
+  makeDirectory(path, items) {
+    const directory = {
+      type: 'directory',
+      name: path,
+      loaded: true,
+      map: new Map(),
+      array: new Array(),
+    };
+
+    for (const item of items) {
+      this.setVFS(directory, item);
+    }
+
+    return directory;
+  }
+
+  setVFS(node, item) {
+    const parts = item.name.split('/');
+    const name = item.name = parts.pop();
+
+    if (item.type == 'directory') {
+      if (!item.map) {
+        item.map = new Map();
+      }
+      if (!item.array) {
+        item.array = new Array();
+      }
+    }
 
     for (const part of parts) {
-      if (!dir.tree.has(part)) {
-        dir.tree.set(part, {
-          type: "directory",
-          name: part,
-          tree: new Map(),
-        });
-      }
+      if (!node.map.has(part)) {
+        const directory = makeDirectory(part, []);
 
-      dir = dir.tree.get(part);
+        node.map.set(part, directory);
+        node.array.push(directory);
+
+        node = directory;
+      } else {
+        node = node.map.get(part);
+      }
     }
 
-    dir.tree.set(name, file);
+    if (node.map.has(name)) {
+      node.array.splice(node.array.indexOf(node.map.get(name)), 1, item);
+      node.map.set(name, item);
+    } else {
+      node.map.set(name, item);
+      node.array.push(item);
+    }
   }
 
-  removeFile(vfs, path) {
+  delVFS(vfs, path) {
     const parts = path.split('/');
     const name = parts.pop();
 
-    let dir = vfs;
+    let node = vfs;
 
     for (const part of parts) {
-      dir = dir.tree.get(part);
+      node = node.map.get(part);
     }
 
-    dir.tree.delete(name);
+    if (node.map.has(name)) {
+      node.array.splice(node.array.indexOf(node.map.get(name)), 1);
+      node.map.delete(name);
+    }
   }
 
   async get() {
     const response = await this.apiService.get('/vfs');
+    const items = response.data;
 
-    return response.data
+    return this.makeState(items)
   }
 
-  async getTree() {
-    const data = await this.get();
+  async getDirectory(vfsPath, path) {
+    const response = await this.apiService.get('/vfs' + vfsPath + '/' + path + '/');
+    const items = response.data
 
-    return data.map((vfs) => this.makeTree(vfs));
+    return this.makeDirectory(path, items);
   }
 
-  async upload(vfs, path, file) {
-    const response = await this.apiService.putFile('/vfs' + vfs.path + '/' + path, file);
+  async makeDirectory(vfsPath, path) {
+    const response = await this.apiService.post('/vfs' + vfsPath + '/' + path + '/');
+    const items = response.data
+
+    return this.makeDirectory(path, []);
+  }
+
+  async uploadFile(vfsPath, path, file) {
+    const response = await this.apiService.putFile('/vfs' + vfsPath + '/' + path, file);
 
     return { type: 'file', name: path }; // TODO: size, mtime
   }
 
-  async delete(vfs, path) {
-    const response = await this.apiService.delete('/vfs' + vfs.path + '/' + path);
+  async delete(vfsPath, path) {
+    const response = await this.apiService.delete('/vfs' + vfsPath + '/' + path);
   }
 }

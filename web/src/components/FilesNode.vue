@@ -34,23 +34,26 @@
 <template>
   <div class="vfs-nodes">
     <div class="vfs-controls">
-      <button @click="newDirectory">&nearr;</button>
-      <button @click="newFile">&plus;</button>
-      <button @click="cancelTemp" v-if="temp">&minus;</button>
+      <button @click="loadDirectory" v-if="!temp && !loaded">&searr;</button>
+      <button @click="newDirectory" v-if="!temp">&gt;</button>
+      <button @click="newFile" v-if="!temp">&plus;</button>
+      <button @click="cancelTemp" v-if="temp">&times;</button>
+      <button @click="makeDirectory" v-if="temp">&check;</button>
     </div>
 
-    <template v-for="(item, i) in items">
+    <template v-for="(item, i) in allItems">
       <file-node v-if="item.type == 'file'"
         :vfs="vfs"
         :dir="dir"
         :node="item"
         :temp="item.temp || false"
-        @remove="remove(i)"
+        @clear="remove(i)"
       />
 
       <div class="vfs-item vfs-directory" v-if="item.type == 'directory'">
         <template v-if="item.temp">
           <input type="text" v-model="item.name" />
+          <progress v-show="creating">Creating...</progress>
         </template>
         <template v-else>
           {{ item.name }}/
@@ -59,9 +62,10 @@
         <files-node
           :vfs="vfs"
           :dir="buildPath(item.name)"
-          :nodes="Array.from(item.tree.values())"
+          :items="item.array"
           :temp="item.temp || false"
-          @remove="remove(i)"
+          :loaded="item.loaded || false"
+          @clear="remove(i)"
         />
       </div>
     </template>
@@ -78,16 +82,18 @@
     props: {
       vfs: { type: Object },
       dir: { type: String },
-      nodes: { type: Array, default: [] },
+      items: { type: Array, default: () => [] },
       temp: { type: Boolean, default: false },
+      loaded: { type: Boolean, default: false },
     },
-    data: function () {
-      return {
-        items: this.nodes,
-      };
-    },
+    data: () => ({
+      creating: false,
+      newItems: [],
+    }),
     computed: {
-
+      allItems() {
+        return [].concat(this.newItems, this.items);
+      }
     },
     methods: {
       buildPath(name) {
@@ -97,17 +103,40 @@
           return name;
         }
       },
+      async loadDirectory() {
+        const vfsPath = this.vfs.path;
+        const path = this.dir;
+
+        await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
+      },
       cancelTemp() {
-        this.$emit('cancel');
+        this.$emit('clear');
+      },
+      async makeDirectory() {
+        const vfsPath = this.vfs.path;
+        const path = this.dir;
+
+        this.creating = true;
+
+        try {
+          await this.$store.dispatch('makeVFSDirectory', { vfsPath, path });
+        } catch (error) {
+          // TODO: input validity
+          throw error;
+        } finally {
+          this.creating = false;
+        }
+
+        this.$emit('clear');
       },
       newDirectory() {
-        this.items.push({ type: 'directory', temp: true, tree: new Map() });
+        this.newItems.push({ type: 'directory', temp: true });
       },
       newFile() {
-        this.items.push({ type: 'file', temp: true });
+        this.newItems.push({ type: 'file', temp: true });
       },
       remove(i) {
-        this.items.splice(i, 1);
+        this.newItems.splice(i, 1);
       },
     }
   }

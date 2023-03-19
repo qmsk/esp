@@ -4,8 +4,10 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #if CONFIG_NEWLIB_VFS_STDIO
   #define HAVE_STDIO_FCNTL 1

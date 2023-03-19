@@ -49,9 +49,6 @@ static enum state cli_readline_ascii(struct cli *cli, char c)
       // echo
       fputc('\n', stdout);
 
-      // end
-      *cli->ptr = '\0';
-
       return END;
 
     default:
@@ -83,9 +80,9 @@ enum readline_csi_command {
 
 static enum state cli_readline_csi_cursor_up(struct cli *cli)
 {
-  if (cli->ptr == cli->buf) {
+  if (cli->ptr == cli->buf && cli->prev_end) {
     // restore previous line
-    while (*cli->ptr) {
+    while (cli->ptr < cli->prev_end) {
       char c = *cli->ptr++;
 
       fputc(c, stdout);
@@ -101,7 +98,8 @@ static enum state cli_readline_csi_cursor_down(struct cli *cli)
     // erase to end of line
     printf("\r%s\e[K", CLI_READLINE_PROMPT);
 
-    cli->ptr = cli->buf;
+    cli->prev_end = cli->end;
+    cli->ptr = cli->end = cli->buf;
   }
 
   return ASCII;
@@ -142,8 +140,18 @@ int cli_readline(struct cli *cli)
   }
 #endif
 
+  if (cli->end) {
+    // undo NULs used by cmd_eval argv for history recall
+    for (char *p = cli->buf; p < cli->end; p++) {
+      if (*p == '\0') {
+        *p = ' ';
+      }
+    }
+  }
+
   // start
-  cli->ptr = cli->buf;
+  cli->prev_end = cli->end;
+  cli->ptr = cli->end = cli->buf;
 
   printf("%s", CLI_READLINE_PROMPT);
 
@@ -178,7 +186,13 @@ int cli_readline(struct cli *cli)
         LOG_FATAL("state=%d", state);
     }
 
+    if (cli->ptr > cli->end) {
+      cli->end = cli->ptr;
+    }
+
     if (state == END) {
+      *cli->end = '\0';
+
       return 0;
     }
   }

@@ -133,13 +133,6 @@ static int cli_eval(struct cli *cli)
     LOG_ERROR("cmd %s: %d", line, err);
   }
 
-  // undo NULs used by cmd_eval argv, allow history recall
-  for (char *p = cli->buf; p < cli->ptr && p < cli->buf + cli->size; p++) {
-    if (*p == '\0') {
-      *p = ' ';
-    }
-  }
-
   return err;
 }
 

@@ -4,7 +4,8 @@
 #include <cmd.h>
 
 struct cli {
-  char *buf, *ptr;
+  char *buf, *ptr, *end;
+  char *prev_end;
   size_t size;
   TickType_t timeout;
 

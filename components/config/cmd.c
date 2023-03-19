@@ -156,6 +156,18 @@ static void print_config(const struct config *config)
   }
 }
 
+int config_cmd_save(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+
+  if (config_save(config)) {
+    LOG_ERROR("config_save");
+    return -CMD_ERR;
+  }
+
+  return 0;
+}
+
 int config_cmd_load(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
@@ -331,6 +343,7 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
+  { "save",              config_cmd_save,   .usage = "",                                .describe = "Save config to filesystem"  },
   { "load",              config_cmd_load,   .usage = "",                                .describe = "Load config from filesystem"  },
   { "show",              config_cmd_show,   .usage = "[SECTION]",                       .describe = "Show config settings"  },
   { "get",               config_cmd_get,    .usage = "SECTION NAME",                    .describe = "Get config setting"    },

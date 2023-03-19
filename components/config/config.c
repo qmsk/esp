@@ -155,7 +155,7 @@ int config_lookup(const struct config *config, const char *module, const char *n
     return 0;
 }
 
-int configtab_init(const struct configtab *tab)
+int configtab_reset(const struct configtab *tab)
 {
   if (tab->count) {
     *tab->count = 0;
@@ -189,14 +189,13 @@ int configtab_init(const struct configtab *tab)
   return 0;
 }
 
-
-int configmod_init(const struct configmod *module, const struct configtab *table)
+int configmod_reset(const struct configmod *module, const struct configtab *table)
 {
   int err;
 
   for (const struct configtab *tab = table; tab->name; tab++) {
-    if ((err = configtab_init(tab))) {
-      LOG_ERROR("configtab_init %s.%s", module->name, tab->name);
+    if ((err = configtab_reset(tab))) {
+      LOG_ERROR("configtab_reset %s.%s", module->name, tab->name);
       return err;
     }
   }
@@ -204,21 +203,21 @@ int configmod_init(const struct configmod *module, const struct configtab *table
   return 0;
 }
 
-int config_init(struct config *config)
+int config_reset(struct config *config)
 {
   int err;
 
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
       for (int i = 0; i < mod->tables_count; i++) {
-        if ((err = configmod_init(mod, mod->tables[i]))) {
-          LOG_ERROR("configmod_init: %s%d", mod->name, i + 1);
+        if ((err = configmod_reset(mod, mod->tables[i]))) {
+          LOG_ERROR("configmod_reset: %s%d", mod->name, i + 1);
           return err;
         }
       }
     } else {
-      if ((err = configmod_init(mod, mod->table))) {
-        LOG_ERROR("configmod_init: %s", mod->name);
+      if ((err = configmod_reset(mod, mod->table))) {
+        LOG_ERROR("configmod_reset: %s", mod->name);
         return err;
       }
     }
@@ -458,4 +457,9 @@ int config_print(const struct configmod *mod, const struct configtab *tab, unsig
   }
 
   return 0;
+}
+
+int config_init(struct config *config)
+{
+  return config_reset(config);
 }

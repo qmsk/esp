@@ -114,12 +114,10 @@ static inline int configtab_count(const struct configtab *tab)
   }
 }
 
-/*
- * Set default values.
- *
- * Multi-valued configtabs are cleared.
- */
-int config_init(struct config *config);
+/* Reset value to defaults */
+int configtab_reset(const struct configtab *tab);
+int configmod_reset(const struct configmod *module, const struct configtab *table);
+int config_reset(struct config *config);
 
 /* Set empty value, or reset count to 0 if multi-valued */
 int config_clear(const struct configmod *mod, const struct configtab *tab);
@@ -134,9 +132,16 @@ int config_get(const struct configmod *mod, const struct configtab *tab, unsigne
 int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file);
 
 /*
+ * Initialize to empty / default values.
+ *
+ * Multi-valued configtabs are cleared.
+ */
+int config_init(struct config *config);
+
+/*
  * Set config from file contents.
  *
- * The config must be empty (`config_init()`), or values will be duplicated!
+ * The config must be empty (`config_reset()`), or values will be duplicated!
  */
 int config_read(struct config *config, FILE *file);
 

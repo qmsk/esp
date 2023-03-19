@@ -375,6 +375,63 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int config_cmd_reset(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+  const char *section = NULL, *name = NULL;
+  const struct configmod *module = NULL;
+  const struct configtab *table = NULL;
+  int err;
+
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &section))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_str(argc, argv, 2, &name))) {
+    return err;
+  }
+
+  if (section) {
+    if (configmod_lookup(config->modules, section, &module, &table)) {
+      LOG_ERROR("Unkonwn config section: %s", section);
+      return -CMD_ERR_ARGV;
+    }
+  }
+
+  if (section && name) {
+    const struct configtab *tab = NULL;
+
+    if (configtab_lookup(table, name, &tab)) {
+      LOG_ERROR("Unkonwn config name: %s.%s", section, name);
+      return -CMD_ERR_ARGV;
+    }
+
+    LOG_INFO("reset [%s] %s...", section, name);
+
+    if (configtab_reset(tab)) {
+      LOG_ERROR("configtab_reset");
+      return -1;
+    }
+  } else if (section) {
+    LOG_INFO("reset [%s]...", section);
+
+    if (configmod_reset(module, table)) {
+      LOG_ERROR("configmod_reset");
+      return -1;
+    }
+  } else {
+    LOG_INFO("reset...");
+
+    if (config_reset(config)) {
+      LOG_ERROR("config_reset");
+      return -1;
+    }
+  }
+
+  LOG_WARN("config modified, use `config save` and reboot");
+
+  return 0;
+}
+
 const struct cmd config_commands[] = {
   { "save",              config_cmd_save,   .usage = "[FILE]",                          .describe = "Save config to filesystem"  },
   { "load",              config_cmd_load,   .usage = "[FILE]",                          .describe = "Load config from filesystem"  },
@@ -383,7 +440,8 @@ const struct cmd config_commands[] = {
 
   { "show",              config_cmd_show,   .usage = "[SECTION]",                       .describe = "Show config settings"  },
   { "get",               config_cmd_get,    .usage = "SECTION NAME",                    .describe = "Get config setting"    },
-  { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set and write config"  },
-  { "clear",             config_cmd_clear,  .usage = "SECTION NAME",                    .describe = "Clear and write config"  },
+  { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set config value"  },
+  { "clear",             config_cmd_clear,  .usage = "SECTION NAME",                    .describe = "Clear config value"  },
+  { "reset",             config_cmd_reset,  .usage = "[SECTION] [NAME]",                .describe = "Reset config values to default"  },
   {}
 };

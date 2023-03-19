@@ -14,7 +14,7 @@
 
 #define VFS_HTTP_URL_PATH "vfs/"
 
-#define VFS_HTTP_PATH_MAX 64
+#define VFS_HTTP_PATH_SIZE 64
 
 #define VFS_HTTP_CONTENT_TYPE "application/octet-stream"
 
@@ -28,10 +28,11 @@ static const struct vfs_http_mount {
   {},
 };
 
-static int vfs_http_mount_match(const struct vfs_http_mount *mount, const char *path)
+static const char *vfs_http_mount_match(const struct vfs_http_mount *mount, const char *path)
 {
   const char *p = path, *m = mount->path;
 
+  // scan common prefix
   while (*p && *p++ == *m++ && *m) {
 
   }
@@ -39,20 +40,20 @@ static int vfs_http_mount_match(const struct vfs_http_mount *mount, const char *
   if (!*p) {
     if (!*m) {
       // exact match
-      return 1;
+      return p;
     } else {
       // short
-      return 0;
+      return NULL;
     }
   } else if (!*m) {
     if (*p == '/') {
       // directory prefix match
-      return 1;
+      return p + 1;
     } else {
-      return 0;
+      return false;
     }
   } else {
-    return 0;
+    return false;
   }
 }
 
@@ -66,7 +67,8 @@ enum vfs_http_type {
 struct vfs_http_params {
   enum vfs_http_type type;
   const struct vfs_http_mount *mount;
-  char path[VFS_HTTP_PATH_MAX];
+  const char *name;
+  char path[VFS_HTTP_PATH_SIZE];
 };
 
 static int vfs_http_params(struct http_request *request, struct vfs_http_params *params)
@@ -89,26 +91,7 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
     }
   }
 
-  if (!*path || (path[0] == '/' && !path[1])) {
-    params->type = VFS_HTTP_TYPE_ROOT;
-
-    return 0;
-  }
-
-  // match VFS mount
-  for (const struct vfs_http_mount *m = vfs_http_mounts; m->path; m++) {
-    if (vfs_http_mount_match(m, path)) {
-      params->mount = m;
-    }
-  }
-
-  if (!params->mount) {
-    LOG_WARN("No matching path=%s prefix", params->path);
-
-    return HTTP_NOT_FOUND;
-  }
-
-  // add vfs prefix
+  // full VFS path
   ret = snprintf(params->path, sizeof(params->path), "%s", path);
 
   if (ret < 0) {
@@ -119,9 +102,32 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
-  if (!path[0]) {
+  if (!*path || (path[0] == '/' && !path[1])) {
     params->type = VFS_HTTP_TYPE_ROOT;
-  } else if (strcmp(path, params->mount->path) == 0) {
+
+    return 0;
+  }
+
+  // match VFS mount
+  const char *name = NULL;
+
+  for (const struct vfs_http_mount *m = vfs_http_mounts; m->path; m++) {
+    if ((name = vfs_http_mount_match(m, path))) {
+      params->mount = m;
+      params->name = name;
+
+      break;
+    }
+  }
+
+  if (!name) {
+    LOG_WARN("No matching path=%s mount", params->path);
+
+    return HTTP_NOT_FOUND;
+  }
+
+  // format filesystem path
+  if (strcmp(path, params->mount->path) == 0) {
     params->type = VFS_HTTP_TYPE_MOUNT;
   } else if (path[strlen(path) - 1] == '/') {
     params->path[strlen(params->path) - 1] = '\0';
@@ -290,32 +296,18 @@ error:
   return err;
 }
 
-static const char *vfs_http_api_dirent_type(const struct dirent *d)
+static int vfs_http_api_write_file_object(struct json_writer *w, const char *name, const char *path)
 {
-  switch(d->d_type) {
-    case DT_REG:  return "file";
-    case DT_DIR:  return "directory";
-    default:      return "unknown";
-  }
-}
-
-static int vfs_http_api_write_directory_file_object(struct json_writer *w, const char *path, const struct dirent *d)
-{
-  char buf[256];
   struct stat st = {};
   struct tm tm;
   char tm_buf[20];
   int err = 0;
 
-  err |= JSON_WRITE_MEMBER_STRING(w, "name", d->d_name);
-  err |= JSON_WRITE_MEMBER_STRING(w, "type", vfs_http_api_dirent_type(d));
+  err |= JSON_WRITE_MEMBER_STRING(w, "name", name);
+  err |= JSON_WRITE_MEMBER_STRING(w, "type", "file");
 
-  if (d->d_type != DT_REG) {
-
-  } else if (snprintf(buf, sizeof(buf), "%s/%s", path, d->d_name) >= sizeof(buf)) {
-    LOG_WARN("path=%s overflow d_name=%s", path, d->d_name);
-  } else if (stat(buf, &st)) {
-    LOG_WARN("stat %s: %s", buf, strerror(errno));
+  if (stat(path, &st)) {
+    LOG_WARN("stat %s: %s", path, strerror(errno));
   } else {
     localtime_r(&st.st_mtime, &tm);
     strftime(tm_buf, sizeof(tm_buf), "%F %T", &tm);
@@ -327,7 +319,53 @@ static int vfs_http_api_write_directory_file_object(struct json_writer *w, const
   return err;
 }
 
-static int vfs_http_api_write_directory_files(struct json_writer *w, const char *path)
+static int vfs_http_api_write_file(struct json_writer *w, void *ctx)
+{
+  const struct vfs_http_params *params = ctx;
+
+  return JSON_WRITE_OBJECT(w, vfs_http_api_write_file_object(w, params->name, params->path));
+}
+
+static int vfs_http_api_write_directory_object(struct json_writer *w, const char *name)
+{
+  int err = 0;
+
+  err |= JSON_WRITE_MEMBER_STRING(w, "name", name);
+  err |= JSON_WRITE_MEMBER_STRING(w, "type", "directory");
+
+  return err;
+}
+
+static int vfs_http_api_write_dirent_object(struct json_writer *w, const char *path, struct dirent *d)
+{
+  char buf[VFS_HTTP_PATH_SIZE];
+  int err;
+
+  if (snprintf(buf, sizeof(buf), "%s/%s", path, d->d_name) >= sizeof(buf)) {
+    LOG_WARN("path=%s overflow d_name=%s", path, d->d_name);
+  }
+
+  switch (d->d_type) {
+    case DT_REG:
+      if ((err = vfs_http_api_write_file_object(w, d->d_name, buf))) {
+        return err;
+      }
+      break;
+
+    case DT_DIR:
+      if ((err = vfs_http_api_write_directory_object(w, d->d_name))) {
+        return err;
+      }
+      break;
+
+    default:
+      LOG_WARN("unkonwn d_type=%d d_name=%s", d->d_type, d->d_name);
+  }
+
+  return 0;
+}
+
+static int vfs_http_api_write_directory_array(struct json_writer *w, const char *path)
 {
   DIR *dir;
   struct dirent *d;
@@ -339,11 +377,12 @@ static int vfs_http_api_write_directory_files(struct json_writer *w, const char 
   }
 
   while ((d = readdir(dir))) {
-    if ((err = JSON_WRITE_OBJECT(w, vfs_http_api_write_directory_file_object(w, path, d)))) {
-      return err;
+    if ((err = JSON_WRITE_OBJECT(w, vfs_http_api_write_dirent_object(w, path, d)))) {
+      goto error;
     }
   }
 
+error:
   closedir(dir);
 
   return err;
@@ -351,24 +390,24 @@ static int vfs_http_api_write_directory_files(struct json_writer *w, const char 
 
 static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
 {
-  const char *path = ctx;
+  const struct vfs_http_params *params = ctx;
 
-  return JSON_WRITE_ARRAY(w, vfs_http_api_write_directory_files(w, path));
+  return JSON_WRITE_ARRAY(w, vfs_http_api_write_directory_array(w, params->path));
 }
 
 static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_http_mount *mount)
 {
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_STRING(w, "path", mount->path)
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_files(w, mount->path))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, mount->path))
   );
 }
 
 static int vfs_http_api_write_mount(struct json_writer *w, void *ctx)
 {
-  const struct vfs_http_mount *mount = ctx;
+  const struct vfs_http_params *params = ctx;
 
-  return vfs_http_api_write_mount_object(w, mount);
+  return vfs_http_api_write_mount_object(w, params->mount);
 }
 
 static int vfs_http_api_write_root_mounts(struct json_writer *w)
@@ -415,7 +454,7 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
       break;
 
     case VFS_HTTP_TYPE_MOUNT:
-      if ((err = write_http_response_json(response, vfs_http_api_write_mount, (void *) params.mount))) {
+      if ((err = write_http_response_json(response, vfs_http_api_write_mount, &params))) {
         LOG_WARN("write_http_response_json -> vfs_http_api_write_mount");
         return err;
       }
@@ -423,7 +462,7 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
       break;
 
     case VFS_HTTP_TYPE_DIRECTORY:
-      if ((err = write_http_response_json(response, vfs_http_api_write_directory, params.path))) {
+      if ((err = write_http_response_json(response, vfs_http_api_write_directory, &params))) {
         LOG_WARN("write_http_response_json -> vfs_http_api_write_directory");
         return err;
       }
@@ -464,6 +503,11 @@ int vfs_http_put(struct http_request *request, struct http_response *response, v
 
   if ((err = vfs_http_write(request, &params))) {
     LOG_WARN("vfs_http_write");
+    return err;
+  }
+
+  if ((err = write_http_response_json(response, vfs_http_api_write_file, &params))) {
+    LOG_WARN("write_http_response_json -> vfs_http_api_write_file");
     return err;
   }
 

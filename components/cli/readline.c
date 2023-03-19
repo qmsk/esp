@@ -22,19 +22,67 @@ enum state {
   END,
 };
 
+static enum state cli_readline_ascii_insert(struct cli *cli, char c)
+{
+  // insert
+  for (char *p = cli->end; p > cli->ptr; p--) {
+    *p = *(p - 1);
+  }
+
+  *cli->ptr++ = c;
+  cli->end++;
+
+  // echo
+  fputc(c, stdout);
+
+  for (char *p = cli->ptr; p < cli->end; p++) {
+    fputc(*p, stdout);
+  }
+
+  // restore cursor position
+  for (char *p = cli->end; p > cli->ptr; p--) {
+    fputc('\b', stdout);
+  }
+
+  return ASCII;
+}
+
+static enum state cli_readline_ascii_remove(struct cli *cli, char c)
+{
+  if (cli->ptr > cli->buf) {
+    // remove
+    for (char *p = cli->ptr; p < cli->end; p++) {
+      *(p - 1) = *p;
+    }
+
+    cli->ptr--;
+    cli->end--;
+
+    // echo wipeout
+    fputc('\b', stdout);
+
+    for (char *p = cli->ptr; p < cli->end; p++) {
+      fputc(*p, stdout);
+    }
+
+    fputc(' ', stdout);
+
+    // restore cursor position
+    for (char *p = cli->end; p > cli->ptr; p--) {
+      fputc('\b', stdout);
+    }
+
+    fputc('\b', stdout);
+  }
+
+  return ASCII;
+}
+
 static enum state cli_readline_ascii(struct cli *cli, char c)
 {
   switch(c) {
     case '\b':
-      if (cli->ptr > cli->buf) {
-        // erase one char
-        cli->ptr--;
-
-        // echo wipeout
-        fprintf(stdout, "\b \b");
-      }
-
-      return ASCII;
+      return cli_readline_ascii_remove(cli, c);
 
     case '\e':
       return ESC;
@@ -52,13 +100,7 @@ static enum state cli_readline_ascii(struct cli *cli, char c)
       return END;
 
     default:
-      // echo
-      fputc(c, stdout);
-
-      // copy
-      *cli->ptr++ = c;
-
-      return ASCII;
+      return cli_readline_ascii_insert(cli, c);
   }
 }
 
@@ -76,6 +118,8 @@ static enum state cli_readline_esc(struct cli *cli, char c)
 enum readline_csi_command {
   CSI_CURSOR_UP     = 'A',
   CSI_CURSOR_DOWN   = 'B',
+  CSI_CURSOR_RIGHT  = 'C',
+  CSI_CURSOR_LEFT   = 'D',
 };
 
 static enum state cli_readline_csi_cursor_up(struct cli *cli)
@@ -105,6 +149,28 @@ static enum state cli_readline_csi_cursor_down(struct cli *cli)
   return ASCII;
 }
 
+static enum state cli_readline_csi_cursor_left(struct cli *cli)
+{
+  if (cli->ptr > cli->buf) {
+    printf("\e[D");
+
+    cli->ptr--;
+  }
+
+  return ASCII;
+}
+
+static enum state cli_readline_csi_cursor_right(struct cli *cli)
+{
+  if (cli->ptr < cli->end) {
+    printf("\e[C");
+
+    cli->ptr++;
+  }
+
+  return ASCII;
+}
+
 static enum state cli_readline_csi(struct cli *cli, char c)
 {
   switch(c) {
@@ -119,6 +185,12 @@ static enum state cli_readline_csi(struct cli *cli, char c)
 
     case CSI_CURSOR_DOWN:
       return cli_readline_csi_cursor_down(cli);
+
+    case CSI_CURSOR_RIGHT:
+      return cli_readline_csi_cursor_right(cli);
+
+    case CSI_CURSOR_LEFT:
+      return cli_readline_csi_cursor_left(cli);
 
     default:
       return ASCII;
@@ -164,7 +236,7 @@ int cli_readline(struct cli *cli)
       }
     #endif
 
-    if (cli->ptr >= cli->buf + cli->size) {
+    if (cli->end >= cli->buf + cli->size) {
       LOG_WARN("line overflow");
       return 1;
     }
@@ -188,6 +260,11 @@ int cli_readline(struct cli *cli)
 
     if (cli->ptr > cli->end) {
       cli->end = cli->ptr;
+    }
+
+    if (cli->end >= cli->buf + cli->size) {
+      LOG_WARN("line overflow");
+      return 1;
     }
 
     if (state == END) {

@@ -1,6 +1,7 @@
 #include "config.h"
 #include "http_routes.h"
 #include "http_handlers.h"
+#include "sdcard.h"
 
 #include <logging.h>
 
@@ -21,6 +22,9 @@ static const struct vfs_http_mount {
   const char *path;
 } vfs_http_mounts[] = {
   { "/config" },
+#if CONFIG_SDCARD_ENABLED
+  { "/sdcard" },
+#endif
   {},
 };
 

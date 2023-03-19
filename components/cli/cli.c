@@ -142,8 +142,6 @@ int cli_main(struct cli *cli)
 
   LOG_DEBUG("cli=%p", cli);
 
-  memset(cli->buf, '\0', cli->size);
-
   if (!cli->timeout) {
     // skip open() step
   } else if ((err = cli_open(cli, cli->timeout)) < 0) {
@@ -184,6 +182,8 @@ int cli_init(struct cli **clip, const struct cmd *commands, struct cli_options o
   if (!(cli->buf = malloc(options.buf_size))) {
     LOG_ERROR("malloc buf");
     goto error;
+  } else {
+    memset(cli->buf, '\0', options.buf_size);
   }
 
   if ((err = cmd_eval_new(&cli->cmd_eval, options.max_args))) {

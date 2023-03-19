@@ -208,6 +208,7 @@ int cli_readline(struct cli *cli)
   }
 #endif
 
+  // history recall
   if (cli->end) {
     // undo NULs used by cmd_eval argv for history recall
     for (char *p = cli->buf; p < cli->end; p++) {
@@ -215,10 +216,11 @@ int cli_readline(struct cli *cli)
         *p = ' ';
       }
     }
+
+    cli->prev_end = cli->end;
   }
 
   // start
-  cli->prev_end = cli->end;
   cli->ptr = cli->end = cli->buf;
 
   printf("%s", CLI_READLINE_PROMPT);

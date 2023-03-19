@@ -145,6 +145,11 @@ int config_read(struct config *config, FILE *file);
 int config_write(struct config *config, FILE *file);
 
 /*
+ * List available config files.
+ */
+int config_walk(struct config *config, int (func)(const char *filename, void *ctx), void *ctx);
+
+/*
  * Load config from file.
  */
 int config_load(struct config *config, const char *filename);

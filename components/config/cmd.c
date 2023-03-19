@@ -192,6 +192,25 @@ int config_cmd_load(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static int print_config_file(const char *filename, void *ctx)
+{
+  printf("%s\n", filename);
+
+  return 0;
+}
+
+int config_cmd_list(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+
+  if (config_walk(config, print_config_file, NULL)) {
+    LOG_ERROR("config_walk");
+    return -CMD_ERR;
+  }
+
+  return 0;
+}
+
 int config_cmd_delete(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
@@ -357,7 +376,9 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
 const struct cmd config_commands[] = {
   { "save",              config_cmd_save,   .usage = "[FILE]",                          .describe = "Save config to filesystem"  },
   { "load",              config_cmd_load,   .usage = "[FILE]",                          .describe = "Load config from filesystem"  },
+  { "list",              config_cmd_list,   .usage = "",                                .describe = "List configs from filesystem"  },
   { "delete",            config_cmd_delete, .usage = "[FILE]",                          .describe = "Delete config from filesystem" },
+
   { "show",              config_cmd_show,   .usage = "[SECTION]",                       .describe = "Show config settings"  },
   { "get",               config_cmd_get,    .usage = "SECTION NAME",                    .describe = "Get config setting"    },
   { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set and write config"  },

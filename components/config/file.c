@@ -4,6 +4,31 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/dirent.h>
+
+int config_walk(struct config *config, int (func)(const char *filename, void *ctx), void *ctx)
+{
+  DIR *dir;
+  struct dirent *d;
+  int err = 0;
+
+  if (!(dir = opendir(config->path))) {
+    LOG_ERROR("opendir %s: %s", config->path, strerror(errno));
+    return -1;
+  }
+
+  while ((d = readdir(dir))) {
+    const char *filename = d->d_name;
+
+    if ((err = func(filename, ctx))) {
+      break;
+    }
+  }
+
+  closedir(dir);
+
+  return err;
+}
 
 int config_load(struct config *config, const char *filename)
 {

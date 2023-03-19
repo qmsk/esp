@@ -7,7 +7,6 @@
 #include <stdio_fcntl.h>
 #endif
 
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -122,85 +121,6 @@ static int cli_open(struct cli *cli, TickType_t timeout)
   return 0;
 }
 
-// process one line of input
-static int cli_read(struct cli *cli)
-{
-  char *ptr = cli->buf;
-  int c;
-
-  // reset EOF state
-  clearerr(stdin);
-
-#if HAVE_STDIO_FCNTL
-  // disable stdin timeout
-  if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, 0) < 0) {
-    LOG_WARN("fcntl stdin: %s", strerror(errno));
-  }
-#endif
-
-  printf("> ");
-
-  while ((c = fgetc(stdin)) != EOF) {
-    #ifdef DEBUG
-      if (isprint(c)) {
-        LOG_DEBUG("%c", c);
-      } else {
-        LOG_DEBUG("%#02x", c);
-      }
-    #endif
-
-    if (ptr >= cli->buf + cli->size) {
-      LOG_WARN("line overflow");
-      return 1;
-    }
-
-    switch(c) {
-      case '\b':
-        if (ptr > cli->buf) {
-          // erase one char
-          ptr--;
-
-          // echo wipeout
-          fprintf(stdout, "\b \b");
-        }
-
-        break;
-
-      case '\r':
-        // echo CR -> CRLF
-        fputc('\r', stdout);
-
-        /* fall-through */
-
-      case '\n':
-        // echo
-        fputc('\n', stdout);
-
-        // end
-        *ptr = '\0';
-
-        return 0;
-
-      default:
-        // echo
-        fputc(c, stdout);
-
-        // copy
-        *ptr++ = c;
-
-        break;
-    }
-  }
-
-  if (ferror(stdin)) {
-    LOG_ERROR("stdin: %s", strerror(errno));
-    return -1;
-  }
-
-  // EOF
-  LOG_WARN("EOF");
-  return -1;
-}
 
 static int cli_eval(struct cli *cli)
 {
@@ -222,6 +142,8 @@ int cli_main(struct cli *cli)
 
   LOG_DEBUG("cli=%p", cli);
 
+  memset(cli->buf, '\0', cli->size);
+
   if (!cli->timeout) {
     // skip open() step
   } else if ((err = cli_open(cli, cli->timeout)) < 0) {
@@ -233,8 +155,8 @@ int cli_main(struct cli *cli)
 
   for (cli->run = true; cli->run; ) {
     // read lines of input, ignore errors
-    if ((err = cli_read(cli)) < 0) {
-      LOG_ERROR("cli_read");
+    if ((err = cli_readline(cli)) < 0) {
+      LOG_ERROR("cli_readline");
       return err;
     } else if (err) {
       continue;

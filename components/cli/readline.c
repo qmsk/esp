@@ -74,6 +74,24 @@ static enum state cli_readline_esc(struct cli *cli, char c)
   }
 }
 
+enum readline_csi_command {
+  CSI_CURSOR_UP = 'A',
+};
+
+static enum state cli_readline_csi_cursor_up(struct cli *cli)
+{
+  if (cli->ptr == cli->buf) {
+    // restore previous line
+    while (*cli->ptr) {
+      char c = *cli->ptr++;
+
+      fputc(c, stdout);
+    }
+  }
+
+  return ASCII;
+}
+
 static enum state cli_readline_csi(struct cli *cli, char c)
 {
   switch(c) {
@@ -82,6 +100,9 @@ static enum state cli_readline_csi(struct cli *cli, char c)
 
     case 0x30 ... 0x3F:  // parameter
       return CSI;
+
+    case CSI_CURSOR_UP:
+      return cli_readline_csi_cursor_up(cli);
 
     default:
       return ASCII;

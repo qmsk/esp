@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define CONFIG_FILENAME 64
+#define CONFIG_FILE_EXT "ini"
+#define CONFIG_BOOT_FILE "boot.ini"
+
+#define CONFIG_PATH_SIZE 64
 #define CONFIG_LINE 512
 #define CONFIG_NAME_SIZE 64
 #define CONFIG_VALUE_SIZE 256
@@ -83,7 +86,7 @@ struct configmod {
 };
 
 struct config {
-  const char *filename;
+  const char *path;
 
   const struct configmod *modules;
 };
@@ -111,12 +114,10 @@ static inline int configtab_count(const struct configtab *tab)
   }
 }
 
-/*
- * Set default values.
- *
- * Multi-valued configtabs are cleared.
- */
-int config_init(struct config *config);
+/* Reset value to defaults */
+int configtab_reset(const struct configtab *tab);
+int configmod_reset(const struct configmod *module, const struct configtab *table);
+int config_reset(struct config *config);
 
 /* Set empty value, or reset count to 0 if multi-valued */
 int config_clear(const struct configmod *mod, const struct configtab *tab);
@@ -130,13 +131,43 @@ int config_get(const struct configmod *mod, const struct configtab *tab, unsigne
 /* Print value at index (typically 0, if not multi-valued) to file */
 int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file);
 
-int config_read(struct config *config, FILE *file);
-int config_write(struct config *config, FILE *file);
-
-int config_load(struct config *config);
-int config_save(struct config *config);
+/*
+ * Initialize to empty / default values.
+ *
+ * Multi-valued configtabs are cleared.
+ */
+int config_init(struct config *config);
 
 /*
- * Returns <0 on error, 0 if reset, >0 if nothing to reset.
+ * Set config from file contents.
+ *
+ * The config must be empty (`config_reset()`), or values will be duplicated!
  */
-int config_reset(struct config *config);
+int config_read(struct config *config, FILE *file);
+
+/*
+ * Write config to file.
+ */
+int config_write(struct config *config, FILE *file);
+
+/*
+ * List available config files.
+ */
+int config_walk(struct config *config, int (func)(const char *filename, void *ctx), void *ctx);
+
+/*
+ * Load config from file.
+ */
+int config_load(struct config *config, const char *filename);
+
+/*
+ * Save config to file.
+ */
+int config_save(struct config *config, const char *filename);
+
+/*
+ * Remove config file.
+ *
+ * Returns <0 on error, 0 if reset, >0 if no file to remove.
+ */
+int config_delete(struct config *config, const char *filename);

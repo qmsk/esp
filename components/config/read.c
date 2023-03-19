@@ -147,7 +147,7 @@ int config_read(struct config *config, FILE *file)
     LOG_DEBUG("%s", buf);
 
     if (config_parse(buf, &section, &name, &value)) {
-      LOG_WARN("Invalid line at %s:%d", config->filename, lineno);
+      LOG_WARN("Invalid line %d", lineno);
       continue;
     }
 

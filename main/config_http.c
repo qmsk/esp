@@ -73,15 +73,21 @@ int config_post_handler_ini(struct http_request *request, struct http_response *
   LOG_INFO("config read...");
   LOG_DEBUG("file=%p", file);
 
+  if ((err = config_init(&config))) {
+    LOG_ERROR("config_init");
+    err = HTTP_INTERNAL_SERVER_ERROR;
+    goto error;
+  }
+
   if ((err = config_read(&config, file))) {
     LOG_WARN("config_read");
     err = HTTP_UNPROCESSABLE_ENTITY;
     goto error;
   }
 
-  LOG_INFO("config save...");
+  LOG_INFO("config save %s", CONFIG_BOOT_FILE);
 
-  if ((err = config_save(&config))) {
+  if ((err = config_save(&config, CONFIG_BOOT_FILE))) {
     LOG_ERROR("config_save");
     goto error;
   }
@@ -302,7 +308,7 @@ static int config_api_write_config(struct json_writer *w, void *ctx)
   const struct config *config = ctx;
 
   return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+        JSON_WRITE_MEMBER_STRING(w, "filename", CONFIG_BOOT_FILE)
     ||  JSON_WRITE_MEMBER_ARRAY(w, "modules", config_api_write_config_modules(w, config))
   );
 }
@@ -404,9 +410,9 @@ int config_api_post_form(struct http_request *request, struct http_response *res
       return err;
     }
 
-    LOG_INFO("config save...");
+    LOG_INFO("config save %s", CONFIG_BOOT_FILE);
 
-    if ((err = config_save(&config))) {
+    if ((err = config_save(&config, CONFIG_BOOT_FILE))) {
       LOG_ERROR("config_save");
       return err;
     }

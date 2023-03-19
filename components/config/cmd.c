@@ -159,9 +159,15 @@ static void print_config(const struct config *config)
 int config_cmd_save(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
+  const char *filename = CONFIG_BOOT_FILE;
+  int err;
 
-  if (config_save(config)) {
-    LOG_ERROR("config_save");
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &filename))) {
+    return err;
+  }
+
+  if (config_save(config, filename)) {
+    LOG_ERROR("config_save %s", filename);
     return -CMD_ERR;
   }
 
@@ -171,9 +177,33 @@ int config_cmd_save(int argc, char **argv, void *ctx)
 int config_cmd_load(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
+  const char *filename = CONFIG_BOOT_FILE;
+  int err;
 
-  if (config_load(config)) {
-    LOG_ERROR("config_load");
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &filename))) {
+    return err;
+  }
+
+  if (config_load(config, filename)) {
+    LOG_ERROR("config_load %s", filename);
+    return -CMD_ERR;
+  }
+
+  return 0;
+}
+
+int config_cmd_delete(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+  const char *filename = CONFIG_BOOT_FILE;
+  int err;
+
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &filename))) {
+    return err;
+  }
+
+  if (config_delete(config, filename)) {
+    LOG_ERROR("config_delete %s", filename);
     return -CMD_ERR;
   }
 
@@ -288,10 +318,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     }
   }
 
-  if (config_save(config)) {
-    LOG_ERROR("Failed writing config");
-    return -CMD_ERR;
-  }
+  LOG_WARN("config modified, use `config save`");
 
   return 0;
 }
@@ -322,33 +349,18 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  if (config_save(config)) {
-    LOG_ERROR("Failed writing config");
-    return -CMD_ERR;
-  }
-
-  return 0;
-}
-
-int config_cmd_reset(int argc, char **argv, void *ctx)
-{
-  struct config *config = ctx;
-
-  if (config_reset(config)) {
-    LOG_ERROR("config_reset");
-    return -CMD_ERR;
-  }
+  LOG_WARN("config modified, use `config save`");
 
   return 0;
 }
 
 const struct cmd config_commands[] = {
-  { "save",              config_cmd_save,   .usage = "",                                .describe = "Save config to filesystem"  },
-  { "load",              config_cmd_load,   .usage = "",                                .describe = "Load config from filesystem"  },
+  { "save",              config_cmd_save,   .usage = "[FILE]",                          .describe = "Save config to filesystem"  },
+  { "load",              config_cmd_load,   .usage = "[FILE]",                          .describe = "Load config from filesystem"  },
+  { "delete",            config_cmd_delete, .usage = "[FILE]",                          .describe = "Delete config from filesystem" },
   { "show",              config_cmd_show,   .usage = "[SECTION]",                       .describe = "Show config settings"  },
   { "get",               config_cmd_get,    .usage = "SECTION NAME",                    .describe = "Get config setting"    },
   { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set and write config"  },
   { "clear",             config_cmd_clear,  .usage = "SECTION NAME",                    .describe = "Clear and write config"  },
-  { "reset",             config_cmd_reset,                                              .describe = "Remove stored config and reset to defaults" },
   {}
 };

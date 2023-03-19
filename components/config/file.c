@@ -5,17 +5,23 @@
 #include <stdio.h>
 #include <string.h>
 
-int config_load(struct config *config)
+int config_load(struct config *config, const char *filename)
 {
+  char path[CONFIG_PATH_SIZE];
   FILE *file;
   int err = 0;
 
-  if ((file = fopen(config->filename, "r")) == NULL) {
-    LOG_ERROR("fopen %s: %s", config->filename, strerror(errno));
+  if (snprintf(path, sizeof(path), "%s/%s", config->path, filename) >= sizeof(path)) {
+    LOG_ERROR("filename too long: %s", filename);
     return -1;
   }
 
-  LOG_INFO("%s", config->filename);
+  if ((file = fopen(path, "r")) == NULL) {
+    LOG_ERROR("fopen %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  LOG_INFO("%s", path);
 
   if ((err = config_init(config))) {
     goto error;
@@ -31,19 +37,25 @@ error:
   return err;
 }
 
-int config_save(struct config *config)
+int config_save(struct config *config, const char *filename)
 {
-  char newfile[CONFIG_FILENAME];
+  char newfile[CONFIG_PATH_SIZE];
+  char path[CONFIG_PATH_SIZE];
   FILE *file;
   int err = 0;
 
-  if (snprintf(newfile, sizeof(newfile), "%s.new", config->filename) >= sizeof(newfile)) {
-    LOG_ERROR("filename too long: %s.new", config->filename);
+  if (snprintf(path, sizeof(path), "%s/%s", config->path, filename) >= sizeof(path)) {
+    LOG_ERROR("filename too long: %s", filename);
+    return -1;
+  }
+
+  if (snprintf(newfile, sizeof(newfile), "%s/%s.new", config->path, filename) >= sizeof(newfile)) {
+    LOG_ERROR("filename too long: %s.new", filename);
     return -1;
   }
 
   if ((file = fopen(newfile, "w")) == NULL) {
-    LOG_ERROR("fopen %s: %s", config->filename, strerror(errno));
+    LOG_ERROR("fopen %s: %s", newfile, strerror(errno));
     return -1;
   }
 
@@ -59,33 +71,40 @@ int config_save(struct config *config)
     return -1;
   }
 
-  if (remove(config->filename)) {
+  if (remove(path)) {
     if (errno == ENOENT) {
       LOG_DEBUG("no existing file");
     } else {
-      LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
+      LOG_ERROR("remove %s: %s", path, strerror(errno));
       return -1;
     }
   }
 
-  if (rename(newfile, config->filename)) {
-    LOG_ERROR("rename %s -> %s: %s", newfile, config->filename, strerror(errno));
+  if (rename(newfile, path)) {
+    LOG_ERROR("rename %s -> %s: %s", newfile, path, strerror(errno));
     return -1;
   }
 
   return err;
 }
 
-int config_reset(struct config *config)
+int config_delete(struct config *config, const char *filename)
 {
-  if (remove(config->filename) == 0) {
-    LOG_INFO("remove %s", config->filename);
+  char path[CONFIG_PATH_SIZE];
+
+  if (snprintf(path, sizeof(path), "%s/%s", config->path, filename) >= sizeof(path)) {
+    LOG_ERROR("filename too long: %s", filename);
+    return -1;
+  }
+
+  if (remove(path) == 0) {
+    LOG_INFO("remove %s", path);
     return 0;
   } else if (errno == ENOENT) {
-    LOG_WARN("remove %s: %s", config->filename, strerror(errno));
+    LOG_WARN("remove %s: %s", path, strerror(errno));
     return 1;
   } else {
-    LOG_ERROR("remove %s: %s", config->filename, strerror(errno));
+    LOG_ERROR("remove %s: %s", path, strerror(errno));
     return -1;
   }
 }

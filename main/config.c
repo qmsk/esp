@@ -20,7 +20,6 @@
 #include <sdkconfig.h>
 
 #define CONFIG_BASE_PATH "/config"
-#define CONFIG_FILE_NAME "boot.ini"
 #define CONFIG_PARTITON_LABEL "config"
 #define CONFIG_MAX_FILES 4
 
@@ -111,7 +110,7 @@ const struct configmod config_modules[] = {
 
 static bool config_disabled = false;
 struct config config = {
-  .filename = (CONFIG_BASE_PATH "/" CONFIG_FILE_NAME),
+  .path     = CONFIG_BASE_PATH,
 
   .modules = config_modules,
 };
@@ -152,17 +151,17 @@ int init_config()
     return 1;
   }
 
-  if (config_load(&config)) {
+  if (config_load(&config, CONFIG_BOOT_FILE)) {
     if (errno == ENOENT) {
-      LOG_WARN("spiffs file at %s not found", config.filename);
+      LOG_WARN("spiffs %s file at %s not found", CONFIG_BASE_PATH, CONFIG_BOOT_FILE);
       return 1;
     } else {
-      LOG_ERROR("config_load(%s)", config.filename);
+      LOG_ERROR("config_load(%s)", CONFIG_BOOT_FILE);
       return -1;
     }
   }
 
-  LOG_INFO("loaded config");
+  LOG_INFO("loaded boot config");
 
   return 0;
 }
@@ -172,13 +171,13 @@ void reset_config()
   int err;
 
   // attempt to remove the config boot.ini file
-  if ((err = config_reset(&config)) < 0) {
-    LOG_ERROR("config_reset");
+  if ((err = config_delete(&config, CONFIG_BOOT_FILE)) < 0) {
+    LOG_ERROR("config_delete");
   } else if (err > 0) {
-    LOG_INFO("no config file: %s", config.filename);
+    LOG_INFO("no config file: %s", CONFIG_BOOT_FILE);
     return;
   } else {
-    LOG_WARN("removed config file: %s", config.filename);
+    LOG_WARN("removed config file: %s", CONFIG_BOOT_FILE);
     return; // success
   }
 

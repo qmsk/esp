@@ -7,7 +7,6 @@
 #include <stdio_fcntl.h>
 #endif
 
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -122,72 +121,6 @@ static int cli_open(struct cli *cli, TickType_t timeout)
   return 0;
 }
 
-// process one line of input
-static int cli_read(struct cli *cli)
-{
-  char *ptr = cli->buf;
-  int c;
-
-  // reset EOF state
-  clearerr(stdin);
-
-#if HAVE_STDIO_FCNTL
-  // disable stdin timeout
-  if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, 0) < 0) {
-    LOG_WARN("fcntl stdin: %s", strerror(errno));
-  }
-#endif
-
-  printf("> ");
-
-  while ((c = fgetc(stdin)) != EOF) {
-    #ifdef DEBUG
-      if (isprint(c)) {
-        LOG_DEBUG("%c", c);
-      } else {
-        LOG_DEBUG("%#02x", c);
-      }
-    #endif
-
-    if (ptr >= cli->buf + cli->size) {
-      LOG_WARN("line overflow");
-      return 1;
-    }
-
-    // echo
-    fputc(c, stdout);
-
-    // handle CR or LF
-    if (c == '\r') {
-      fputc('\n', stdout);
-    }
-
-    if (c == '\b' && ptr > cli->buf) {
-      // erase one char
-      ptr--;
-
-      // echo wipeout
-      fprintf(stdout, " \b");
-
-    } else if (c == '\r' || c == '\n') {
-      *ptr = '\0';
-
-      return 0;
-    } else {
-      // copy
-      *ptr++ = c;
-    }
-  }
-
-  if (ferror(stdin)) {
-    LOG_ERROR("stdin: %s", strerror(errno));
-    return -1;
-  }
-
-  // EOF
-  LOG_WARN("EOF");
-  return -1;
-}
 
 static int cli_eval(struct cli *cli)
 {
@@ -220,8 +153,8 @@ int cli_main(struct cli *cli)
 
   for (cli->run = true; cli->run; ) {
     // read lines of input, ignore errors
-    if ((err = cli_read(cli)) < 0) {
-      LOG_ERROR("cli_read");
+    if ((err = cli_readline(cli)) < 0) {
+      LOG_ERROR("cli_readline");
       return err;
     } else if (err) {
       continue;
@@ -249,6 +182,8 @@ int cli_init(struct cli **clip, const struct cmd *commands, struct cli_options o
   if (!(cli->buf = malloc(options.buf_size))) {
     LOG_ERROR("malloc buf");
     goto error;
+  } else {
+    memset(cli->buf, '\0', options.buf_size);
   }
 
   if ((err = cmd_eval_new(&cli->cmd_eval, options.max_args))) {

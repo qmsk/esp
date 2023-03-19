@@ -4,7 +4,8 @@
 #include <cmd.h>
 
 struct cli {
-  char *buf;
+  char *buf, *ptr, *end;
+  char *prev_end;
   size_t size;
   TickType_t timeout;
 
@@ -14,3 +15,6 @@ struct cli {
   // false once cli_exit() called
   bool run;
 };
+
+// process one line of input
+int cli_readline(struct cli *cli);

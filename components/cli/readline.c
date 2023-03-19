@@ -13,6 +13,8 @@
   #include <stdio_fcntl.h>
 #endif
 
+#define CLI_READLINE_PROMPT "> "
+
 enum state {
   ASCII,
   ESC,
@@ -75,7 +77,8 @@ static enum state cli_readline_esc(struct cli *cli, char c)
 }
 
 enum readline_csi_command {
-  CSI_CURSOR_UP = 'A',
+  CSI_CURSOR_UP     = 'A',
+  CSI_CURSOR_DOWN   = 'B',
 };
 
 static enum state cli_readline_csi_cursor_up(struct cli *cli)
@@ -92,6 +95,18 @@ static enum state cli_readline_csi_cursor_up(struct cli *cli)
   return ASCII;
 }
 
+static enum state cli_readline_csi_cursor_down(struct cli *cli)
+{
+  if (cli->ptr != cli->buf) {
+    // erase to end of line
+    printf("\r%s\e[K", CLI_READLINE_PROMPT);
+
+    cli->ptr = cli->buf;
+  }
+
+  return ASCII;
+}
+
 static enum state cli_readline_csi(struct cli *cli, char c)
 {
   switch(c) {
@@ -103,6 +118,9 @@ static enum state cli_readline_csi(struct cli *cli, char c)
 
     case CSI_CURSOR_UP:
       return cli_readline_csi_cursor_up(cli);
+
+    case CSI_CURSOR_DOWN:
+      return cli_readline_csi_cursor_down(cli);
 
     default:
       return ASCII;
@@ -127,7 +145,7 @@ int cli_readline(struct cli *cli)
   // start
   cli->ptr = cli->buf;
 
-  printf("> ");
+  printf("%s", CLI_READLINE_PROMPT);
 
   while ((c = fgetc(stdin)) != EOF) {
     #ifdef DEBUG

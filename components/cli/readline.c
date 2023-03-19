@@ -40,8 +40,8 @@ static enum state cli_readline_ascii_insert(struct cli *cli, char c)
   }
 
   // restore cursor position
-  for (char *p = cli->end; p > cli->ptr; p--) {
-    fputc('\b', stdout);
+  if (cli->ptr < cli->end) {
+    fprintf(stdout, "\e[%dD", (cli->end - cli->ptr));
   }
 
   return ASCII;
@@ -68,11 +68,7 @@ static enum state cli_readline_ascii_remove(struct cli *cli, char c)
     fputc(' ', stdout);
 
     // restore cursor position
-    for (char *p = cli->end; p > cli->ptr; p--) {
-      fputc('\b', stdout);
-    }
-
-    fputc('\b', stdout);
+    fprintf(stdout, "\e[%dD", (cli->end - cli->ptr + 1));
   }
 
   return ASCII;

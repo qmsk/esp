@@ -17,11 +17,15 @@ int config_load(struct config *config)
 
   LOG_INFO("%s", config->filename);
 
-  if ((err = config_read(config, file))) {
-    fclose(file);
-    return err;
+  if ((err = config_init(config))) {
+    goto error;
   }
 
+  if ((err = config_read(config, file))) {
+    goto error;
+  }
+
+error:
   fclose(file);
 
   return err;

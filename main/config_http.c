@@ -73,6 +73,12 @@ int config_post_handler_ini(struct http_request *request, struct http_response *
   LOG_INFO("config read...");
   LOG_DEBUG("file=%p", file);
 
+  if ((err = config_init(&config))) {
+    LOG_ERROR("config_init");
+    err = HTTP_INTERNAL_SERVER_ERROR;
+    goto error;
+  }
+
   if ((err = config_read(&config, file))) {
     LOG_WARN("config_read");
     err = HTTP_UNPROCESSABLE_ENTITY;

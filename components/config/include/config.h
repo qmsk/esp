@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define CONFIG_FILE_EXT "ini"
 #define CONFIG_BOOT_FILE "boot.ini"
 
 #define CONFIG_PATH_SIZE 64

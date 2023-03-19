@@ -12,6 +12,7 @@ const struct http_route http_routes[] = {
   /* vfs_http.c */
   { "GET",    "vfs/",             vfs_http_get,         NULL },
   { "PUT",    "vfs/",             vfs_http_put,         NULL },
+  { "POST",   "vfs/",             vfs_http_post,        NULL },
   { "DELETE", "vfs/",             vfs_http_delete,      NULL },
 
   /* config_http.c */

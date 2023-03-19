@@ -18,6 +18,8 @@
 
 #define VFS_HTTP_CONTENT_TYPE "application/octet-stream"
 
+#define VFS_HTTP_MKDIR_MODE 0775
+
 static const struct vfs_http_mount {
   const char *path;
 } vfs_http_mounts[] = {
@@ -139,6 +141,27 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
   return 0;
 }
 
+static int vfs_http_error(const char *op, const char *path)
+{
+  switch(errno) {
+    case ENOENT:
+      LOG_WARN("%s %s: %s", op, path, strerror(errno));
+      return HTTP_NOT_FOUND;
+
+    case ENOTSUP:
+      LOG_WARN("%s %s: %s", op, path, strerror(errno));
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    case EACCES:
+      LOG_WARN("%s %s: %s", op, path, strerror(errno));
+      return HTTP_FORBIDDEN;
+
+    default:
+      LOG_ERROR("%s %s: %s", op, path, strerror(errno));
+      return HTTP_INTERNAL_SERVER_ERROR;
+  }
+}
+
 static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, const char *mode)
 {
   if (params->type != VFS_HTTP_TYPE_FILE) {
@@ -147,13 +170,39 @@ static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, con
 
   if ((*filep = fopen(params->path, mode))) {
     return 0;
-  } else if (errno == ENOENT) {
-    LOG_WARN("fopen: %s", strerror(errno));
-    return HTTP_NOT_FOUND;
   } else {
-    LOG_ERROR("fopen: %s", strerror(errno));
-    return -1;
+    return vfs_http_error("fopen", params->path);
   }
+}
+
+static int vfs_http_mkdir(const struct vfs_http_params *params)
+{
+  if (params->type != VFS_HTTP_TYPE_DIRECTORY) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  LOG_INFO("%s", params->path);
+
+  if (mkdir(params->path, VFS_HTTP_MKDIR_MODE)) {
+    return vfs_http_error("mkdir", params->path);
+  }
+
+  return 0;
+}
+
+static int vfs_http_rmdir(const struct vfs_http_params *params)
+{
+  if (params->type != VFS_HTTP_TYPE_DIRECTORY) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  LOG_INFO("%s", params->path);
+
+  if (rmdir(params->path)) {
+    return vfs_http_error("rmdir", params->path);
+  }
+
+  return 0;
 }
 
 static int vfs_http_unlink(const struct vfs_http_params *params)
@@ -162,14 +211,10 @@ static int vfs_http_unlink(const struct vfs_http_params *params)
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
+  LOG_INFO("%s", params->path);
+
   if (unlink(params->path)) {
-    if (errno == ENOENT) {
-      LOG_WARN("unlink: %s", strerror(errno));
-      return HTTP_NOT_FOUND;
-    } else {
-      LOG_ERROR("unlink: %s", strerror(errno));
-      return -1;
-    }
+    return vfs_http_error("unlink", params->path);
   }
 
   return 0;
@@ -392,7 +437,10 @@ static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
 {
   const struct vfs_http_params *params = ctx;
 
-  return JSON_WRITE_ARRAY(w, vfs_http_api_write_directory_array(w, params->path));
+  return JSON_WRITE_OBJECT(w,
+        vfs_http_api_write_directory_object(w, params->name)
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, params->path))
+  );
 }
 
 static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_http_mount *mount)
@@ -462,6 +510,7 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
       break;
 
     case VFS_HTTP_TYPE_DIRECTORY:
+      // TODO: 404 if not exists
       if ((err = write_http_response_json(response, vfs_http_api_write_directory, &params))) {
         LOG_WARN("write_http_response_json -> vfs_http_api_write_directory");
         return err;
@@ -480,7 +529,6 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
     default:
       return HTTP_UNPROCESSABLE_ENTITY;
   }
-
 
   return 0;
 }
@@ -514,6 +562,52 @@ int vfs_http_put(struct http_request *request, struct http_response *response, v
   return err;
 }
 
+int vfs_http_post(struct http_request *request, struct http_response *response, void *ctx)
+{
+  const struct http_request_headers *headers;
+  struct vfs_http_params params = {};
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = vfs_http_params(request, &params))) {
+    LOG_WARN("vfs_http_params");
+    return err;
+  }
+
+  switch (params.type) {
+    case VFS_HTTP_TYPE_ROOT:
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    case VFS_HTTP_TYPE_MOUNT:
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    case VFS_HTTP_TYPE_DIRECTORY:
+      if ((err = vfs_http_mkdir(&params))) {
+        LOG_WARN("vfs_http_mkdir");
+        return err;
+      }
+
+      if ((err = write_http_response_json(response, vfs_http_api_write_directory, &params))) {
+        LOG_WARN("write_http_response_json -> vfs_http_api_write_directory");
+        return err;
+      }
+
+      break;
+
+    case VFS_HTTP_TYPE_FILE:
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    default:
+      return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  return 0;
+}
+
 int vfs_http_delete(struct http_request *request, struct http_response *response, void *ctx)
 {
   const struct http_request_headers *headers;
@@ -530,9 +624,31 @@ int vfs_http_delete(struct http_request *request, struct http_response *response
     return err;
   }
 
-  if ((err = vfs_http_unlink(&params))) {
-    LOG_WARN("vfs_http_unlink");
-    return err;
+  switch (params.type) {
+    case VFS_HTTP_TYPE_ROOT:
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    case VFS_HTTP_TYPE_MOUNT:
+      return HTTP_METHOD_NOT_ALLOWED;
+
+    case VFS_HTTP_TYPE_DIRECTORY:
+      if ((err = vfs_http_rmdir(&params))) {
+        LOG_WARN("vfs_http_rmdir");
+        return err;
+      }
+
+      break;
+
+    case VFS_HTTP_TYPE_FILE:
+      if ((err = vfs_http_unlink(&params))) {
+        LOG_WARN("vfs_http_unlink");
+        return err;
+      }
+
+      break;
+
+    default:
+      return HTTP_UNPROCESSABLE_ENTITY;
   }
 
   return err;

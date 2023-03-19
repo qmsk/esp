@@ -188,6 +188,41 @@ int vfs_rm_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int vfs_mkdir_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  unsigned mode = 0755;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (mkdir(path, mode)) {
+    LOG_ERROR("mkdir %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int vfs_rmdir_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (rmdir(path)) {
+    LOG_ERROR("rmdir %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
 const struct cmd vfs_commands[] = {
   { "ls",     vfs_ls_cmd,    .usage = "[PATH]", .describe = "List files"  },
 #if !CONFIG_IDF_TARGET_ESP8266
@@ -196,6 +231,8 @@ const struct cmd vfs_commands[] = {
   { "stat",   vfs_stat_cmd,   .usage = "PATH",    .describe = "Stat file"  },
   { "mv",     vfs_mv_cmd,     .usage = "SRC DST", .describe = "Rename file"  },
   { "rm",     vfs_rm_cmd,     .usage = "PATH",    .describe = "Remove file"  },
+  { "mkdir",  vfs_mkdir_cmd,  .usage = "PATH",    .describe = "Create directory"  },
+  { "rmdir",  vfs_rmdir_cmd,  .usage = "PATH",    .describe = "Remove directory"  },
   {}
 };
 

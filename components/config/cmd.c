@@ -189,6 +189,8 @@ int config_cmd_load(int argc, char **argv, void *ctx)
     return -CMD_ERR;
   }
 
+  LOG_WARN("config modified, use `config save` and reboot");
+
   return 0;
 }
 
@@ -337,7 +339,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     }
   }
 
-  LOG_WARN("config modified, use `config save`");
+  LOG_WARN("config modified, use `config save` and reboot");
 
   return 0;
 }
@@ -368,7 +370,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  LOG_WARN("config modified, use `config save`");
+  LOG_WARN("config modified, use `config save` and reboot");
 
   return 0;
 }

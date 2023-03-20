@@ -38,7 +38,8 @@
       <button @click="newDirectory" v-if="!temp">&gt;</button>
       <button @click="newFile" v-if="!temp">&plus;</button>
       <button @click="cancelTemp" v-if="temp">&times;</button>
-      <button @click="makeDirectory" v-if="temp">&check;</button>
+      <button @click="createDirectory" v-if="temp">&check;</button>
+      <button @click="deleteDirectory()" v-if="!temp">&times;</button>
     </div>
 
     <template v-for="(item, i) in allItems">
@@ -57,6 +58,7 @@
         </template>
         <template v-else>
           {{ item.name }}/
+          <progress v-show="deleting">Deleting...</progress>
         </template>
 
         <files-node
@@ -88,6 +90,7 @@
     },
     data: () => ({
       creating: false,
+      deleting: false,
       newItems: [],
     }),
     computed: {
@@ -112,14 +115,14 @@
       cancelTemp() {
         this.$emit('clear');
       },
-      async makeDirectory() {
+      async createDirectory() {
         const vfsPath = this.vfs.path;
         const path = this.dir;
 
         this.creating = true;
 
         try {
-          await this.$store.dispatch('makeVFSDirectory', { vfsPath, path });
+          await this.$store.dispatch('createVFSDirectory', { vfsPath, path });
         } catch (error) {
           // TODO: input validity
           throw error;
@@ -128,6 +131,21 @@
         }
 
         this.$emit('clear');
+      },
+      async deleteDirectory() {
+        const vfsPath = this.vfs.path;
+        const path = this.dir;
+
+        this.deleting = true;
+
+        try {
+          await this.$store.dispatch('deleteDirectory', { vfsPath, path });
+        } catch (error) {
+          // TODO: input validity
+          throw error;
+        } finally {
+          this.deleting = false;
+        }
       },
       newDirectory() {
         this.newItems.push({ type: 'directory', temp: true });

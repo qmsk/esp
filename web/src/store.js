@@ -85,8 +85,8 @@ export default new Vuex.Store({
 
       commit('setVFS', { vfsPath, item });
     },
-    async makeVFSDirectory({ commit }, { vfsPath, path }) {
-      const item = await vfsService.makeDirectory(vfsPath, path);
+    async createVFSDirectory({ commit }, { vfsPath, path }) {
+      const item = await vfsService.createDirectory(vfsPath, path);
 
       commit('setVFS', { vfsPath, item });
     },
@@ -97,6 +97,11 @@ export default new Vuex.Store({
     },
     async deleteFile({ commit }, { vfsPath, path }) {
       await vfsService.delete(vfsPath, path);
+
+      commit('delVFS', { vfsPath, path });
+    },
+    async deleteDirectory({ commit }, { vfsPath, path }) {
+      await vfsService.deleteDirectory(vfsPath, path);
 
       commit('delVFS', { vfsPath, path });
     },

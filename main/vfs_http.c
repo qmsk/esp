@@ -71,6 +71,8 @@ struct vfs_http_params {
   const struct vfs_http_mount *mount;
   const char *name;
   char path[VFS_HTTP_PATH_SIZE];
+
+  DIR *dir;
 };
 
 static int vfs_http_params(struct http_request *request, struct vfs_http_params *params)
@@ -172,6 +174,19 @@ static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, con
     return 0;
   } else {
     return vfs_http_error("fopen", params->path);
+  }
+}
+
+static int vfs_http_opendir(struct vfs_http_params *params)
+{
+  if (params->type != VFS_HTTP_TYPE_DIRECTORY && params->type != VFS_HTTP_TYPE_MOUNT) {
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  if ((params->dir = opendir(params->path))) {
+    return 0;
+  } else {
+    return vfs_http_error("opendir", params->path);
   }
 }
 
@@ -410,16 +425,10 @@ static int vfs_http_api_write_dirent_object(struct json_writer *w, const char *p
   return 0;
 }
 
-static int vfs_http_api_write_directory_array(struct json_writer *w, const char *path)
+static int vfs_http_api_write_directory_array(struct json_writer *w, DIR *dir, const char *path)
 {
-  DIR *dir;
   struct dirent *d;
   int err = 0;
-
-  if (!(dir = opendir(path))) {
-    LOG_ERROR("opendir %s: %s", path, strerror(errno));
-    return -1;
-  }
 
   while ((d = readdir(dir))) {
     if ((err = JSON_WRITE_OBJECT(w, vfs_http_api_write_dirent_object(w, path, d)))) {
@@ -439,15 +448,15 @@ static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
 
   return JSON_WRITE_OBJECT(w,
         vfs_http_api_write_directory_object(w, params->name)
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, params->path))
+    ||  (params->dir ? JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, params->dir, params->path)) : 0)
   );
 }
 
-static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_http_mount *mount)
+static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_http_mount *mount, DIR *dir)
 {
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_STRING(w, "path", mount->path)
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, mount->path))
+    ||  (dir ? JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, dir, mount->path)) : 0)
   );
 }
 
@@ -455,15 +464,20 @@ static int vfs_http_api_write_mount(struct json_writer *w, void *ctx)
 {
   const struct vfs_http_params *params = ctx;
 
-  return vfs_http_api_write_mount_object(w, params->mount);
+  return vfs_http_api_write_mount_object(w, params->mount, params->dir);
 }
 
 static int vfs_http_api_write_root_mounts(struct json_writer *w)
 {
+  DIR *dir;
   int err;
 
   for (const struct vfs_http_mount *m = vfs_http_mounts; m->path; m++) {
-    if ((err = vfs_http_api_write_mount_object(w, m))) {
+    if (!(dir = opendir(m->path))) {
+      LOG_WARN("opendir %s: %s", m->path, strerror(errno));
+    }
+
+    if ((err = vfs_http_api_write_mount_object(w, m, dir))) {
       return err;
     }
   }
@@ -502,6 +516,11 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
       break;
 
     case VFS_HTTP_TYPE_MOUNT:
+      if ((err = vfs_http_opendir(&params))) {
+        LOG_WARN("vfs_http_opendir");
+        return err;
+      }
+
       if ((err = write_http_response_json(response, vfs_http_api_write_mount, &params))) {
         LOG_WARN("write_http_response_json -> vfs_http_api_write_mount");
         return err;
@@ -510,7 +529,11 @@ int vfs_http_get(struct http_request *request, struct http_response *response, v
       break;
 
     case VFS_HTTP_TYPE_DIRECTORY:
-      // TODO: 404 if not exists
+      if ((err = vfs_http_opendir(&params))) {
+        LOG_WARN("vfs_http_opendir");
+        return err;
+      }
+
       if ((err = write_http_response_json(response, vfs_http_api_write_directory, &params))) {
         LOG_WARN("write_http_response_json -> vfs_http_api_write_directory");
         return err;

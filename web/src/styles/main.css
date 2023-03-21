@@ -14,7 +14,7 @@ body {
 }
 
 a {
-  color: #ccc;
+  color: #111;
 }
 
 h1 {
@@ -69,6 +69,10 @@ header {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+}
+
+header a {
+  color: #ccc;
 }
 
 main {

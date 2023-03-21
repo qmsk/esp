@@ -23,7 +23,7 @@
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
                     :readonly="tab.readonly">
-                    
+
                   <input v-if="tab.type == 'string' && !tab.secret" type="text"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="value"

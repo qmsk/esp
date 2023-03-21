@@ -1,7 +1,3 @@
-form {
-
-}
-
 /* fieldsets */
 form fieldset {
   display: grid;
@@ -57,12 +53,12 @@ form fieldset button {
 }
 
 /* general styles */
-form p {
+form fieldset p {
   font-style: italic;
   font-size: small;
 }
 
-form label {
+form fieldset label {
   margin-left: 1em;
   padding: 0.5em;
 
@@ -72,25 +68,25 @@ form label {
   color: #ccc;
 }
 
-form input, form select {
+form fieldset input, form fieldset select {
   width: 100%;
   height: 1.8em;
 }
 
-form input:invalid {
+form fieldset input:invalid {
   box-shadow: 0 0 5px 1px red;
 }
 
-form input[type="checkbox"] {
+form fieldset input[type="checkbox"] {
   width: 2em;
 }
 
-form input[type="file"] {
+form fieldset input[type="file"] {
   margin: auto 0;
 }
 
 /* Button styling */
-form button {
+form fieldset button {
   padding: 0.5em 1em;
 
   background-color: #133337;
@@ -103,17 +99,17 @@ form button {
   font-weight: bold;
 }
 
-form button:hover {
+form fieldset button:hover {
   border: 0.25px solid #eee;
 }
 
-form button:active {
+form fieldset button:active {
   transform: scale(0.99);
 }
 
-form button:disabled {
+form fieldset button:disabled {
   background-color: #888;
 }
-form button:disabled:hover {
+form fieldset button:disabled:hover {
   border: 0.25px solid #000;
 }

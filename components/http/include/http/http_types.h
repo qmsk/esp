@@ -1,6 +1,8 @@
 #ifndef HTTP_TYPES_H
 #define HTTP_TYPES_H
 
+#include <sys/types.h>
+
 enum http_version {
     HTTP_10 = 0,    // default
     HTTP_11,
@@ -50,5 +52,11 @@ const char *http_status_str (enum http_status status);
  */
 enum http_content_type http_content_type_parse (const char *value);
 
+/*
+ * Return an unix timestamp for the HTTP Date/Last-Modified.
+ *
+ * Returns -1 on invalid value.
+ */
+time_t http_date_parse (const char *value);
 
 #endif

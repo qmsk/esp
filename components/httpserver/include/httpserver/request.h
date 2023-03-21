@@ -15,6 +15,9 @@ struct http_request_headers {
 
   /* Decoded Content-Type, or HTTP_CONTENT_TYPE_UNKNOWN */
   enum http_content_type content_type;
+
+  /* Decoded Last-Modified */
+  time_t last_modified;
 };
 
 /*

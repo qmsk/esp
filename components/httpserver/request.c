@@ -190,6 +190,14 @@ int http_request_header (struct http_request *request, const char **namep, const
         } else {
             LOG_DEBUG("decoded content-type: %s", *valuep);
         }
+    } else if (strcasecmp(*namep, "Last-Modified") == 0) {
+        request->headers.last_modified = http_date_parse(*valuep);
+
+        if (request->headers.last_modified == HTTP_CONTENT_TYPE_UNKNOWN) {
+            LOG_DEBUG("unknown content-type: %s", *valuep);
+        } else {
+            LOG_DEBUG("decoded content-type: %s", *valuep);
+        }
     }
 
     HTTP_HOOK_RETURN(request->hooks, HTTP_HOOK_REQUEST_HEADER, request_header, request, *namep, *valuep);

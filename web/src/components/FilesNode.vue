@@ -84,8 +84,12 @@
   <div :class="{'vfs-item': true, 'vfs-root': isRoot, 'vfs-directory': !isRoot }">
     <div class="vfs-header">
       <div class="vfs-controls">
-        <button @click="loadSubmit" v-if="!isLoaded && !loadBusy && !deleteBusy">&searr;</button>
-        <button @click="loadCancel" v-if="isLoaded && !loadBusy && !deleteBusy">&nwarr;</button>
+        <button @click="loadSubmit" v-if="!isLoaded && !loadBusy && !deleteBusy">
+          <span class="material-icons-outlined">expand_more</span>
+        </button>
+        <button @click="loadCancel" v-if="isLoaded && !loadBusy && !deleteBusy">
+          <span class="material-icons-outlined">expand_less</span>
+        </button>
 
         <progress v-show="loadBusy">Loading...</progress>
         <progress v-show="deleteBusy">Deleting...</progress>
@@ -97,15 +101,21 @@
       </div>
 
       <div class="vfs-actions">
-        <button @click="deleteSubmit" v-if="!isRoot">&times;</button>
+        <button @click="deleteSubmit" v-if="!isRoot">
+          <span class="material-icons-outlined">folder_delete</span>
+        </button>
       </div>
     </div>
 
     <div :class="{'vfs-item': true, 'vfs-skel': !mkdir, 'vfs-directory': mkdir, 'vfs-new': mkdir }" v-if="isLoaded">
       <div class="vfs-header">
         <div class="vfs-controls">
-          <button @click="mkdirOpen" v-if="!mkdir">&gt;</button>
-          <button @click="mkdirSubmit" v-if="mkdir && !mkdirBusy" :disabled="!mkdirName">&check;</button>
+          <button @click="mkdirOpen" v-if="!mkdir">
+            <span class="material-icons-outlined">create_new_folder</span>
+          </button>
+          <button @click="mkdirSubmit" v-if="mkdir && !mkdirBusy" :disabled="!mkdirName">
+            <span class="material-icons-outlined">create_new_folder</span>
+          </button>
           <progress v-if="mkdir" v-show="mkdirBusy">Creating...</progress>
         </div>
 
@@ -114,7 +124,9 @@
         </div>
 
         <div class="vfs-actions">
-          <button @click="mkdirCancel" v-if="mkdir">&times;</button>
+          <button @click="mkdirCancel" v-if="mkdir">
+            <span class="material-icons-outlined">cancel</span>
+          </button>
         </div>
       </div>
     </div>
@@ -140,8 +152,12 @@
     <div :class="{'vfs-item': true, 'vfs-skel': !upload, 'vfs-file': upload, 'vfs-new': upload }" v-if="isLoaded">
       <div class="vfs-header">
         <div class="vfs-controls">
-          <button @click="uploadOpen" v-if="!upload">&plus;</button>
-          <button @click="uploadSubmit" v-if="upload && !uploadBusy" :disabled="!uploadFile">&check;</button>
+          <button @click="uploadOpen" v-if="!upload">
+            <span class="material-icons-outlined">upload_file</span>
+          </button>
+          <button @click="uploadSubmit" v-if="upload && !uploadBusy" :disabled="!uploadFile">
+            <span class="material-icons-outlined">upload_file</span>
+          </button>
           <progress v-if="upload" v-show="uploadBusy">Creating...</progress>
         </div>
 
@@ -150,7 +166,9 @@
         </div>
 
         <div class="vfs-actions">
-          <button @click="uploadCancel" v-if="upload">&times;</button>
+          <button @click="uploadCancel" v-if="upload">
+            <span class="material-icons-outlined">cancel</span>
+          </button>
         </div>
       </div>
     </div>

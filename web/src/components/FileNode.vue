@@ -19,7 +19,9 @@
       </div>
 
       <div class="vfs-actions">
-        <button @click="deleteSubmit()">&times;</button>
+        <button @click="deleteSubmit()">
+          <span class="material-icons-outlined">delete</span>
+        </button>
       </div>
     </div>
   </div>

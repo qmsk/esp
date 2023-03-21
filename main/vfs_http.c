@@ -13,6 +13,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <utime.h>
+#include <utime.h>
+
+#if CONFIG_IDF_TARGET_ESP8266
+  #include <esp_vfs.h>
+
+  #define utime esp_vfs_utime
+#endif
 
 #define VFS_HTTP_URL_PATH "vfs/"
 

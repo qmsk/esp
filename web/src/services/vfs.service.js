@@ -194,6 +194,15 @@ export default class VFSService {
   }
 
   async deleteDirectory(vfsPath, path) {
-    const response = await this.apiService.delete('/vfs' + vfsPath + '/' + path + '/');
+    try {
+      const response = await this.apiService.delete('/vfs' + vfsPath + '/' + path + '/');
+    } catch (error) {
+      if (error.response && error.response.status == 405) {
+        // not supported by filesystem, fake it
+        return;
+      } else {
+        throw error;
+      }
+    }
   }
 }

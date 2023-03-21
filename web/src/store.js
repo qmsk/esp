@@ -76,34 +76,39 @@ export default new Vuex.Store({
 
     /* VFS */
     async loadVFS({ commit }) {
-      const data = await vfsService.get();
+      const vfsState = await vfsService.get();
 
-      commit('updateVFS', data);
+      commit('updateVFS', vfsState);
+    },
+    async loadVFSRoot({ commit }, { vfsPath  }) {
+      const vfsItem = await vfsService.getRoot(vfsPath);
+
+      commit('setVFSRoot', vfsItem );
     },
     async loadVFSDirectory({ commit }, { vfsPath, path }) {
       const item = await vfsService.getDirectory(vfsPath, path);
 
-      commit('setVFS', { vfsPath, item });
+      commit('setVFSItem', { vfsPath, item });
     },
     async createVFSDirectory({ commit }, { vfsPath, path }) {
       const item = await vfsService.createDirectory(vfsPath, path);
 
-      commit('setVFS', { vfsPath, item });
+      commit('setVFSItem', { vfsPath, item });
     },
     async uploadFile({ commit }, { vfsPath, path, file }) {
       const item = await vfsService.uploadFile(vfsPath, path, file);
 
-      commit('setVFS', { vfsPath, item });
+      commit('setVFSItem', { vfsPath, item });
     },
     async deleteFile({ commit }, { vfsPath, path }) {
       await vfsService.delete(vfsPath, path);
 
-      commit('delVFS', { vfsPath, path });
+      commit('delVFSItem', { vfsPath, path });
     },
     async deleteDirectory({ commit }, { vfsPath, path }) {
       await vfsService.deleteDirectory(vfsPath, path);
 
-      commit('delVFS', { vfsPath, path });
+      commit('delVFSItem', { vfsPath, path });
     },
   },
   mutations: {
@@ -139,15 +144,18 @@ export default new Vuex.Store({
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
     },
-    updateVFS(state, vfs) {
-      state.vfs = vfs;
+    updateVFS(state, vfsState) {
+      state.vfs = vfsState;
     },
-    setVFS(state, { vfsPath, item }) {
+    setVFSRoot(state, vfsItem) {
+      vfsService.setVFSRoot(state.vfs, vfsItem);
+    },
+    setVFSItem(state, { vfsPath, item }) {
       const vfs = state.vfs.map.get(vfsPath);
 
       vfsService.setVFS(vfs, item);
     },
-    delVFS(state, { vfsPath, path }) {
+    delVFSItem(state, { vfsPath, path }) {
       const vfs = state.vfs.map.get(vfsPath);
 
       vfsService.delVFS(vfs, path);

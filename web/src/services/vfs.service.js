@@ -12,13 +12,24 @@ export default class VFSService {
     for (const vfsItem of items) {
       const vfs = this.makeVFS(vfsItem);
 
-      state.array.push(vfs);
-      state.map.set(vfsItem.path, vfs)
+      this.setVFSRoot(state, vfs);
     }
 
-    state.array.sort((a, b) => a.path.localeCompare(b.path));
-
     return state;
+  }
+
+  setVFSRoot(node, vfs) {
+    const name = vfs.path;
+
+    if (node.map.has(name)) {
+      node.array.splice(node.array.indexOf(node.map.get(name)), 1, vfs);
+      node.map.set(name, vfs);
+    } else {
+      node.map.set(name, vfs)
+      node.array.push(vfs);
+    }
+
+    node.array.sort((a, b) => a.path.localeCompare(b.path));
   }
 
   makeVFS(item) {
@@ -133,6 +144,13 @@ export default class VFSService {
     const items = response.data;
 
     return this.makeState(items)
+  }
+
+  async getRoot(vfsPath) {
+    const response = await this.apiService.get('/vfs' + vfsPath);
+    const item = response.data;
+
+    return this.makeVFS(item)
   }
 
   async getDirectory(vfsPath, path) {

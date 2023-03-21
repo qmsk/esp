@@ -81,26 +81,27 @@
   }
 </style>
 <template>
-  <div :class="{'vfs-item': true, 'vfs-root': root, 'vfs-directory': !root }">
+  <div :class="{'vfs-item': true, 'vfs-root': isRoot, 'vfs-directory': !isRoot }">
     <div class="vfs-header">
       <div class="vfs-controls">
-        <button @click="loadSubmit" v-if="!loaded && !loadBusy && !deleteBusy">&searr;</button>
+        <button @click="loadSubmit" v-if="!isLoaded && !loadBusy && !deleteBusy">&searr;</button>
+        <button @click="loadCancel" v-if="isLoaded && !loadBusy && !deleteBusy">&nwarr;</button>
 
         <progress v-show="loadBusy">Loading...</progress>
         <progress v-show="deleteBusy">Deleting...</progress>
       </div>
 
       <div class="vfs-title">
-        <span v-if="root" class="vfs-name">{{ vfs.path }}</span>
+        <span v-if="isRoot" class="vfs-name">{{ vfs.path }}</span>
         <span v-else class="vfs-name">{{ name }}/</span>
       </div>
 
       <div class="vfs-actions">
-        <button @click="deleteSubmit" v-if="!root">&times;</button>
+        <button @click="deleteSubmit" v-if="!isRoot">&times;</button>
       </div>
     </div>
 
-    <div :class="{'vfs-item': true, 'vfs-skel': !mkdir, 'vfs-directory': mkdir, 'vfs-new': mkdir }" v-if="loaded">
+    <div :class="{'vfs-item': true, 'vfs-skel': !mkdir, 'vfs-directory': mkdir, 'vfs-new': mkdir }" v-if="isLoaded">
       <div class="vfs-header">
         <div class="vfs-controls">
           <button @click="mkdirOpen" v-if="!mkdir">&gt;</button>
@@ -118,7 +119,7 @@
       </div>
     </div>
 
-    <template v-for="(item, i) in items">
+    <template v-if="isLoaded" v-for="(item, i) in items">
       <file-node v-if="item.type == 'file'"
         :vfs="vfs"
         :dir="path"
@@ -136,7 +137,7 @@
       />
     </template>
 
-    <div :class="{'vfs-item': true, 'vfs-skel': !upload, 'vfs-file': upload, 'vfs-new': upload }" v-if="loaded">
+    <div :class="{'vfs-item': true, 'vfs-skel': !upload, 'vfs-file': upload, 'vfs-new': upload }" v-if="isLoaded">
       <div class="vfs-header">
         <div class="vfs-controls">
           <button @click="uploadOpen" v-if="!upload">&plus;</button>
@@ -171,6 +172,7 @@
       loaded: { type: Boolean, default: false },
     },
     data: () => ({
+      load: true,
       loadBusy: false,
 
       mkdir: false,
@@ -184,8 +186,11 @@
       deleteBusy: false,
     }),
     computed: {
-      root() {
+      isRoot() {
         return !this.dir && !this.name;
+      },
+      isLoaded() {
+        return this.loaded && this.load;
       },
       path() {
         if (this.dir) {
@@ -219,18 +224,27 @@
     methods: {
       async loadSubmit() {
         const vfsPath = this.vfs.path;
-        const path = this.path;
 
+        this.load = true;
         this.loadBusy = true;
 
         try {
-          await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
+          if (this.isRoot) {
+            await this.$store.dispatch('loadVFSRoot', { vfsPath});
+          } else {
+            const path = this.path;
+
+            await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
+          }
         } catch (error) {
           // TODO:
           throw error;
         } finally {
           this.loadBusy = false;
         }
+      },
+      loadCancel() {
+        this.load = false;
       },
 
       /* mkdir */

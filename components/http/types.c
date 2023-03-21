@@ -89,3 +89,18 @@ time_t http_date_parse (const char *value)
     return mktime(&tm);
   }
 }
+
+int http_date_format (char *buf, size_t size, time_t time)
+{
+  struct tm tm;
+
+  if (!gmtime_r(&time, &tm)) {
+    return -1;
+  }
+
+  if (!strftime(buf, size, HTTP_DATE_FORMAT, &tm)) {
+    return -1;
+  }
+
+  return 0;
+}

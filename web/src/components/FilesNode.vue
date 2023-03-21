@@ -326,9 +326,11 @@
         }
 
         this.mkdir = false;
+        this.mkdirName = "";
       },
       mkdirCancel() {
         this.mkdir = false;
+        this.mkdirName = "";
       },
 
       /* file upload */

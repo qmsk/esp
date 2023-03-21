@@ -101,14 +101,14 @@ export default new Vuex.Store({
       commit('setVFSItem', { vfsPath, item });
     },
     async deleteFile({ commit }, { vfsPath, path }) {
-      await vfsService.delete(vfsPath, path);
+      const meta = await vfsService.delete(vfsPath, path);
 
-      commit('delVFSItem', { vfsPath, path });
+      commit('delVFSItem', { vfsPath, path, meta });
     },
     async deleteDirectory({ commit }, { vfsPath, path }) {
-      await vfsService.deleteDirectory(vfsPath, path);
+      const meta = await vfsService.deleteDirectory(vfsPath, path);
 
-      commit('delVFSItem', { vfsPath, path });
+      commit('delVFSItem', { vfsPath, path, meta });
     },
   },
   mutations: {
@@ -153,10 +153,18 @@ export default new Vuex.Store({
     setVFSItem(state, { vfsPath, item }) {
       const vfs = state.vfs.map.get(vfsPath);
 
+      if (item.vfs_stat) {
+        vfsService.setVFSStat(vfs, item.vfs_stat);
+      }
+
       vfsService.setVFS(vfs, item);
     },
-    delVFSItem(state, { vfsPath, path }) {
+    delVFSItem(state, { vfsPath, path, meta }) {
       const vfs = state.vfs.map.get(vfsPath);
+
+      if (meta.vfs_stat) {
+        vfsService.setVFSStat(vfs, meta.vfs_stat);
+      }
 
       vfsService.delVFS(vfs, path);
     },

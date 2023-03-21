@@ -32,6 +32,10 @@ export default class VFSService {
     node.array.sort((a, b) => a.path.localeCompare(b.path));
   }
 
+  setVFSStat(vfs, vfs_stat) {
+    vfs.stat = vfs_stat;
+  }
+
   makeVFS(item) {
     const vfs = {
       path: item.path,
@@ -191,11 +195,17 @@ export default class VFSService {
 
   async delete(vfsPath, path) {
     const response = await this.apiService.delete('/vfs' + vfsPath + '/' + path);
+    const meta = response.data;
+
+    return meta;
   }
 
   async deleteDirectory(vfsPath, path) {
     try {
       const response = await this.apiService.delete('/vfs' + vfsPath + '/' + path + '/');
+      const meta = response.data;
+
+      return meta;
     } catch (error) {
       if (error.response && error.response.status == 405) {
         // not supported by filesystem, fake it

@@ -155,7 +155,7 @@
     </div>
 
     <template v-if="isLoaded" v-for="(item, i) in items">
-      <file-node v-if="item.type == 'file'"
+      <file-node v-if="item.type == 'file'" :key="item.name"
         :vfs="vfs"
         :dir="path"
         :name="item.name"
@@ -163,7 +163,7 @@
         :mtime="item.mtime"
       />
 
-      <files-node v-else-if="item.type == 'directory'"
+      <files-node v-else-if="item.type == 'directory'" :key="item.name"
         :vfs="vfs"
         :dir="path"
         :name="item.name"

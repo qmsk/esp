@@ -7,7 +7,7 @@
       <h1>Files</h1>
       <progress v-show="loading">Loading...</progress>
 
-      <files-node v-if="vfsArray" v-for="vfs in vfsArray"
+      <files-node v-if="vfsArray" v-for="vfs in vfsArray" :key="vfs.path"
         :vfs="vfs"
         dir=""
         name=""

@@ -40,11 +40,6 @@
         deleteBusy: false,
       }
     },
-    filters: {
-      fileTime(date) {
-        return date.toLocaleString();
-      },
-    },
     computed: {
       path() {
         if (this.dir) {

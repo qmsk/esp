@@ -39,8 +39,14 @@ export default class VFSService {
       array: new Array(),
     };
 
-    for (const fileItem of item.files) {
-      this.setVFS(vfs, fileItem);
+    if (item.files) {
+      vfs.loaded = true;
+
+      for (const fileItem of item.files) {
+        this.setVFS(vfs, fileItem);
+      }
+    } else {
+      vfs.loaded = false;
     }
 
     return vfs;

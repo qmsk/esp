@@ -13,8 +13,12 @@
     color: #111;
   }
 
-  div.vfs-item.vfs-temp {
-      border: 1px dashed #bbb;
+  div.vfs-item.vfs-skel {
+    border: 1px solid transparent;
+  }
+
+  div.vfs-item.vfs-new {
+    border: 1px dashed #bbb;
   }
 
   div.vfs-header {
@@ -24,6 +28,10 @@
 
     height: 2em;
     padding: 1em;
+  }
+
+  div.vfs-item.vfs-skel > div.vfs-header {
+
   }
 
   div.vfs-controls {
@@ -73,47 +81,50 @@
   }
 </style>
 <template>
-  <div :class="['vfs-item', root ? 'vfs-root' : 'vfs-directory', temp ? 'vfs-temp' : null]">
+  <div :class="{'vfs-item': true, 'vfs-root': root, 'vfs-directory': !root }">
     <div class="vfs-header">
       <div class="vfs-controls">
-        <button @click="load" v-if="!temp && !loaded && !loading && !deleting">&searr;</button>
-        <button @click="createDirectory" v-if="temp && !creating">&check;</button>
+        <button @click="loadSubmit" v-if="!loaded && !loadBusy && !deleteBusy">&searr;</button>
 
-        <progress v-show="loading">Loading...</progress>
-        <progress v-show="creating">Creating...</progress>
-        <progress v-show="deleting">Deleting...</progress>
+        <progress v-show="loadBusy">Loading...</progress>
+        <progress v-show="deleteBusy">Deleting...</progress>
       </div>
 
       <div class="vfs-title">
-        <template v-if="temp">
-          <input type="text" v-model="newName" />
-        </template>
-        <template v-else-if="root">
-          <span class="vfs-name">{{ vfs.path }}</span>
-        </template>
-        <template v-else>
-          <span class="vfs-name">{{ name }}/</span>
-        </template>
+        <span v-if="root" class="vfs-name">{{ vfs.path }}</span>
+        <span v-else class="vfs-name">{{ name }}/</span>
       </div>
 
       <div class="vfs-actions">
-        <button @click="cancel" v-if="temp">&times;</button>
-        <button @click="deleteDirectory" v-if="!temp && !root">&times;</button>
-        <button @click="newDirectory" v-if="!temp">&gt;</button>
-        <button @click="newFile" v-if="!temp">&plus;</button>
+        <button @click="deleteSubmit" v-if="!root">&times;</button>
       </div>
     </div>
 
+    <div :class="{'vfs-item': true, 'vfs-skel': !mkdir, 'vfs-directory': mkdir, 'vfs-new': mkdir }" v-if="loaded">
+      <div class="vfs-header">
+        <div class="vfs-controls">
+          <button @click="mkdirOpen" v-if="!mkdir">&gt;</button>
+          <button @click="mkdirSubmit" v-if="mkdir && !mkdirBusy" :disabled="!mkdirName">&check;</button>
+          <progress v-if="mkdir" v-show="mkdirBusy">Creating...</progress>
+        </div>
 
-    <template v-for="(item, i) in allItems">
+        <div class="vfs-title" v-if="mkdir">
+          <input type="text" v-model="mkdirName" />
+        </div>
+
+        <div class="vfs-actions">
+          <button @click="mkdirCancel" v-if="mkdir">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <template v-for="(item, i) in items">
       <file-node v-if="item.type == 'file'"
         :vfs="vfs"
         :dir="path"
         :name="item.name"
         :size="item.size"
         :mtime="item.mtime"
-        :temp="item.temp || false"
-        @clear="remove(i)"
       />
 
       <files-node v-else-if="item.type == 'directory'"
@@ -121,11 +132,27 @@
         :dir="path"
         :name="item.name"
         :items="item.array"
-        :temp="item.temp || false"
         :loaded="item.loaded || false"
-        @clear="remove(i)"
       />
     </template>
+
+    <div :class="{'vfs-item': true, 'vfs-skel': !upload, 'vfs-file': upload, 'vfs-new': upload }" v-if="loaded">
+      <div class="vfs-header">
+        <div class="vfs-controls">
+          <button @click="uploadOpen" v-if="!upload">&plus;</button>
+          <button @click="uploadSubmit" v-if="upload && !uploadBusy" :disabled="!uploadFile">&check;</button>
+          <progress v-if="upload" v-show="uploadBusy">Creating...</progress>
+        </div>
+
+        <div class="vfs-title" v-if="upload">
+          <input type="file" @change="uploadChanged" />
+        </div>
+
+        <div class="vfs-actions">
+          <button @click="uploadCancel" v-if="upload">&times;</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -141,39 +168,60 @@
       dir: { type: String },
       name: { type: String },
       items: { type: Array, default: () => [] },
-      temp: { type: Boolean, default: false },
       loaded: { type: Boolean, default: false },
     },
     data: () => ({
-      loading: false,
-      creating: false,
-      deleting: false,
-      newItems: [],
-      newName: null,
+      loadBusy: false,
+
+      mkdir: false,
+      mkdirName: "",
+      mkdirBusy: false,
+
+      upload: false,
+      uploadFile: null,
+      uploadBusy: false,
+
+      deleteBusy: false,
     }),
     computed: {
       root() {
-        return !this.dir && !this.name && !this.temp;
+        return !this.dir && !this.name;
       },
       path() {
-        const name = this.temp ? this.newName : this.name;
-
         if (this.dir) {
-          return this.dir + '/' + name;
+          return this.dir + '/' + this.name;
         } else {
-          return name;
+          return this.name;
         }
       },
-      allItems() {
-        return [].concat(this.newItems, this.items);
+      mkdirPath() {
+        const path = this.path;
+
+        if (path) {
+          return path + '/' + this.mkdirName;
+        } else {
+          return this.mkdirName;
+        }
+      },
+      uploadPath() {
+        const path = this.path;
+        const file = this.uploadFile;
+
+        if (!this.uploadFile) {
+          return null;
+        } else if (path) {
+          return path + '/' + file.name;
+        } else {
+          return file.name;
+        }
       },
     },
     methods: {
-      async load() {
+      async loadSubmit() {
         const vfsPath = this.vfs.path;
         const path = this.path;
 
-        this.loading = true;
+        this.loadBusy = true;
 
         try {
           await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
@@ -181,17 +229,19 @@
           // TODO:
           throw error;
         } finally {
-          this.loading = false;
+          this.loadBusy = false;
         }
       },
-      cancel() {
-        this.$emit('clear');
-      },
-      async createDirectory() {
-        const vfsPath = this.vfs.path;
-        const path = this.path;
 
-        this.creating = true;
+      /* mkdir */
+      mkdirOpen() {
+        this.mkdir = true;
+      },
+      async mkdirSubmit() {
+        const vfsPath = this.vfs.path;
+        const path = this.mkdirPath;
+
+        this.mkdirBusy = true;
 
         try {
           await this.$store.dispatch('createVFSDirectory', { vfsPath, path });
@@ -199,16 +249,57 @@
           // TODO: input validity
           throw error;
         } finally {
-          this.creating = false;
+          this.mkdirBusy = false;
         }
 
-        this.$emit('clear');
+        this.mkdir = false;
       },
-      async deleteDirectory() {
+      mkdirCancel() {
+        this.mkdir = false;
+      },
+
+      /* file upload */
+      uploadOpen() {
+        this.upload = true;
+      },
+      uploadChanged() {
+        const input = event.target;
+        let file = null
+
+        if (input.files.length > 0) {
+          file = input.files[0];
+        }
+
+        this.uploadFile = file;
+      },
+      async uploadSubmit() {
+        const vfsPath = this.vfs.path;
+        const path = this.uploadPath;
+        const file = this.uploadFile;
+
+        this.uploadBusy = true;
+
+        try {
+          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
+        } catch (error) {
+          // TODO: input validity
+          throw error;
+        } finally {
+          this.uploadBusy = false;
+        }
+
+        this.upload = false;
+      },
+      uploadCancel() {
+        this.upload = false;
+      },
+
+      /* delete */
+      async deleteSubmit() {
         const vfsPath = this.vfs.path;
         const path = this.path;
 
-        this.deleting = true;
+        this.deleteBusy = true;
 
         try {
           await this.$store.dispatch('deleteDirectory', { vfsPath, path });
@@ -216,17 +307,8 @@
           // TODO: input validity
           throw error;
         } finally {
-          this.deleting = false;
+          this.deleteBusy = false;
         }
-      },
-      newDirectory() {
-        this.newItems.push({ type: 'directory', temp: true });
-      },
-      newFile() {
-        this.newItems.push({ type: 'file', temp: true });
-      },
-      remove(i) {
-        this.newItems.splice(i, 1);
       },
     }
   }

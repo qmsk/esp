@@ -4,17 +4,11 @@
   <div class="vfs-item vfs-file">
     <div class="vfs-header">
       <div class="vfs-controls">
-        <progress v-show="uploading">Uploading...</progress>
-        <progress v-show="deleting">Deleting...</progress>
+        <progress v-show="deleteBusy">Deleting...</progress>
       </div>
 
       <div class="vfs-title">
-        <template v-if="temp">
-          <input type="file" @input="uploadFile" />
-        </template>
-        <template v-else>
-          {{ name }}
-        </template>
+          <span class="vfs-name">{{ name }}</span>
       </div>
 
       <div class="vfs-attr">
@@ -25,8 +19,7 @@
       </div>
 
       <div class="vfs-actions">
-        <button @click="deleteFile()" v-if="!temp">&times;</button>
-        <button @click="cancelTemp()" v-if="temp">&minus;</button>
+        <button @click="deleteSubmit()">&times;</button>
       </div>
     </div>
   </div>
@@ -39,12 +32,10 @@
       name: { type: String },
       size: { type: Number, default: null },
       mtime: { type: Date, default: null },
-      temp: { type: Boolean, default: false },
     },
     data: function() {
       return {
-        uploading: false,
-        deleting: false,
+        deleteBusy: false,
       }
     },
     filters: {
@@ -69,43 +60,21 @@
         return date.toLocaleString();
       },
     },
-    methods: {
-      buildPath(name) {
+    computed: {
+      path() {
         if (this.dir) {
-          return this.dir + '/' + name;
+          return this.dir + '/' + this.name;
         } else {
-          return name;
+          return this.name;
         }
       },
-      cancelTemp() {
-        if (this.temp) {
-          this.$emit('clear');
-        }
-      },
-      async uploadFile(event) {
-        const input = event.target;
-        const file = input.files[0];
-        const path = this.buildPath(file.name)
+    },
+    methods: {
+      async deleteSubmit() {
         const vfsPath = this.vfs.path;
+        const path = this.path;
 
-        this.uploading = true;
-
-        try {
-          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
-        } catch (error) {
-          input.setCustomValidity(error.name + ": " + error.message);
-          throw error;
-        } finally {
-          this.uploading = false;
-        }
-
-        this.$emit('clear');
-      },
-      async deleteFile(event) {
-        const vfsPath = this.vfs.path;
-        const path = this.buildPath(this.name);
-
-        this.deleting = true;
+        this.deleteBusy = true;
 
         try {
           await this.$store.dispatch('deleteFile', { vfsPath, path });
@@ -113,7 +82,7 @@
           // TODO
           throw error;
         } finally {
-          this.deleting = false;
+          this.deleteBusy = false;
         }
       },
     }

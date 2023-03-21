@@ -2,19 +2,33 @@
 </style>
 <template>
   <div class="vfs-item vfs-file">
-    <div class="vfs-file-controls">
-      <button @click="deleteFile()" v-if="!temp">&times;</button>
-      <button @click="cancelTemp()" v-if="temp">&minus;</button>
-    </div>
+    <div class="vfs-header">
+      <div class="vfs-controls">
+        <progress v-show="uploading">Uploading...</progress>
+        <progress v-show="deleting">Deleting...</progress>
+      </div>
 
-    <template v-if="temp">
-      <input type="file" @input="uploadFile" />
-      <progress v-show="uploading">Uploading...</progress>
-    </template>
-    <template v-else>
-      {{ node.name }}
-      <progress v-show="deleting">Deleting...</progress>
-    </template>
+      <div class="vfs-title">
+        <template v-if="temp">
+          <input type="file" @input="uploadFile" />
+        </template>
+        <template v-else>
+          {{ name }}
+        </template>
+      </div>
+
+      <div class="vfs-attr">
+        <span class="vfs-file-size" v-if="size">{{ size | fileSize }}</span>
+      </div>
+      <div class="vfs-attr">
+        <span class="vfs-file-mtime" v-if="mtime">{{ mtime | fileTime }}</span>
+      </div>
+
+      <div class="vfs-actions">
+        <button @click="deleteFile()" v-if="!temp">&times;</button>
+        <button @click="cancelTemp()" v-if="temp">&minus;</button>
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -22,7 +36,9 @@
     props: {
       vfs: { type: Object },
       dir: { type: String },
-      node: { type: Object },
+      name: { type: String },
+      size: { type: Number, default: null },
+      mtime: { type: Date, default: null },
       temp: { type: Boolean, default: false },
     },
     data: function() {
@@ -30,6 +46,28 @@
         uploading: false,
         deleting: false,
       }
+    },
+    filters: {
+      fileSize(size) {
+        const sizeMap = new Map([
+          ['GB', 1024 * 1024 * 1024 ],
+          ['MB', 1024 * 1024 ],
+          ['KB', 1024 ],
+        ]);
+
+        for (const [suffix, unit] of sizeMap) {
+          if (size >= unit) {
+            const units = size / unit;
+
+            return units.toFixed(2) + ' ' + suffix;
+          }
+        }
+
+        return size.toFixed(0) +  ' ' + 'B';
+      },
+      fileTime(date) {
+        return date.toLocaleString();
+      },
     },
     methods: {
       buildPath(name) {
@@ -65,7 +103,7 @@
       },
       async deleteFile(event) {
         const vfsPath = this.vfs.path;
-        const path = this.buildPath(this.node.name);
+        const path = this.buildPath(this.name);
 
         this.deleting = true;
 

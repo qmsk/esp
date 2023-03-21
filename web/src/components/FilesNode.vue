@@ -1,75 +1,130 @@
 <style>
-  div.vfs-tree {
-    border: 1px solid #bbb;
-  }
-
-  div.vfs-controls {
-    padding: 1em;
-  }
-
-  div.vfs-file-controls {
-    float: right;
-  }
-
   div.vfs-item {
     margin-left: 1em;
     margin-top: 1em;
     margin-bottom: 1em;
-    padding: 1em;
+    padding: 0;
 
-    background-color: #ccc;
+    display: flex;
+    flex-direction: column;
+
+    border: 1px solid #bbb;
+
     color: #111;
   }
 
-  div.vfs-file {
-    background-color: #ccc;
-    color: #111;
+  div.vfs-item.vfs-temp {
+      border: 1px dashed #bbb;
+  }
+
+  div.vfs-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    height: 2em;
+    padding: 1em;
+  }
+
+  div.vfs-controls {
+    flex: 0 0 3em;
+  }
+
+  div.vfs-title {
+    flex: 1 0 0;
+
+    font-weight: bold;
+  }
+
+  div.vfs-attr {
+    flex: 1 0 0;
+
+    font-style: italic;
+  }
+
+  div.vfs-actions {
+    flex: 0 0 8em;
+  }
+
+  div.vfs-root {
+    background-color: #aaa;
+  }
+
+  div.vfs-root > div.vfs-header {
+    background-color: #444;
+    color: #ccc;
   }
 
   div.vfs-directory {
     background-color: #888;
     color: #111;
   }
+
+  div.vfs-directory > div.vfs-header {
+    background-color: #888;
+    color: #111;
+
+    font-weight: bold;
+  }
+
+  div.vfs-file {
+    background-color: #ccc;
+    color: #111;
+  }
 </style>
 <template>
-  <div class="vfs-nodes">
-    <div class="vfs-controls">
-      <button @click="loadDirectory" v-if="!temp && !loaded">&searr;</button>
-      <button @click="newDirectory" v-if="!temp">&gt;</button>
-      <button @click="newFile" v-if="!temp">&plus;</button>
-      <button @click="cancelTemp" v-if="temp">&times;</button>
-      <button @click="createDirectory" v-if="temp">&check;</button>
-      <button @click="deleteDirectory()" v-if="!temp">&times;</button>
+  <div :class="['vfs-item', root ? 'vfs-root' : 'vfs-directory', temp ? 'vfs-temp' : null]">
+    <div class="vfs-header">
+      <div class="vfs-controls">
+        <button @click="load" v-if="!temp && !loaded && !loading && !deleting">&searr;</button>
+        <button @click="createDirectory" v-if="temp && !creating">&check;</button>
+
+        <progress v-show="loading">Loading...</progress>
+        <progress v-show="creating">Creating...</progress>
+        <progress v-show="deleting">Deleting...</progress>
+      </div>
+
+      <div class="vfs-title">
+        <template v-if="temp">
+          <input type="text" v-model="newName" />
+        </template>
+        <template v-else-if="root">
+          <span class="vfs-name">{{ vfs.path }}</span>
+        </template>
+        <template v-else>
+          <span class="vfs-name">{{ name }}/</span>
+        </template>
+      </div>
+
+      <div class="vfs-actions">
+        <button @click="cancel" v-if="temp">&times;</button>
+        <button @click="deleteDirectory" v-if="!temp && !root">&times;</button>
+        <button @click="newDirectory" v-if="!temp">&gt;</button>
+        <button @click="newFile" v-if="!temp">&plus;</button>
+      </div>
     </div>
+
 
     <template v-for="(item, i) in allItems">
       <file-node v-if="item.type == 'file'"
         :vfs="vfs"
-        :dir="dir"
-        :node="item"
+        :dir="path"
+        :name="item.name"
+        :size="item.size"
+        :mtime="item.mtime"
         :temp="item.temp || false"
         @clear="remove(i)"
       />
 
-      <div class="vfs-item vfs-directory" v-if="item.type == 'directory'">
-        <template v-if="item.temp">
-          <input type="text" v-model="item.name" />
-          <progress v-show="creating">Creating...</progress>
-        </template>
-        <template v-else>
-          {{ item.name }}/
-          <progress v-show="deleting">Deleting...</progress>
-        </template>
-
-        <files-node
-          :vfs="vfs"
-          :dir="buildPath(item.name)"
-          :items="item.array"
-          :temp="item.temp || false"
-          :loaded="item.loaded || false"
-          @clear="remove(i)"
-        />
-      </div>
+      <files-node v-else-if="item.type == 'directory'"
+        :vfs="vfs"
+        :dir="path"
+        :name="item.name"
+        :items="item.array"
+        :temp="item.temp || false"
+        :loaded="item.loaded || false"
+        @clear="remove(i)"
+      />
     </template>
   </div>
 </template>
@@ -84,40 +139,57 @@
     props: {
       vfs: { type: Object },
       dir: { type: String },
+      name: { type: String },
       items: { type: Array, default: () => [] },
       temp: { type: Boolean, default: false },
       loaded: { type: Boolean, default: false },
     },
     data: () => ({
+      loading: false,
       creating: false,
       deleting: false,
       newItems: [],
+      newName: null,
     }),
     computed: {
-      allItems() {
-        return [].concat(this.newItems, this.items);
-      }
-    },
-    methods: {
-      buildPath(name) {
+      root() {
+        return !this.dir && !this.name && !this.temp;
+      },
+      path() {
+        const name = this.temp ? this.newName : this.name;
+
         if (this.dir) {
           return this.dir + '/' + name;
         } else {
           return name;
         }
       },
-      async loadDirectory() {
-        const vfsPath = this.vfs.path;
-        const path = this.dir;
-
-        await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
+      allItems() {
+        return [].concat(this.newItems, this.items);
       },
-      cancelTemp() {
+    },
+    methods: {
+      async load() {
+        const vfsPath = this.vfs.path;
+        const path = this.path;
+
+        this.loading = true;
+
+        try {
+          await this.$store.dispatch('loadVFSDirectory', { vfsPath, path });
+        } catch (error) {
+          // TODO:
+          throw error;
+        } finally {
+          this.loading = false;
+        }
+      },
+      cancel() {
         this.$emit('clear');
       },
       async createDirectory() {
         const vfsPath = this.vfs.path;
-        const path = this.dir;
+        const path = this.path;
 
         this.creating = true;
 
@@ -134,7 +206,7 @@
       },
       async deleteDirectory() {
         const vfsPath = this.vfs.path;
-        const path = this.dir;
+        const path = this.path;
 
         this.deleting = true;
 

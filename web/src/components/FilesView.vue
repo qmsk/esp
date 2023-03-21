@@ -1,20 +1,19 @@
 <style>
-  div.vfs-tree {
 
-  }
 </style>
-
 <template>
   <main id="files-view" class="split">
     <div class="view">
       <h1>Files</h1>
       <progress v-show="loading">Loading...</progress>
-      <template v-if="vfsArray">
-        <div class="vfs-tree" v-for="vfs in vfsArray">
-          <h2>{{ vfs.path }}</h2>
-          <files-node :vfs="vfs" dir="" :items="vfs.array" :loaded="true" />
-        </div>
-      </template>
+
+      <files-node v-if="vfsArray" v-for="vfs in vfsArray"
+        :vfs="vfs"
+        dir=""
+        name=""
+        :items="vfs.array"
+        :loaded="true"
+      />
     </div>
   </main>
 </template>

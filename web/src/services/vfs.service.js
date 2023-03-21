@@ -44,8 +44,10 @@ export default class VFSService {
       array: new Array(),
     };
 
-    for (const fileItem of item.files) {
-      this.setVFS(directory, fileItem);
+    if (item.files) {
+      for (const fileItem of item.files) {
+        this.setVFS(directory, fileItem);
+      }
     }
 
     return directory;
@@ -82,6 +84,10 @@ export default class VFSService {
       if (!item.array) {
         item.array = new Array();
       }
+    }
+
+    if (item.mtime) {
+      item.mtime = new Date(item.mtime);
     }
 
     for (const part of parts) {
@@ -131,9 +137,9 @@ export default class VFSService {
 
   async getDirectory(vfsPath, path) {
     const response = await this.apiService.get('/vfs' + vfsPath + '/' + path + '/');
-    const items = response.data
+    const item = response.data
 
-    return this.makeDirectory(items);
+    return this.makeDirectory(item);
   }
 
   async createDirectory(vfsPath, path) {
@@ -141,7 +147,7 @@ export default class VFSService {
       const response = await this.apiService.post('/vfs' + vfsPath + '/' + path + '/');
       const item = response.data;
 
-      return item;
+      return this.makeDirectory(item);
     } catch (error) {
       if (error.response && error.response.status == 405) {
         // not supported by filesystem, fake it

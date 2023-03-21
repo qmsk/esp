@@ -1,4 +1,5 @@
 #include "config.h"
+#include "config_vfs.h"
 #include "artnet.h"
 #include "atx_psu.h"
 #include "console.h"
@@ -14,14 +15,9 @@
 #include <logging.h>
 
 #include <esp_err.h>
-#include <esp_spiffs.h>
 
 #include <errno.h>
 #include <sdkconfig.h>
-
-#define CONFIG_BASE_PATH "/config"
-#define CONFIG_PARTITON_LABEL "config"
-#define CONFIG_MAX_FILES 4
 
 const struct configmod config_modules[] = {
   { "console",
@@ -110,7 +106,7 @@ const struct configmod config_modules[] = {
 
 static bool config_disabled = false;
 struct config config = {
-  .path     = CONFIG_BASE_PATH,
+  .path     = CONFIG_VFS_PATH,
 
   .modules = config_modules,
 };
@@ -123,27 +119,19 @@ void disable_config()
 
 int init_config()
 {
-  esp_vfs_spiffs_conf_t conf = {
-    .base_path              = CONFIG_BASE_PATH,
-    .partition_label        = CONFIG_PARTITON_LABEL,
-    .max_files              = CONFIG_MAX_FILES,
-    .format_if_mount_failed = true,
-  };
-  esp_err_t err;
+  int err;
 
   if ((err = config_init(&config))) {
     LOG_ERROR("config_init");
     return err;
   }
 
-  LOG_INFO("mount/format partition=%s at base_path=%s with max_files=%u", conf.partition_label, conf.base_path, conf.max_files);
-
-  if ((err = esp_vfs_spiffs_register(&conf))) {
-    if (err == ESP_ERR_NOT_FOUND) {
-      LOG_WARN("config partition with label=%s not found", conf.partition_label);
-    } else {
-      LOG_ERROR("esp_vfs_spiffs_register: %s", esp_err_to_name(err));
-    }
+  if ((err = init_config_vfs()) < 0) {
+    LOG_ERROR("init_config_vfs");
+    return err;
+  } else if (err) {
+    LOG_WARN("init_config_vfs");
+    return 1;
   }
 
   if (config_disabled) {
@@ -153,7 +141,7 @@ int init_config()
 
   if (config_load(&config, CONFIG_BOOT_FILE)) {
     if (errno == ENOENT) {
-      LOG_WARN("spiffs %s file at %s not found", CONFIG_BASE_PATH, CONFIG_BOOT_FILE);
+      LOG_WARN("spiffs %s file at %s not found", CONFIG_VFS_PATH, CONFIG_BOOT_FILE);
       return 1;
     } else {
       LOG_ERROR("config_load(%s)", CONFIG_BOOT_FILE);
@@ -182,10 +170,9 @@ void reset_config()
   }
 
   // if spiffs is corrupted enough, format entire partition
-  if ((err = esp_spiffs_format(CONFIG_PARTITON_LABEL))) {
-    LOG_ERROR("esp_spiffs_format: %s", esp_err_to_name(err));
+  if (reset_config_vfs()) {
+    LOG_ERROR("reset_config_vfs");
   } else {
-    LOG_WARN("formatted config filesystem with partition label=%s", CONFIG_PARTITON_LABEL);
     return; // success
   }
 

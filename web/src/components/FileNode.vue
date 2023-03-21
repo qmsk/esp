@@ -22,6 +22,11 @@
         <button @click="deleteSubmit()">
           <span class="material-icons-outlined">delete</span>
         </button>
+        <form method="get" :action="url">
+          <button type="submit">
+            <span class="material-icons-outlined">file_download</span>
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -48,6 +53,9 @@
           return this.name;
         }
       },
+      url() {
+        return '/vfs' + this.vfs.path + '/' + this.path;
+      }
     },
     methods: {
       async deleteSubmit() {

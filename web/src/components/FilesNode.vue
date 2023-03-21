@@ -57,7 +57,6 @@
 
     padding: 0.5em;
 
-
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -77,6 +76,11 @@
 
   div.vfs-actions {
     flex: 0 0 8em;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em;
   }
 
   div.vfs-root {

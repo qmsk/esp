@@ -1,4 +1,5 @@
 #include "sdcard.h"
+#include "sdcard_vfs.h"
 
 #include <logging.h>
 
@@ -8,9 +9,9 @@
   #include <diskio_sdmmc.h>
   #include <esp_vfs_fat.h>
 
-  #define SDCARD_FATFS_BASE_PATH "/sdcard"
-  #define SDCARD_FATFS_MAX_FILES 4
+  #define SDCARD_VFS_MAX_FILES 4
 
+  BYTE sdcard_pdrv = FF_DRV_NOT_USED;
   FATFS *sdcard_fatfs;
 
   static const char *fresult_str(FRESULT result)
@@ -40,33 +41,86 @@
     }
   }
 
+  static inline size_t fatfs_sector_size(FATFS *fs)
+  {
+      return fs->ssize;
+  }
+
+  static inline size_t fatfs_total_sectors(FATFS *fs)
+  {
+      return (fs->n_fatent - 2) * fs->csize;
+  }
+
+  static inline size_t fatfs_used_sectors(FATFS *fs, DWORD nclst)
+  {
+      return (fs->n_fatent - 2 - nclst) * fs->csize;
+  }
+
+  static inline size_t fatfs_free_sectors(FATFS *fs, DWORD nclst)
+  {
+      return nclst * fs->csize;
+  }
+
+  int sdcard_vfs_stat(const struct vfs_dev *dev, struct vfs_stat *stat)
+  {
+    char drv[8];
+    FATFS *fatfs;
+    DWORD nclst;
+    FRESULT fres;
+
+    if (snprintf(drv, sizeof(drv), "%u:", sdcard_pdrv) >= sizeof(drv)) {
+      LOG_ERROR("drv overflow");
+      return -1;
+    }
+
+    if ((fres = f_getfree(drv, &nclst, &fatfs))) {
+      stat->mounted = false;
+
+      LOG_ERROR("f_mount: %s", fresult_str(fres));
+
+      return -1;
+    } else {
+      stat->mounted = true;
+    }
+
+    stat->sector_size = fatfs_sector_size(fatfs);
+    stat->total_sectors = fatfs_total_sectors(fatfs);
+    stat->used_sectors = fatfs_used_sectors(fatfs, nclst);
+    stat->free_sectors = fatfs_free_sectors(fatfs, nclst);
+
+    return 0;
+  }
+
+  const struct vfs_dev sdcard_vfs_dev = {
+    .stat_func = sdcard_vfs_stat,
+  };
+
   int mount_sdcard_fatfs(sdmmc_card_t *card)
   {
-    BYTE pdrv = FF_DRV_NOT_USED;
     char drv[8];
     esp_err_t err;
     FRESULT fres;
 
     // allocate sdmmc drive
-    if ((err = ff_diskio_get_drive(&pdrv))) {
+    if ((err = ff_diskio_get_drive(&sdcard_pdrv))) {
       LOG_ERROR("ff_diskio_get_drive: %s", esp_err_to_name(err));
       return -1;
     }
 
-    ff_diskio_register_sdmmc(pdrv, card);
+    ff_diskio_register_sdmmc(sdcard_pdrv, card);
 
-    if (snprintf(drv, sizeof(drv), "%u:", pdrv) >= sizeof(drv)) {
+    if (snprintf(drv, sizeof(drv), "%u:", sdcard_pdrv) >= sizeof(drv)) {
       LOG_ERROR("drv overflow");
       return -1;
     }
 
     // mount vfs
-    if ((err = esp_vfs_fat_register(SDCARD_FATFS_BASE_PATH, drv, SDCARD_FATFS_MAX_FILES, &sdcard_fatfs))) {
+    if ((err = esp_vfs_fat_register(SDCARD_VFS_PATH, drv, SDCARD_VFS_MAX_FILES, &sdcard_fatfs))) {
       LOG_ERROR("esp_vfs_fat_register: %s", esp_err_to_name(err));
       return -1;
     }
 
-    LOG_INFO("mount sdcard FATFS at VFS %s", SDCARD_FATFS_BASE_PATH);
+    LOG_INFO("mount sdcard FATFS at VFS %s", SDCARD_VFS_PATH);
 
     // mount fatfs
     if ((fres = f_mount(sdcard_fatfs, drv, 1))) {
@@ -79,18 +133,11 @@
 
   int unmount_sdcard_fatfs(sdmmc_card_t *card)
   {
-    BYTE pdrv = FF_DRV_NOT_USED;
     char drv[8];
     FRESULT fres;
     esp_err_t err;
 
-    // lookup fatfs drive number
-    if ((pdrv = ff_diskio_get_pdrv_card(card)) == FF_DRV_NOT_USED) {
-      LOG_ERROR("ff_diskio_get_pdrv_card(...): not used");
-      return -1;
-    }
-
-    if (snprintf(drv, sizeof(drv), "%u:", pdrv) >= sizeof(drv)) {
+    if (snprintf(drv, sizeof(drv), "%u:", sdcard_pdrv) >= sizeof(drv)) {
       LOG_ERROR("drv overflow");
       return -1;
     }
@@ -102,15 +149,17 @@
     }
 
     // unregister fatfs -> sdmmc
-    ff_diskio_unregister(pdrv);
+    ff_diskio_unregister(sdcard_pdrv);
+
+    sdcard_pdrv = FF_DRV_NOT_USED;
 
     // unmount vfs
-    if ((err = esp_vfs_fat_unregister_path(SDCARD_FATFS_BASE_PATH))) {
+    if ((err = esp_vfs_fat_unregister_path(SDCARD_VFS_PATH))) {
       LOG_ERROR("esp_vfs_fat_unregister_path: %s", esp_err_to_name(err));
       return -1;
     }
 
-    LOG_INFO("unmounted sdcard FATFS at VFS %s", SDCARD_FATFS_BASE_PATH);
+    LOG_INFO("unmounted sdcard FATFS at VFS %s", SDCARD_VFS_PATH);
 
     return 0;
   }

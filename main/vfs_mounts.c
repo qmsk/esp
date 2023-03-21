@@ -1,12 +1,11 @@
 #include "config_vfs.h"
+#include "sdcard_vfs.h"
 #include "vfs_state.h"
-
-#include <sdkconfig.h>
 
 const struct vfs_mount vfs_mounts[] = {
   { .path = CONFIG_VFS_PATH, .dev = &config_vfs_dev },
 #if CONFIG_SDCARD_ENABLED
-  { .path = "/sdcard" },
+  { .path = SDCARD_VFS_PATH, .dev = &sdcard_vfs_dev },
 #endif
   { },
 };

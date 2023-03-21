@@ -142,7 +142,7 @@
           </div>
 
           <div class="vfs-title" v-if="mkdir">
-            <input type="text" v-model="mkdirName" />
+            <input type="text" v-model="mkdirName" ref="mkdirInput" />
           </div>
 
           <div class="vfs-actions">
@@ -308,6 +308,7 @@
       /* mkdir */
       mkdirOpen() {
         this.mkdir = true;
+        this.$nextTick(() => this.$refs.mkdirInput.focus());
       },
       async mkdirSubmit() {
         const vfsPath = this.vfs.path;

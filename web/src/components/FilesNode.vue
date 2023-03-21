@@ -129,27 +129,29 @@
     </div>
 
     <div :class="{'vfs-item': true, 'vfs-skel': !mkdir, 'vfs-directory': mkdir, 'vfs-new': mkdir }" v-if="isLoaded">
-      <div class="vfs-header">
-        <div class="vfs-controls">
-          <button @click="mkdirOpen" v-if="!mkdir">
-            <span class="material-icons-outlined">create_new_folder</span>
-          </button>
-          <button @click="mkdirSubmit" v-if="mkdir && !mkdirBusy" :disabled="!mkdirName">
-            <span class="material-icons-outlined">create_new_folder</span>
-          </button>
-          <progress v-if="mkdir" v-show="mkdirBusy">Creating...</progress>
-        </div>
+      <form>
+        <div class="vfs-header">
+          <div class="vfs-controls">
+            <button type="button" @click="mkdirOpen" v-if="!mkdir">
+              <span class="material-icons-outlined">create_new_folder</span>
+            </button>
+            <button type="submit" @click="mkdirSubmit" v-if="mkdir && !mkdirBusy" :disabled="!mkdirName">
+              <span class="material-icons-outlined">create_new_folder</span>
+            </button>
+            <progress v-if="mkdir" v-show="mkdirBusy">Creating...</progress>
+          </div>
 
-        <div class="vfs-title" v-if="mkdir">
-          <input type="text" v-model="mkdirName" />
-        </div>
+          <div class="vfs-title" v-if="mkdir">
+            <input type="text" v-model="mkdirName" />
+          </div>
 
-        <div class="vfs-actions">
-          <button @click="mkdirCancel" v-if="mkdir">
-            <span class="material-icons-outlined">cancel</span>
-          </button>
+          <div class="vfs-actions">
+            <button type="reset" @click="mkdirCancel" v-if="mkdir">
+              <span class="material-icons-outlined">cancel</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
 
     <template v-if="isLoaded" v-for="(item, i) in items">
@@ -171,27 +173,29 @@
     </template>
 
     <div :class="{'vfs-item': true, 'vfs-skel': !upload, 'vfs-file': upload, 'vfs-new': upload }" v-if="isLoaded">
-      <div class="vfs-header">
-        <div class="vfs-controls">
-          <button @click="uploadOpen" v-if="!upload">
-            <span class="material-icons-outlined">upload_file</span>
-          </button>
-          <button @click="uploadSubmit" v-if="upload && !uploadBusy" :disabled="!uploadFile">
-            <span class="material-icons-outlined">upload_file</span>
-          </button>
-          <progress v-if="upload" v-show="uploadBusy">Creating...</progress>
-        </div>
+      <form>
+        <div class="vfs-header">
+          <div class="vfs-controls">
+            <button type="button" @click="uploadOpen" v-if="!upload">
+              <span class="material-icons-outlined">upload_file</span>
+            </button>
+            <button type="submit" @click="uploadSubmit" v-if="upload && !uploadBusy" :disabled="!uploadFile">
+              <span class="material-icons-outlined">upload_file</span>
+            </button>
+            <progress v-if="upload" v-show="uploadBusy">Creating...</progress>
+          </div>
 
-        <div class="vfs-title" v-if="upload">
-          <input type="file" @change="uploadChanged" />
-        </div>
+          <div class="vfs-title" v-if="upload">
+            <input type="file" @change="uploadChanged" />
+          </div>
 
-        <div class="vfs-actions">
-          <button @click="uploadCancel" v-if="upload">
-            <span class="material-icons-outlined">cancel</span>
-          </button>
+          <div class="vfs-actions">
+            <button type="reset" @click="uploadCancel" v-if="upload">
+              <span class="material-icons-outlined">cancel</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 </template>

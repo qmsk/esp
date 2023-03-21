@@ -52,6 +52,25 @@
     font-style: italic;
   }
 
+  div.vfs-progress {
+    flex: 1 0 0;
+
+    padding: 0.5em;
+
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  div.vfs-progress span {
+    flex: 0 0 auto;
+  }
+  div.vfs-progress meter {
+    flex: 1 0 auto;
+  }
+
   div.vfs-attr meter {
     width: 100%;
   }
@@ -189,7 +208,16 @@
             <input type="file" @input="uploadInput" ref="uploadInput" />
           </div>
 
-          <div class="vfs-attrv-if="uploadFile">
+          <div class="vfs-progress" v-if="uploadFile">
+            <span class="vfs-file-size" v-if="uploadProgress">{{ uploadProgress.loaded | fileSize }}</span>
+            <meter v-if="uploadFile && uploadProgress"
+              min="0"
+              :max="uploadProgress.total"
+              :value="uploadProgress.loaded"
+              :title="uploadProgress.loaded | fileSize">
+
+              {{ uploadProgress.loaded | fileSize }} / {{ uploadProgress.total | fileSize }}
+            </meter>
             <span class="vfs-file-size">{{ uploadFileSize | fileSize }}</span>
           </div>
           <div class="vfs-attr" v-if="uploadFile">
@@ -232,6 +260,7 @@
       upload: false,
       uploadFile: null,
       uploadBusy: false,
+      uploadProgress: null,
 
       deleteBusy: false,
     }),
@@ -377,11 +406,13 @@
         const vfsPath = this.vfs.path;
         const file = this.uploadFile;
         const path = this.uploadFilePath;
+        let progress = { total: file.size, loaded: 0 };
 
         this.uploadBusy = true;
+        this.uploadProgress = progress
 
         try {
-          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
+          await this.$store.dispatch('uploadFile', { vfsPath, path, file, progress });
         } catch (error) {
           // TODO: input validity
           throw error;

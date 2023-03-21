@@ -95,8 +95,8 @@ export default new Vuex.Store({
 
       commit('setVFSItem', { vfsPath, item });
     },
-    async uploadFile({ commit }, { vfsPath, path, file }) {
-      const item = await vfsService.uploadFile(vfsPath, path, file);
+    async uploadFile({ commit }, { vfsPath, path, file, progress }) {
+      const item = await vfsService.uploadFile(vfsPath, path, file, progress);
 
       commit('setVFSItem', { vfsPath, item });
     },

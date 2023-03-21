@@ -182,8 +182,8 @@ export default class VFSService {
     }
   }
 
-  async uploadFile(vfsPath, path, file) {
-    const response = await this.apiService.putFile('/vfs' + vfsPath + '/' + path, file);
+  async uploadFile(vfsPath, path, file, progress) {
+    const response = await this.apiService.putFile('/vfs' + vfsPath + '/' + path, file, progress);
     const item = response.data;
 
     return item;

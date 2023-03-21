@@ -1,6 +1,7 @@
 <style src="./styles/main.css"></style>
 <style src="./styles/form.css"></style>
 <style src="normalize.css"></style>
+<style src="material-icons/iconfont/outlined.css"></style>
 <style>
 
 </style>

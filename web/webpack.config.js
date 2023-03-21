@@ -25,6 +25,10 @@ module.exports = (env, argv) => {
             'css-loader'
           ],
         },
+        {
+          test: /\.(woff|woff2)$/,
+          type: 'asset/resource',
+        },
       ],
     },
     plugins: [

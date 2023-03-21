@@ -1,7 +1,8 @@
-#include "config.h"
+#include "config_vfs.h"
 #include "http_routes.h"
 #include "http_handlers.h"
 #include "sdcard.h"
+#include "vfs_state.h"
 
 #include <logging.h>
 
@@ -21,45 +22,6 @@
 
 #define VFS_HTTP_MKDIR_MODE 0775
 
-static const struct vfs_http_mount {
-  const char *path;
-} vfs_http_mounts[] = {
-  { "/config" },
-#if CONFIG_SDCARD_ENABLED
-  { "/sdcard" },
-#endif
-  {},
-};
-
-static const char *vfs_http_mount_match(const struct vfs_http_mount *mount, const char *path)
-{
-  const char *p = path, *m = mount->path;
-
-  // scan common prefix
-  while (*p && *p++ == *m++ && *m) {
-
-  }
-
-  if (!*p) {
-    if (!*m) {
-      // exact match
-      return p;
-    } else {
-      // short
-      return NULL;
-    }
-  } else if (!*m) {
-    if (*p == '/') {
-      // directory prefix match
-      return p + 1;
-    } else {
-      return false;
-    }
-  } else {
-    return false;
-  }
-}
-
 enum vfs_http_type {
   VFS_HTTP_TYPE_ROOT,
   VFS_HTTP_TYPE_MOUNT,
@@ -69,7 +31,7 @@ enum vfs_http_type {
 
 struct vfs_http_params {
   enum vfs_http_type type;
-  const struct vfs_http_mount *mount;
+  const struct vfs_mount *mount;
   const char *name;
   time_t mtime;
 
@@ -128,8 +90,8 @@ static int vfs_http_params(struct http_request *request, struct vfs_http_params 
   // match VFS mount
   const char *name = NULL;
 
-  for (const struct vfs_http_mount *m = vfs_http_mounts; m->path; m++) {
-    if ((name = vfs_http_mount_match(m, path))) {
+  for (const struct vfs_mount *m = vfs_mounts; m->path; m++) {
+    if ((name = vfs_mount_match(m, path))) {
       params->mount = m;
       params->name = name;
 
@@ -523,19 +485,48 @@ static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
   );
 }
 
-static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_http_mount *mount, DIR *dir)
+static int vfs_http_api_write_stat_object(struct json_writer *w, const struct vfs_stat *stat)
 {
-  return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_STRING(w, "path", mount->path)
-    ||  (dir ? JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, dir, mount->path)) : 0)
-  );
+    return (
+          JSON_WRITE_MEMBER_UINT(w, "sector_size", stat->sector_size)
+      ||  JSON_WRITE_MEMBER_UINT(w, "total_sectors", stat->total_sectors)
+      ||  JSON_WRITE_MEMBER_UINT(w, "used_sectors", stat->used_sectors)
+      ||  JSON_WRITE_MEMBER_UINT(w, "free_sectors", stat->free_sectors)
+    );
+}
+
+static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_mount *mount, DIR *dir)
+{
+  int err = 0;
+
+  err |= JSON_WRITE_MEMBER_STRING(w, "path", mount->path);
+
+  if (mount->dev && mount->dev->stat_func) {
+    struct vfs_stat stat = {};
+
+    if (mount->dev->stat_func(mount->dev, &stat)) {
+      LOG_WARN("mount path=%s dev stat", mount->path);
+    } else {
+      err |= JSON_WRITE_MEMBER_BOOL(w, "mounted", stat.mounted);
+
+      if (stat.mounted) {
+        err |= JSON_WRITE_MEMBER_OBJECT(w, "stat", vfs_http_api_write_stat_object(w, &stat));
+      }
+    }
+  }
+
+  if (dir) {
+    err |= JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, dir, mount->path));
+  }
+
+  return err;
 }
 
 static int vfs_http_api_write_mount(struct json_writer *w, void *ctx)
 {
   const struct vfs_http_params *params = ctx;
 
-  return vfs_http_api_write_mount_object(w, params->mount, params->dir);
+  return JSON_WRITE_OBJECT(w, vfs_http_api_write_mount_object(w, params->mount, params->dir));
 }
 
 static int vfs_http_api_write_root_mounts(struct json_writer *w)
@@ -543,12 +534,12 @@ static int vfs_http_api_write_root_mounts(struct json_writer *w)
   DIR *dir;
   int err;
 
-  for (const struct vfs_http_mount *m = vfs_http_mounts; m->path; m++) {
+  for (const struct vfs_mount *m = vfs_mounts; m->path; m++) {
     if (!(dir = opendir(m->path))) {
       LOG_WARN("opendir %s: %s", m->path, strerror(errno));
     }
 
-    if ((err = vfs_http_api_write_mount_object(w, m, dir))) {
+    if ((err = JSON_WRITE_OBJECT(w, vfs_http_api_write_mount_object(w, m, dir)))) {
       return err;
     }
   }

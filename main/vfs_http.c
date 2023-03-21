@@ -11,6 +11,7 @@
 #include <sys/dirent.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <utime.h>
 
 #define VFS_HTTP_URL_PATH "vfs/"
 
@@ -70,16 +71,28 @@ struct vfs_http_params {
   enum vfs_http_type type;
   const struct vfs_http_mount *mount;
   const char *name;
-  char path[VFS_HTTP_PATH_SIZE];
+  time_t mtime;
 
+  char path[VFS_HTTP_PATH_SIZE];
   DIR *dir;
 };
 
 static int vfs_http_params(struct http_request *request, struct vfs_http_params *params)
 {
+  const struct http_request_headers *headers;
   const struct url *url = http_request_url(request);
   const char *path = url->path;
   int ret;
+
+  // read headers
+  if ((ret = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return ret;
+  }
+
+  if (headers->last_modified) {
+    params->mtime = headers->last_modified;
+  }
 
   // strip http url prefix, optional / suffix, leave / prefix
   for (const char *p = VFS_HTTP_URL_PATH; *p; p++) {
@@ -319,9 +332,9 @@ error:
 static int vfs_http_write(struct http_request *request, const struct vfs_http_params *params)
 {
   FILE *http_file, *file;
-  int err;
+  int err = 0;
 
-  LOG_INFO("path=%s", params->path);
+  LOG_INFO("path=%s mtime=%ld", params->path, params->mtime);
 
   if ((err = vfs_http_open(&file, params, "w")) < 0) {
     LOG_ERROR("vfs_http_open");
@@ -344,13 +357,24 @@ static int vfs_http_write(struct http_request *request, const struct vfs_http_pa
 file_error:
   if (fclose(http_file) < 0) {
     LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
+    err = -1;
   }
 
 error:
   if (fclose(file) < 0) {
     LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
+    err = -1;
+  }
+
+  if (params->mtime && !err) {
+    struct utimbuf times = {
+      .actime = 0,
+      .modtime = params->mtime,
+    };
+
+    if (utime(params->path, &times)) {
+      LOG_WARN("utime: %s", strerror(errno));
+    }
   }
 
   return err;

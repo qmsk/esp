@@ -22,10 +22,12 @@ export default class APIService {
   }
 
   putFile(url, file,) {
+    const lastModified = new Date(file.lastModified);
+
     return axios.put(url, file, {
       headers: {
         'Content-Type': file.type || 'application/binary',
-        'Last-Modified': file.lastModified,
+        'Last-Modified': lastModified.toUTCString(),
       },
     });
   }

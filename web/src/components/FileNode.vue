@@ -41,23 +41,6 @@
       }
     },
     filters: {
-      fileSize(size) {
-        const sizeMap = new Map([
-          ['GB', 1024 * 1024 * 1024 ],
-          ['MB', 1024 * 1024 ],
-          ['KB', 1024 ],
-        ]);
-
-        for (const [suffix, unit] of sizeMap) {
-          if (size >= unit) {
-            const units = size / unit;
-
-            return units.toFixed(2) + ' ' + suffix;
-          }
-        }
-
-        return size.toFixed(0) +  ' ' + 'B';
-      },
       fileTime(date) {
         return date.toLocaleString();
       },

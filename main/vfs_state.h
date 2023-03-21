@@ -28,3 +28,5 @@ struct vfs_mount {
 extern const struct vfs_mount vfs_mounts[];
 
 const char *vfs_mount_match(const struct vfs_mount *mount, const char *path);
+
+int vfs_mount_stat(const struct vfs_mount *mount, struct vfs_stat *stat);

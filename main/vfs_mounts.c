@@ -38,3 +38,12 @@ const char *vfs_mount_match(const struct vfs_mount *mount, const char *path)
     return false;
   }
 }
+
+int vfs_mount_stat(const struct vfs_mount *mount, struct vfs_stat *stat)
+{
+  if (mount->dev && mount->dev->stat_func) {
+    return mount->dev->stat_func(mount->dev, stat);
+  } else {
+    return 1;
+  }
+}

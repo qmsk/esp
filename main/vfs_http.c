@@ -387,6 +387,34 @@ error:
   return err;
 }
 
+static int vfs_http_api_write_stat_object(struct json_writer *w, const struct vfs_stat *stat)
+{
+    return (
+          JSON_WRITE_MEMBER_UINT(w, "sector_size", stat->sector_size)
+      ||  JSON_WRITE_MEMBER_UINT(w, "total_sectors", stat->total_sectors)
+      ||  JSON_WRITE_MEMBER_UINT(w, "used_sectors", stat->used_sectors)
+      ||  JSON_WRITE_MEMBER_UINT(w, "free_sectors", stat->free_sectors)
+    );
+}
+
+static int vfs_http_api_write_mount_stat(struct json_writer *w, void *ctx)
+{
+  struct vfs_stat stat;
+  const struct vfs_http_params *params = ctx;
+  int err;
+
+  if ((err = vfs_mount_stat(params->mount, &stat)) < 0) {
+    LOG_ERROR("mount path=%s dev stat", params->mount->path);
+    return err;
+  } else if (err) {
+    // not available
+  }
+
+  return JSON_WRITE_OBJECT(w,
+    (stat.mounted ? JSON_WRITE_MEMBER_OBJECT(w, "vfs_stat", vfs_http_api_write_stat_object(w, &stat)) : 0)
+  );
+}
+
 static int vfs_http_api_write_file_object(struct json_writer *w, const char *name, const char *path)
 {
   struct stat st;
@@ -414,9 +442,21 @@ static int vfs_http_api_write_file_object(struct json_writer *w, const char *nam
 
 static int vfs_http_api_write_file(struct json_writer *w, void *ctx)
 {
+  struct vfs_stat stat;
   const struct vfs_http_params *params = ctx;
+  int err;
 
-  return JSON_WRITE_OBJECT(w, vfs_http_api_write_file_object(w, params->name, params->path));
+  if ((err = vfs_mount_stat(params->mount, &stat)) < 0) {
+    LOG_ERROR("mount path=%s dev stat", params->mount->path);
+    return err;
+  } else if (err) {
+    // skip
+  }
+
+  return JSON_WRITE_OBJECT(w,
+        vfs_http_api_write_file_object(w, params->name, params->path)
+    ||  (stat.mounted ? JSON_WRITE_MEMBER_OBJECT(w, "vfs_stat", vfs_http_api_write_stat_object(w, &stat)) : 0)
+  );
 }
 
 static int vfs_http_api_write_directory_object(struct json_writer *w, const char *name)
@@ -477,41 +517,40 @@ error:
 
 static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
 {
+  struct vfs_stat stat;
   const struct vfs_http_params *params = ctx;
+  int err;
+
+  if ((err = vfs_mount_stat(params->mount, &stat)) < 0) {
+    LOG_ERROR("mount path=%s dev stat", params->mount->path);
+    return err;
+  } else if (err) {
+    // skip
+  }
 
   return JSON_WRITE_OBJECT(w,
         vfs_http_api_write_directory_object(w, params->name)
     ||  (params->dir ? JSON_WRITE_MEMBER_ARRAY(w, "files", vfs_http_api_write_directory_array(w, params->dir, params->path)) : 0)
+    ||  (stat.mounted ? JSON_WRITE_MEMBER_OBJECT(w, "vfs_stat", vfs_http_api_write_stat_object(w, &stat)) : 0)
   );
-}
-
-static int vfs_http_api_write_stat_object(struct json_writer *w, const struct vfs_stat *stat)
-{
-    return (
-          JSON_WRITE_MEMBER_UINT(w, "sector_size", stat->sector_size)
-      ||  JSON_WRITE_MEMBER_UINT(w, "total_sectors", stat->total_sectors)
-      ||  JSON_WRITE_MEMBER_UINT(w, "used_sectors", stat->used_sectors)
-      ||  JSON_WRITE_MEMBER_UINT(w, "free_sectors", stat->free_sectors)
-    );
 }
 
 static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_mount *mount, DIR *dir)
 {
+  struct vfs_stat stat = {};
   int err = 0;
 
   err |= JSON_WRITE_MEMBER_STRING(w, "path", mount->path);
 
-  if (mount->dev && mount->dev->stat_func) {
-    struct vfs_stat stat = {};
+  if ((err = vfs_mount_stat(mount, &stat)) < 0) {
+    LOG_WARN("mount path=%s dev stat", mount->path);
+  } else if (err) {
+    LOG_DEBUG("mount path=%s dev stat not supported", mount->path);
+  } else {
+    err |= JSON_WRITE_MEMBER_BOOL(w, "mounted", stat.mounted);
 
-    if (mount->dev->stat_func(mount->dev, &stat)) {
-      LOG_WARN("mount path=%s dev stat", mount->path);
-    } else {
-      err |= JSON_WRITE_MEMBER_BOOL(w, "mounted", stat.mounted);
-
-      if (stat.mounted) {
-        err |= JSON_WRITE_MEMBER_OBJECT(w, "stat", vfs_http_api_write_stat_object(w, &stat));
-      }
+    if (stat.mounted) {
+      err |= JSON_WRITE_MEMBER_OBJECT(w, "stat", vfs_http_api_write_stat_object(w, &stat));
     }
   }
 
@@ -734,6 +773,11 @@ int vfs_http_delete(struct http_request *request, struct http_response *response
 
     default:
       return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  if ((err = write_http_response_json(response, vfs_http_api_write_mount_stat, &params))) {
+    LOG_WARN("write_http_response_json -> vfs_http_api_write_mount_stat");
+    return err;
   }
 
   return err;

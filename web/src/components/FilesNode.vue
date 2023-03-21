@@ -186,7 +186,7 @@
           </div>
 
           <div class="vfs-title" v-if="upload">
-            <input type="file" @change="uploadChanged" />
+            <input type="file" @input="uploadInput" ref="uploadInput" />
           </div>
 
           <div class="vfs-actions">
@@ -223,7 +223,6 @@
       mkdirBusy: false,
 
       upload: false,
-      uploadFile: null,
       uploadBusy: false,
 
       deleteBusy: false,
@@ -266,7 +265,18 @@
           return this.mkdirName;
         }
       },
-      uploadPath() {
+      uploadFile() {
+        if (this.upload) {
+          const input = this.$refs.uploadInput;
+
+          if (input && input.files.length > 0) {
+            return input.files[0];
+          }
+        }
+
+        return null;
+      },
+      uploadFilePath() {
         const path = this.path;
         const file = this.uploadFile;
 
@@ -337,20 +347,34 @@
       uploadOpen() {
         this.upload = true;
       },
-      uploadChanged() {
+      async uploadInput(event) {
         const input = event.target;
-        let file = null
 
-        if (input.files.length > 0) {
-          file = input.files[0];
+        if (!input.files.length) {
+          return;
         }
 
-        this.uploadFile = file;
+        const vfsPath = this.vfs.path;
+        const file = input.files[0];
+        const path = this.path ? this.path + '/' + file.name : file.name;
+
+        this.uploadBusy = true;
+
+        try {
+          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
+        } catch (error) {
+          // TODO: input validity
+          throw error;
+        } finally {
+          this.uploadBusy = false;
+        }
+
+        this.upload = false;
       },
       async uploadSubmit() {
         const vfsPath = this.vfs.path;
-        const path = this.uploadPath;
         const file = this.uploadFile;
+        const path = this.uploadFilePath;
 
         this.uploadBusy = true;
 

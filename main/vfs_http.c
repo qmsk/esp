@@ -177,6 +177,26 @@ static int vfs_http_error(const char *op, const char *path)
   }
 }
 
+struct vfs_http_stat {
+  size_t size;
+  time_t mtime;
+};
+
+static int vfs_http_stat(const struct vfs_http_params *params, struct vfs_http_stat *s)
+{
+  struct stat st = {};
+  int err = 0;
+
+  if (stat(params->path, &st)) {
+    return vfs_http_error("stat", params->path);
+  }
+
+  s->size = st.st_size;
+  s->mtime = st.st_mtime;
+
+  return err;
+}
+
 static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, const char *mode)
 {
   if (params->type != VFS_HTTP_TYPE_FILE) {
@@ -276,52 +296,77 @@ static int vfs_copy(FILE *read, FILE *write)
 
 static int vfs_http_read(struct http_response *response, const struct vfs_http_params *params)
 {
+  char datebuf[HTTP_DATE_SIZE];
+  struct vfs_http_stat stat;
   FILE *http_file, *file;
   int err;
 
   LOG_INFO("path=%s", params->path);
 
-  if ((err = vfs_http_open(&file, params, "r")) < 0) {
-    LOG_ERROR("vfs_http_open");
+  if ((err = vfs_http_stat(params, &stat)) < 0) {
+    LOG_ERROR("vfs_http_stat");
     return err;
   } else if (err) {
-    LOG_WARN("vfs_http_open: %d", err);
+    LOG_WARN("vfs_http_stat: %d", err);
     return err;
+  }
+
+  if (http_date_format(datebuf, sizeof(datebuf), stat.mtime)) {
+    LOG_ERROR("http_date_format");
+    return -1;
   }
 
   if ((err = http_response_start(response, HTTP_OK, NULL))) {
     LOG_WARN("http_response_start");
-    goto error;
+    return err;
   }
 
   if ((err = http_response_header(response, "Content-Type", "%s", VFS_HTTP_CONTENT_TYPE))) {
-    LOG_WARN("http_response_header");
-    goto error;
+    LOG_WARN("http_response_header Content-Type");
+    return err;
+  }
+
+  if ((err = http_response_header(response, "Content-Size", "%u", stat.size))) {
+    LOG_WARN("http_response_header Content-Size");
+    return err;
+  }
+
+  if ((err = http_response_header(response, "Last-Modified", "%s", datebuf))) {
+    LOG_WARN("http_response_header Last-Modified");
+    return err;
   }
 
   if ((err = http_response_header(response, "Content-Disposition", "attachment; filename=\"%s\"", params->path))) {
-    LOG_WARN("http_response_header");
-    goto error;
+    LOG_WARN("http_response_header Content-Disposition");
+    return err;
   }
 
   if ((err = http_response_open(response, &http_file))) {
     LOG_WARN("http_response_open");
-    goto error;
+    return err;
+  }
+
+  if ((err = vfs_http_open(&file, params, "r")) < 0) {
+    LOG_ERROR("vfs_http_open");
+    goto open_error;
+  } else if (err) {
+    LOG_WARN("vfs_http_open: %d", err);
+    goto open_error;
   }
 
   if ((err = vfs_copy(file, http_file))) {
     LOG_ERROR("vfs_copy");
-    goto file_error;
-  }
-
-file_error:
-  if (fclose(http_file) < 0) {
-    LOG_WARN("fclose: %s", strerror(errno));
-    return -1;
+    goto error;
   }
 
 error:
   if (fclose(file) < 0) {
+    LOG_WARN("fclose: %s", strerror(errno));
+    return -1;
+  }
+
+open_error:
+  if (fclose(http_file) < 0) {
     LOG_WARN("fclose: %s", strerror(errno));
     return -1;
   }
@@ -382,9 +427,8 @@ error:
 
 static int vfs_http_api_write_file_object(struct json_writer *w, const char *name, const char *path)
 {
-  struct stat st = {};
-  struct tm tm;
-  char tm_buf[20];
+  struct stat st;
+  char datebuf[HTTP_DATE_SIZE];
   int err = 0;
 
   err |= JSON_WRITE_MEMBER_STRING(w, "name", name);
@@ -392,13 +436,16 @@ static int vfs_http_api_write_file_object(struct json_writer *w, const char *nam
 
   if (stat(path, &st)) {
     LOG_WARN("stat %s: %s", path, strerror(errno));
-  } else {
-    localtime_r(&st.st_mtime, &tm);
-    strftime(tm_buf, sizeof(tm_buf), "%F %T", &tm);
-
-    err |= JSON_WRITE_MEMBER_INT(w, "size", st.st_size);
-    err |= JSON_WRITE_MEMBER_STRING(w, "mtime", tm_buf);
+    return -1;
   }
+
+  if (http_date_format(datebuf, sizeof(datebuf), st.st_mtime)) {
+    LOG_WARN("http_date_format: %s", strerror(errno));
+    return -1;
+  }
+
+  err |= JSON_WRITE_MEMBER_INT(w, "size", st.st_size);
+  err |= JSON_WRITE_MEMBER_STRING(w, "mtime", datebuf);
 
   return err;
 }

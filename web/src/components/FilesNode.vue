@@ -189,6 +189,13 @@
             <input type="file" @input="uploadInput" ref="uploadInput" />
           </div>
 
+          <div class="vfs-attrv-if="uploadFile">
+            <span class="vfs-file-size">{{ uploadFileSize | fileSize }}</span>
+          </div>
+          <div class="vfs-attr" v-if="uploadFile">
+            <span class="vfs-file-mtime">{{ uploadFileLastModified | fileTime }}</span>
+          </div>
+
           <div class="vfs-actions">
             <button type="reset" @click="uploadCancel" v-if="upload">
               <span class="material-icons-outlined">cancel</span>
@@ -223,6 +230,7 @@
       mkdirBusy: false,
 
       upload: false,
+      uploadFile: null,
       uploadBusy: false,
 
       deleteBusy: false,
@@ -265,17 +273,6 @@
           return this.mkdirName;
         }
       },
-      uploadFile() {
-        if (this.upload) {
-          const input = this.$refs.uploadInput;
-
-          if (input && input.files.length > 0) {
-            return input.files[0];
-          }
-        }
-
-        return null;
-      },
       uploadFilePath() {
         const path = this.path;
         const file = this.uploadFile;
@@ -287,6 +284,24 @@
         } else {
           return file.name;
         }
+      },
+      uploadFileSize() {
+        const file = this.uploadFile;
+
+        if (!file) {
+          return null;
+        }
+
+        return file.size;
+      },
+      uploadFileLastModified() {
+        const file = this.uploadFile;
+
+        if (!file) {
+          return null;
+        }
+
+        return new Date(file.lastModified);
       },
     },
     methods: {
@@ -350,26 +365,13 @@
       async uploadInput(event) {
         const input = event.target;
 
-        if (!input.files.length) {
+        if (input.files.length > 0) {
+          this.uploadFile = input.files[0];
+        } else {
           return;
         }
 
-        const vfsPath = this.vfs.path;
-        const file = input.files[0];
-        const path = this.path ? this.path + '/' + file.name : file.name;
-
-        this.uploadBusy = true;
-
-        try {
-          await this.$store.dispatch('uploadFile', { vfsPath, path, file });
-        } catch (error) {
-          // TODO: input validity
-          throw error;
-        } finally {
-          this.uploadBusy = false;
-        }
-
-        this.upload = false;
+        this.uploadSubmit();
       },
       async uploadSubmit() {
         const vfsPath = this.vfs.path;
@@ -388,9 +390,11 @@
         }
 
         this.upload = false;
+        this.uploadFile = null;
       },
       uploadCancel() {
         this.upload = false;
+        this.uploadFile = null;
       },
 
       /* delete */

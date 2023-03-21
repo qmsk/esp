@@ -21,14 +21,25 @@ export default class APIService {
     });
   }
 
-  putFile(url, file,) {
+  putFile(url, file, progress) {
     const lastModified = new Date(file.lastModified);
 
-    return axios.put(url, file, {
+    let config = {
       headers: {
         'Content-Type': file.type || 'application/binary',
         'Last-Modified': lastModified.toUTCString(),
       },
-    });
+    };
+
+    if (progress) {
+      config.onUploadProgress = function(progressEvent) {
+        console.log("putFile " + url + ": progress loaded=" + progressEvent.loaded + " total=" + progressEvent.total);
+
+        progress.loaded = progressEvent.loaded;
+        progress.total = progressEvent.total;
+      }
+    }
+
+    return axios.put(url, file, config);
   }
 }

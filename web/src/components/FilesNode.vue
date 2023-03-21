@@ -47,7 +47,13 @@
   div.vfs-attr {
     flex: 1 0 0;
 
+    padding: 0.5em;
+
     font-style: italic;
+  }
+
+  div.vfs-attr meter {
+    width: 100%;
   }
 
   div.vfs-actions {
@@ -98,6 +104,21 @@
       <div class="vfs-title">
         <span v-if="isRoot" class="vfs-name">{{ vfs.path }}</span>
         <span v-else class="vfs-name">{{ name }}/</span>
+      </div>
+
+      <div class="vfs-attr" v-if="isRoot">
+        <meter v-if="vfs.stat"
+          min="0"
+          :max="statTotalSize"
+          :value="statUsedSize"
+          :title="statUsedSize | fileSize">
+
+          {{ statUsedSize | fileSize }} used / {{ statTotalSize | fileSize }} total
+        </meter>
+      </div>
+
+      <div class="vfs-attr" v-if="isRoot">
+        <span class="vfs-stat" v-if="vfs.stat">{{ statFreeSize | fileSize }} Free</span>
       </div>
 
       <div class="vfs-actions">
@@ -216,6 +237,21 @@
         } else {
           return this.name;
         }
+      },
+      statTotalSize() {
+        const stat = this.vfs.stat;
+
+        return stat.total_sectors * stat.sector_size;
+      },
+      statUsedSize() {
+        const stat = this.vfs.stat;
+
+        return stat.used_sectors * stat.sector_size;
+      },
+      statFreeSize() {
+        const stat = this.vfs.stat;
+
+        return stat.free_sectors * stat.sector_size;
       },
       mkdirPath() {
         const path = this.path;

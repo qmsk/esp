@@ -35,18 +35,18 @@ export default class VFSService {
   makeVFS(item) {
     const vfs = {
       path: item.path,
+      mounted: item.mounted,
+      stat: item.stat,
       map: new Map(),
       array: new Array(),
     };
 
     if (item.files) {
-      vfs.loaded = true;
-
       for (const fileItem of item.files) {
         this.setVFS(vfs, fileItem);
       }
     } else {
-      vfs.loaded = false;
+      vfs.mounted = false;
     }
 
     return vfs;

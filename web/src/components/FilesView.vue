@@ -12,7 +12,7 @@
         dir=""
         name=""
         :items="vfs.array"
-        :loaded="vfs.loaded"
+        :loaded="vfs.mounted"
       />
     </div>
   </main>

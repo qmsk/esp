@@ -22,6 +22,19 @@ static char dirent_type_char(const struct dirent *d) {
   }
 }
 
+static char stat_mode_char(const struct stat *st) {
+  switch (st->st_mode & _IFMT) {
+    case _IFDIR:
+      return 'd';
+
+    case _IFREG:
+      return 'f';
+
+    default:
+      return '?';
+  }
+}
+
 #if !CONFIG_IDF_TARGET_ESP8266
 
   esp_err_t vfs_walk_func(esp_vfs_id_t id, const char *path, void *ctx)
@@ -111,11 +124,115 @@ int vfs_ls_cmd(int argc, char **argv, void *ctx)
 
 #endif
 
+int vfs_stat_cmd(int argc, char **argv, void *ctx)
+{
+  struct stat st;
+  struct tm tm;
+  char tm_buf[20];
+  const char *path = NULL;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (stat(path, &st)) {
+    LOG_ERROR("stat %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  localtime_r(&st.st_mtime, &tm);
+  strftime(tm_buf, sizeof(tm_buf), "%F %T", &tm);
+
+  printf("%c %5ld %20s %s\n", stat_mode_char(&st), st.st_size, tm_buf, path);
+
+  return 0;
+}
+
+int vfs_mv_cmd(int argc, char **argv, void *ctx)
+{
+  const char *src_path = NULL;
+  const char *dst_path = NULL;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &src_path))) {
+    return err;
+  }
+
+  if ((err = cmd_arg_str(argc, argv, 2, &dst_path))) {
+    return err;
+  }
+
+  if (rename(src_path, dst_path)) {
+    LOG_ERROR("rename %s -> %s: %s", src_path, dst_path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int vfs_rm_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (unlink(path)) {
+    LOG_ERROR("unlink %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int vfs_mkdir_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  unsigned mode = 0755;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (mkdir(path, mode)) {
+    LOG_ERROR("mkdir %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
+int vfs_rmdir_cmd(int argc, char **argv, void *ctx)
+{
+  const char *path = NULL;
+  int err = 0;
+
+  if ((err = cmd_arg_str(argc, argv, 1, &path))) {
+    return err;
+  }
+
+  if (rmdir(path)) {
+    LOG_ERROR("rmdir %s: %s", path, strerror(errno));
+    return -1;
+  }
+
+  return 0;
+}
+
 const struct cmd vfs_commands[] = {
   { "ls",     vfs_ls_cmd,    .usage = "[PATH]", .describe = "List files"  },
 #if !CONFIG_IDF_TARGET_ESP8266
   { "lsof",   vfs_lsof_cmd,                     .describe = "List open file descriptors"  },
 #endif
+  { "stat",   vfs_stat_cmd,   .usage = "PATH",    .describe = "Stat file"  },
+  { "mv",     vfs_mv_cmd,     .usage = "SRC DST", .describe = "Rename file"  },
+  { "rm",     vfs_rm_cmd,     .usage = "PATH",    .describe = "Remove file"  },
+  { "mkdir",  vfs_mkdir_cmd,  .usage = "PATH",    .describe = "Create directory"  },
+  { "rmdir",  vfs_rmdir_cmd,  .usage = "PATH",    .describe = "Remove directory"  },
   {}
 };
 

@@ -25,6 +25,10 @@ module.exports = (env, argv) => {
             'css-loader'
           ],
         },
+        {
+          test: /\.(woff|woff2)$/,
+          type: 'asset/resource',
+        },
       ],
     },
     plugins: [
@@ -44,6 +48,7 @@ module.exports = (env, argv) => {
       proxy: {
         '/api': process.env.API_URL,
         '/config.ini': process.env.API_URL,
+        '/vfs': process.env.API_URL,
       }
     },
   };

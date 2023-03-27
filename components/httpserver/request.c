@@ -74,9 +74,10 @@ int http_request_read (struct http_request *request)
         return 400;
     }
 
+    // XXX: decoded in-place, stripping const
+    request->query = (char *) request->url.query;
+
     if (strcasecmp(method, "GET") == 0) {
-        // XXX: decoded in-place, stripping const
-        request->get_query = (char *) request->url.query;
 
     } else if (strcasecmp(method, "POST") == 0) {
         request->post = true;
@@ -104,9 +105,9 @@ enum http_version http_request_version(const struct http_request *request)
 
 int http_request_query (struct http_request *request, char **keyp, char **valuep)
 {
-    LOG_DEBUG("request=%p: state=%s", request, request->get_query);
+    LOG_DEBUG("request=%p: query=%s", request, request->query);
 
-    return url_decode(&request->get_query, keyp, valuep);
+    return url_decode(&request->query, keyp, valuep);
 }
 
 int http_request_header (struct http_request *request, const char **namep, const char **valuep)
@@ -185,6 +186,14 @@ int http_request_header (struct http_request *request, const char **namep, const
         request->headers.content_type = http_content_type_parse(*valuep);
 
         if (request->headers.content_type == HTTP_CONTENT_TYPE_UNKNOWN) {
+            LOG_DEBUG("unknown content-type: %s", *valuep);
+        } else {
+            LOG_DEBUG("decoded content-type: %s", *valuep);
+        }
+    } else if (strcasecmp(*namep, "Last-Modified") == 0) {
+        request->headers.last_modified = http_date_parse(*valuep);
+
+        if (request->headers.last_modified == HTTP_CONTENT_TYPE_UNKNOWN) {
             LOG_DEBUG("unknown content-type: %s", *valuep);
         } else {
             LOG_DEBUG("decoded content-type: %s", *valuep);
@@ -272,7 +281,7 @@ int http_request_param (struct http_request *request, char **keyp, char **valuep
 {
     LOG_DEBUG("request=%p", request);
 
-    if (request->get_query)
+    if (request->query)
         return http_request_query(request, keyp, valuep);
 
     if (!request->post)

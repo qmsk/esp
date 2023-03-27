@@ -57,8 +57,8 @@ struct http_request {
     bool body;
     bool body_form; // reading form body
 
-    /* XXX: Decoding GET params in-place from url.query */
-    char *get_query;
+    /* Decoding GET params in-place from url.query */
+    char *query;
 };
 
 #endif

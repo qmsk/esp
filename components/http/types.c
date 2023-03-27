@@ -1,7 +1,11 @@
 #include "http/http_types.h"
 
+#include <errno.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
+
+#define HTTP_DATE_FORMAT "%a, %d %b %Y %H:%M:%S GMT"
 
 const char *http_version_str (enum http_version version)
 {
@@ -69,4 +73,34 @@ enum http_content_type http_content_type_parse (const char *name)
   }
 
   return HTTP_CONTENT_TYPE_UNKNOWN;
+}
+
+time_t http_date_parse (const char *value)
+{
+  struct tm tm;
+  const char *p;
+
+  if (!(p = strptime(value, HTTP_DATE_FORMAT, &tm))) {
+    return -1;
+  } else if (*p) {
+    // trailing data
+    return -1;
+  } else {
+    return mktime(&tm);
+  }
+}
+
+int http_date_format (char *buf, size_t size, time_t time)
+{
+  struct tm tm;
+
+  if (!gmtime_r(&time, &tm)) {
+    return -1;
+  }
+
+  if (!strftime(buf, size, HTTP_DATE_FORMAT, &tm)) {
+    return -1;
+  }
+
+  return 0;
 }

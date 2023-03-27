@@ -5,11 +5,13 @@ import { createLogger } from 'vuex'
 import APIService from './services/api.service'
 import ConfigService from './services/config.service'
 import SystemService from './services/system.service'
+import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
 
 const apiService = new APIService();
 const configService = new ConfigService(apiService);
 const systemService = new SystemService(apiService);
+const vfsService = new VFSService(apiService);
 const wifiService = new WiFiService(apiService);
 
 Vue.use(Vuex);
@@ -20,6 +22,7 @@ export default new Vuex.Store({
     system: null,
     wifi: null,
     wifi_scan: null,
+    vfs: null,
   },
   plugins: [
     // XXX: only during development
@@ -70,6 +73,43 @@ export default new Vuex.Store({
 
       commit('updateWiFiScan', data);
     },
+
+    /* VFS */
+    async loadVFS({ commit }) {
+      const vfsState = await vfsService.get();
+
+      commit('updateVFS', vfsState);
+    },
+    async loadVFSRoot({ commit }, { vfsPath  }) {
+      const vfsItem = await vfsService.getRoot(vfsPath);
+
+      commit('setVFSRoot', vfsItem );
+    },
+    async loadVFSDirectory({ commit }, { vfsPath, path }) {
+      const item = await vfsService.getDirectory(vfsPath, path);
+
+      commit('setVFSItem', { vfsPath, item });
+    },
+    async createVFSDirectory({ commit }, { vfsPath, path }) {
+      const item = await vfsService.createDirectory(vfsPath, path);
+
+      commit('setVFSItem', { vfsPath, item });
+    },
+    async uploadFile({ commit }, { vfsPath, path, file, progress }) {
+      const item = await vfsService.uploadFile(vfsPath, path, file, progress);
+
+      commit('setVFSItem', { vfsPath, item });
+    },
+    async deleteFile({ commit }, { vfsPath, path }) {
+      const meta = await vfsService.delete(vfsPath, path);
+
+      commit('delVFSItem', { vfsPath, path, meta });
+    },
+    async deleteDirectory({ commit }, { vfsPath, path }) {
+      const meta = await vfsService.deleteDirectory(vfsPath, path);
+
+      commit('delVFSItem', { vfsPath, path, meta });
+    },
   },
   mutations: {
     loadConfig (state, config) {
@@ -103,6 +143,30 @@ export default new Vuex.Store({
     },
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
+    },
+    updateVFS(state, vfsState) {
+      state.vfs = vfsState;
+    },
+    setVFSRoot(state, vfsItem) {
+      vfsService.setVFSRoot(state.vfs, vfsItem);
+    },
+    setVFSItem(state, { vfsPath, item }) {
+      const vfs = state.vfs.map.get(vfsPath);
+
+      if (item.vfs_stat) {
+        vfsService.setVFSStat(vfs, item.vfs_stat);
+      }
+
+      vfsService.setVFS(vfs, item);
+    },
+    delVFSItem(state, { vfsPath, path, meta }) {
+      const vfs = state.vfs.map.get(vfsPath);
+
+      if (meta.vfs_stat) {
+        vfsService.setVFSStat(vfs, meta.vfs_stat);
+      }
+
+      vfsService.delVFS(vfs, path);
     },
   },
 });

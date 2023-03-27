@@ -2,15 +2,22 @@
 
 const struct http_route http_routes[] = {
   /* http_dist.c */
-  { "GET",  "",                http_dist_index_handler, NULL },
-  { "GET",  "dist/",           http_dist_handler,       NULL },
+  { "GET",  "",                   http_dist_index_handler, NULL },
+  { "GET",  "dist/",              http_dist_handler,       NULL },
+
+  /* config_http_file.c */
+  { "GET",  "config.ini",         config_file_get,      NULL },
+  { "POST", "config.ini",         config_file_post,     NULL },
+
+  /* vfs_http.c */
+  { "GET",    "vfs/",             vfs_http_get,         NULL },
+  { "PUT",    "vfs/",             vfs_http_put,         NULL },
+  { "POST",   "vfs/",             vfs_http_post,        NULL },
+  { "DELETE", "vfs/",             vfs_http_delete,      NULL },
 
   /* config_http.c */
-  { "GET",  "config.ini",      config_get_handler,      NULL },
-  { "POST", "config.ini",      config_post_handler,     NULL },
-
-  { "GET",  "api/config",         config_api_get,  NULL },
-  { "POST", "api/config",         config_api_post, NULL },
+  { "GET",  "api/config",         config_api_get,       NULL },
+  { "POST", "api/config",         config_api_post,      NULL },
 
   /* system_http.c */
   { "GET",  "api/system",         system_api_handler,         NULL },

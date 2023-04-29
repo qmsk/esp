@@ -51,8 +51,8 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   reply->net_switch = (artnet->options.address & 0x7F00) >> 8;
   reply->sub_switch = (artnet->options.address & 0x00F0) >> 0;
 
-  strncpy((char *) reply->short_name, artnet->options.metadata.short_name, sizeof(reply->short_name) - 1);
-  strncpy((char *) reply->long_name, artnet->options.metadata.long_name, sizeof(reply->long_name) - 1);
+  strncpy((char *) reply->short_name, artnet->options.metadata.short_name, sizeof(reply->short_name));
+  strncpy((char *) reply->long_name, artnet->options.metadata.long_name, sizeof(reply->long_name));
 
   memcpy(reply->mac, artnet->options.metadata.mac_address, 6);
 

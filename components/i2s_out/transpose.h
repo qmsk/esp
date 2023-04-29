@@ -15,8 +15,8 @@ static inline void i2s_out_transpose_uint32(uint32_t *x, uint32_t *y)
 {
   uint32_t t;
 
-  t = (*x ^ (*x >> 7)) & 0x00AA00AA; *x = *x ^ t ^ (t << 7); \
-  t = (*y ^ (*y >> 7)) & 0x00AA00AA; *y = *y ^ t ^ (t << 7); \
+  t = (*x ^ (*x >> 7)) & 0x00AA00AA; *x = *x ^ t ^ (t << 7);
+  t = (*y ^ (*y >> 7)) & 0x00AA00AA; *y = *y ^ t ^ (t << 7);
 
   t = (*x ^ (*x >> 14)) & 0x0000CCCC; *x = *x ^ t ^ (t << 14);
   t = (*y ^ (*y >> 14)) & 0x0000CCCC; *y = *y ^ t ^ (t << 14);

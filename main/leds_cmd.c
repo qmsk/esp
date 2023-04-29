@@ -30,7 +30,6 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %s\n", "Interface", config_enum_to_string(leds_interface_enum, options->interface));
     printf("\t%-20s: %s\n", "Protocol", config_enum_to_string(leds_protocol_enum, options->protocol));
     printf("\t%-20s: %s\n", "Parameter", config_enum_to_string(leds_parameter_enum, leds_parameter_type(state->leds)));
-    printf("\t%-20s: %5u\n", "Active", state->active);
     printf("\t%-20s: %5u\n", "Count", options->count);
     printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
     printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);

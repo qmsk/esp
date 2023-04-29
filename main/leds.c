@@ -151,9 +151,7 @@ void force_leds_active(struct leds_state *state)
 
 void update_leds_active(struct leds_state *state)
 {
-  state->active = leds_count_active(state->leds);
-
-  if (state->active) {
+  if (leds_is_active(state->leds)) {
     // wait for power_good before sending first frame
     wait_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index, LEDS_ATX_PSU_POWER_GOOD_TIMEOUT);
   } else {
@@ -163,8 +161,6 @@ void update_leds_active(struct leds_state *state)
 
 void clear_leds_active(struct leds_state *state)
 {
-  state->active = 0;
-
   clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
 }
 

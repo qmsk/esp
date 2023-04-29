@@ -161,9 +161,9 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
   if (params.offset > leds->options.count) {
     LOG_DEBUG("offset=%u is over options.count=%u", params.offset, leds->options.count);
     params.count = 0;
-  } else if (params.offset + params.count > leds->options.count) {
-    LOG_DEBUG("offset=%u + count=%u is over options.count=%u", params.offset, params.count, leds->options.count);
-    params.count = leds->options.count - params.offset;
+  } else if (params.offset + (params.count * params.segment) > leds->options.count) {
+    LOG_DEBUG("offset=%u + count=%u * segment=%u is over options.count=%u", params.offset, params.count, params.segment, leds->options.count);
+    params.count = (leds->options.count - params.offset) / params.segment;
   }
 
   switch(format) {

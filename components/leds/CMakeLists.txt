@@ -18,3 +18,5 @@ idf_component_register(
   REQUIRES driver gpio i2s_out stats uart
   PRIV_REQUIRES logging
 )
+
+target_compile_options(${COMPONENT_LIB} PRIVATE -O2)

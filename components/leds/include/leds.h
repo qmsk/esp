@@ -395,13 +395,24 @@ int leds_set_test(struct leds *leds, enum leds_test_mode mode, unsigned frame);
 
 /*
  * Return number of active LEDs, with non-zero color.
+ *
+ * NOTE: this is a relatively expensive operation, which checks all LEDs.
  */
 unsigned leds_count_active(struct leds *leds);
 
 /*
  * Return total power for leds, ref options->limit_total.
+ *
+ * NOTE: this is a relatively expensive operation, which checks all LEDs.
  */
 unsigned leds_count_total_power(struct leds *leds);
+
+/*
+ * Return true if any LED are active, with non-zero power.
+ *
+ * This is based on power limits.
+ */
+bool leds_is_active(struct leds *leds);
 
 /* Output frames on interface */
 int leds_tx(struct leds *leds);

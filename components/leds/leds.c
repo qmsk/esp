@@ -13,7 +13,6 @@ int leds_init(struct leds *leds, const struct leds_options *options)
   int err;
 
   leds->options = *options;
-  leds->active = 0;
 
   if (options->protocol < LEDS_PROTOCOLS_COUNT && leds_protocol_types[options->protocol]) {
     leds->protocol_type = leds_protocol_types[options->protocol];
@@ -26,6 +25,8 @@ int leds_init(struct leds *leds, const struct leds_options *options)
     LOG_ERROR("calloc");
     return -1;
   }
+
+  leds->pixels_limit_dirty = true;
 
   if ((err = leds_limit_init(&leds->limit, options->limit_groups, options->count))) {
     LOG_ERROR("leds_limit_init");
@@ -104,7 +105,7 @@ int leds_clear_all(struct leds *leds)
 {
   struct leds_color color = {}; // all off
 
-  leds->active = false;
+  leds->pixels_limit_dirty = true;
 
   for (unsigned i = 0; i < leds->options.count; i++) {
     leds->pixels[i] = color;
@@ -122,10 +123,7 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
     return -1;
   }
 
-  if (leds_color_active(color, leds->protocol_type->parameter_type)) {
-    leds->active = true;
-  }
-
+  leds->pixels_limit_dirty = true;
   leds->pixels[index] = color;
 
   return 0;
@@ -135,11 +133,7 @@ int leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);
 
-  if (leds_color_active(color, leds->protocol_type->parameter_type)) {
-    leds->active = true;
-  } else {
-    leds->active = false;
-  }
+  leds->pixels_limit_dirty = true;
 
   for (unsigned i = 0; i < leds->options.count; i++) {
     leds->pixels[i] = color;
@@ -165,6 +159,8 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
     LOG_DEBUG("offset=%u + count=%u * segment=%u is over options.count=%u", params.offset, params.count, params.segment, leds->options.count);
     params.count = (leds->options.count - params.offset) / params.segment;
   }
+
+  leds->pixels_limit_dirty = true;
 
   switch(format) {
     case LEDS_FORMAT_RGB:
@@ -195,17 +191,7 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
 
 unsigned leds_count_active(struct leds *leds)
 {
-  unsigned active = 0;
-
-  if (leds->active) {
-    active = leds_colors_active(leds->pixels, leds->options.count, leds->protocol_type->parameter_type);
-
-    if (!active) {
-      leds->active = false;
-    }
-  }
-
-  return active;
+  return leds_colors_active(leds->pixels, leds->options.count, leds->protocol_type->parameter_type);
 }
 
 unsigned leds_count_total_power(struct leds *leds)
@@ -213,58 +199,16 @@ unsigned leds_count_total_power(struct leds *leds)
   return leds_power_total(leds->pixels, 0, leds->options.count, leds->protocol_type->power_mode);
 }
 
-static void leds_update_limit(struct leds *leds)
+bool leds_is_active(struct leds *leds)
 {
-  unsigned total_power = 0;
+  leds_limit_update(leds);
 
-  if (leds->limit.group_count && leds->options.limit_group) {
-    for (unsigned group = 0; group < leds->limit.group_count; group++) {
-      unsigned count = leds->limit.group_size;
-      unsigned index = leds->limit.group_size * group;
-      unsigned group_power = leds_power_total(leds->pixels, index, count, leds->protocol_type->power_mode);
-      unsigned output_power = leds_limit_set_group(&leds->limit, group, leds->options.limit_group, group_power);
-
-      total_power += output_power;
-
-      LOG_DEBUG("group[%u] limit=%u power=%u -> output power=%u", group,
-        leds->options.limit_group,
-        group_power,
-        output_power
-      );
-
-      leds->limit_groups_status[group] = (struct leds_limit_status) {
-        .count  = count,
-        .limit  = leds->options.limit_group,
-        .power  = group_power,
-        .output = output_power,
-      };
-    }
-  } else {
-    total_power = leds_power_total(leds->pixels, 0, leds->options.count, leds->protocol_type->power_mode);
-  }
-
-  // apply total limit
-  if (leds->options.limit_total) {
-    unsigned output_power = leds_limit_set_total(&leds->limit, leds->options.limit_total, total_power);
-
-    LOG_DEBUG("total limit=%u power=%u -> output power=%u",
-      leds->options.limit_total,
-      total_power,
-      output_power
-    );
-
-    leds->limit_total_status = (struct leds_limit_status) {
-      .count  = leds->options.count,
-      .limit  = leds->options.limit_total,
-      .power  = total_power,
-      .output = output_power,
-    };
-  }
+  return leds->limit_total_status.power > 0;
 }
 
 int leds_tx(struct leds *leds)
 {
-  leds_update_limit(leds);
+  leds_limit_update(leds);
 
   switch (leds->options.interface) {
     case LEDS_INTERFACE_NONE:

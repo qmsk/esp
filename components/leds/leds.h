@@ -20,15 +20,13 @@ struct leds {
 
   // pixel state
   struct leds_color *pixels;
-
-  // if false, all leds are inactive
-  bool active;
+  bool pixels_limit_dirty; // recalculate leds_limit_status
 
   // limit used for leds_tx()
   struct leds_limit limit;
-
   struct leds_limit_status limit_total_status, *limit_groups_status;
 };
+
 
 int leds_init(struct leds *leds, const struct leds_options *options);
 
@@ -40,6 +38,9 @@ unsigned leds_colors_active (const struct leds_color *colors, unsigned count, en
 
 /* power.c */
 unsigned leds_power_total(const struct leds_color *pixels, unsigned index, unsigned count, enum leds_power_mode power_mode);
+
+/* limit.c */
+void leds_limit_update(struct leds *leds);
 
 /* format.c */
 void leds_set_format_rgb(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params);

@@ -17,8 +17,6 @@ struct leds_state {
 
   struct leds *leds;
 
-  unsigned active;
-
   xTaskHandle task;
   EventGroupHandle_t event_group;
 

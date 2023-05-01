@@ -11,22 +11,30 @@
   | (((data[7 * (step) + (index)] >> (shift)) & 0xff) << 0) \
 )
 
+/*
+ * Based on https://github.com/hcs0/Hackers-Delight/blob/master/transpose8.c.txt transpose8rS32.
+ *
+ * Transpose the 8x8 bit = 64-bit matrix represented by two 32-bit words, compensating for the I2S
+ * peripherial's FIFO byte ordering in 8-bit parallel mode.
+ */
 static inline void i2s_out_transpose_uint32(uint32_t *x, uint32_t *y)
 {
   uint32_t t;
 
-  t = (*x ^ (*x >> 7)) & 0x00AA00AA; *x = *x ^ t ^ (t << 7); \
-  t = (*y ^ (*y >> 7)) & 0x00AA00AA; *y = *y ^ t ^ (t << 7); \
+  // swap masked pairs of bits offset by 7 positions
+  t = (*x ^ (*x >> 7)) & 0x00AA00AA; *x = *x ^ t ^ (t << 7);
+  t = (*y ^ (*y >> 7)) & 0x00AA00AA; *y = *y ^ t ^ (t << 7);
 
+  // swap masked pairs of bits offset by 14 positions
   t = (*x ^ (*x >> 14)) & 0x0000CCCC; *x = *x ^ t ^ (t << 14);
   t = (*y ^ (*y >> 14)) & 0x0000CCCC; *y = *y ^ t ^ (t << 14);
 
+  // merge transposed high 4-bit nibbles and low 4-bit nibbles
   t = (*x & 0xF0F0F0F0) | ((*y >> 4) & 0x0F0F0F0F);
   *y = ((*x << 4) & 0xF0F0F0F0) | (*y & 0x0F0F0F0F);
   *x = t;
 
-  // swap the 8-bit bytes of each 16-bit half of the 32-bit sample for the I2S 8-bit parallel fifo mode
-  // TODO: is it possible to merge this into the above bit-wrangling?
+  // swap the 8-bit bytes of each 16-bit word of the 32-bit sample for the I2S 8-bit parallel fifo mode
   *x = ((*x << 8) & 0xFF00FF00) | ((*x >> 8) & 0x00FF00FF);
   *y = ((*y << 8) & 0xFF00FF00) | ((*y >> 8) & 0x00FF00FF);
 }

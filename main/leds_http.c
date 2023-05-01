@@ -59,8 +59,7 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
   leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
   return (
-        JSON_WRITE_MEMBER_UINT(w, "active", state->active)
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &limit_total_status))
+        JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &limit_total_status))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, limit_groups_status, groups))
   );
 }

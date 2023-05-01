@@ -154,7 +154,6 @@ struct vfs_http_stat {
 static int vfs_http_stat(const struct vfs_http_params *params, struct vfs_http_stat *s)
 {
   struct stat st = {};
-  int err = 0;
 
   if (stat(params->path, &st)) {
     return vfs_http_error("stat", params->path);
@@ -163,7 +162,7 @@ static int vfs_http_stat(const struct vfs_http_params *params, struct vfs_http_s
   s->size = st.st_size;
   s->mtime = st.st_mtime;
 
-  return err;
+  return 0;
 }
 
 static int vfs_http_open(FILE **filep, const struct vfs_http_params *params, const char *mode)
@@ -266,7 +265,7 @@ static int vfs_copy(FILE *read, FILE *write)
 static int vfs_http_read(struct http_response *response, const struct vfs_http_params *params)
 {
   char datebuf[HTTP_DATE_SIZE];
-  struct vfs_http_stat stat;
+  struct vfs_http_stat stat = {};
   FILE *http_file, *file;
   int err;
 

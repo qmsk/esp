@@ -43,6 +43,23 @@ unsigned count_dmx_artnet_inputs()
   }
 }
 
+unsigned count_dmx_artnet_outputs()
+{
+  unsigned count = 0;
+
+  for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
+    const struct dmx_output_config *output_config = &dmx_output_configs[i];
+
+    if (!output_config->enabled) {
+      continue;
+    };
+
+    count++;
+  }
+
+  return count;
+}
+
 int init_dmx()
 {
   int err;

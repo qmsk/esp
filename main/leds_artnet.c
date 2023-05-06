@@ -195,6 +195,24 @@ static unsigned config_leds_artnet_universe_count(const struct leds_config *conf
   return artnet_universe_count;
 }
 
+unsigned count_leds_artnet_outputs()
+{
+  unsigned count = 0;
+
+  for (int i = 0; i < LEDS_COUNT; i++)
+  {
+    const struct leds_config *config = &leds_configs[i];
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    count += config_leds_artnet_universe_count(config);
+  }
+
+  return count;
+}
+
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
 {
   LOG_INFO("leds%d: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u", index + 1,

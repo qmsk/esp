@@ -8,13 +8,10 @@
 
 #include <string.h>
 
-#define ARTNET_INPUT_COUNT 4
-#define ARTNET_OUTPUT_COUNT 16
-
 int artnet_cmd_info(int argc, char **argv, void *ctx)
 {
-  struct artnet_input_options artnet_input_options[ARTNET_INPUT_COUNT];
-  struct artnet_output_options artnet_output_options[ARTNET_OUTPUT_COUNT];
+  struct artnet_input_options artnet_input_options[ARTNET_INPUTS_MAX];
+  struct artnet_output_options artnet_output_options[ARTNET_OUTPUTS_MAX];
 
   if (!artnet) {
     LOG_WARN("artnet disabled");
@@ -24,7 +21,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
-  size_t inputs_size = ARTNET_INPUT_COUNT, outputs_size = ARTNET_OUTPUT_COUNT;
+  size_t inputs_size = ARTNET_INPUTS_MAX, outputs_size = ARTNET_OUTPUTS_MAX;
   int err;
 
   printf("Listen port=%u\n", options.port);
@@ -49,7 +46,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("\n");
   printf("Inputs: count=%u\n", input_count);
 
-  for (int i = 0; i < inputs_size && i < ARTNET_INPUT_COUNT; i++) {
+  for (int i = 0; i < inputs_size && i < ARTNET_INPUTS_MAX; i++) {
     struct artnet_input_options *options = &artnet_input_options[i];
     struct artnet_input_state state;
 
@@ -68,7 +65,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("\n");
   printf("Outputs: count=%u\n", output_count);
 
-  for (int i = 0; i < outputs_size && i < ARTNET_OUTPUT_COUNT; i++) {
+  for (int i = 0; i < outputs_size && i < ARTNET_OUTPUTS_MAX; i++) {
     struct artnet_output_options *options = &artnet_output_options[i];
     struct artnet_output_state state;
     TickType_t tick = xTaskGetTickCount();

@@ -125,7 +125,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
   { CONFIG_TYPE_UINT16, "artnet_universe_count",
     .description = "Output from multiple Art-Net DMX universes. Default 0 -> automatic, enough to fit all LEDs",
-    .uint16_type = { .value = &LEDS_CONFIG.artnet_universe_count, .max = ARTNET_UNIVERSE_MAX + 1 },
+    .uint16_type = { .value = &LEDS_CONFIG.artnet_universe_count, .max = ARTNET_OUTPUTS_MAX },
   },
   { CONFIG_TYPE_UINT16, "artnet_universe_step",
     .description = "Output from non-consecutive Art-Net DMX universes, at artnet_universe_start + i*artnet_universe_step. Default 1, special-case 0 -> output multiple copies of the same universe",

@@ -15,12 +15,19 @@
 
 #define ARTNET_OUTPUT_NAME_MAX 16
 
-// up to 16 task notification bits for indexed outputs
-#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0xffff
-#define ARTNET_OUTPUT_EVENT_FLAG_BITS 0x00ff0000
+// TODO: limited by the available FreeRTOS event group bits...
+#define ARTNET_OUTPUTS_MAX 20
+
+// up to 20 task notification bits for indexed outputs
+// NOTE: FreeRTOS event groups only support 24 bits...
+#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0x000fffff
+#define ARTNET_OUTPUT_EVENT_FLAG_BITS  0x00f00000
 
 // flag bit to force output sync
-#define ARTNET_OUTPUT_EVENT_SYNC_BIT 16
+#define ARTNET_OUTPUT_EVENT_SYNC_BIT 20
+
+#define ARTNET_INPUTS_MAX 16
+#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
 
 struct artnet;
 struct artnet_input;
@@ -44,6 +51,9 @@ struct artnet_options {
   // number of input ports supported
   // if >0, will also allocate working memory for artnet_inputs_main()
   unsigned inputs;
+
+  // number of output ports supported
+  unsigned outputs;
 };
 
 struct artnet_dmx {

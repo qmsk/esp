@@ -17,7 +17,7 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
 {
   xQueueHandle queue;
 
-  if (artnet->output_count >= ARTNET_OUTPUTS) {
+  if (artnet->output_count >= artnet->output_size) {
     LOG_ERROR("too many outputs");
     return -1;
   }

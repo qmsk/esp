@@ -95,12 +95,12 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
       }
 
       if ((output->options.address & 0x7FF0) != artnet->options.address) {
-        LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
+        LOG_DEBUG("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
         continue;
       }
 
       if (output->options.port >= 4) {
-        LOG_WARN("skip output port=%d index=%u", output->options.port, output->options.index);
+        LOG_DEBUG("skip output port=%d index=%u", output->options.port, output->options.index);
         continue;
       } else if (output->options.port >= num_ports) {
         num_ports = output->options.port + 1;

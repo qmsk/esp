@@ -5,7 +5,7 @@
 
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
 {
-  return ((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0) | (uni & 0x000F);
+  return (((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0)) + uni;
 }
 
 uint16_t artnet_address_net(uint16_t address)

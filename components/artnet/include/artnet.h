@@ -124,6 +124,8 @@ struct artnet_output_state {
 
 /*
  * Pack artnet address from net + subnet + uni.
+ *
+ * NOTE: artnet_address() will interpret universes >= 16 as overflowing into the next net/subnet.
  */
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
 uint16_t artnet_address_net(uint16_t address);

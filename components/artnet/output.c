@@ -22,9 +22,12 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     return -1;
   }
 
+  if (options.port >= 4) {
+    LOG_WARN("port=%u >= 4, will not be discoverable", options.port);
+  }
+
   if ((options.address & 0xFFF0) != artnet->options.address) {
-    LOG_ERROR("port=%u index=%u address=%04x mismatch with artnet.universe=%04x", options.port, options.index, options.address, artnet->options.address);
-    return -1;
+    LOG_WARN("port=%u index=%u address=%04x mismatch with artnet.universe=%04x, will not be discoverable", options.port, options.index, options.address, artnet->options.address);
   }
 
   LOG_DEBUG("output=%d port=%d index=%u address=%04x", artnet->output_count, options.port, options.index, options.address);

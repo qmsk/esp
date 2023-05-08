@@ -6,6 +6,8 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
+#include <sdkconfig.h>
+
 #define ARTNET_UDP_PORT 6454
 #define ARTNET_DMX_SIZE 512
 
@@ -15,8 +17,8 @@
 
 #define ARTNET_OUTPUT_NAME_MAX 16
 
-// TODO: limited by the available FreeRTOS event group bits...
-#define ARTNET_OUTPUTS_MAX 20
+// limited to 20 by the available FreeRTOS event group bits
+#define ARTNET_OUTPUTS_MAX (CONFIG_ARTNET_OUTPUTS_MAX)
 
 // up to 20 task notification bits for indexed outputs
 // NOTE: FreeRTOS event groups only support 24 bits...

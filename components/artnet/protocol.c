@@ -59,7 +59,7 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
 
   // per-bind fields
-  for (unsigned index = 0; ; index++) {
+  for (unsigned index = 0; index <= ARTNET_INDEX_MAX; index++) {
     uint16_t num_ports = 0;
 
     memset(reply->port_types, 0, sizeof(reply->port_types));
@@ -95,12 +95,12 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
       }
 
       if ((output->options.address & 0x7FF0) != artnet->options.address) {
-        LOG_WARN("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
+        LOG_DEBUG("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
         continue;
       }
 
       if (output->options.port >= 4) {
-        LOG_WARN("skip output port=%d index=%u", output->options.port, output->options.index);
+        LOG_DEBUG("skip output port=%d index=%u", output->options.port, output->options.index);
         continue;
       } else if (output->options.port >= num_ports) {
         num_ports = output->options.port + 1;

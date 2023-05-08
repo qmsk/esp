@@ -1,10 +1,5 @@
 #pragma once
 
-#define ARTNET_OUTPUTS 16
-
-#define ARTNET_INPUTS_MAX 16
-#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
-
 // 4s timeout for sync mode
 #define ARTNET_SYNC_TICKS (4000 / portTICK_PERIOD_MS)
 
@@ -75,8 +70,8 @@ struct artnet {
   struct artnet_input *input_ports;
   unsigned input_size, input_count;
 
-  struct artnet_output output_ports[ARTNET_OUTPUTS];
-  unsigned output_count;
+  struct artnet_output *output_ports;
+  unsigned output_size, output_count;
 
   /* network */
   int socket;

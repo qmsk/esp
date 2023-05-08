@@ -1,0 +1,8 @@
+menu "qmsk-artnet"
+  config ARTNET_OUTPUTS_MAX
+      int "Maximum Art-NET output universes"
+
+      range 0 20
+      default 16
+
+endmenu

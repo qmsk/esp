@@ -3,6 +3,7 @@
 #include "artnet_state.h"
 #include "artnet_config.h"
 #include "dmx_artnet.h"
+#include "leds_artnet.h"
 #include "system_network.h"
 #include "tasks.h"
 
@@ -26,6 +27,16 @@ unsigned count_artnet_inputs()
   inputs += count_dmx_artnet_inputs();
 
   return inputs;
+}
+
+unsigned count_artnet_outputs()
+{
+  unsigned outputs = 0;
+
+  outputs += count_dmx_artnet_outputs();
+  outputs += count_leds_artnet_outputs();
+
+  return outputs;
 }
 
 static int build_artnet_metadata(struct artnet_metadata *metadata)
@@ -75,6 +86,7 @@ int init_artnet()
     .port     = ARTNET_UDP_PORT,
     .address  = artnet_address(config->net, config->subnet, 0),
     .inputs   = count_artnet_inputs(),
+    .outputs  = count_artnet_outputs(),
   };
   int err;
 
@@ -88,10 +100,11 @@ int init_artnet()
     return err;
   }
 
-  LOG_INFO("port=%u address=%04x inputs=%u",
+  LOG_INFO("port=%u address=%04x inputs=%u outputs=%u",
     options.port,
     options.address,
-    options.inputs
+    options.inputs,
+    options.outputs
   );
   LOG_INFO("ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
   LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);

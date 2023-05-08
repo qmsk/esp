@@ -6,21 +6,31 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
+#include <sdkconfig.h>
+
 #define ARTNET_UDP_PORT 6454
 #define ARTNET_DMX_SIZE 512
 
 #define ARTNET_NET_MAX 127
 #define ARTNET_SUBNET_MAX 15
 #define ARTNET_UNIVERSE_MAX 15
+#define ARTNET_INDEX_MAX 255
 
 #define ARTNET_OUTPUT_NAME_MAX 16
 
-// up to 16 task notification bits for indexed outputs
-#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0xffff
-#define ARTNET_OUTPUT_EVENT_FLAG_BITS 0x00ff0000
+// limited to 20 by the available FreeRTOS event group bits
+#define ARTNET_OUTPUTS_MAX (CONFIG_ARTNET_OUTPUTS_MAX)
+
+// up to 20 task notification bits for indexed outputs
+// NOTE: FreeRTOS event groups only support 24 bits...
+#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0x000fffff
+#define ARTNET_OUTPUT_EVENT_FLAG_BITS  0x00f00000
 
 // flag bit to force output sync
-#define ARTNET_OUTPUT_EVENT_SYNC_BIT 16
+#define ARTNET_OUTPUT_EVENT_SYNC_BIT 20
+
+#define ARTNET_INPUTS_MAX 16
+#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
 
 struct artnet;
 struct artnet_input;
@@ -44,6 +54,9 @@ struct artnet_options {
   // number of input ports supported
   // if >0, will also allocate working memory for artnet_inputs_main()
   unsigned inputs;
+
+  // number of output ports supported
+  unsigned outputs;
 };
 
 struct artnet_dmx {
@@ -73,7 +86,7 @@ struct artnet_input_options {
   enum artnet_port port;
 
   /* Output index, used for discovery bind index and task notification bits */
-  uint8_t index;
+  unsigned index;
 
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;
@@ -84,12 +97,12 @@ struct artnet_output_options {
   enum artnet_port port;
 
   /* Output index, used for discovery bind index and task notification bits */
-  uint8_t index;
+  unsigned index;
 
   /* Human-friendly name */
   char name[ARTNET_OUTPUT_NAME_MAX];
 
-  /* ArtNet net/subnet/uni address, must match artnet_options.address */
+  /* ArtNet net/subnet/uni address, should match artnet_options.address for discovery */
   uint16_t address;
 
   /* Task associated with output, will receive task notifications on updates */
@@ -114,6 +127,8 @@ struct artnet_output_state {
 
 /*
  * Pack artnet address from net + subnet + uni.
+ *
+ * NOTE: artnet_address() will interpret universes >= 16 as overflowing into the next net/subnet.
  */
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
 uint16_t artnet_address_net(uint16_t address);

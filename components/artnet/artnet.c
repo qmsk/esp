@@ -5,7 +5,7 @@
 
 uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
 {
-  return ((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0) | (uni & 0x000F);
+  return (((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0)) + uni;
 }
 
 uint16_t artnet_address_net(uint16_t address)
@@ -51,6 +51,11 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
     return -1;
   }
 
+  if (options.outputs > ARTNET_OUTPUTS_MAX) {
+    LOG_ERROR("outputs=%u exceeds max=%u", options.outputs, ARTNET_OUTPUTS_MAX);
+    return -1;
+  }
+
   artnet->options = options;
 
   artnet_init_stats(artnet);
@@ -70,6 +75,15 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 
     if (!(artnet->input_dmx = calloc(1, sizeof(*artnet->input_dmx)))) {
       LOG_ERROR("calloc(input_dmx)");
+      return -1;
+    }
+  }
+
+  if (options.outputs) {
+    artnet->output_size = options.outputs;
+
+    if (!(artnet->output_ports = calloc(artnet->output_size, sizeof(*artnet->output_ports)))) {
+      LOG_ERROR("calloc(outputs)");
       return -1;
     }
   }

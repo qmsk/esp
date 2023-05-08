@@ -3,8 +3,8 @@
 #include <leds.h>
 
 // compatible with ARTNET_OUTPUT_EVENT_*_BIT/BITS
-#define LEDS_EVENT_SYNC_BIT 16 // ARTNET_OUTPUT_EVENT_SYNC_BIT
-#define LEDS_EVENT_TEST_BIT 17
+#define LEDS_EVENT_SYNC_BIT (ARTNET_OUTPUT_EVENT_SYNC_BIT + 0)
+#define LEDS_EVENT_TEST_BIT (ARTNET_OUTPUT_EVENT_SYNC_BIT + 1)
 
 int init_leds_task(struct leds_state *state, const struct leds_config *config);
 int start_leds_task(struct leds_state *state, const struct leds_config *config);

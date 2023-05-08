@@ -101,7 +101,7 @@ struct artnet_output_options {
   /* Human-friendly name */
   char name[ARTNET_OUTPUT_NAME_MAX];
 
-  /* ArtNet net/subnet/uni address, must match artnet_options.address */
+  /* ArtNet net/subnet/uni address, should match artnet_options.address for discovery */
   uint16_t address;
 
   /* Task associated with output, will receive task notifications on updates */

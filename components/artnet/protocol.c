@@ -59,7 +59,7 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
 
   // per-bind fields
-  for (unsigned index = 0; ; index++) {
+  for (unsigned index = 0; index <= ARTNET_INDEX_MAX; index++) {
     uint16_t num_ports = 0;
 
     memset(reply->port_types, 0, sizeof(reply->port_types));

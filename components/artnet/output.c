@@ -22,6 +22,11 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     return -1;
   }
 
+  if (options.index > ARTNET_INDEX_MAX) {
+    LOG_ERROR("index=%u overflow", options.index);
+    return -1;
+  }
+
   if (options.port >= 4) {
     LOG_WARN("port=%u >= 4, will not be discoverable", options.port);
   }

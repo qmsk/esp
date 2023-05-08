@@ -14,6 +14,7 @@
 #define ARTNET_NET_MAX 127
 #define ARTNET_SUBNET_MAX 15
 #define ARTNET_UNIVERSE_MAX 15
+#define ARTNET_INDEX_MAX 255
 
 #define ARTNET_OUTPUT_NAME_MAX 16
 
@@ -85,7 +86,7 @@ struct artnet_input_options {
   enum artnet_port port;
 
   /* Output index, used for discovery bind index and task notification bits */
-  uint8_t index;
+  unsigned index;
 
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;
@@ -96,7 +97,7 @@ struct artnet_output_options {
   enum artnet_port port;
 
   /* Output index, used for discovery bind index and task notification bits */
-  uint8_t index;
+  unsigned index;
 
   /* Human-friendly name */
   char name[ARTNET_OUTPUT_NAME_MAX];

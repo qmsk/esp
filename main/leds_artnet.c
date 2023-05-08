@@ -134,7 +134,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   if (data) {
     // set output from artnet universe
-    for (uint8_t index = 0; index < state->artnet->universe_count; index++) {
+    for (unsigned index = 0; index < state->artnet->universe_count; index++) {
       if (!(event_bits & (1 << index))) {
         continue;
       }
@@ -244,7 +244,7 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
 
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config)
 {
-  for (uint8_t i = 0; i < state->artnet->universe_count; i++) {
+  for (unsigned i = 0; i < state->artnet->universe_count; i++) {
     struct artnet_output_options options = {
       .port = (enum artnet_port) (state->index), // use ledsX index as output port
       .index = i,

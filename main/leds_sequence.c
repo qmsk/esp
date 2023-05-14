@@ -143,7 +143,10 @@ static void leds_sequence_main(void *ctx)
     TickType_t tick = fseq_tick(leds_sequence->fseq);
     TickType_t t = xTaskGetTickCount();
 
-    if (tick > t) {
+    if (!tick) {
+      LOG_INFO("stop");
+      goto stop;
+    } else if (tick > t) {
       vTaskDelay(tick - t);
     }
 
@@ -165,6 +168,7 @@ error:
   user_alert(USER_ALERT_ERROR_LEDS_SEQUENCE);
   LOG_ERROR("task=%p stopped", leds_sequence->task);
 
+stop:
   leds_sequence->task = NULL;
   vTaskDelete(NULL);
 }

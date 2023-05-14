@@ -11,6 +11,30 @@
 #include <stdio.h>
 #include <string.h>
 
+// config
+struct leds_sequence_config leds_sequence_config = {
+
+};
+
+const struct config_file_path leds_sequence_paths[] = {
+  { "/config/leds-sequence", "fseq" },
+  { "/sdcard/leds-sequence", "fseq" },
+  {}
+};
+
+const struct configtab leds_sequence_configtab[] = {
+  { CONFIG_TYPE_BOOL, "enabled",
+    .bool_type = { .value = &leds_sequence_config.enabled },
+  },
+  { CONFIG_TYPE_BOOL, "loop",
+    .bool_type = { .value = &leds_sequence_config.loop },
+  },
+  { CONFIG_TYPE_FILE, "file",
+    .file_type = { .value = leds_sequence_config.file, .size = sizeof(leds_sequence_config.file), .paths = leds_sequence_paths },
+  },
+  {},
+};
+
 static int set_leds_sequence(struct leds_state *state, const struct fseq_frame *frame)
 {
   const struct leds_config *config = state->config;

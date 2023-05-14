@@ -128,12 +128,6 @@ const struct config_enum leds_parameter_enum[] = {
   {}
 };
 
-const struct config_file_path leds_sequence_paths[] = {
-  { "/config/leds-sequence", "fseq" },
-  { "/sdcard/leds-sequence", "fseq" },
-  {}
-};
-
 #define LEDS_CONFIGTAB leds_configtab0
 #define LEDS_CONFIG leds_configs[0]
 #include "leds_configtab.i"

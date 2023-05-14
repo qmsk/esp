@@ -90,6 +90,10 @@ const struct configmod config_modules[] = {
     .description = "LEDS I2S interface",
     .table = leds_i2s_configtab,
   },
+  { "leds-sequence",
+    .description = "LEDS Sequence support",
+    .table = leds_sequence_configtab,
+  },
   { "leds",
     .description = (
       "Control LEDs using synchronous (separate clock/data) serial protocols via Art-Net."

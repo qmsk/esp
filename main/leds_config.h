@@ -104,6 +104,12 @@ struct leds_state *state;
   extern const struct config_enum leds_i2s_clock_enum[];
 #endif
 
+struct leds_sequence_config {
+  bool enabled;
+  bool loop;
+  char file[LEDS_SEQUENCE_FILE_MAX];
+};
+
 struct leds_config {
   bool enabled;
 
@@ -155,8 +161,6 @@ struct leds_config {
   uint16_t artnet_leds_segment;
 
   bool sequence_enabled;
-  bool sequence_loop;
-  char sequence_file[LEDS_SEQUENCE_FILE_MAX];
   int sequence_format;
   uint16_t sequence_channel_start;
   uint16_t sequence_channel_count;

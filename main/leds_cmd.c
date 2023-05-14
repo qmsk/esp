@@ -340,6 +340,14 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   #endif
   }
 
+  // sequence
+  {
+    struct leds_sequence_stats *stats = &leds_sequence_stats;
+
+    print_stats_timer("sequence", "read", &stats->read);
+    print_stats_counter("sequence", "skip", &stats->skip);
+  }
+
   for (unsigned i = 0; i < LEDS_COUNT; i++) {
     const struct leds_stats *stats = &leds_stats[i];
 
@@ -352,7 +360,6 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "update",   &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
-    print_stats_counter("sequence", "skip", &stats->sequence_skip);
     printf("\n");
   }
 

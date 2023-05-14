@@ -27,12 +27,15 @@ const struct config_file_path leds_sequence_paths[] = {
 const struct configtab leds_sequence_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
     .bool_type = { .value = &leds_sequence_config.enabled },
+    .description = "Enable LEDs sequence input",
   },
   { CONFIG_TYPE_BOOL, "loop",
     .bool_type = { .value = &leds_sequence_config.loop },
+    .description = "Loop LEDs sequence file",
   },
   { CONFIG_TYPE_FILE, "file",
     .file_type = { .value = leds_sequence_config.file, .size = sizeof(leds_sequence_config.file), .paths = leds_sequence_paths },
+    .description = "Read LEDs sequence file from SD-Card",
   },
   {},
 };

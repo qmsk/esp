@@ -75,6 +75,13 @@ int start_taskf(struct task_options options, ...);
 # define ATX_PSU_TASK_STACK 2048
 #endif
 
+// used for SD-Card fseq -> LEDS
+#define LEDS_SEQUENCE_TASK_NAME "leds-sequence"
+#define LEDS_SEQUENCE_TASK_PRIORITY (tskIDLE_PRIORITY + 10)
+#define LEDS_SEQUENCE_TASK_AFFINITY TASKS_CPU_PRO
+
+#define LEDS_SEQUENCE_TASK_STACK 2048
+
 // used for TCP/IP ArtNET network protocol -> output
 #define ARTNET_LISTEN_TASK_NAME "artnet-listen"
 #define ARTNET_LISTEN_TASK_PRIORITY (tskIDLE_PRIORITY + 10)

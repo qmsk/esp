@@ -54,6 +54,11 @@ int init_leds()
   }
 #endif
 
+  if ((err = init_leds_sequence())) {
+    LOG_ERROR("init_leds_sequence");
+    return 0;
+  }
+
   for (int i = 0; i < LEDS_COUNT; i++)
   {
     struct leds_state *state = &leds_states[i];
@@ -91,8 +96,8 @@ int init_leds()
     }
 
     if (config->sequence_enabled) {
-      if ((err = init_leds_sequence(state, config))) {
-        LOG_ERROR("leds%d: init_leds_sequence", i + 1);
+      if ((err = config_leds_sequence(state, config))) {
+        LOG_ERROR("leds%d: config_leds_sequence", i + 1);
         return err;
       }
     }
@@ -130,13 +135,11 @@ int start_leds()
         return err;
       }
     }
+  }
 
-    if (config->sequence_enabled) {
-      if ((err = start_leds_sequence(state, config))) {
-        LOG_ERROR("leds%d: start_leds_sequence", i + 1);
-        return err;
-      }
-    }
+  if ((err = start_leds_sequence())) {
+    LOG_ERROR("start_leds_sequence");
+    return err;
   }
 
   return 0;

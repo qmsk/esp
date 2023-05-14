@@ -17,6 +17,15 @@ static int config_api_write_enum_value(struct json_writer *w, const struct confi
   return json_write_string(w, e->name);
 }
 
+static int config_api_write_file_value(struct json_writer *w, const struct configtab *tab, unsigned index)
+{
+  if (tab->file_type.value[index * tab->file_type.size]) {
+    return json_write_nstring(w, &tab->file_type.value[index * tab->file_type.size], tab->file_type.size);
+  } else {
+    return json_write_null(w);
+  }
+}
+
 static int config_api_write_configtab_value(struct json_writer *w, const struct configtab *tab, unsigned index)
 {
 
@@ -32,6 +41,9 @@ static int config_api_write_configtab_value(struct json_writer *w, const struct 
 
     case CONFIG_TYPE_ENUM:
       return config_api_write_enum_value(w, tab, index);
+
+    case CONFIG_TYPE_FILE:
+      return config_api_write_file_value(w, tab, index);
 
     default:
       LOG_ERROR("unknown type=%d", tab->type);
@@ -100,11 +112,47 @@ static int config_api_write_configtab_enum_values(struct json_writer *w, const s
   return 0;
 }
 
+static int config_api_write_configtab_file_paths(struct json_writer *w, const struct config_file_path *p)
+{
+  int err;
+
+  for (; p->prefix; p++) {
+    if (p->suffix) {
+      err |= json_write_raw(w, "\"%s/*.%s\"", p->prefix, p->suffix);
+    } else {
+      err |= json_write_raw(w, "\"%s/*\"", p->prefix);
+    }
+  }
+
+  return 0;
+}
+
+static int config_api_write_configtab_file_value(const struct config_file_path *p, const char *name, void *ctx)
+{
+  struct json_writer *w = ctx;
+
+  return json_write_string(w, name);
+}
+
+static int config_api_write_configtab_file_values(struct json_writer *w, const struct config_file_path *p)
+{
+  return config_file_walk(p, config_api_write_configtab_file_value, w);
+}
+
 static int config_api_write_configtab_members_enum(struct json_writer *w, const struct configtab *tab)
 {
   return (
         config_api_write_configtab_type_members(w, tab, "enum")
     ||  JSON_WRITE_MEMBER_ARRAY(w, "enum_values", config_api_write_configtab_enum_values(w, tab->enum_type.values))
+  );
+}
+
+static int config_api_write_configtab_members_file(struct json_writer *w, const struct configtab *tab)
+{
+  return (
+        config_api_write_configtab_type_members(w, tab, "file")
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "file_paths", config_api_write_configtab_file_paths(w, tab->file_type.paths))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "file_values", config_api_write_configtab_file_values(w, tab->file_type.paths))
   );
 }
 
@@ -119,6 +167,8 @@ static int config_api_write_configtab_members(struct json_writer *w, const struc
       return config_api_write_configtab_members_bool(w, tab);
     case CONFIG_TYPE_ENUM:
       return config_api_write_configtab_members_enum(w, tab);
+    case CONFIG_TYPE_FILE:
+      return config_api_write_configtab_members_file(w, tab);
     default:
       return 0;
   }

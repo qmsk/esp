@@ -120,10 +120,6 @@ TickType_t leds_test_wait(struct leds_state *state)
 
 bool leds_test_active(struct leds_state *state, EventBits_t bits)
 {
-  if (!state->test) {
-    return false;
-  }
-
   if (state->test->mode) {
     return true;
   }

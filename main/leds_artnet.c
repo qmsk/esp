@@ -95,10 +95,6 @@ static int leds_artnet_timeout(struct leds_state *state)
 
 bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
 {
-  if (!state->artnet) {
-    return false;
-  }
-
   if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
     return true;
   }
@@ -157,6 +153,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     }
   }
 
+  // timeouts
   if (data || sync) {
     leds_artnet_timeout_reset(state);
   } else if (config->artnet_dmx_timeout) {
@@ -167,6 +164,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
       timeout = true;
 
+      // repeat
       leds_artnet_timeout_reset(state);
     }
   }

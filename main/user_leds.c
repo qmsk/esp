@@ -24,12 +24,14 @@ enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
 };
 
 enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
-  [USER_ALERT_ERROR_BOOT]         = USER_LEDS_FAST,
-  [USER_ALERT_ERROR_CONFIG]       = USER_LEDS_SLOW,
-  [USER_ALERT_ERROR_SETUP]        = USER_LEDS_ON,
-  [USER_ALERT_ERROR_WIFI]         = USER_LEDS_ON,
-  [USER_ALERT_ERROR_START]        = USER_LEDS_ON,
-  [USER_ALERT_ERROR_DMX]          = USER_LEDS_ON,
+  [USER_ALERT_ERROR_BOOT]                 = USER_LEDS_FAST,
+  [USER_ALERT_ERROR_CONFIG]               = USER_LEDS_SLOW,
+  [USER_ALERT_ERROR_SETUP]                = USER_LEDS_ON,
+  [USER_ALERT_ERROR_WIFI]                 = USER_LEDS_ON,
+  [USER_ALERT_ERROR_START]                = USER_LEDS_ON,
+  [USER_ALERT_ERROR_DMX]                  = USER_LEDS_ON,
+  [USER_ALERT_ERROR_LEDS_SEQUENCE]        = USER_LEDS_ON,
+  [USER_ALERT_ERROR_LEDS_SEQUENCE_READ]   = USER_LEDS_FLASH,
 };
 
 // state

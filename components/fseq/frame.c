@@ -5,19 +5,19 @@
 
 #include <logging.h>
 
-int fseq_frame_init(struct fseq_frame *frame, struct fseq *fseq)
+int fseq_frame_new(struct fseq_frame **framep, struct fseq *fseq)
 {
-  frame->size = fseq_get_frame_size(fseq);
+  struct fseq_frame *frame;
+  size_t size = fseq_get_frame_size(fseq);
 
-  if (!(frame->buf = malloc(frame->size))) {
-    LOG_ERROR("malloc %u", frame->size);
+  if (!(frame = malloc(sizeof(*frame) + size))) {
+    LOG_ERROR("malloc %u + %u", sizeof(*frame), size);
     return -1;
   }
 
-  return 0;
-}
+  frame->size = size;
 
-size_t fseq_size(struct fseq *fseq)
-{
-  return fseq_get_frame_size(fseq);
+  *framep = frame;
+
+  return 0;
 }

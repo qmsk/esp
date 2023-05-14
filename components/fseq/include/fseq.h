@@ -22,21 +22,22 @@ enum fseq_state {
 
 struct fseq;
 struct fseq_frame {
-  uint8_t *buf;
   size_t size;
+  uint8_t buf[];
 };
+
+/* Return size of fseq_frame in bytes (metadata + uint8_t buf).  */
+static inline size_t fseq_frame_size(const struct fseq_frame *frame)
+{
+  return sizeof(*frame) + frame->size;
+}
 
 int fseq_new(struct fseq **fseqp, FILE *file);
 
 /*
- * Initialize frame for use with fseq.
+ * Allocate frame for use with fseq.
  */
-int fseq_frame_init(struct fseq_frame *frame, struct fseq *fseq);
-
-/*
- * Return size of fseq frame in bytes (uint8_t channels).
- */
-size_t fseq_frame_size(struct fseq *fseq);
+int fseq_frame_new(struct fseq_frame **framep, struct fseq *fseq);
 
 /*
  * Return current fseq state.

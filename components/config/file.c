@@ -73,8 +73,13 @@ int config_file_walk(const struct config_file_path *paths, int (*func)(const str
 
   for (const struct config_file_path *p = paths; p->prefix; p++) {
     if (!(dir = opendir(p->prefix))) {
-      LOG_ERROR("opendir %s: %s", p->prefix, strerror(errno));
-      return -1;
+      if (errno == ENOENT) {
+        LOG_DEBUG("opendir %s: %s", p->prefix, strerror(errno));
+        continue;
+      } else {
+        LOG_ERROR("opendir %s: %s", p->prefix, strerror(errno));
+        return -1;
+      }
     }
 
     while ((d = readdir(dir))) {

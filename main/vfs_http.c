@@ -544,13 +544,13 @@ static int vfs_http_api_write_directory(struct json_writer *w, void *ctx)
 static int vfs_http_api_write_mount_object(struct json_writer *w, const struct vfs_mount *mount, DIR *dir)
 {
   struct vfs_stat stat = {};
-  int err = 0;
+  int err = 0, ret;
 
   err |= JSON_WRITE_MEMBER_STRING(w, "path", mount->path);
 
-  if ((err = vfs_mount_stat(mount, &stat)) < 0) {
+  if ((ret = vfs_mount_stat(mount, &stat)) < 0) {
     LOG_WARN("mount path=%s dev stat", mount->path);
-  } else if (err) {
+  } else if (ret) {
     LOG_DEBUG("mount path=%s dev stat not supported", mount->path);
   } else {
     err |= JSON_WRITE_MEMBER_BOOL(w, "mounted", stat.mounted);

@@ -11,6 +11,7 @@
 enum eth_mode {
   ETH_MODE_NONE,
   ETH_MODE_STATIC,
+  ETH_MODE_AUTOCONF,    // autoconf, generate host bits based on MAC addr
   ETH_MODE_DHCP_CLIENT,
   ETH_MODE_DHCP_SERVER,
 };

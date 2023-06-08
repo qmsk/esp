@@ -34,8 +34,13 @@
 # define SYSTEM_IPV4_ADDR_BYTE4(x) esp_ip4_addr4(x)
 # define SYSTEM_IP_ADDR_TYPE esp_ip_addr_t
 
-  const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status);
+# if CONFIG_IEEE802154_ENABLED
+  typedef uint8_t system_mac_addr_t[8];
+# else
+  typedef uint8_t system_mac_addr_t[6];
+# endif
 
+  const char *esp_netif_dhcp_status_str(esp_netif_dhcp_status_t status);
 #endif
 
 struct system_interface_info {

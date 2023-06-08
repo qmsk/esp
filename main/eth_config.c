@@ -19,6 +19,9 @@
 #if CONFIG_ETH_MODE_DEFAULT_STATIC
   #define ETH_CONFIG_ENABLED_DEFAULT true
   #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_STATIC
+#elif CONFIG_ETH_MODE_DEFAULT_AUTOCONF
+  #define ETH_CONFIG_ENABLED_DEFAULT true
+  #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_AUTOCONF
 #elif CONFIG_ETH_MODE_DEFAULT_DHCP_CLIENT
   #define ETH_CONFIG_ENABLED_DEFAULT true
   #define ETH_CONFIG_MODE_DEFAULT ETH_MODE_DHCP_CLIENT
@@ -51,6 +54,7 @@
   const struct config_enum eth_mode_enum[] = {
     { "NONE",         ETH_MODE_NONE         },
     { "STATIC",       ETH_MODE_STATIC       },
+    { "AUTOCONF",     ETH_MODE_AUTOCONF     },
     { "DHCP_CLIENT",  ETH_MODE_DHCP_CLIENT  },
     { "DHCP_SERVER",  ETH_MODE_DHCP_SERVER  },
     {}
@@ -142,20 +146,6 @@
     return 0;
   }
 
-  static int config_eth_ip(const struct eth_config *config)
-  {
-    int err;
-
-    LOG_INFO("Using config IPv4: ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
-
-    if ((err = set_eth_netif_ip(config->ip, config->netmask, config->gw))) {
-      LOG_ERROR("set_eth_netif_ip");
-      return err;
-    }
-
-    return 0;
-  }
-
   static int config_eth_none(const struct eth_config *config)
   {
     int err;
@@ -179,7 +169,7 @@
   {
     int err;
 
-    LOG_INFO("Using IPv4 Static");
+    LOG_INFO("Using static IPv4: ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
 
     if ((err = config_eth_hostname(config))) {
       LOG_ERROR("config_eth_hostname");
@@ -191,8 +181,32 @@
       return err;
     }
 
-    if ((err = config_eth_ip(config))) {
-      LOG_ERROR("config_eth_ip");
+    if ((err = set_eth_netif_ip(config->ip, config->netmask, config->gw))) {
+      LOG_ERROR("set_eth_netif_ip");
+      return err;
+    }
+
+    return 0;
+  }
+
+  static int config_eth_autoconf(const struct eth_config *config)
+  {
+    int err;
+
+    LOG_INFO("Using IPv4 autoconf");
+
+    if ((err = config_eth_hostname(config))) {
+      LOG_ERROR("config_eth_hostname");
+      return err;
+    }
+
+    if ((err = set_eth_netif_static())) {
+      LOG_ERROR("set_eth_netif_static");
+      return err;
+    }
+
+    if ((err = set_eth_netif_autoconf(config->ip, config->netmask, config->gw))) {
+      LOG_ERROR("set_eth_netif_autoconf");
       return err;
     }
 
@@ -222,7 +236,7 @@
   {
     int err;
 
-    LOG_INFO("Using IPv4 DHCP Server");
+    LOG_INFO("Using IPv4 DHCP Server: ip=%s netmask=%s gw=%s", config->ip, config->netmask, config->gw);
 
     if ((err = config_eth_hostname(config))) {
       LOG_ERROR("config_eth_hostname");
@@ -235,8 +249,8 @@
       return err;
     }
 
-    if ((err = config_eth_ip(config))) {
-      LOG_ERROR("config_eth_ip");
+    if ((err = set_eth_netif_ip(config->ip, config->netmask, config->gw))) {
+      LOG_ERROR("set_eth_netif_ip");
       return err;
     }
 
@@ -258,6 +272,9 @@
 
       case ETH_MODE_STATIC:
         return config_eth_static(config);
+
+      case ETH_MODE_AUTOCONF:
+        return config_eth_autoconf(config);
 
       case ETH_MODE_DHCP_CLIENT:
         return config_eth_dhcpc(config);

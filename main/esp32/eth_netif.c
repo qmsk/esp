@@ -3,9 +3,12 @@
 #include "../eth_netif.h"
 #include "../eth_state.h"
 
+#include <system_interfaces.h>
+
 #if CONFIG_ETH_ENABLED
   #include <esp_eth.h>
   #include <esp_err.h>
+  #include <esp_mac.h>
   #include <esp_netif.h>
   #include <mdns.h>
 
@@ -13,6 +16,29 @@
 
   static esp_netif_t *eth_netif;
   static esp_eth_netif_glue_handle_t eth_netif_glue;
+
+  static uint32_t ipv4_rand()
+  {
+    unsigned seed = 0;
+    system_mac_addr_t mac_addr;
+    esp_err_t err;
+
+    // random seed from system MAC address
+    if ((err = esp_base_mac_addr_get(mac_addr))) {
+      LOG_WARN("esp_base_mac_addr_get: %s", esp_err_to_name(err));
+    }
+
+    for (int i = 0; i < sizeof(mac_addr); i++) {
+      seed = (seed << 8) | (mac_addr[i]);
+    }
+
+    return rand_r(&seed);
+  }
+
+  static void ivp4_autoconf(esp_netif_ip_info_t *ip_info)
+  {
+    ip_info->ip.addr = (ip_info->ip.addr & ip_info->netmask.addr) | (ipv4_rand() & ~ip_info->netmask.addr);
+  }
 
   int init_eth_netif()
   {
@@ -98,6 +124,40 @@
       LOG_ERROR("invalid gw=%s", gw);
       return -1;
     }
+
+    if ((err = esp_netif_set_ip_info(eth_netif, &ip_info))) {
+      LOG_ERROR("esp_netif_set_ip_info: %s", esp_err_to_name(err));
+      return -1;
+    }
+
+    return 0;
+  }
+
+  int set_eth_netif_autoconf(const char *ip, const char *netmask, const char *gw)
+  {
+    esp_netif_ip_info_t ip_info;
+    esp_err_t err;
+
+    if ((err = esp_netif_str_to_ip4(ip, &ip_info.ip))) {
+      LOG_ERROR("invalid ip=%s", ip);
+      return -1;
+    }
+
+    if ((err = esp_netif_str_to_ip4(netmask, &ip_info.netmask))) {
+      LOG_ERROR("invalid netmask=%s", netmask);
+      return -1;
+    }
+
+    if ((err = esp_netif_str_to_ip4(gw, &ip_info.gw))) {
+      LOG_ERROR("invalid gw=%s", gw);
+      return -1;
+    }
+
+    ivp4_autoconf(&ip_info);
+
+    LOG_INFO("Generated IPv4 autoconf addr: " IPSTR,
+      esp_ip4_addr1(&ip_info.ip), esp_ip4_addr2(&ip_info.ip), esp_ip4_addr3(&ip_info.ip), esp_ip4_addr4(&ip_info.ip)
+    );
 
     if ((err = esp_netif_set_ip_info(eth_netif, &ip_info))) {
       LOG_ERROR("esp_netif_set_ip_info: %s", esp_err_to_name(err));

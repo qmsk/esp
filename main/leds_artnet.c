@@ -175,10 +175,15 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
 {
   unsigned artnet_dmx_leds = config->artnet_dmx_leds;
+  unsigned artnet_leds_segment = config->artnet_leds_segment;
   unsigned artnet_universe_count = config->artnet_universe_count;
 
   if (!artnet_dmx_leds) {
     artnet_dmx_leds = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE);
+  }
+
+  if (artnet_leds_segment) {
+    artnet_dmx_leds = artnet_dmx_leds * artnet_leds_segment;
   }
 
   if (!artnet_universe_count) {

@@ -28,7 +28,7 @@ static esp_ip4_addr_t ipv4_network(const esp_netif_ip_info_t *ip_info)
 
 static unsigned ipv4_prefixlen(const esp_netif_ip_info_t *ip_info)
 {
-  uint32_t addr = esp_netif_htonl(ip_info->ip.addr);
+  uint32_t addr = esp_netif_htonl(ip_info->netmask.addr);
   unsigned len = 0;
 
   for (uint32_t mask = 1 << 31; mask; mask >>= 1) {

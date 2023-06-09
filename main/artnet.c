@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#define ARTNET_PRODUCT "https://github.com/SpComb/esp-projects"
+#define ARTNET_PRODUCT "https://github.com/qmsk/esp"
 
 #define ARTNET_INPUTS 4
 

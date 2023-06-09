@@ -3,13 +3,22 @@
 #include "artnet_state.h"
 #include "artnet_config.h"
 
+#include <sdkconfig.h>
+
+
+#if CONFIG_ARTNET_ENABLED
+  #define ARTNET_CONFIG_ENABLED_DEFAULT true
+#else
+  #define ARTNET_CONFIG_ENABLED_DEFAULT false
+#endif
+
 struct artnet_config artnet_config = {
 
 };
 
 const struct configtab artnet_configtab[] = {
   { CONFIG_TYPE_BOOL, "enabled",
-    .bool_type = { .value = &artnet_config.enabled },
+    .bool_type = { .value = &artnet_config.enabled, .default_value = ARTNET_CONFIG_ENABLED_DEFAULT },
   },
   { CONFIG_TYPE_UINT16, "net",
     .description = "Set network address, 0-127.",

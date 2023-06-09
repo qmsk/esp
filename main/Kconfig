@@ -179,6 +179,11 @@ menu "qmsk-esp"
 
 endmenu
 
+menu "qmsk-artnet"
+  config ARTNET_ENABLED
+      bool "Enable artnet protocol by default"
+endmenu
+
 menu "qmsk-esp-eth"
   choice ETH_BOARD
     prompt "Ethernet board type"
@@ -206,6 +211,9 @@ menu "qmsk-esp-eth"
 
       config ETH_MODE_DEFAULT_STATIC
         bool "Static IPv4"
+
+      config ETH_MODE_DEFAULT_AUTOCONF
+        bool "IPv4 autoconf"
 
       config ETH_MODE_DEFAULT_DHCP_CLIENT
         bool "DHCP Client"

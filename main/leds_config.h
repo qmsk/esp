@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 
-#define LEDS_LIMIT_GROUPS_MAX 8
+#define LEDS_LIMIT_GROUPS_MAX 64
 #define LEDS_SEQUENCE_FILE_MAX 64
 
 struct leds_state *state;

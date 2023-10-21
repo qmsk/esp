@@ -146,6 +146,8 @@ struct leds_config {
   unsigned gpio_count;
 #endif
 
+  uint16_t update_timeout;
+
   bool test_enabled;
   int test_mode;
   bool test_auto;

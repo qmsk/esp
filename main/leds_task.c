@@ -9,12 +9,44 @@
 
 #include <logging.h>
 
+static TickType_t leds_update_wait(struct leds_state *state)
+{
+  if (state->config->update_timeout && state->update_tick) {
+    // refresh valid date
+    return state->update_tick + state->config->update_timeout / portTICK_PERIOD_MS;
+  }
+
+  return 0;
+}
+
+
+static bool leds_update_active(struct leds_state *state)
+{
+  // not configured
+  if (!state->config->update_timeout) {
+    return false;
+  }
+
+  // not initialized
+  if (!state->update_tick) {
+    return false;
+  }
+
+  return xTaskGetTickCount() >= state->update_tick + state->config->update_timeout / portTICK_PERIOD_MS;
+}
+
 static EventBits_t leds_task_wait(struct leds_state *state)
 {
   TickType_t tick;
 
   // first tick to wait until
   TickType_t wait_tick = portMAX_DELAY;
+
+  if ((tick = leds_update_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
+    }
+  }
 
   if (state->test && (tick = leds_test_wait(state))) {
     if (tick < wait_tick) {
@@ -97,7 +129,17 @@ static void leds_main(void *ctx)
       }
     }
 
+    if (leds_update_active(state)) {
+      LOG_DEBUG("update timeout");
+
+      stats_counter_increment(&stats->update_timeout);
+
+      update = true;
+    }
+
     if (update) {
+      state->update_tick = xTaskGetTickCount();
+
       WITH_STATS_TIMER(&stats->update) {
         if (update_leds(state)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);

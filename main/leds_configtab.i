@@ -102,6 +102,11 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
 #endif
 
+  { CONFIG_TYPE_UINT16, "update_timeout",
+    .description = "Update LED outputs after given milliseconds without any updates. Default 0 -> hold output idle.",
+    .uint16_type = { .value = &LEDS_CONFIG.update_timeout },
+  },
+
   { CONFIG_TYPE_BOOL, "test_enabled",
     .description = "Enable test pattern output, active when TEST button pressed",
     .bool_type = { .value = &LEDS_CONFIG.test_enabled, .default_value = true },

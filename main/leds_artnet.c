@@ -84,7 +84,7 @@ static int leds_artnet_timeout(struct leds_state *state)
   struct leds_stats *stats = &leds_stats[state->index];
   int err;
 
-  LOG_INFO("leds%d: timeout", state->index + 1);
+  LOG_WARN("leds%d: timeout", state->index + 1);
 
   stats_counter_increment(&stats->artnet_timeout);
 

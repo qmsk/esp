@@ -29,9 +29,10 @@ static int system_info_cmd(int argc, char **argv, void *ctx)
   printf("\tVersion: %s\n", info.esp_idf_version);
   printf("\n");
   printf("App:\n");
-  printf("\tName:    %s\n", info.esp_app_desc->project_name);
-  printf("\tVersion: %s\n", info.esp_app_desc->version);
-  printf("\tBuild:   %s %s\n", info.esp_app_desc->date, info.esp_app_desc->time);
+  printf("\tName:        %s\n", info.esp_app_desc->project_name);
+  printf("\tVersion:     %s\n", info.esp_app_desc->version);
+  printf("\tBuild:       %s %s\n", info.esp_app_desc->date, info.esp_app_desc->time);
+  printf("\tBoardconfig: %s\n", system_boardconfig);
 
   return 0;
 }

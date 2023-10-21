@@ -25,6 +25,7 @@ services:
     command: make
     init: true
     environment:
+      BOARDCONFIG: ${BOARDCONFIG:-qmsk-esp}
       SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
       SDKCONFIG_DEFAULTS: sdkconfig.defaults boardconfig/${BOARDCONFIG:-qmsk-esp}
 

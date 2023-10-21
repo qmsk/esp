@@ -17,6 +17,7 @@ struct leds_state {
   const struct leds_config *config;
 
   struct leds *leds;
+  TickType_t update_tick;
 
   xTaskHandle task;
   EventGroupHandle_t event_group;

@@ -20,6 +20,7 @@ struct leds_stats {
   struct stats_timer sequence;
 
   struct stats_timer update;
+  struct stats_counter update_timeout;
 };
 
 extern struct leds_sequence_stats leds_sequence_stats;

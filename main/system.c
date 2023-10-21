@@ -8,6 +8,8 @@
 #include <mdns.h>
 #include <nvs_flash.h>
 
+const char system_boardconfig[] = BOARDCONFIG;
+
 static int init_system_nvs_harder()
 {
   esp_err_t err;

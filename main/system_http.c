@@ -1,3 +1,4 @@
+#include "system.h"
 #include "http_routes.h"
 #include "http_handlers.h"
 
@@ -40,6 +41,7 @@ static int system_api_write_info_object(struct json_writer *w)
     JSON_WRITE_MEMBER_STRING(w, "app_version", info.esp_app_desc->version) ||
     JSON_WRITE_MEMBER_STRING(w, "build_date", info.esp_app_desc->date) ||
     JSON_WRITE_MEMBER_STRING(w, "build_time", info.esp_app_desc->time) ||
+    JSON_WRITE_MEMBER_STRING(w, "boardconfig", system_boardconfig) ||
     JSON_WRITE_MEMBER_UINT(w, "flash_size", image_info.flash_size) ||
     JSON_WRITE_MEMBER_UINT(w, "flash_usage", image_info.flash_usage) ||
     JSON_WRITE_MEMBER_UINT(w, "iram_size", image_info.iram_total_size) ||

@@ -37,6 +37,7 @@ static bool leds_update_active(struct leds_state *state)
 
 static EventBits_t leds_task_wait(struct leds_state *state)
 {
+  // XXX: how to handle tick overflow? with uint32_t TickType @ 100Hz, this will likely bug out after ~497 days of uptime...
   TickType_t tick;
 
   // first tick to wait until

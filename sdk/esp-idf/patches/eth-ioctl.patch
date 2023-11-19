@@ -1,0 +1,118 @@
+diff --git a/components/esp_eth/include/esp_eth_com.h b/components/esp_eth/include/esp_eth_com.h
+index 7ce0538fbe..1252ec5374 100644
+--- a/components/esp_eth/include/esp_eth_com.h
++++ b/components/esp_eth/include/esp_eth_com.h
+@@ -90,6 +90,8 @@ typedef enum {
+     ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
+     ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
+     ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
++    ETH_CMD_G_LINK,        /*!< Get Link state */
++    ETH_CMD_G_ERROR_COUNTER, /*!< Get Link errors counter */
+ } esp_eth_io_cmd_t;
+ 
+ /**
+diff --git a/components/esp_eth/include/esp_eth_phy.h b/components/esp_eth/include/esp_eth_phy.h
+index f85b7d4304..c36ab33ebd 100644
+--- a/components/esp_eth/include/esp_eth_phy.h
++++ b/components/esp_eth/include/esp_eth_phy.h
+@@ -186,6 +186,17 @@ struct esp_eth_phy_s {
+     */
+     esp_err_t (*loopback)(esp_eth_phy_t *phy, bool enable);
+ 
++    /**
++    * @brief Read PHY symbol error counter
++    *
++    * @param[in] phy: Ethernet PHY instance
++    * @param[out] counter: PHY symbol error counter
++    *
++    * @return
++    *      - ESP_OK: Read valid symbol error counter
++    */
++    esp_err_t (*get_error_counter)(esp_eth_phy_t *phy, uint32_t *counter);
++
+     /**
+     * @brief Free memory of Ethernet PHY instance
+     *
+diff --git a/components/esp_eth/src/esp_eth.c b/components/esp_eth/src/esp_eth.c
+index a021247552..0d26ea133b 100644
+--- a/components/esp_eth/src/esp_eth.c
++++ b/components/esp_eth/src/esp_eth.c
+@@ -399,6 +399,15 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
+             ESP_GOTO_ON_ERROR(phy->loopback(phy, (bool)data), err, TAG, "configuration of phy loopback mode failed");
+         }
+         break;
++    case ETH_CMD_G_LINK:
++        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store link value");
++        *(eth_link_t *)data = eth_driver->link;
++        break;
++    case ETH_CMD_G_ERROR_COUNTER:
++        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store link value");
++        ESP_GOTO_ON_FALSE(phy->get_error_counter, ESP_ERR_NOT_SUPPORTED, err, TAG, "no error counter support");
++        ESP_GOTO_ON_ERROR(phy->get_error_counter(phy, (uint32_t *)data), err, TAG, "phy get error counter failed");
++        break;
+     default:
+         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);
+         break;
+diff --git a/components/esp_eth/src/esp_eth_phy_lan87xx.c b/components/esp_eth/src/esp_eth_phy_lan87xx.c
+index 92dbfdad23..8ef1511cfd 100644
+--- a/components/esp_eth/src/esp_eth_phy_lan87xx.c
++++ b/components/esp_eth/src/esp_eth_phy_lan87xx.c
+@@ -89,7 +89,7 @@ typedef union {
+     };
+     uint32_t val;
+ } tdr_pattern_reg_t;
+-#define EHT_PHY_TDRPD_REG_ADDR (0x18)
++#define ETH_PHY_TDRPD_REG_ADDR (0x18)
+ 
+ /**
+  * @brief Time Domain Reflectometry Control/Status Register)
+@@ -106,7 +106,7 @@ typedef union {
+     };
+     uint32_t val;
+ } tdr_control_reg_t;
+-#define EHT_PHY_TDRC_REG_ADDR (0x19)
++#define ETH_PHY_TDRC_REG_ADDR (0x19)
+ 
+ /**
+  * @brief SECR(Symbol Error Counter Register)
+@@ -118,7 +118,7 @@ typedef union {
+     };
+     uint32_t val;
+ } secr_reg_t;
+-#define EHT_PHY_SECR_REG_ADDR (0x1A)
++#define ETH_PHY_SECR_REG_ADDR (0x1A)
+ 
+ /**
+  * @brief CSIR(Control Status Indications Register)
+@@ -478,6 +478,20 @@ err:
+     return ret;
+ }
+ 
++static esp_err_t lan87xx_get_error_counter(esp_eth_phy_t *phy, uint32_t *counter)
++{
++    esp_err_t ret = ESP_OK;
++    phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    esp_eth_mediator_t *eth = lan87xx->eth;
++    /* Get Symbol Error Counter register */
++    secr_reg_t secr;
++    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_SECR_REG_ADDR, &(secr.val)), err, TAG, "read BMCR failed");
++    *counter = secr.symbol_err_count;
++    return ESP_OK;
++err:
++    return ret;
++}
++
+ static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
+ {
+     esp_err_t ret = ESP_OK;
+@@ -541,8 +555,9 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
+     lan87xx->parent.pwrctl = lan87xx_pwrctl;
+     lan87xx->parent.get_addr = lan87xx_get_addr;
+     lan87xx->parent.set_addr = lan87xx_set_addr;
+-    lan87xx->parent.loopback = lan87xx_loopback;
+     lan87xx->parent.advertise_pause_ability = lan87xx_advertise_pause_ability;
++    lan87xx->parent.loopback = lan87xx_loopback;
++    lan87xx->parent.get_error_counter = lan87xx_get_error_counter;
+     lan87xx->parent.del = lan87xx_del;
+ 
+     return &(lan87xx->parent);

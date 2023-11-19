@@ -57,10 +57,24 @@ static void on_sta_stop()
 
 static void on_sta_connected(wifi_event_sta_connected_t *event)
 {
-  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u authmode=%s",
+  int rssi = 0;
+  wifi_phy_mode_t phymode = -1;
+  esp_err_t err;
+
+  if ((err = esp_wifi_sta_get_rssi(&rssi))) {
+
+  }
+
+  if ((err = esp_wifi_sta_get_negotiated_phymode(&phymode))) {
+
+  }
+
+  LOG_INFO("ssid=%.32s bssid=%02x:%02x:%02x:%02x:%02x:%02x channel=%u rssi=%d phymode=%s authmode=%s",
     event->ssid,
     event->bssid[0], event->bssid[1], event->bssid[2], event->bssid[3], event->bssid[4], event->bssid[5],
     event->channel,
+    rssi,
+    wifi_phy_mode_str(phymode),
     wifi_auth_mode_str(event->authmode)
   );
 

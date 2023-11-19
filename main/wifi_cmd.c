@@ -92,6 +92,16 @@ static int print_wifi_info_sta()
     );
   }
 
+#if !CONFIG_IDF_TARGET_ESP8266
+  wifi_phy_mode_t phymode = -1;
+  
+  if ((err = esp_wifi_sta_get_negotiated_phymode(&phymode))) {
+    LOG_WARN("esp_wifi_sta_get_negotiated_phymode: %s", esp_err_to_name(err));
+  } else {
+    printf("\t\t%-20s: %s\n", "PHY Mode", wifi_phy_mode_str(phymode));
+  }
+#endif
+
   return 0;
 }
 

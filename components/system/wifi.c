@@ -102,15 +102,17 @@ const char *wifi_err_reason_str(wifi_err_reason_t reason) {
   }
 }
 
-const char *wifi_phy_mode_str(wifi_phy_mode_t phymode)
-{
-  switch (phymode) {
-    case WIFI_PHY_MODE_LR:    return "LR";
-    case WIFI_PHY_MODE_11B:   return "11B";
-    case WIFI_PHY_MODE_11G:   return "11G";
-    case WIFI_PHY_MODE_HT20:  return "HT20";
-    case WIFI_PHY_MODE_HT40:  return "HT40";
-    case WIFI_PHY_MODE_HE20:  return "HE20";
-    default:                  return "?";
+#if !CONFIG_IDF_TARGET_ESP8266
+  const char *wifi_phy_mode_str(wifi_phy_mode_t phymode)
+  {
+    switch (phymode) {
+      case WIFI_PHY_MODE_LR:    return "LR";
+      case WIFI_PHY_MODE_11B:   return "11B";
+      case WIFI_PHY_MODE_11G:   return "11G";
+      case WIFI_PHY_MODE_HT20:  return "HT20";
+      case WIFI_PHY_MODE_HT40:  return "HT40";
+      case WIFI_PHY_MODE_HE20:  return "HE20";
+      default:                  return "?";
+    }
   }
-}
+#endif

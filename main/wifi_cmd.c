@@ -29,7 +29,6 @@ static int print_wifi_info_sta()
   uint8_t mac[6];
   wifi_config_t config;
   wifi_ap_record_t ap;
-  wifi_phy_mode_t phymode = -1;
   esp_err_t err;
 
   if ((err = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac))) {
@@ -93,11 +92,15 @@ static int print_wifi_info_sta()
     );
   }
 
+#if !CONFIG_IDF_TARGET_ESP8266
+  wifi_phy_mode_t phymode = -1;
+  
   if ((err = esp_wifi_sta_get_negotiated_phymode(&phymode))) {
     LOG_WARN("esp_wifi_sta_get_negotiated_phymode: %s", esp_err_to_name(err));
   } else {
     printf("\t\t%-20s: %s\n", "PHY Mode", wifi_phy_mode_str(phymode));
   }
+#endif
 
   return 0;
 }

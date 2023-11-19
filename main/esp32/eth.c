@@ -48,6 +48,7 @@
 
     phy_config.phy_addr = CONFIG_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_ETH_PHY_RESET_GPIO_NUM;
+    phy_config.autonego_timeout_ms = 0; // skip blocking wait for autonegotation complete in esp_eth_start()
 
     LOG_INFO("lan87xx: phy_addr=%d reset_gpio_num=%d",
       phy_config.phy_addr,
@@ -62,7 +63,7 @@
     return 0;
   #else
     LOG_ERROR("no CONFIG_ETH_PHY_* configured");
-    
+
     return -1;
   #endif
 
@@ -72,6 +73,8 @@
   {
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(eth_mac, eth_phy);
     esp_err_t err;
+
+    eth_config.check_link_period_ms = 500; // faster link up/down detection
 
     if ((err = esp_eth_driver_install(&eth_config, &eth_handle))) {
       LOG_ERROR("esp_eth_driver_install: %s", esp_err_to_name(err));

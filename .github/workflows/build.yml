@@ -10,7 +10,7 @@ on:
 
 env:
   NODE_VERSION: 15.x
-  ESP_IDF_VERSION: v4.4
+  ESP_IDF_VERSION: v4.4.6
   ESP8266_RTOS_SDK_VERSION: v3.4
 
 jobs:

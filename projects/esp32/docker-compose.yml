@@ -9,6 +9,7 @@ services:
     build:
       context: ../../sdk/esp-idf
       args:
+        # also update .github/workflows/build.yml `ESP_IDF_VERSION`
         ESP_IDF_VERSION: v4.4.6
         BUILD_UID: ${BUILD_UID}
         BUILD_GID: ${BUILD_GID}

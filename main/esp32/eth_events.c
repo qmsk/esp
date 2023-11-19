@@ -29,6 +29,7 @@
     uint8_t mac[6];
     eth_speed_t eth_speed;
     eth_duplex_t eth_duplex;
+    uint32_t errors;
     esp_err_t err;
 
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr))) {
@@ -43,12 +44,16 @@
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &eth_duplex))) {
       LOG_ERROR("esp_eth_ioctl ETH_CMD_G_DUPLEX_MODE: %s", esp_err_to_name(err));
     }
+    if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_ERROR_COUNTER, &errors))) {
+      LOG_ERROR("esp_eth_ioctl ETH_CMD_G_ERROR_COUNTER: %s", esp_err_to_name(err));
+    }
 
-    LOG_INFO("link up: phy=%u mac=%02x:%02x:%02x:%02x:%02x:%02x speed=%s duplex=%s",
+    LOG_INFO("link up: phy=%u mac=%02x:%02x:%02x:%02x:%02x:%02x speed=%s duplex=%s errors=%u",
       phy_addr,
       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
       eth_speed_str(eth_speed),
-      eth_duplex_str(eth_duplex)
+      eth_duplex_str(eth_duplex),
+      errors
     );
 
     if (is_eth_netif_dhcpc() > 0) {
@@ -63,6 +68,7 @@
   {
     uint32_t phy_addr;
     uint8_t mac[6];
+    uint32_t errors;
     esp_err_t err;
 
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr))) {
@@ -71,10 +77,14 @@
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac))) {
       LOG_ERROR("esp_eth_ioctl ETH_CMD_G_MAC_ADDR: %s", esp_err_to_name(err));
     }
+    if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_ERROR_COUNTER, &errors))) {
+      LOG_ERROR("esp_eth_ioctl ETH_CMD_G_ERROR_COUNTER: %s", esp_err_to_name(err));
+    }
 
-    LOG_INFO("link down: phy=%u mac=%02x:%02x:%02x:%02x:%02x:%02x",
+    LOG_INFO("link down: phy=%u mac=%02x:%02x:%02x:%02x:%02x:%02x errors=%u",
       phy_addr,
-      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
+      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+      errors
     );
 
     user_state(USER_STATE_DISCONNECTED);

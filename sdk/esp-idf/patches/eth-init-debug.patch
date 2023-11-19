@@ -1,0 +1,217 @@
+diff --git a/components/esp_eth/src/esp_eth_phy_lan87xx.c b/components/esp_eth/src/esp_eth_phy_lan87xx.c
+index 92dbfdad23..323d61e8a6 100644
+--- a/components/esp_eth/src/esp_eth_phy_lan87xx.c
++++ b/components/esp_eth/src/esp_eth_phy_lan87xx.c
+@@ -234,12 +234,14 @@ static esp_err_t lan87xx_update_link_duplex_speed(phy_lan87xx_t *lan87xx)
+     anlpar_reg_t anlpar;
+     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
+     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
++    ESP_LOGD(TAG, "lan87xx_get_link: bmsr=%04x (link_status=%d, auto_nego_complete=%d)", bmsr.val, bmsr.link_status, bmsr.auto_nego_complete);
+     eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+     /* check if link status changed */
+     if (lan87xx->link_status != link) {
+         /* when link up, read negotiation result */
+         if (link == ETH_LINK_UP) {
+             ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_PSCSR_REG_ADDR, &(pscsr.val)), err, TAG, "read PSCSR failed");
++            ESP_LOGD(TAG, "lan87xx_get_link: up pscsr=%04x (speed_indication=%d, auto_nego_done=%d)", pscsr.val, pscsr.speed_indication, pscsr.auto_nego_done);
+             switch (pscsr.speed_indication) {
+             case 1: //10Base-T half-duplex
+                 speed = ETH_SPEED_10M;
+@@ -283,6 +285,7 @@ static esp_err_t lan87xx_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *et
+     esp_err_t ret = ESP_OK;
+     ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mediator to null");
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    ESP_LOGD(TAG, "lan87xx_set_mediator...");
+     lan87xx->eth = eth;
+     return ESP_OK;
+ err:
+@@ -293,6 +296,7 @@ static esp_err_t lan87xx_get_link(esp_eth_phy_t *phy)
+ {
+     esp_err_t ret = ESP_OK;
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    ESP_LOGD(TAG, "lan87xx_get_link...");
+     /* Updata information about link, speed, duplex */
+     ESP_GOTO_ON_ERROR(lan87xx_update_link_duplex_speed(lan87xx), err, TAG, "update link duplex speed failed");
+     return ESP_OK;
+@@ -306,16 +310,18 @@ static esp_err_t lan87xx_reset(esp_eth_phy_t *phy)
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     lan87xx->link_status = ETH_LINK_DOWN;
+     esp_eth_mediator_t *eth = lan87xx->eth;
++    ESP_LOGD(TAG, "lan87xx_reset...");
+     bmcr_reg_t bmcr = {.reset = 1};
+     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+     /* wait for reset complete */
+     uint32_t to = 0;
+     for (to = 0; to < lan87xx->reset_timeout_ms / 10; to++) {
+-        vTaskDelay(pdMS_TO_TICKS(10));
+         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
++        ESP_LOGD(TAG, "lan87xx_reset: poll bmcr=%04x (duplex_mode=%d, en_auto_nego=%d, speed_select=%d, reset=%d)", bmcr.val, bmcr.duplex_mode, bmcr.en_auto_nego, bmcr.speed_select, bmcr.reset);
+         if (!bmcr.reset) {
+             break;
+         }
++        vTaskDelay(pdMS_TO_TICKS(10));
+     }
+     ESP_GOTO_ON_FALSE(to < lan87xx->reset_timeout_ms / 10, ESP_FAIL, err, TAG, "reset timeout");
+     return ESP_OK;
+@@ -326,7 +332,9 @@ err:
+ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
+ {
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    ESP_LOGD(TAG, "lan87xx_reset_hw...");
+     if (lan87xx->reset_gpio_num >= 0) {
++        ESP_LOGD(TAG, "lan87xx_reset_hw gpio=%d", lan87xx->reset_gpio_num);
+         esp_rom_gpio_pad_select_gpio(lan87xx->reset_gpio_num);
+         gpio_set_direction(lan87xx->reset_gpio_num, GPIO_MODE_OUTPUT);
+         gpio_set_level(lan87xx->reset_gpio_num, 0);
+@@ -347,27 +355,38 @@ static esp_err_t lan87xx_negotiate(esp_eth_phy_t *phy)
+     esp_err_t ret = ESP_OK;
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     esp_eth_mediator_t *eth = lan87xx->eth;
+-    /* in case any link status has changed, let's assume we're in link down status */
+-    lan87xx->link_status = ETH_LINK_DOWN;
+-    /* Restart auto negotiation */
+-    bmcr_reg_t bmcr = {
+-        .speed_select = 1,     /* 100Mbps */
+-        .duplex_mode = 1,      /* Full Duplex */
+-        .en_auto_nego = 1,     /* Auto Negotiation */
+-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
+-    };
+-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+-    /* Wait for auto negotiation complete */
++    ESP_LOGD(TAG, "lan87xx_negotiate...");
++
++    bmcr_reg_t bmcr;
+     bmsr_reg_t bmsr;
+     pscsr_reg_t pscsr;
++
++    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
++
++    ESP_LOGD(TAG, "lan87xx_negotiate: init bmcr=%04x (duplex_mode=%d, en_auto_nego=%d, speed_select=%d, reset=%d)", bmcr.val, bmcr.duplex_mode, bmcr.en_auto_nego, bmcr.speed_select, bmcr.reset);
++
++    if (!bmcr.en_auto_nego) {
++      /* in case any link status has changed, let's assume we're in link down status */
++      lan87xx->link_status = ETH_LINK_DOWN;
++
++      /* Restart auto negotiation */
++      bmcr.en_auto_nego = 1; /* Enable Auto Negotiation */
++      bmcr.restart_auto_nego = 1; /* Restart Auto Negotiation */
++      ESP_LOGD(TAG, "lan87xx_negotiate: start bmcr=%04x (duplex_mode=%d, restart_auto_nego=%d, en_auto_nego=%d, speed_select=%d, reset=%d)", bmcr.val, bmcr.duplex_mode, bmcr.restart_auto_nego, bmcr.en_auto_nego, bmcr.speed_select, bmcr.reset);
++      ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
++    }
++
++    /* Wait for auto negotiation complete */
+     uint32_t to = 0;
+     for (to = 0; to < lan87xx->autonego_timeout_ms / 100; to++) {
+-        vTaskDelay(pdMS_TO_TICKS(100));
+         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_PSCSR_REG_ADDR, &(pscsr.val)), err, TAG, "read PSCSR failed");
++        ESP_LOGD(TAG, "lan87xx_negotiate: poll bmsr=%04x (link_status=%d, auto_nego_complete=%d) pscsr=%04x (auto_nego_done=%d)", bmsr.val, bmsr.link_status, bmsr.auto_nego_complete, pscsr.val, pscsr.auto_nego_done);
+         if (bmsr.auto_nego_complete && pscsr.auto_nego_done) {
+             break;
+         }
++
++        vTaskDelay(pdMS_TO_TICKS(100));
+     }
+     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
+     if (to >= lan87xx->autonego_timeout_ms / 100 && (lan87xx->link_status == ETH_LINK_UP)) {
+@@ -384,8 +403,13 @@ static esp_err_t lan87xx_pwrctl(esp_eth_phy_t *phy, bool enable)
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     esp_eth_mediator_t *eth = lan87xx->eth;
+     bmcr_reg_t bmcr;
++    ESP_LOGD(TAG, "lan87xx_pwrctl enable=%d...", enable);
+     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+-    if (!enable) {
++    ESP_LOGD(TAG, "lan87xx_pwrctl: read bmcr=%04x (power_down=%d)", bmcr.val, bmcr.power_down);
++    if (bmcr.power_down == !enable) {
++        /* No change */
++        return ESP_OK;
++    } else if (!enable) {
+         /* General Power Down Mode */
+         bmcr.power_down = 1;
+     } else {
+@@ -393,6 +417,7 @@ static esp_err_t lan87xx_pwrctl(esp_eth_phy_t *phy, bool enable)
+         bmcr.power_down = 0;
+     }
+     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
++    ESP_LOGD(TAG, "lan87xx_pwrctl: write bmcr=%04x (power_down=%d)", bmcr.val, bmcr.power_down);
+     if (!enable) {
+         ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+         ESP_GOTO_ON_FALSE(bmcr.power_down == 1, ESP_FAIL, err, TAG, "power down failed");
+@@ -400,11 +425,12 @@ static esp_err_t lan87xx_pwrctl(esp_eth_phy_t *phy, bool enable)
+         /* wait for power up complete */
+         uint32_t to = 0;
+         for (to = 0; to < lan87xx->reset_timeout_ms / 10; to++) {
+-            vTaskDelay(pdMS_TO_TICKS(10));
+             ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
++            ESP_LOGD(TAG, "lan87xx_pwrctl: poll bmcr=%04x (power_down=%d)", bmcr.val, bmcr.power_down);
+             if (bmcr.power_down == 0) {
+                 break;
+             }
++            vTaskDelay(pdMS_TO_TICKS(10));
+         }
+         ESP_GOTO_ON_FALSE(to < lan87xx->reset_timeout_ms / 10, ESP_FAIL, err, TAG, "power up timeout");
+     }
+@@ -416,6 +442,7 @@ err:
+ static esp_err_t lan87xx_set_addr(esp_eth_phy_t *phy, uint32_t addr)
+ {
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    ESP_LOGD(TAG, "lan87xx_set_addr...");
+     lan87xx->addr = addr;
+     return ESP_OK;
+ }
+@@ -423,6 +450,7 @@ static esp_err_t lan87xx_set_addr(esp_eth_phy_t *phy, uint32_t addr)
+ static esp_err_t lan87xx_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
+ {
+     esp_err_t ret = ESP_OK;
++    ESP_LOGD(TAG, "lan87xx_get_addr...");
+     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "addr can't be null");
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     *addr = lan87xx->addr;
+@@ -434,6 +462,7 @@ err:
+ static esp_err_t lan87xx_del(esp_eth_phy_t *phy)
+ {
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
++    ESP_LOGD(TAG, "lan87xx_del...");
+     free(lan87xx);
+     return ESP_OK;
+ }
+@@ -443,6 +472,7 @@ static esp_err_t lan87xx_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t ab
+     esp_err_t ret = ESP_OK;
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     esp_eth_mediator_t *eth = lan87xx->eth;
++    ESP_LOGD(TAG, "lan87xx_advertise_pause_ability...");
+     /* Set PAUSE function ability */
+     anar_reg_t anar;
+     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)), err, TAG, "read ANAR failed");
+@@ -464,6 +494,7 @@ static esp_err_t lan87xx_loopback(esp_eth_phy_t *phy, bool enable)
+     esp_err_t ret = ESP_OK;
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     esp_eth_mediator_t *eth = lan87xx->eth;
++    ESP_LOGD(TAG, "lan87xx_loopback...");
+     /* Set Loopback function */
+     bmcr_reg_t bmcr;
+     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+@@ -483,6 +514,7 @@ static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
+     esp_err_t ret = ESP_OK;
+     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+     esp_eth_mediator_t *eth = lan87xx->eth;
++    ESP_LOGD(TAG, "lan87xx_init...");
+     // Detect PHY address
+     if (lan87xx->addr == ESP_ETH_PHY_ADDR_AUTO) {
+         ESP_GOTO_ON_ERROR(esp_eth_detect_phy_addr(eth, &lan87xx->addr), err, TAG, "Detect PHY address failed");
+@@ -513,6 +545,7 @@ err:
+ static esp_err_t lan87xx_deinit(esp_eth_phy_t *phy)
+ {
+     esp_err_t ret = ESP_OK;
++    ESP_LOGD(TAG, "lan87xx_deinit...");
+     /* Power off Ethernet PHY */
+     ESP_GOTO_ON_ERROR(lan87xx_pwrctl(phy, false), err, TAG, "power control failed");
+     return ESP_OK;
+@@ -523,6 +556,7 @@ err:
+ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
+ {
+     esp_eth_phy_t *ret = NULL;
++    ESP_LOGD(TAG, "esp_eth_phy_new_lan87xx...");
+     ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
+     phy_lan87xx_t *lan87xx = calloc(1, sizeof(phy_lan87xx_t));
+     ESP_GOTO_ON_FALSE(lan87xx, NULL, err, TAG, "calloc lan87xx failed");

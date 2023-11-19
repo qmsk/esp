@@ -16,6 +16,7 @@
     eth_link_t link;
     eth_speed_t speed;
     eth_duplex_t duplex;
+    uint32_t errors;
     esp_err_t err;
 
     if (!eth_handle) {
@@ -35,6 +36,9 @@
     if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex))) {
       LOG_ERROR("esp_eth_ioctl ETH_CMD_G_DUPLEX_MODE: %s", esp_err_to_name(err));
     }
+    if ((err = esp_eth_ioctl(eth_handle, ETH_CMD_G_ERROR_COUNTER, &errors))) {
+      LOG_ERROR("esp_eth_ioctl ETH_CMD_G_ERROR_COUNTER: %s", esp_err_to_name(err));
+    }
 
     printf("ETH %02x:%02x:%02x:%02x:%02x:%02x:\n",
       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]
@@ -43,6 +47,7 @@
     printf("\t%-20s: %.32s\n", "Link", eth_link_str(link));
     printf("\t%-20s: %.32s\n", "Speed", eth_speed_str(speed));
     printf("\t%-20s: %.32s\n", "Duplex", eth_duplex_str(duplex));
+    printf("\t%-20s: %9u\n", "Errors", errors);
 
     return 0;
   }

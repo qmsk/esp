@@ -10,6 +10,8 @@
 #include <logging.h>
 #include <leds.h>
 
+#define SYNC_BITS_MASK(count) ((1 << (count)) - 1)
+
 static unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
 {
   unsigned universe_leds_count = config->artnet_dmx_leds;
@@ -62,6 +64,55 @@ unsigned count_leds_artnet_outputs()
   return count;
 }
 
+static void leds_artnet_sync_set(struct leds_state *state, unsigned index)
+{
+  const struct leds_config *config = state->config;
+
+  // mark for update
+  state->artnet->sync_bits |= (1 << index);
+
+  if (config->artnet_sync_timeout) {
+    // set on first update
+    if (!state->artnet->sync_tick) {
+      state->artnet->sync_tick = xTaskGetTickCount() + config->artnet_sync_timeout / portTICK_PERIOD_MS;
+    }
+  } else {
+    state->artnet->sync_tick = 0;
+  }
+}
+
+static bool leds_artnet_sync_check(struct leds_state *state)
+{
+  const struct leds_config *config = state->config;
+  struct leds_stats *stats = &leds_stats[state->index];
+
+  if (state->artnet->sync_bits == SYNC_BITS_MASK(state->artnet->universe_count)) {
+    // all outputs set
+    return true;
+  }
+
+  if (state->artnet->sync_tick && xTaskGetTickCount() >= state->artnet->sync_tick) {
+    // timed out waiting for remaining outputs
+    stats_counter_increment(&stats->sync_timeout);
+
+    return true;
+  }
+
+  if (config->artnet_sync_timeout) {
+    // wait for remaining outputs update before sync
+    return false;
+  }
+
+  // free-running
+  return true;
+}
+
+static void leds_artnet_sync_reset(struct leds_state *state)
+{
+  state->artnet->sync_bits = 0;
+  state->artnet->sync_tick = 0;
+}
+
 void leds_artnet_timeout_reset(struct leds_state *state)
 {
   const struct leds_config *config = state->config;
@@ -75,6 +126,10 @@ void leds_artnet_timeout_reset(struct leds_state *state)
 
 TickType_t leds_artnet_wait(struct leds_state *state)
 {
+  if (state->artnet->sync_tick) {
+    return state->artnet->sync_tick;
+  }
+
   if (state->artnet->timeout_tick && !leds_test_active(state, 0)) {
     // use loss-of-signal timeout
     return state->artnet->timeout_tick;
@@ -152,6 +207,12 @@ bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
     return true;
   }
 
+  if (state->artnet->sync_tick) {
+    if (xTaskGetTickCount() >= state->artnet->sync_tick) {
+      return true;
+    }
+  }
+
   if (state->artnet->timeout_tick && !leds_test_active(state, 0)) {
     if (xTaskGetTickCount() >= state->artnet->timeout_tick) {
       return true;
@@ -167,7 +228,6 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   bool data = event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS;
   bool sync = event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT);
-  bool unsync = false;
   bool timeout = false;
 
   if (state->test) {
@@ -195,11 +255,12 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         continue;
       }
 
-      if (!state->artnet->dmx.sync_mode) {
-        // at least one DMX update is in non-synchronous mode, so force update
-        unsync = true;
-      }
+      leds_artnet_sync_set(state, index);
     }
+  }
+
+  if (leds_artnet_sync_check(state)) {
+    sync = true;
   }
 
   // timeouts
@@ -218,7 +279,11 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     }
   }
 
-  return unsync || sync || timeout;
+  if (sync) {
+    leds_artnet_sync_reset(state);
+  }
+
+  return sync || timeout;
 }
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)

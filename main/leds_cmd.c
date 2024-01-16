@@ -360,6 +360,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "update",   &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
+    print_stats_counter("sync",   "timeout", &stats->sync_timeout);
     print_stats_counter("update", "timeout", &stats->update_timeout);
     printf("\n");
   }

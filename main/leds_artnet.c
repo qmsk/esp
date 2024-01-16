@@ -109,13 +109,13 @@ static bool leds_artnet_sync_check(struct leds_state *state)
     return true;
   }
 
-  if (config->artnet_sync_timeout) {
-    // wait for remaining outputs update before sync
-    return false;
+  if (!config->artnet_sync_timeout && state->artnet->sync_bits) {
+    // free-running
+    return true;
   }
 
-  // free-running
-  return true;
+  // wait for remaining outputs update before sync
+  return false;
 }
 
 static void leds_artnet_sync_reset(struct leds_state *state)

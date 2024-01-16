@@ -64,12 +64,20 @@ unsigned count_leds_artnet_outputs()
   return count;
 }
 
-static void leds_artnet_sync_set(struct leds_state *state, unsigned index)
+static bool leds_artnet_sync_set(struct leds_state *state, unsigned index)
 {
   const struct leds_config *config = state->config;
+  struct leds_stats *stats = &leds_stats[state->index];
 
-  // mark for update
-  state->artnet->sync_bits |= (1 << index);
+  if (!(state->artnet->sync_bits & (1 << index))) {
+    // mark for sync as normal
+    state->artnet->sync_bits |= (1 << index);
+  } else if (state->artnet->sync_tick) {
+    // received multiple updates for output, skip update and force sync
+    stats_counter_increment(&stats->sync_forced);
+
+    return false;
+  }
 
   if (config->artnet_sync_timeout) {
     // set on first update
@@ -79,6 +87,8 @@ static void leds_artnet_sync_set(struct leds_state *state, unsigned index)
   } else {
     state->artnet->sync_tick = 0;
   }
+
+  return true;
 }
 
 static bool leds_artnet_sync_check(struct leds_state *state)
@@ -244,6 +254,12 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         continue;
       }
 
+      if (!leds_artnet_sync_set(state, index)) {
+        // skip, force sync
+        sync = true;
+        break;
+      }
+
       if (artnet_output_read(state->artnet->outputs[index], &state->artnet->dmx, 0)) {
         // this can race under normal conditions, we have already handled the output
         LOG_DEBUG("leds%d: artnet_output[%d] empty", state->index + 1, index);
@@ -254,8 +270,6 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         LOG_WARN("leds%d: leds_artnet_set", state->index + 1);
         continue;
       }
-
-      leds_artnet_sync_set(state, index);
     }
   }
 

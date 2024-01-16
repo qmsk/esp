@@ -273,7 +273,8 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     }
   }
 
-  if (leds_artnet_sync_check(state)) {
+  if (!sync && leds_artnet_sync_check(state)) {
+    // apply soft sync
     sync = true;
   }
 

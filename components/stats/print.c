@@ -9,7 +9,7 @@ void print_stats_timer(const char *title, const char *desc, const struct stats_t
     timer->count,
     stats_timer_seconds_passed(timer),
     stats_timer_average_rate(timer),
-    stats_timer_average_seconds(timer),
+    stats_timer_average_seconds(timer) * 1000.0f,
     stats_timer_utilization(timer) * 100.0f
   );
 }

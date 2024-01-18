@@ -424,3 +424,26 @@ menu "qmsk-esp-sdcard"
     bool "SD Card support"
 
 endmenu
+
+menu "qmsk-esp-usb-pd-sink"
+  config USB_PD_SINK_ENABLED
+    bool "USB-PD Sink support"
+
+  choice USB_PD_SINK_TYPE
+    prompt "USB-PD Sink type"
+
+    config USB_PD_SINK_TYPE_NONE
+      bool "Disabled"
+
+    config USB_PD_SINK_TYPE_STUSB4500
+      bool "STUSB4500"
+      select USB_PD_SINK_ENABLED
+  endchoice
+
+  config USB_PD_SINK_TYPE_STUSB4500_I2C_ADDR
+    depends on USB_PD_SINK_TYPE_STUSB4500
+    int "Configurable STUSB4500 I2C address bits (0-3)"
+    range 0 3
+    default 0
+
+endmenu

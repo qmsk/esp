@@ -39,6 +39,15 @@ enum stusb4500_i2c_register {
 
   STUSB4500_DEVICE_ID                 = 0x2F,
 
+  STUSB4500_RW_BUFFER_0               = 0x53, // NVM
+  STUSB4500_RW_BUFFER_1,
+  STUSB4500_RW_BUFFER_2,
+  STUSB4500_RW_BUFFER_3,
+  STUSB4500_RW_BUFFER_4,
+  STUSB4500_RW_BUFFER_5,
+  STUSB4500_RW_BUFFER_6,
+  STUSB4500_RW_BUFFER_7,
+
   STUSB4500_DPM_PDO_NUMB              = 0x70,
   STUSB4500_DPM_SNK_PDO1_0            = 0x85,
   STUSB4500_DPM_SNK_PDO1_1            = 0x86,
@@ -56,6 +65,9 @@ enum stusb4500_i2c_register {
   STUSB4500_RDO_REG_STATUS_1          = 0x92,
   STUSB4500_RDO_REG_STATUS_2          = 0x93,
   STUSB4500_RDO_REG_STATUS_3          = 0x94,
+  STUSB4500_FTP_CUST_PASSWORD         = 0x95, // NVM
+  STUSB4500_FTP_CTRL_0                = 0x96, // NVM
+  STUSB4500_FTP_CTRL_1                = 0x97, // NVM
 };
 
 enum stusb4500_port_status_attached_device {
@@ -263,6 +275,10 @@ struct stusb4500_device_id {
   uint8_t device_id : 8;
 };
 
+struct stusb4500_rw_buffer {
+  uint8_t data[8];
+};
+
 struct stusb4500_dpm_pdo_numb {
   uint8_t dpm_snk_pdo_numb : 3;
   uint8_t reserved3 : 5;
@@ -301,4 +317,43 @@ union stusb4500_rdo_reg_status {
     uint32_t object_position : 3;
     uint32_t reserved31 : 1;
   } fixed_supply;
+};
+
+static const uint8_t stusb4500_ftp_cust_password_password = 0x47;
+
+struct stusb4500_ftp_cust_password {
+  uint8_t password : 8;
+};
+
+enum stusb4500_ftp_ctrl_opcode {
+  STUSB4500_FTP_CTRL_OPCODE_READ              = 0x00,
+  STUSB4500_FTP_CTRL_OPCODE_WRITE_PL          = 0x01,
+  STUSB4500_FTP_CTRL_OPCODE_WRITE_SER         = 0x02,
+  STUSB4500_FTP_CTRL_OPCODE_READ_PL           = 0x03,
+  STUSB4500_FTP_CTRL_OPCODE_READ_SER          = 0x04,
+  STUSB4500_FTP_CTRL_OPCODE_ERASE_SECTOR      = 0x05,
+  STUSB4500_FTP_CTRL_OPCODE_PROG_SECTOR       = 0x06,
+  STUSB4500_FTP_CTRL_OPCODE_SOFT_PROG_SECTOR  = 0x07,
+};
+
+enum stusb4500_ftp_ctrl_ser {
+  STUSB4500_FTP_SER_SECTOR_0 = 0x01,
+  STUSB4500_FTP_SER_SECTOR_1 = 0x02,
+  STUSB4500_FTP_SER_SECTOR_2 = 0x04,
+  STUSB4500_FTP_SER_SECTOR_3 = 0x08,
+  STUSB4500_FTP_SER_SECTOR_4 = 0x10,
+};
+
+struct stusb4500_ftp_ctrl_0 {
+  uint8_t sector : 3;
+  uint8_t _3 : 1;
+  uint8_t req : 1;
+  uint8_t _5 : 1;
+  uint8_t rst_n : 1;
+  uint8_t pwr : 1;
+};
+
+struct stusb4500_ftp_ctrl_1 {
+  uint8_t opcode : 3;
+  uint8_t ser : 5;
 };

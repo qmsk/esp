@@ -197,9 +197,40 @@ int stusb4500_get_rdo(struct stusb4500 *stusb4500)
   return 0;
 }
 
+int stusb4500_get_nvm(struct stusb4500 *stusb4500)
+{
+  struct stusb4500_nvm nvm = {};
+  int err;
+
+  if ((err = stusb4500_nvm_read(stusb4500, &nvm))) {
+    LOG_ERROR("stusb4500_nvm_read");
+    return err;
+  }
+
+  for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
+    LOG_DEBUG("nvm sector[%d]: %02x %02x %02x %02x %02x %02x %02x %02x", i,
+      nvm.sectors[i][0],
+      nvm.sectors[i][1],
+      nvm.sectors[i][2],
+      nvm.sectors[i][3],
+      nvm.sectors[i][4],
+      nvm.sectors[i][5],
+      nvm.sectors[i][6],
+      nvm.sectors[i][7]
+    );
+  }
+
+  return 0;
+}
+
 int stusb4500_start(struct stusb4500 *stusb4500)
 {
   int err;
+
+  if ((err = stusb4500_get_nvm(stusb4500))) {
+    LOG_ERROR("stusb4500_get_nvm");
+    return err;
+  }
 
   if ((err = stusb4500_get_status(stusb4500))) {
     LOG_ERROR("stusb4500_get_status");

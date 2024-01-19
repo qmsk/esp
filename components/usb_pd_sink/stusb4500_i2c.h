@@ -106,7 +106,7 @@ struct stusb4500_i2c_rev {
 };
 
 struct stusb4500_device_capab_high {
-  uint8_t not_used;
+  uint8_t device_capab_high : 8; // not used
 };
 
 struct stusb4500_i2c_alert_status {
@@ -122,7 +122,14 @@ struct stusb4500_i2c_alert_status {
   } alert_status_1 ;
 
   struct stusb4500_alert_status_1_mask {
-    uint8_t bits;
+    uint8_t reserved0 : 1;
+    uint8_t prt_status_al_mask : 1;
+    uint8_t reserved2 : 1;
+    uint8_t reserved3 : 1; // XXX: pd_typec_status_al_mask?
+    uint8_t cc_fault_status_al_mask : 1;
+    uint8_t typec_monitoring_status_mask : 1;
+    uint8_t port_status_al_mask : 1;
+    uint8_t reserved7 : 1;
   } alert_status_1_mask;
 };
 

@@ -199,7 +199,7 @@ int stusb4500_get_rdo(struct stusb4500 *stusb4500)
 
 int stusb4500_get_nvm(struct stusb4500 *stusb4500)
 {
-  struct stusb4500_nvm nvm = {};
+  union stusb4500_nvm nvm = {};
   int err;
 
   if ((err = stusb4500_nvm_read(stusb4500, &nvm))) {
@@ -219,6 +219,47 @@ int stusb4500_get_nvm(struct stusb4500 *stusb4500)
       nvm.sectors[i][7]
     );
   }
+
+  LOG_DEBUG("nvm bank0 vendor_id=%04x product_id=%04x bcd_device_id=%04x port_role_ctrl=%u device_power_role_ctrl=%u",
+    nvm.banks.bank0.vendor_id,
+    nvm.banks.bank0.product_id,
+    nvm.banks.bank0.bcd_device_id,
+    nvm.banks.bank0.port_role_ctrl,
+    nvm.banks.bank0.device_power_role_ctrl
+  );
+
+  LOG_DEBUG("nvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
+    nvm.banks.bank1.gpio_cfg,
+    nvm.banks.bank1.vbus_dchg_mask,
+    nvm.banks.bank1.vbus_disch_time_to_pdo,
+    nvm.banks.bank1.discharge_time_to_0v
+  );
+
+  LOG_DEBUG("nvm bank3 usb_comm_capable=%u dpm_snk_pdo_numb=%u snk_uncons_power=%u",
+    nvm.banks.bank3.usb_comm_capable,
+    nvm.banks.bank3.dpm_snk_pdo_numb,
+    nvm.banks.bank3.snk_uncons_power
+  );
+
+  LOG_DEBUG("nvm bank3 pdo1(i=%u ll=%u hl=%u) pdo2(i=%u ll=%u hl=%u) pdo3(i=%u ll=%u hl=%u)",
+    nvm.banks.bank3.lut_snk_pdo1_i,
+    nvm.banks.bank3.snk_ll1,
+    nvm.banks.bank3.snk_hl1,
+    nvm.banks.bank3.lut_snk_pdo2_i,
+    nvm.banks.bank3.snk_ll2,
+    nvm.banks.bank3.snk_hl2,
+    nvm.banks.bank3.lut_snk_pdo3_i,
+    nvm.banks.bank3.snk_ll3,
+    nvm.banks.bank3.snk_hl3
+  );
+
+  LOG_DEBUG("nvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u req_src_current=%u",
+    nvm.banks.bank4.snk_pdo_flex1_v,
+    nvm.banks.bank4.snk_pdo_flex2_v,
+    nvm.banks.bank4.snk_pdo_flex_i,
+    nvm.banks.bank4.power_ok_cfg,
+    nvm.banks.bank4.req_src_current
+  );
 
   return 0;
 }

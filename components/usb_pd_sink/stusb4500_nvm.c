@@ -117,7 +117,7 @@ static int stusb4500_nvm_read_sector(struct stusb4500 *stusb4500, uint8_t sector
   return 0;
 }
 
-int stusb4500_nvm_read(struct stusb4500 *stusb4500, struct stusb4500_nvm *nvm)
+int stusb4500_nvm_read(struct stusb4500 *stusb4500, union stusb4500_nvm *nvm)
 {
   int err;
 

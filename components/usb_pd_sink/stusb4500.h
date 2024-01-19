@@ -17,4 +17,4 @@ int stusb4500_start(struct stusb4500 *stusb4500);
 int stusb4500_i2c_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *out, size_t size);
 int stusb4500_i2c_write(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *buf, size_t size);
 
-int stusb4500_nvm_read(struct stusb4500 *stusb4500, struct stusb4500_nvm *nvm);
+int stusb4500_nvm_read(struct stusb4500 *stusb4500, union stusb4500_nvm *nvm);

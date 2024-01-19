@@ -8,29 +8,29 @@
 
 #include <logging.h>
 
-int stusb4500_init(struct stusb4500 *stusb, const struct usb_pd_sink_options *options)
+int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options *options)
 {
-  stusb->i2c_port = options->i2c_port;
-  stusb->i2c_addr = USB_PD_SINK_STUSB4500_I2C_ADDR(options->i2c_addr);
-  stusb->i2c_timeout = USB_PD_SINK_STUSB4500_I2C_TIMEOUT;
+  stusb4500->i2c_port = options->i2c_port;
+  stusb4500->i2c_addr = USB_PD_SINK_STUSB4500_I2C_ADDR(options->i2c_addr);
+  stusb4500->i2c_timeout = USB_PD_SINK_STUSB4500_I2C_TIMEOUT;
 
   return 0;
 }
 
-static int stusb4500_read(struct stusb4500 *stusb, enum stusb4500_i2c_register reg, void *out, size_t size)
+static int stusb4500_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *out, size_t size)
 {
   uint8_t cmd[] = { reg };
   esp_err_t err;
 
-  if ((err = i2c_master_write_read_device(stusb->i2c_port, stusb->i2c_addr, cmd, sizeof(cmd), out, size, stusb->i2c_timeout))) {
-    LOG_ERROR("i2c_master_write_to_device port=%d addr=%u: %s", stusb->i2c_port, stusb->i2c_addr, esp_err_to_name(err));
+  if ((err = i2c_master_write_read_device(stusb4500->i2c_port, stusb4500->i2c_addr, cmd, sizeof(cmd), out, size, stusb4500->i2c_timeout))) {
+    LOG_ERROR("i2c_master_write_to_device port=%d addr=%u: %s", stusb4500->i2c_port, stusb4500->i2c_addr, esp_err_to_name(err));
     return -1;
   }
 
   return 0;
 }
 
-int stusb4500_start(struct stusb4500 *stusb)
+int stusb4500_start(struct stusb4500 *stusb4500)
 {
   struct stusb4500_i2c_rev rev;
   struct stusb4500_i2c_status status;
@@ -38,19 +38,19 @@ int stusb4500_start(struct stusb4500 *stusb)
   struct stusb4500_device_id device_id;
   int err;
 
-  if ((err = stusb4500_read(stusb, STUSB4500_BCD_TYPEC_REV_LOW, &rev, sizeof(rev)))) {
+  if ((err = stusb4500_read(stusb4500, STUSB4500_BCD_TYPEC_REV_LOW, &rev, sizeof(rev)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb, STUSB4500_PORT_STATUS_0, &status, sizeof(status)))) {
+  if ((err = stusb4500_read(stusb4500, STUSB4500_PORT_STATUS_0, &status, sizeof(status)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb, STUSB4500_PE_FSM, &pe_fsm, sizeof(pe_fsm)))) {
+  if ((err = stusb4500_read(stusb4500, STUSB4500_PE_FSM, &pe_fsm, sizeof(pe_fsm)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb, STUSB4500_DEVICE_ID, &device_id, sizeof(device_id)))) {
+  if ((err = stusb4500_read(stusb4500, STUSB4500_DEVICE_ID, &device_id, sizeof(device_id)))) {
     return err;
   }
 

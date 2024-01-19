@@ -8,5 +8,5 @@ struct stusb4500 {
   TickType_t i2c_timeout;
 };
 
-int stusb4500_init(struct stusb4500 *stusb, const struct usb_pd_sink_options *options);
-int stusb4500_start(struct stusb4500 *stusb);
+int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options *options);
+int stusb4500_start(struct stusb4500 *stusb4500);

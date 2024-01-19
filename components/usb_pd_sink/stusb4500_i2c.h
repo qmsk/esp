@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #define STUSB4500_DPM_SNK_PDO(i) (STUSB4500_DPM_SNK_PDO1_0 + 4 * (i))
 #define STUSB4500_DPM_SNK_PDO_COUNT 3
 

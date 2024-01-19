@@ -1,7 +1,6 @@
 #include "stusb4500.h"
 #include "stusb4500_i2c.h"
 
-#include <driver/i2c.h>
 #include <esp_err.h>
 
 #define DEBUG
@@ -17,19 +16,6 @@ int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options
   return 0;
 }
 
-static int stusb4500_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *out, size_t size)
-{
-  uint8_t cmd[] = { reg };
-  esp_err_t err;
-
-  if ((err = i2c_master_write_read_device(stusb4500->i2c_port, stusb4500->i2c_addr, cmd, sizeof(cmd), out, size, stusb4500->i2c_timeout))) {
-    LOG_ERROR("i2c_master_write_to_device port=%d addr=%u: %s", stusb4500->i2c_port, stusb4500->i2c_addr, esp_err_to_name(err));
-    return -1;
-  }
-
-  return 0;
-}
-
 int stusb4500_get_status(struct stusb4500 *stusb4500)
 {
   struct stusb4500_i2c_rev rev;
@@ -38,19 +24,19 @@ int stusb4500_get_status(struct stusb4500 *stusb4500)
   struct stusb4500_device_id device_id;
   int err;
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_BCD_TYPEC_REV_LOW, &rev, sizeof(rev)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_BCD_TYPEC_REV_LOW, &rev, sizeof(rev)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_PORT_STATUS_0, &status, sizeof(status)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_PORT_STATUS_0, &status, sizeof(status)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_PE_FSM, &pe_fsm, sizeof(pe_fsm)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_PE_FSM, &pe_fsm, sizeof(pe_fsm)))) {
     return err;
   }
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_DEVICE_ID, &device_id, sizeof(device_id)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_DEVICE_ID, &device_id, sizeof(device_id)))) {
     return err;
   }
 
@@ -124,19 +110,19 @@ int stusb4500_get_ctrl(struct stusb4500 *stusb4500)
    struct stusb4500_vbus_discharge_time_ctrl vbus_discharge_time_ctrl;
    int err;
 
-   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_0, &monitoring_ctrl_0, sizeof(monitoring_ctrl_0)))) {
+   if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_MONITORING_CTRL_0, &monitoring_ctrl_0, sizeof(monitoring_ctrl_0)))) {
      return err;
    }
 
-   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_1, &monitoring_ctrl_1, sizeof(monitoring_ctrl_1)))) {
+   if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_MONITORING_CTRL_1, &monitoring_ctrl_1, sizeof(monitoring_ctrl_1)))) {
      return err;
    }
 
-   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_2, &monitoring_ctrl_2, sizeof(monitoring_ctrl_2)))) {
+   if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_MONITORING_CTRL_2, &monitoring_ctrl_2, sizeof(monitoring_ctrl_2)))) {
      return err;
    }
 
-   if ((err = stusb4500_read(stusb4500, STUSB4500_VBUS_DISCHARGE_TIME_CTRL, &vbus_discharge_time_ctrl, sizeof(vbus_discharge_time_ctrl)))) {
+   if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_VBUS_DISCHARGE_TIME_CTRL, &vbus_discharge_time_ctrl, sizeof(vbus_discharge_time_ctrl)))) {
      return err;
    }
 
@@ -155,13 +141,13 @@ int stusb4500_get_pdo(struct stusb4500 *stusb4500)
   union stusb4500_pdo pdo;
   int err;
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_DPM_PDO_NUMB, &pdo_numb, sizeof(pdo_numb)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_DPM_PDO_NUMB, &pdo_numb, sizeof(pdo_numb)))) {
     return err;
   }
 
   for (int i = 0; i < pdo_numb.dpm_snk_pdo_numb && i < STUSB4500_DPM_SNK_PDO_COUNT; i++) {
-    if ((err = stusb4500_read(stusb4500, STUSB4500_DPM_SNK_PDO(i), &pdo, sizeof(pdo)))) {
-      LOG_ERROR("stusb4500_read STUSB4500_DPM_SNK_PDO(%d)", i);
+    if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_DPM_SNK_PDO(i), &pdo, sizeof(pdo)))) {
+      LOG_ERROR("stusb4500_i2c_read STUSB4500_DPM_SNK_PDO(%d)", i);
       return err;
     }
 
@@ -193,7 +179,7 @@ int stusb4500_get_rdo(struct stusb4500 *stusb4500)
   union stusb4500_rdo_reg_status rdo;
   int err;
 
-  if ((err = stusb4500_read(stusb4500, STUSB4500_RDO_REG_STATUS_0, &rdo, sizeof(rdo)))) {
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_RDO_REG_STATUS_0, &rdo, sizeof(rdo)))) {
     return err;
   }
 

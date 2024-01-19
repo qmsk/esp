@@ -1,5 +1,7 @@
 #pragma once
 
+#include "stusb4500_i2c.h"
+
 #include <usb_pd_sink.h>
 
 struct stusb4500 {
@@ -10,3 +12,6 @@ struct stusb4500 {
 
 int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options *options);
 int stusb4500_start(struct stusb4500 *stusb4500);
+
+int stusb4500_i2c_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *out, size_t size);
+int stusb4500_i2c_write(struct stusb4500 *stusb4500, enum stusb4500_i2c_register reg, void *buf, size_t size);

@@ -18,6 +18,10 @@ enum stusb4500_i2c_register {
   STUSB4500_PD_TYPEC_STATUS           = 0x14,
   STUSB4500_TYPEC_STATUS              = 0x15,
   STUSB4500_PRT_STATUS                = 0x16,
+
+  STUSB4500_PE_FSM                    = 0x29,
+
+  STUSB4500_DEVICE_ID                 = 0x2F,
 };
 
 enum stusb4500_port_status_attached_device {
@@ -159,4 +163,12 @@ struct stusb4500_i2c_status {
     uint8_t prt_bist_received : 1;
     uint8_t reserved5 : 3;
   } prt_status;
+};
+
+struct stusb4500_pe_fsm {
+  uint8_t pe_fsm_state : 8;
+};
+
+struct stusb4500_device_id {
+  uint8_t device_id : 8;
 };

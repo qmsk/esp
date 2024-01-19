@@ -34,6 +34,8 @@ int stusb4500_start(struct stusb4500 *stusb)
 {
   struct stusb4500_i2c_rev rev;
   struct stusb4500_i2c_status status;
+  struct stusb4500_pe_fsm pe_fsm;
+  struct stusb4500_device_id device_id;
   int err;
 
   if ((err = stusb4500_read(stusb, STUSB4500_BCD_TYPEC_REV_LOW, &rev, sizeof(rev)))) {
@@ -41,6 +43,14 @@ int stusb4500_start(struct stusb4500 *stusb)
   }
 
   if ((err = stusb4500_read(stusb, STUSB4500_PORT_STATUS_0, &status, sizeof(status)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_read(stusb, STUSB4500_PE_FSM, &pe_fsm, sizeof(pe_fsm)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_read(stusb, STUSB4500_DEVICE_ID, &device_id, sizeof(device_id)))) {
     return err;
   }
 
@@ -93,6 +103,14 @@ int stusb4500_start(struct stusb4500 *stusb)
     status.prt_status.prl_hw_rst_received,
     status.prt_status.prl_msg_received,
     status.prt_status.prt_bist_received
+  );
+
+  LOG_DEBUG("pe_fsm: pe_fsm_state=%u",
+    pe_fsm.pe_fsm_state
+  );
+
+  LOG_DEBUG("device_id: device_id=%u",
+    device_id.device_id
   );
 
   return 0;

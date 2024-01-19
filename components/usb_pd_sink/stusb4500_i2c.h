@@ -1,5 +1,8 @@
 #pragma once
 
+#define STUSB4500_DPM_SNK_PDO(i) (STUSB4500_DPM_SNK_PDO1_0 + 4 * (i))
+#define STUSB4500_DPM_SNK_PDO_COUNT 3
+
 enum stusb4500_i2c_register {
   STUSB4500_BCD_TYPEC_REV_LOW         = 0x06,
   STUSB4500_BCD_TYPEC_REV_HIGH        = 0x07,
@@ -22,6 +25,24 @@ enum stusb4500_i2c_register {
   STUSB4500_PE_FSM                    = 0x29,
 
   STUSB4500_DEVICE_ID                 = 0x2F,
+
+  STUSB4500_DPM_PDO_NUMB              = 0x70,
+  STUSB4500_DPM_SNK_PDO1_0            = 0x85,
+  STUSB4500_DPM_SNK_PDO1_1            = 0x86,
+  STUSB4500_DPM_SNK_PDO1_2            = 0x87,
+  STUSB4500_DPM_SNK_PDO1_3            = 0x88,
+  STUSB4500_DPM_SNK_PDO2_0            = 0x89,
+  STUSB4500_DPM_SNK_PDO2_1            = 0x8A,
+  STUSB4500_DPM_SNK_PDO2_2            = 0x8B,
+  STUSB4500_DPM_SNK_PDO2_3            = 0x8C,
+  STUSB4500_DPM_SNK_PDO3_0            = 0x8D,
+  STUSB4500_DPM_SNK_PDO3_1            = 0x8E,
+  STUSB4500_DPM_SNK_PDO3_2            = 0x8F,
+  STUSB4500_DPM_SNK_PDO3_3            = 0x90,
+  STUSB4500_RDO_REG_STATUS_0          = 0x91,
+  STUSB4500_RDO_REG_STATUS_1          = 0x92,
+  STUSB4500_RDO_REG_STATUS_2          = 0x93,
+  STUSB4500_RDO_REG_STATUS_3          = 0x94,
 };
 
 enum stusb4500_port_status_attached_device {
@@ -39,6 +60,13 @@ enum stusb4500_typec_fsm_state {
   STUSB4500_TYPEC_FSM_STATE_UNATTACHED_ACCESSORY  = 0b01101,
   STUSB4500_TYPEC_FSM_STATE_ATTACHWAIT_ACCESSORY  = 0b01110,
   STUSB4500_TYPEC_FSM_STATE_TYPEC_ERRORRECOVERY   = 0b10011,
+};
+
+enum stusb4500_pdo_type {
+  STUSB4500_PDO_TYPE_FIXED_SUPPLY     = 0b00,
+  STUSB4500_PDO_TYPE_BATTERY          = 0b01,
+  STUSB4500_PDO_TYPE_VARIABLE_SUPPLY  = 0b10,
+  // Augmented Power Data Object (APDO) = 0b11, // XXX: PD 3.0
 };
 
 struct stusb4500_i2c_rev {
@@ -171,4 +199,44 @@ struct stusb4500_pe_fsm {
 
 struct stusb4500_device_id {
   uint8_t device_id : 8;
+};
+
+struct stusb4500_dpm_pdo_numb {
+  uint8_t dpm_snk_pdo_numb : 3;
+  uint8_t reserved3 : 5;
+};
+
+union stusb4500_pdo {
+  struct stusb4500_pdo_header {
+    uint32_t body : 30;
+    uint32_t type : 2;
+  } header;
+
+  struct stusb4500_sink_fixed_supply_pdo {
+    uint32_t max_current : 10; // 10mA
+    uint32_t voltage : 10; // 50mV
+    uint32_t reserved20 : 3; // peak_current for source
+    uint32_t fast_role_swap : 2; // XXX: PD 3.0
+    uint32_t dual_role_data : 1;
+    uint32_t usb_comm_capable : 1;
+    uint32_t unconstrained_power : 1;
+    uint32_t higher_capability : 1; // usb_suspend_supported for source
+    uint32_t dual_role_power : 1;
+    uint32_t type : 2;
+  } fixed_supply;
+};
+
+union stusb4500_rdo_reg_status {
+  struct stusb4500_fuxed_supply_rdo {
+    uint32_t max_current : 10; // 10mA
+    uint32_t operating_current : 10; // 10mA
+    uint32_t reserved20 : 3;
+    uint32_t unchunked_messages_supported : 1; // XXX: PD3.0
+    uint32_t no_usb_suspend : 1;
+    uint32_t usb_comm_capable : 1;
+    uint32_t capability_mismatch : 1;
+    uint32_t give_back : 1;
+    uint32_t object_position : 3;
+    uint32_t reserved31 : 1;
+  } fixed_supply;
 };

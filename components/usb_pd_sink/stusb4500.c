@@ -30,7 +30,7 @@ static int stusb4500_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_regist
   return 0;
 }
 
-int stusb4500_start(struct stusb4500 *stusb4500)
+int stusb4500_get_status(struct stusb4500 *stusb4500)
 {
   struct stusb4500_i2c_rev rev;
   struct stusb4500_i2c_status status;
@@ -112,6 +112,90 @@ int stusb4500_start(struct stusb4500 *stusb4500)
   LOG_DEBUG("device_id: device_id=%u",
     device_id.device_id
   );
+
+  return 0;
+}
+
+int stusb4500_get_pdo(struct stusb4500 *stusb4500)
+{
+  struct stusb4500_dpm_pdo_numb pdo_numb;
+  union stusb4500_pdo pdo;
+  int err;
+
+  if ((err = stusb4500_read(stusb4500, STUSB4500_DPM_PDO_NUMB, &pdo_numb, sizeof(pdo_numb)))) {
+    return err;
+  }
+
+  for (int i = 0; i < pdo_numb.dpm_snk_pdo_numb && i < STUSB4500_DPM_SNK_PDO_COUNT; i++) {
+    if ((err = stusb4500_read(stusb4500, STUSB4500_DPM_SNK_PDO(i), &pdo, sizeof(pdo)))) {
+      LOG_ERROR("stusb4500_read STUSB4500_DPM_SNK_PDO(%d)", i);
+      return err;
+    }
+
+    switch(pdo.header.type) {
+      case STUSB4500_PDO_TYPE_FIXED_SUPPLY:
+        LOG_DEBUG("dpm_snk_pdo%d: fixed_supply max_current=%u voltage=%u fast_role_swap=%u dual_role_data=%u usb_comm_capable=%u unconstrained_power=%u higher_capability=%u dual_role_power=%u", i,
+          pdo.fixed_supply.max_current,
+          pdo.fixed_supply.voltage,
+          pdo.fixed_supply.fast_role_swap,
+          pdo.fixed_supply.dual_role_data,
+          pdo.fixed_supply.usb_comm_capable,
+          pdo.fixed_supply.unconstrained_power,
+          pdo.fixed_supply.higher_capability,
+          pdo.fixed_supply.dual_role_power
+        );
+        break;
+
+      default:
+        LOG_WARN("dpm_snk_pdo%d: unsupported type=%u", i, pdo.header.type);
+        break;
+    }
+  }
+
+  return 0;
+}
+
+int stusb4500_get_rdo(struct stusb4500 *stusb4500)
+{
+  union stusb4500_rdo_reg_status rdo;
+  int err;
+
+  if ((err = stusb4500_read(stusb4500, STUSB4500_RDO_REG_STATUS_0, &rdo, sizeof(rdo)))) {
+    return err;
+  }
+
+  LOG_DEBUG("rdo: fixed_supply max_current=%u operating_current=%u unchunked_messages_supported=%u no_usb_suspend=%u usb_comm_capable=%u capability_mismatch=%u give_back=%u object_position=%u",
+    rdo.fixed_supply.max_current,
+    rdo.fixed_supply.operating_current,
+    rdo.fixed_supply.unchunked_messages_supported,
+    rdo.fixed_supply.no_usb_suspend,
+    rdo.fixed_supply.usb_comm_capable,
+    rdo.fixed_supply.capability_mismatch,
+    rdo.fixed_supply.give_back,
+    rdo.fixed_supply.object_position
+  );
+
+  return 0;
+}
+
+int stusb4500_start(struct stusb4500 *stusb4500)
+{
+  int err;
+
+  if ((err = stusb4500_get_status(stusb4500))) {
+    LOG_ERROR("stusb4500_get_status");
+    return err;
+  }
+
+  if ((err = stusb4500_get_pdo(stusb4500))) {
+    LOG_ERROR("stusb4500_get_pdo");
+    return err;
+  }
+
+  if ((err = stusb4500_get_rdo(stusb4500))) {
+    LOG_ERROR("stusb4500_get_rdo");
+    return err;
+  }
 
   return 0;
 }

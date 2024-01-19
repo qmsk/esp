@@ -1,0 +1,5 @@
+menu "STUSB4500"
+  config STUSB4500_POWER_ONLY_ABOVE_5V
+    bool "Only enable VBUS_EN_SNK pin when source attached and voltage is negotiated to PDO2/3"
+
+endmenu

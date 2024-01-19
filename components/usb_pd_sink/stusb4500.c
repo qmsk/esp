@@ -197,7 +197,65 @@ int stusb4500_get_rdo(struct stusb4500 *stusb4500)
   return 0;
 }
 
-int stusb4500_get_nvm(struct stusb4500 *stusb4500)
+static void stusb4500_nvm_debug(const union stusb4500_nvm *nvm)
+{
+  for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
+    LOG_DEBUG("nvm sector[%d]: %02x %02x %02x %02x %02x %02x %02x %02x", i,
+      nvm->sectors[i][0],
+      nvm->sectors[i][1],
+      nvm->sectors[i][2],
+      nvm->sectors[i][3],
+      nvm->sectors[i][4],
+      nvm->sectors[i][5],
+      nvm->sectors[i][6],
+      nvm->sectors[i][7]
+    );
+  }
+
+  LOG_DEBUG("nvm bank0 vendor_id=%04x product_id=%04x bcd_device_id=%04x port_role_ctrl=%u device_power_role_ctrl=%u",
+    nvm->banks.bank0.vendor_id,
+    nvm->banks.bank0.product_id,
+    nvm->banks.bank0.bcd_device_id,
+    nvm->banks.bank0.port_role_ctrl,
+    nvm->banks.bank0.device_power_role_ctrl
+  );
+
+  LOG_DEBUG("nvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
+    nvm->banks.bank1.gpio_cfg,
+    nvm->banks.bank1.vbus_dchg_mask,
+    nvm->banks.bank1.vbus_disch_time_to_pdo,
+    nvm->banks.bank1.discharge_time_to_0v
+  );
+
+  LOG_DEBUG("nvm bank3 usb_comm_capable=%u dpm_snk_pdo_numb=%u snk_uncons_power=%u",
+    nvm->banks.bank3.usb_comm_capable,
+    nvm->banks.bank3.dpm_snk_pdo_numb,
+    nvm->banks.bank3.snk_uncons_power
+  );
+
+  LOG_DEBUG("nvm bank3 pdo1(i=%u ll=%u hl=%u) pdo2(i=%u ll=%u hl=%u) pdo3(i=%u ll=%u hl=%u)",
+    nvm->banks.bank3.lut_snk_pdo1_i,
+    nvm->banks.bank3.snk_ll1,
+    nvm->banks.bank3.snk_hl1,
+    nvm->banks.bank3.lut_snk_pdo2_i,
+    nvm->banks.bank3.snk_ll2,
+    nvm->banks.bank3.snk_hl2,
+    nvm->banks.bank3.lut_snk_pdo3_i,
+    nvm->banks.bank3.snk_ll3,
+    nvm->banks.bank3.snk_hl3
+  );
+
+  LOG_DEBUG("nvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u power_only_above_5v=%u req_src_current=%u",
+    nvm->banks.bank4.snk_pdo_flex1_v,
+    nvm->banks.bank4.snk_pdo_flex2_v,
+    nvm->banks.bank4.snk_pdo_flex_i,
+    nvm->banks.bank4.power_ok_cfg,
+    nvm->banks.bank4.power_only_above_5v,
+    nvm->banks.bank4.req_src_current
+  );
+}
+
+int stusb4500_setup(struct stusb4500 *stusb4500)
 {
   union stusb4500_nvm nvm = {};
   int err;
@@ -207,60 +265,22 @@ int stusb4500_get_nvm(struct stusb4500 *stusb4500)
     return err;
   }
 
-  for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
-    LOG_DEBUG("nvm sector[%d]: %02x %02x %02x %02x %02x %02x %02x %02x", i,
-      nvm.sectors[i][0],
-      nvm.sectors[i][1],
-      nvm.sectors[i][2],
-      nvm.sectors[i][3],
-      nvm.sectors[i][4],
-      nvm.sectors[i][5],
-      nvm.sectors[i][6],
-      nvm.sectors[i][7]
-    );
+  stusb4500_nvm_debug(&nvm);
+
+  if ((err = stusb4500_config_nvm(&nvm)) < 0) {
+    LOG_ERROR("stusb4500_config_nvm");
+    return err;
+  } else if (!err) {
+    LOG_DEBUG("NVM OK");
+    return 0;
+  } else {
+    LOG_WARN("NVM changes, write...");
   }
 
-  LOG_DEBUG("nvm bank0 vendor_id=%04x product_id=%04x bcd_device_id=%04x port_role_ctrl=%u device_power_role_ctrl=%u",
-    nvm.banks.bank0.vendor_id,
-    nvm.banks.bank0.product_id,
-    nvm.banks.bank0.bcd_device_id,
-    nvm.banks.bank0.port_role_ctrl,
-    nvm.banks.bank0.device_power_role_ctrl
-  );
-
-  LOG_DEBUG("nvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
-    nvm.banks.bank1.gpio_cfg,
-    nvm.banks.bank1.vbus_dchg_mask,
-    nvm.banks.bank1.vbus_disch_time_to_pdo,
-    nvm.banks.bank1.discharge_time_to_0v
-  );
-
-  LOG_DEBUG("nvm bank3 usb_comm_capable=%u dpm_snk_pdo_numb=%u snk_uncons_power=%u",
-    nvm.banks.bank3.usb_comm_capable,
-    nvm.banks.bank3.dpm_snk_pdo_numb,
-    nvm.banks.bank3.snk_uncons_power
-  );
-
-  LOG_DEBUG("nvm bank3 pdo1(i=%u ll=%u hl=%u) pdo2(i=%u ll=%u hl=%u) pdo3(i=%u ll=%u hl=%u)",
-    nvm.banks.bank3.lut_snk_pdo1_i,
-    nvm.banks.bank3.snk_ll1,
-    nvm.banks.bank3.snk_hl1,
-    nvm.banks.bank3.lut_snk_pdo2_i,
-    nvm.banks.bank3.snk_ll2,
-    nvm.banks.bank3.snk_hl2,
-    nvm.banks.bank3.lut_snk_pdo3_i,
-    nvm.banks.bank3.snk_ll3,
-    nvm.banks.bank3.snk_hl3
-  );
-
-  LOG_DEBUG("nvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u power_only_above_5v=%u req_src_current=%u",
-    nvm.banks.bank4.snk_pdo_flex1_v,
-    nvm.banks.bank4.snk_pdo_flex2_v,
-    nvm.banks.bank4.snk_pdo_flex_i,
-    nvm.banks.bank4.power_ok_cfg,
-    nvm.banks.bank4.power_only_above_5v,
-    nvm.banks.bank4.req_src_current
-  );
+  if ((err = stusb4500_nvm_write(stusb4500, &nvm))) {
+    LOG_ERROR("stusb4500_nvm_write");
+    return err;
+  }
 
   return 0;
 }
@@ -268,11 +288,6 @@ int stusb4500_get_nvm(struct stusb4500 *stusb4500)
 int stusb4500_start(struct stusb4500 *stusb4500)
 {
   int err;
-
-  if ((err = stusb4500_get_nvm(stusb4500))) {
-    LOG_ERROR("stusb4500_get_nvm");
-    return err;
-  }
 
   if ((err = stusb4500_get_status(stusb4500))) {
     LOG_ERROR("stusb4500_get_status");

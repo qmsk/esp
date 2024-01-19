@@ -28,6 +28,11 @@
       return err;
     }
 
+    if ((err = usb_pd_sink_setup(usb_pd_sink))) {
+      LOG_ERROR("usb_pd_sink_setup");
+      return err;
+    }
+
     return 0;
   }
 

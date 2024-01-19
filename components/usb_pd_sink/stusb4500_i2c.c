@@ -22,7 +22,7 @@ int stusb4500_i2c_read(struct stusb4500 *stusb4500, enum stusb4500_i2c_register 
     goto error;
   }
 
-  LOG_DEBUG("i2c_addr=%u cmd=%u", stusb4500->i2c_addr, cmd);
+  LOG_DEBUG("i2c_addr=%02x cmd=%02x", stusb4500->i2c_addr, cmd);
 
   if ((err = i2c_master_write_byte(handle, stusb4500->i2c_addr << 1 | I2C_MASTER_WRITE, true))) {
     LOG_ERROR("i2c_master_write_byte: %s", esp_err_to_name(err));
@@ -69,7 +69,7 @@ error:
   return err;
 }
 
-int stusb4500_i2c_write(struct stusb4500 *stusb4500, enum stusb4500_i2c_register cmd, void *buf, size_t size)
+int stusb4500_i2c_write(struct stusb4500 *stusb4500, enum stusb4500_i2c_register cmd, const void *buf, size_t size)
 {
   uint8_t buffer[I2C_LINK_RECOMMENDED_SIZE(1)] = { 0 };
   i2c_cmd_handle_t handle;
@@ -85,7 +85,7 @@ int stusb4500_i2c_write(struct stusb4500 *stusb4500, enum stusb4500_i2c_register
     goto error;
   }
 
-  LOG_DEBUG("i2c_addr=%u cmd=%u", stusb4500->i2c_addr, cmd);
+  LOG_DEBUG("i2c_addr=%02x cmd=%02x", stusb4500->i2c_addr, cmd);
 
   if ((err = i2c_master_write_byte(handle, stusb4500->i2c_addr << 1 | I2C_MASTER_WRITE, true))) {
     LOG_ERROR("i2c_master_write_byte: %s", esp_err_to_name(err));

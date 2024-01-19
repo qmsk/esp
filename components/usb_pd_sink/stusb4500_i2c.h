@@ -336,6 +336,8 @@ enum stusb4500_ftp_ctrl_opcode {
   STUSB4500_FTP_CTRL_OPCODE_SOFT_PROG_SECTOR  = 0x07,
 };
 
+#define STUSB4500_FTP_SER_SECTORS (0x1F)
+
 enum stusb4500_ftp_ctrl_ser {
   STUSB4500_FTP_SER_SECTOR_0 = 0x01,
   STUSB4500_FTP_SER_SECTOR_1 = 0x02,

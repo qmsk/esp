@@ -22,6 +22,17 @@ enum stusb4500_i2c_register {
   STUSB4500_TYPEC_STATUS              = 0x15,
   STUSB4500_PRT_STATUS                = 0x16,
 
+  STUSB4500_PD_COMMAND_CTRL           = 0x1A,
+
+  STUSB4500_MONITORING_CTRL_0         = 0x20,
+  STUSB4500_MONITORING_CTRL_1         = 0x21, // undocumented
+  STUSB4500_MONITORING_CTRL_2         = 0x22,
+  STUSB4500_RESET_CTRL                = 0x23,
+
+  STUSB4500_VBUS_DISCHARGE_TIME_CTRL  = 0x25,
+  STUSB4500_VBUS_DISCHARGE_CTRL       = 0x26,
+  STUSB4500_VBUS_CTRL                 = 0x27,
+
   STUSB4500_PE_FSM                    = 0x29,
 
   STUSB4500_DEVICE_ID                 = 0x2F,
@@ -191,6 +202,48 @@ struct stusb4500_i2c_status {
     uint8_t prt_bist_received : 1;
     uint8_t reserved5 : 3;
   } prt_status;
+};
+
+struct stusb4500_pd_command_ctrl {
+  uint8_t send_message_command : 6;
+  uint8_t reserved6 : 2;
+};
+
+struct stusb4500_monitoring_ctrl_0 {
+  uint8_t reserved0 : 3;
+  uint8_t vbus_snk_disc_threshold : 1;
+  uint8_t reserved4 : 4;
+};
+
+struct stusb4500_monitoring_ctrl_1 {
+  uint8_t voltage; // undocumented, 100mV
+};
+
+struct stusb4500_monitoring_ctrl_2 {
+  uint8_t vshift_low : 4;
+  uint8_t vshift_high : 4;
+};
+
+struct stusb4500_reset_ctrl {
+  uint8_t reset_sw_en : 1;
+  uint8_t reserved1 : 7;
+};
+
+struct stusb4500_vbus_discharge_time_ctrl {
+  uint8_t discharge_time_transition : 4;
+  uint8_t discharge_time_to_0v : 4;
+};
+
+struct stusb4500_vbus_discharge_ctrl {
+  uint8_t reserved0 : 6;
+  uint8_t reserved6 : 1;
+  uint8_t vbus_discharge_en : 1;
+};
+
+struct stusb4500_vbus_ctrl {
+  uint8_t reserved0 : 1;
+  uint8_t sink_vbus_en : 1;
+  uint8_t reserved2 : 6;
 };
 
 struct stusb4500_pe_fsm {

@@ -116,6 +116,39 @@ int stusb4500_get_status(struct stusb4500 *stusb4500)
   return 0;
 }
 
+int stusb4500_get_ctrl(struct stusb4500 *stusb4500)
+{
+   struct stusb4500_monitoring_ctrl_0 monitoring_ctrl_0;
+   struct stusb4500_monitoring_ctrl_1 monitoring_ctrl_1;
+   struct stusb4500_monitoring_ctrl_2 monitoring_ctrl_2;
+   struct stusb4500_vbus_discharge_time_ctrl vbus_discharge_time_ctrl;
+   int err;
+
+   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_0, &monitoring_ctrl_0, sizeof(monitoring_ctrl_0)))) {
+     return err;
+   }
+
+   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_1, &monitoring_ctrl_1, sizeof(monitoring_ctrl_1)))) {
+     return err;
+   }
+
+   if ((err = stusb4500_read(stusb4500, STUSB4500_MONITORING_CTRL_2, &monitoring_ctrl_2, sizeof(monitoring_ctrl_2)))) {
+     return err;
+   }
+
+   if ((err = stusb4500_read(stusb4500, STUSB4500_VBUS_DISCHARGE_TIME_CTRL, &vbus_discharge_time_ctrl, sizeof(vbus_discharge_time_ctrl)))) {
+     return err;
+   }
+
+   LOG_DEBUG("monitoring_ctrl: vbus_snk_disc_threshold=%u voltage=%u vshift_low=%u vshift_high=%u",
+     monitoring_ctrl_0.vbus_snk_disc_threshold,
+     monitoring_ctrl_1.voltage,
+     monitoring_ctrl_2.vshift_low, monitoring_ctrl_2.vshift_high
+   );
+
+   return 0;
+}
+
 int stusb4500_get_pdo(struct stusb4500 *stusb4500)
 {
   struct stusb4500_dpm_pdo_numb pdo_numb;
@@ -184,6 +217,11 @@ int stusb4500_start(struct stusb4500 *stusb4500)
 
   if ((err = stusb4500_get_status(stusb4500))) {
     LOG_ERROR("stusb4500_get_status");
+    return err;
+  }
+
+  if ((err = stusb4500_get_ctrl(stusb4500))) {
+    LOG_ERROR("stusb4500_get_ctrl");
     return err;
   }
 

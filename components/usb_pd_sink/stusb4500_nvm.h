@@ -87,7 +87,8 @@ union stusb4500_nvm {
       uint64_t reserved5_4 : 1;  // 0
       uint64_t power_ok_cfg : 2;
       uint64_t reserved5_7 : 1;  // 0
-      uint64_t reserved6_0 : 4; // 0x0
+      uint64_t reserved6_0 : 3; // 0x0
+      uint64_t power_only_above_5v : 1;
       uint64_t req_src_current : 1;
       uint64_t reserved6_5 : 3; // 0b010
       uint64_t reserved7 : 8; // ALERT_STATUS_1_MASK

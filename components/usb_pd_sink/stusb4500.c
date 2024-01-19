@@ -253,11 +253,12 @@ int stusb4500_get_nvm(struct stusb4500 *stusb4500)
     nvm.banks.bank3.snk_hl3
   );
 
-  LOG_DEBUG("nvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u req_src_current=%u",
+  LOG_DEBUG("nvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u power_only_above_5v=%u req_src_current=%u",
     nvm.banks.bank4.snk_pdo_flex1_v,
     nvm.banks.bank4.snk_pdo_flex2_v,
     nvm.banks.bank4.snk_pdo_flex_i,
     nvm.banks.bank4.power_ok_cfg,
+    nvm.banks.bank4.power_only_above_5v,
     nvm.banks.bank4.req_src_current
   );
 

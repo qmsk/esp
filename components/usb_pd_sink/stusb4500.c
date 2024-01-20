@@ -305,12 +305,6 @@ int stusb4500_setup(struct stusb4500 *stusb4500)
     }
   }
 
-  // reset runtime state to NVM defaults
-  if ((err = stusb4500_reset(stusb4500))) {
-    LOG_ERROR("stusb4500_reset");
-    return err;
-  }
-
   return 0;
 }
 

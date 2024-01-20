@@ -237,7 +237,7 @@ struct stusb4500_monitoring_ctrl_0 {
 };
 
 struct stusb4500_monitoring_ctrl_1 {
-  uint8_t voltage; // undocumented, 100mV
+  uint8_t voltage : 8; // undocumented, 100mV
 };
 
 struct stusb4500_monitoring_ctrl_2 {

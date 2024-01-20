@@ -3,8 +3,6 @@
 
 #include <esp_err.h>
 
-#define DEBUG
-
 #include <logging.h>
 
 int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options *options)
@@ -339,6 +337,52 @@ int stusb4500_start(struct stusb4500 *stusb4500)
     LOG_ERROR("stusb4500_get_rdo");
     return err;
   }
+
+  return 0;
+}
+
+int stusb4500_status(struct stusb4500 *stusb4500, struct usb_pd_sink_status *status)
+{
+  struct stusb4500_bcd_usbpd_rev_high bcd_usbpd_rev_high;
+  struct stusb4500_port_status_1 port_status_1;
+  struct stusb4500_typec_monitoring_status_1 typec_monitoring_status_1;
+  struct stusb4500_monitoring_ctrl_1 monitoring_ctrl_1;
+  union stusb4500_rdo_reg_status rdo;
+  int err;
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_BCD_USBPD_REV_HIGH, &bcd_usbpd_rev_high, sizeof(bcd_usbpd_rev_high)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_PORT_STATUS_1, &port_status_1, sizeof(port_status_1)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_TYPEC_MONITORING_STATUS_1, &typec_monitoring_status_1, sizeof(typec_monitoring_status_1)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_MONITORING_CTRL_1, &monitoring_ctrl_1, sizeof(monitoring_ctrl_1)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_RDO_REG_STATUS_0, &rdo, sizeof(rdo)))) {
+    return err;
+  }
+
+  status->usb_pd_version_major = bcd_usbpd_rev_high.major;
+  status->usb_pd_version_minor = bcd_usbpd_rev_high.minor;
+
+  status->port_attached = (port_status_1.attach == 1);
+  status->port_power = (port_status_1.power_mode == 0);
+  status->vbus_ready = (typec_monitoring_status_1.vbus_ready == 1);
+
+  status->pdo_number = rdo.fixed_supply.object_position;
+  status->pd_capability_mismatch = rdo.fixed_supply.capability_mismatch;
+
+  status->voltage_mV = monitoring_ctrl_1.voltage * 100; // 100mV -> mV
+  status->operating_current_mA = rdo.fixed_supply.operating_current * 10; // 10mA -> mA
+  status->maximum_current_mA = rdo.fixed_supply.max_current * 10; // 10mA -> mA
 
   return 0;
 }

@@ -9,8 +9,9 @@
 #include "log.h"
 #include "sdcard.h"
 #include "spiffs.h"
-#include "user_leds.h"
 #include "system.h"
+#include "usb_pd_cmd.h"
+#include "user_leds.h"
 #include "vfs.h"
 #include "wifi.h"
 
@@ -49,6 +50,11 @@ const struct cmd console_cli_commands[] = {
   { "config",       .describe = "Configuration",
       .subcommands = &config_cmdtab,
   },
+#if CONFIG_USB_PD_SINK_ENABLED
+  { "usb-pd",       .describe = "USB-PD Sink",
+      .subcommands = &usb_pd_cmdtab,
+  },
+#endif
 #if CONFIG_SDCARD_ENABLED
   { "sdcard",       .describe = "SD Card",
       .subcommands = &sdcard_cmdtab,

@@ -1,4 +1,6 @@
 #include "usb_pd_sink.h"
+#include "usb_pd_state.h"
+
 #include "i2c_master.h"
 
 #include <usb_pd_sink.h>

@@ -255,6 +255,32 @@ static void stusb4500_nvm_debug(const union stusb4500_nvm *nvm)
   );
 }
 
+int stusb4500_reset(struct stusb4500 *stusb4500)
+{
+  struct stusb4500_reset_ctrl reset_ctrl = { .reset_sw_en = 1 };
+  struct stusb4500_reset_ctrl reset_ctrl_clear = { .reset_sw_en = 0 };
+  int err;
+
+  if ((err = stusb4500_i2c_write(stusb4500, STUSB4500_RESET_CTRL, &reset_ctrl, sizeof(reset_ctrl)))) {
+    return err;
+  }
+
+  if ((err = stusb4500_i2c_read(stusb4500, STUSB4500_RESET_CTRL, &reset_ctrl, sizeof(reset_ctrl)))) {
+    return err;
+  }
+
+  // TODO: delay 25ms?
+  LOG_DEBUG("reset_ctrl: reset_sw_en=%u",
+    reset_ctrl.reset_sw_en
+  );
+
+  if ((err = stusb4500_i2c_write(stusb4500, STUSB4500_RESET_CTRL, &reset_ctrl_clear, sizeof(reset_ctrl_clear)))) {
+    return err;
+  }
+
+  return 0;
+}
+
 int stusb4500_setup(struct stusb4500 *stusb4500)
 {
   union stusb4500_nvm nvm = {};
@@ -271,14 +297,19 @@ int stusb4500_setup(struct stusb4500 *stusb4500)
     LOG_ERROR("stusb4500_config_nvm");
     return err;
   } else if (!err) {
-    LOG_DEBUG("NVM OK");
-    return 0;
+    LOG_INFO("NVM OK");
   } else {
     LOG_WARN("NVM changes, write...");
+
+    if ((err = stusb4500_nvm_write(stusb4500, &nvm))) {
+      LOG_ERROR("stusb4500_nvm_write");
+      return err;
+    }
   }
 
-  if ((err = stusb4500_nvm_write(stusb4500, &nvm))) {
-    LOG_ERROR("stusb4500_nvm_write");
+  // reset runtime state to NVM defaults
+  if ((err = stusb4500_reset(stusb4500))) {
+    LOG_ERROR("stusb4500_reset");
     return err;
   }
 

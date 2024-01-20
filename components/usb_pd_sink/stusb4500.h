@@ -12,6 +12,7 @@ struct stusb4500 {
 };
 
 int stusb4500_init(struct stusb4500 *stusb4500, const struct usb_pd_sink_options *options);
+int stusb4500_reset(struct stusb4500 *stusb4500);
 int stusb4500_setup(struct stusb4500 *stusb4500);
 int stusb4500_start(struct stusb4500 *stusb4500);
 

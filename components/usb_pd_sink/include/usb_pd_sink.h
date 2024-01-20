@@ -26,7 +26,7 @@ struct usb_pd_sink;
 int usb_pd_sink_new(struct usb_pd_sink **sinkp, const struct usb_pd_sink_options *options);
 
 /*
- * Static USB-PD Sink setup from Kconfig.
+ * Setup USB-PD Sink using static Kconfig defaults.
  */
 int usb_pd_sink_setup(struct usb_pd_sink *sink);
 

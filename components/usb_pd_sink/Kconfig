@@ -1,5 +1,100 @@
 menu "STUSB4500"
+  config STUSB4500_SNK_PDO_NUMB
+    int "Number of sink PDOs"
+    range 1 3
+    default 3
+
+  config STUSB4500_V_SNK_PDO2
+    int "Voltage value for SNK_PDO2 (mV)"
+    range 5000 20000
+    default 15000
+
+  config STUSB4500_V_SNK_PDO3
+    int "Voltage value for SNK_PDO3 (mV)"
+    range 5000 20000
+    default 20000
+
+  config STUSB4500_I_SNK_PDO1
+    int "Current value for SNK_PDO1 (mA)"
+    range 500 5000
+    default 1500
+
+  config STUSB4500_I_SNK_PDO2
+    int "Current value for SNK_PDO2 (mA)"
+    range 500 5000
+    default 1500
+
+  config STUSB4500_I_SNK_PDO3
+    int "Current value for SNK_PDO3 (mA)"
+    range 500 5000
+    default 1000
+
+  config STUSB4500_VBUS_DISCH_DISABLE
+    bool "VBUS discharge deactivation on VBUS_VS_DISCH and DISCH pins"
+    default 0
+
+  config STUSB4500_USB_COMM_CAPABLE
+    bool "USB 2.0 or 3.x data communication capability by sink system"
+    default 0
+
+  config STUSB4500_SNK_UNCONS_POWER
+    bool "Unconstrained Power bit setting in capabilities message sent by the sink"
+    default 0
+
+  config STUSB4500_REQ_SRC_CURRENT
+    bool "In case of match, selects which operating current from the sink or the source is to be requested in the RDO message"
+    default 0
+
+  choice STUSB4500_POWER_OK_CFG_CHOICE
+    prompt "Selects POWER_OK pins configuration"
+    default STUSB4500_POWER_OK_CFG_2
+
+    config STUSB4500_POWER_OK_CFG_1
+      bool "Configuration 1"
+
+    config STUSB4500_POWER_OK_CFG_2
+      bool "Configuration 2"
+
+    config STUSB4500_POWER_OK_CFG_3
+      bool "Configuration 2"
+
+  endchoice
+
+  config STUSB4500_POWER_OK_CFG
+    int "Selects POWER_OK pins configuration"
+    range 0 3
+    default 0 if STUSB4500_POWER_OK_CFG_1
+    default 2 if STUSB4500_POWER_OK_CFG_2
+    default 3 if STUSB4500_POWER_OK_CFG_3
+
   config STUSB4500_POWER_ONLY_ABOVE_5V
     bool "Only enable VBUS_EN_SNK pin when source attached and voltage is negotiated to PDO2/3"
+    default 0
+
+  choice STUSB4500_GPIO_CFG_CHOICE
+    prompt "Selects POWER_OK pins configuration"
+    default STUSB4500_GPIO_CFG_ERROR_RECOVERY
+
+    config STUSB4500_GPIO_CFG_SW_CTRL_GPIO
+      bool "SW_CTRL_GPIO"
+
+    config STUSB4500_GPIO_CFG_ERROR_RECOVERY
+      bool "ERROR_RECOVERY"
+
+    config STUSB4500_GPIO_CFG_DEBUG
+      bool "DEBUG"
+
+    config STUSB4500_GPIO_CFG_SINK_POWER
+      bool "SINK_POWER"
+
+  endchoice
+
+  config STUSB4500_GPIO_CFG
+    int "Selects GPIO pin configuration"
+    range 0 3
+    default 0 if STUSB4500_GPIO_CFG_SW_CTRL_GPIO
+    default 1 if STUSB4500_GPIO_CFG_ERROR_RECOVERY
+    default 2 if STUSB4500_GPIO_CFG_DEBUG
+    default 3 if STUSB4500_GPIO_CFG_SINK_POWER
 
 endmenu

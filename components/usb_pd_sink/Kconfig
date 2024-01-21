@@ -42,7 +42,7 @@ menu "STUSB4500"
     default 0
 
   config STUSB4500_REQ_SRC_CURRENT
-    bool "In case of match, selects which operating current from the sink or the source is to be requested in the RDO message"
+    bool "Request maximum available source current from source"
     default 0
 
   choice STUSB4500_POWER_OK_CFG_CHOICE

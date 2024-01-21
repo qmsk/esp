@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#define STUSB4500_NVM_START 0xC0
 #define STUSB4500_NVM_SECTOR_COUNT 5
 #define STUSB4500_NVM_SECTOR_SIZE 8
 

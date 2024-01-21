@@ -192,7 +192,7 @@ static void stusb4500_print_nvm(struct stusb4500 *stusb4500, FILE *file)
   }
 
   for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
-    fprintf(file, "\tnvm sector[%d]: %02x %02x %02x %02x %02x %02x %02x %02x\n", i,
+    fprintf(file, "\tnvm bank%d: %02x %02x %02x %02x %02x %02x %02x %02x", i,
       nvm.sectors[i][0],
       nvm.sectors[i][1],
       nvm.sectors[i][2],
@@ -202,49 +202,64 @@ static void stusb4500_print_nvm(struct stusb4500 *stusb4500, FILE *file)
       nvm.sectors[i][6],
       nvm.sectors[i][7]
     );
+
+    switch(i) {
+      case 0:
+        fprintf(file, "\tvendor_id=%04x product_id=%04x bcd_device_id=%04x port_role_ctrl=%u device_power_role_ctrl=%u",
+          nvm.banks.bank0.vendor_id,
+          nvm.banks.bank0.product_id,
+          nvm.banks.bank0.bcd_device_id,
+          nvm.banks.bank0.port_role_ctrl,
+          nvm.banks.bank0.device_power_role_ctrl
+        );
+        break;
+
+      case 1:
+        fprintf(file, "\tnvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
+          nvm.banks.bank1.gpio_cfg,
+          nvm.banks.bank1.vbus_dchg_mask,
+          nvm.banks.bank1.vbus_disch_time_to_pdo,
+          nvm.banks.bank1.discharge_time_to_0v
+        );
+
+      case 2:
+        // nothing interesting
+        break;
+
+      case 3:
+        fprintf(file, "\tusb_comm_capable=%u dpm_snk_pdo_numb=%u snk_uncons_power=%u",
+          nvm.banks.bank3.usb_comm_capable,
+          nvm.banks.bank3.dpm_snk_pdo_numb,
+          nvm.banks.bank3.snk_uncons_power
+        );
+
+        fprintf(file, "\tpdo1(i=%u ll=%u hl=%u) pdo2(i=%u ll=%u hl=%u) pdo3(i=%u ll=%u hl=%u)",
+          nvm.banks.bank3.lut_snk_pdo1_i,
+          nvm.banks.bank3.snk_ll1,
+          nvm.banks.bank3.snk_hl1,
+          nvm.banks.bank3.lut_snk_pdo2_i,
+          nvm.banks.bank3.snk_ll2,
+          nvm.banks.bank3.snk_hl2,
+          nvm.banks.bank3.lut_snk_pdo3_i,
+          nvm.banks.bank3.snk_ll3,
+          nvm.banks.bank3.snk_hl3
+        );
+        break;
+
+      case 4:
+        fprintf(file, "\tsnk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u power_only_above_5v=%u req_src_current=%u",
+          nvm.banks.bank4.snk_pdo_flex1_v,
+          nvm.banks.bank4.snk_pdo_flex2_v,
+          nvm.banks.bank4.snk_pdo_flex_i,
+          nvm.banks.bank4.power_ok_cfg,
+          nvm.banks.bank4.power_only_above_5v,
+          nvm.banks.bank4.req_src_current
+        );
+        break;
+    }
+
+    fprintf(file, "\n");
   }
-
-  fprintf(file, "\tnvm bank0 vendor_id=%04x product_id=%04x bcd_device_id=%04x port_role_ctrl=%u device_power_role_ctrl=%u\n",
-    nvm.banks.bank0.vendor_id,
-    nvm.banks.bank0.product_id,
-    nvm.banks.bank0.bcd_device_id,
-    nvm.banks.bank0.port_role_ctrl,
-    nvm.banks.bank0.device_power_role_ctrl
-  );
-
-  fprintf(file, "\tnvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u\n",
-    nvm.banks.bank1.gpio_cfg,
-    nvm.banks.bank1.vbus_dchg_mask,
-    nvm.banks.bank1.vbus_disch_time_to_pdo,
-    nvm.banks.bank1.discharge_time_to_0v
-  );
-
-  fprintf(file, "\tnvm bank3 usb_comm_capable=%u dpm_snk_pdo_numb=%u snk_uncons_power=%u\n",
-    nvm.banks.bank3.usb_comm_capable,
-    nvm.banks.bank3.dpm_snk_pdo_numb,
-    nvm.banks.bank3.snk_uncons_power
-  );
-
-  fprintf(file, "\tnvm bank3 pdo1(i=%u ll=%u hl=%u) pdo2(i=%u ll=%u hl=%u) pdo3(i=%u ll=%u hl=%u)\n",
-    nvm.banks.bank3.lut_snk_pdo1_i,
-    nvm.banks.bank3.snk_ll1,
-    nvm.banks.bank3.snk_hl1,
-    nvm.banks.bank3.lut_snk_pdo2_i,
-    nvm.banks.bank3.snk_ll2,
-    nvm.banks.bank3.snk_hl2,
-    nvm.banks.bank3.lut_snk_pdo3_i,
-    nvm.banks.bank3.snk_ll3,
-    nvm.banks.bank3.snk_hl3
-  );
-
-  fprintf(file, "\tnvm bank4 snk_pdo_flex1_v=%u snk_pdo_flex2_v=%u snk_pdo_flex_i=%u power_ok_cfg=%u power_only_above_5v=%u req_src_current=%u\n",
-    nvm.banks.bank4.snk_pdo_flex1_v,
-    nvm.banks.bank4.snk_pdo_flex2_v,
-    nvm.banks.bank4.snk_pdo_flex_i,
-    nvm.banks.bank4.power_ok_cfg,
-    nvm.banks.bank4.power_only_above_5v,
-    nvm.banks.bank4.req_src_current
-  );
 }
 
 int stusb4500_print(struct stusb4500 *stusb4500, FILE *file)
@@ -253,6 +268,7 @@ int stusb4500_print(struct stusb4500 *stusb4500, FILE *file)
   stusb4500_print_ctrl(stusb4500, file);
   stusb4500_print_pdo(stusb4500, file);
   stusb4500_print_rdo(stusb4500, file);
+
   stusb4500_print_nvm(stusb4500, file);
 
   return 0;

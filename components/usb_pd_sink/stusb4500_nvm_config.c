@@ -47,22 +47,21 @@ static inline unsigned config_snk_pdo_i(unsigned config_mA)
   }
 }
 
-int stusb4500_config_nvm(union stusb4500_nvm *nvm)
+int stusb4500_nvm_validate(union stusb4500_nvm *nvm)
 {
   stusb4500_nvm_sector_t zero_sector = {};
 
-  // sanity-check
   for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
     if (!memcmp(nvm->sectors[i], &zero_sector, sizeof(zero_sector))) {
       LOG_ERROR("sector%d is all-zeroes, corrupted read?", i);
-      return -1;
+      return 1;
     }
   }
 
   for (int i = 1; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
     if (!memcmp(nvm->sectors[i], nvm->sectors[i - 1], sizeof(nvm->sectors[i]))) {
       LOG_ERROR("sector%d is identical to sector%d, corrupted read?", i, i - 1);
-      return -1;
+      return 1;
     }
   }
 
@@ -72,7 +71,7 @@ int stusb4500_config_nvm(union stusb4500_nvm *nvm)
       nvm->banks.bank0.product_id,
       nvm->banks.bank0.bcd_device_id
     );
-    return -1;
+    return 1;
   }
 
   if (nvm->banks.bank0.product_id != STUSB4500_NVM_PRODUCT_ID) {
@@ -81,7 +80,7 @@ int stusb4500_config_nvm(union stusb4500_nvm *nvm)
       nvm->banks.bank0.product_id,
       nvm->banks.bank0.bcd_device_id
     );
-    return -1;
+    return 1;
   }
 
   if (nvm->banks.bank0.bcd_device_id != STUSB4500_NVM_DEVICE_ID) {
@@ -90,10 +89,14 @@ int stusb4500_config_nvm(union stusb4500_nvm *nvm)
       nvm->banks.bank0.product_id,
       nvm->banks.bank0.bcd_device_id
     );
-    return -1;
+    return 1;
   }
 
-  // apply config changes
+  return 0;
+}
+
+int stusb4500_nvm_config(union stusb4500_nvm *nvm)
+{
   int ret = 0;
 
   if (nvm->banks.bank3.dpm_snk_pdo_numb != CONFIG_STUSB4500_SNK_PDO_NUMB) {
@@ -209,4 +212,30 @@ int stusb4500_config_nvm(union stusb4500_nvm *nvm)
   }
 
   return ret;
+}
+
+int stusb4500_nvm_print(const union stusb4500_nvm *nvm, FILE *file)
+{
+  int err;
+
+  for (int i = 0; i < STUSB4500_NVM_SECTOR_COUNT; i++) {
+    // using GUI file format
+    err = fprintf(file, "0x%02X:\t0x%02X\t0x%02X\t0x%02X\t0x%02X\t0x%02X\t0x%02X\t0x%02X\t0x%02X\r\n",
+      STUSB4500_NVM_START + i * STUSB4500_NVM_SECTOR_SIZE,
+      nvm->sectors[i][0],
+      nvm->sectors[i][1],
+      nvm->sectors[i][2],
+      nvm->sectors[i][3],
+      nvm->sectors[i][4],
+      nvm->sectors[i][5],
+      nvm->sectors[i][6],
+      nvm->sectors[i][7]
+    );
+
+    if (err < 0) {
+      return err;
+    }
+  }
+
+  return 0;
 }

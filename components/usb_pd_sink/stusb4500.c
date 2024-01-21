@@ -50,13 +50,27 @@ int stusb4500_setup(struct stusb4500 *stusb4500)
     return err;
   }
 
-  if ((err = stusb4500_config_nvm(&nvm)) < 0) {
-    LOG_ERROR("stusb4500_config_nvm");
+  if ((err = stusb4500_nvm_validate(&nvm)) < 0) {
+    LOG_ERROR("stusb4500_nvm_validate");
     return err;
   } else if (!err) {
-    LOG_INFO("NVM OK");
+    LOG_DEBUG("stusb4500_nvm_validate OK");
   } else {
-    LOG_WARN("NVM changes, write...");
+    LOG_WARN("stusb4500_nvm_validate");
+    return err;
+  }
+
+  if ((err = stusb4500_nvm_config(&nvm)) < 0) {
+    LOG_ERROR("stusb4500_nvm_config");
+    return err;
+  } else if (!err) {
+    LOG_INFO("NVM config OK");
+  } else {
+    LOG_WARN("NVM config changed:");
+
+    if ((err = stusb4500_nvm_print(&nvm, stderr))) {
+      LOG_WARN("stusb4500_nvm_print");
+    }
 
     if ((err = stusb4500_nvm_write(stusb4500, &nvm))) {
       LOG_ERROR("stusb4500_nvm_write");

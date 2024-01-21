@@ -35,8 +35,26 @@
     return 0;
   }
 
+  int usb_pd_sink_debug_cmd(int argc, char **argv, void *ctx)
+  {
+    int err;
+
+    if (!usb_pd_sink) {
+      LOG_ERROR("not initialized");
+      return -1;
+    }
+
+    if ((err = usb_pd_sink_print(usb_pd_sink, stdout))) {
+      LOG_ERROR("usb_pd_sink_print");
+      return -1;
+    }
+
+    return 0;
+  }
+
   const struct cmd usb_pd_commands[] = {
     { "status",   usb_pd_sink_status_cmd,  .describe = "Show USB-PD Sink Status"  },
+    { "debug",    usb_pd_sink_debug_cmd,   .describe = "Print detailed USB-PD Sink Status"  },
     {}
   };
 

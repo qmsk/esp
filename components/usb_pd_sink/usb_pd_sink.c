@@ -72,3 +72,14 @@ int usb_pd_sink_status(struct usb_pd_sink *sink, struct usb_pd_sink_status *stat
       LOG_FATAL("invalid type=%d", sink->type);
   }
 }
+
+int usb_pd_sink_print(struct usb_pd_sink *sink, FILE *file)
+{
+  switch (sink->type) {
+    case USB_PD_SINK_STUSB4500:
+      return stusb4500_print(&sink->state.stusb4500, file);
+
+    default:
+      LOG_FATAL("invalid type=%d", sink->type);
+  }
+}

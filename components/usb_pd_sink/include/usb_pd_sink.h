@@ -2,6 +2,7 @@
 
 #include <freertos/FreeRTOS.h>
 #include <hal/i2c_types.h>
+#include <stdio.h>
 
 #define USB_PD_SINK_STUSB4500_I2C_ADDR_BASE 0x28
 #define USB_PD_SINK_STUSB4500_I2C_ADDR_MASK 0x03
@@ -51,6 +52,11 @@ int usb_pd_sink_setup(struct usb_pd_sink *sink);
 int usb_pd_sink_start(struct usb_pd_sink *sink);
 
 /*
- * Get USB-PD Sink info.
+ * Get generic USB-PD Sink info.
  */
 int usb_pd_sink_status(struct usb_pd_sink *sink, struct usb_pd_sink_status *status);
+
+/*
+ * Print detailed USB-PD Sink info.
+ */
+int usb_pd_sink_print(struct usb_pd_sink *sink, FILE *file);

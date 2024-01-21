@@ -215,7 +215,7 @@ static void stusb4500_print_nvm(struct stusb4500 *stusb4500, FILE *file)
         break;
 
       case 1:
-        fprintf(file, "\tnvm bank1 gpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
+        fprintf(file, "\tgpio_cfg=%u vbus_dchg_mask=%u vbus_disch_time_to_pdo=%u discharge_time_to_0v=%u",
           nvm.banks.bank1.gpio_cfg,
           nvm.banks.bank1.vbus_dchg_mask,
           nvm.banks.bank1.vbus_disch_time_to_pdo,

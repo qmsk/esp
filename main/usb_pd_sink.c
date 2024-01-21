@@ -3,11 +3,11 @@
 
 #include "i2c_master.h"
 
-#include <usb_pd_sink.h>
-
 #include <logging.h>
 
 #if CONFIG_USB_PD_SINK_ENABLED
+  #include <usb_pd_sink.h>
+
   struct usb_pd_sink *usb_pd_sink;
 
   int init_usb_pd_sink()

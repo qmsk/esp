@@ -2,6 +2,7 @@
 
 PROJECT_NAME := qmsk-esp
 EXTRA_COMPONENT_DIRS :=
+EXCLUDE_COMPONENTS := usb_pd_sink
 COMPONENT_DIRS := $(abspath ../../components) ${EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components $(abspath ../../main)
 
 include $(IDF_PATH)/make/project.mk

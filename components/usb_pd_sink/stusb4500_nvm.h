@@ -88,9 +88,10 @@ union stusb4500_nvm {
       uint64_t snk_pdo_flex1_v : 10;
       uint64_t snk_pdo_flex2_v : 10;
       uint64_t snk_pdo_flex_i : 10;
-      uint64_t reserved5_4 : 1;  // 0
+      uint64_t reserved4_4 : 1;  // 0
       uint64_t power_ok_cfg : 2;
-      uint64_t reserved5_7 : 1;  // 0
+      uint64_t reserved4_7 : 1;  // 0
+      uint64_t reserved5 : 8; // 0x0
       uint64_t reserved6_0 : 3; // 0x0
       uint64_t power_only_above_5v : 1;
       uint64_t req_src_current : 1;

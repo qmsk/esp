@@ -1,0 +1,10 @@
+# ESP-IDF Partition Table (Single factory app, no OTA, 8MB flash)
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x6000,
+phy_init, data, phy,     0xf000,  0x1000,
+config,   data, spiffs,  0x10000, 0xF0000,
+
+factory,  app,  factory, 0x100000, 2M,
+
+# 1MB spiffs /web-dist
+web-dist, data, spiffs,  0x500000, 0x100000,

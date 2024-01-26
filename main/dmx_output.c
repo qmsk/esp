@@ -23,7 +23,7 @@ int init_dmx_output(struct dmx_output_state *state, int index, const struct dmx_
   }
 
   // dmx output
-  struct dmx_output_options options;
+  struct dmx_output_options options = {};
 
   LOG_INFO("dmx-output%d: enabled", index + 1);
 

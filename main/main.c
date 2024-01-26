@@ -14,6 +14,7 @@
 #include "sdcard.h"
 #include "system.h"
 #include "user.h"
+#include "usb_pd_sink.h"
 #include "user_events.h"
 #include "user_leds.h"
 #include "wifi.h"
@@ -111,6 +112,13 @@ void app_main(void)
   }
 #endif
 
+#if CONFIG_USB_PD_SINK_ENABLED
+  if ((err = init_usb_pd_sink())) {
+    LOG_ERROR("init_usb_pd_sink");
+    user_alert(USER_ALERT_ERROR_SETUP);
+  }
+#endif
+
   LOG_INFO("config");
 
   if ((err = init_config()) < 0) {
@@ -129,6 +137,13 @@ void app_main(void)
 #if CONFIG_I2C_GPIO_ENABLED
   if ((err = start_i2c_gpio())) {
     LOG_ERROR("start_i2c_gpio");
+    user_alert(USER_ALERT_ERROR_START);
+  }
+#endif
+
+#if CONFIG_USB_PD_SINK_ENABLED
+  if ((err = start_usb_pd_sink())) {
+    LOG_ERROR("start_usb_pd_sink");
     user_alert(USER_ALERT_ERROR_START);
   }
 #endif

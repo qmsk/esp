@@ -146,7 +146,7 @@ void leds_set_format_rgbwi(struct leds *leds, const uint8_t *data, size_t len, s
       struct leds_color pixel_color = leds_color_intensity(group_color, parameter_type, intensity);
 
       for (unsigned j = 0; j < params.segment; j++) {
-        leds->pixels[params.offset + g * params.group + i * params.segment + j] = pixel_color;
+        leds->pixels[params.offset + (g * params.group + i) * params.segment + j] = pixel_color;
       }
     }
   }

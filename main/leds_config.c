@@ -93,11 +93,12 @@ const struct config_enum leds_gpio_mode_enum[] = {
 #endif
 
 const struct config_enum leds_format_enum[] = {
-  { "RGB",  LEDS_FORMAT_RGB  },
-  { "BGR",  LEDS_FORMAT_BGR  },
-  { "GRB",  LEDS_FORMAT_GRB  },
-  { "RGBA", LEDS_FORMAT_RGBA },
-  { "RGBW", LEDS_FORMAT_RGBW },
+  { "RGB",   LEDS_FORMAT_RGB  },
+  { "BGR",   LEDS_FORMAT_BGR  },
+  { "GRB",   LEDS_FORMAT_GRB  },
+  { "RGBA",  LEDS_FORMAT_RGBA },
+  { "RGBW",  LEDS_FORMAT_RGBW },
+  { "RGBWI", LEDS_FORMAT_RGBWI },
   {}
 };
 

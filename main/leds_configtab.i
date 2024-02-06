@@ -158,6 +158,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Control multiple consecutive LEDs per Art-Net DMX channel. Default 0 -> set individual LEDs",
     .uint16_type = { .value = &LEDS_CONFIG.artnet_leds_segment },
   },
+  { CONFIG_TYPE_UINT16, "artnet_leds_group",
+    .description = "Group up consecutive LEDs into the same Art-NET DMX universe. Default 0 -> individual LEDs",
+    .uint16_type = { .value = &LEDS_CONFIG.artnet_leds_group },
+  },
 
   { CONFIG_TYPE_BOOL, "sequence_enabled",
     .description = "Output LED sequence frames, requires leds-sequence config",

@@ -49,3 +49,28 @@ unsigned leds_colors_active (const struct leds_color *pixels, unsigned count, en
 
   return active;
 }
+
+struct leds_color leds_color_intensity (struct leds_color color, enum leds_parameter_type parameter_type, uint8_t intensity)
+{
+  switch (parameter_type) {
+    case LEDS_PARAMETER_DIMMER:
+      color.dimmer = intensity;
+      break;
+
+    case LEDS_PARAMETER_NONE:
+      color.r = color.r * intensity / 255;
+      color.g = color.g * intensity / 255;
+      color.b = color.b * intensity / 255;
+      color.parameter = 0;
+      break;
+
+    case LEDS_PARAMETER_WHITE:
+      color.r = color.r * intensity / 255;
+      color.g = color.g * intensity / 255;
+      color.b = color.b * intensity / 255;
+      color.w = color.w * intensity / 255;
+      break;
+  }
+
+  return color;
+}

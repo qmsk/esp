@@ -161,6 +161,7 @@ struct leds_config {
   uint16_t artnet_dmx_timeout;
   int artnet_leds_format;
   uint16_t artnet_leds_segment;
+  uint16_t artnet_leds_group;
 
   bool sequence_enabled;
   int sequence_format;

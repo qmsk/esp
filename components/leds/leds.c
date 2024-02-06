@@ -142,53 +142,6 @@ int leds_set_all(struct leds *leds, struct leds_color color)
   return 0;
 }
 
-int leds_set_format(struct leds *leds, enum leds_format format, const void *data, size_t len, struct leds_format_params params)
-{
-  if (params.count == 0) {
-    params.count = leds->options.count;
-  }
-
-  if (params.segment == 0) {
-    params.segment = 1;
-  }
-
-  if (params.offset > leds->options.count) {
-    LOG_DEBUG("offset=%u is over options.count=%u", params.offset, leds->options.count);
-    params.count = 0;
-  } else if (params.offset + (params.count * params.segment) > leds->options.count) {
-    LOG_DEBUG("offset=%u + count=%u * segment=%u is over options.count=%u", params.offset, params.count, params.segment, leds->options.count);
-    params.count = (leds->options.count - params.offset) / params.segment;
-  }
-
-  leds->pixels_limit_dirty = true;
-
-  switch(format) {
-    case LEDS_FORMAT_RGB:
-      leds_set_format_rgb(leds, data, len, params);
-      return 0;
-
-    case LEDS_FORMAT_BGR:
-      leds_set_format_bgr(leds, data, len, params);
-      return 0;
-
-    case LEDS_FORMAT_GRB:
-      leds_set_format_grb(leds, data, len, params);
-      return 0;
-
-    case LEDS_FORMAT_RGBA:
-      leds_set_format_rgba(leds, data, len, params);
-      return 0;
-
-    case LEDS_FORMAT_RGBW:
-      leds_set_format_rgbw(leds, data, len, params);
-      return 0;
-
-    default:
-      LOG_ERROR("unknown format=%#x", format);
-      return -1;
-  }
-}
-
 unsigned leds_count_active(struct leds *leds)
 {
   return leds_colors_active(leds->pixels, leds->options.count, leds->protocol_type->parameter_type);

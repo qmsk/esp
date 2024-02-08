@@ -18,7 +18,7 @@ unsigned leds_format_count(enum leds_format format, size_t len, size_t group)
     case LEDS_FORMAT_RGBW:
       return len / 4;
 
-    case LEDS_FORMAT_RGBWI:
+    case LEDS_FORMAT_RGBWXI:
       return len / (4 + group) * group;
 
     default:
@@ -123,7 +123,7 @@ void leds_set_format_rgbw(struct leds *leds, const uint8_t *data, size_t len, st
   }
 }
 
-void leds_set_format_rgbwi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
+void leds_set_format_rgbwxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
 {
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
 
@@ -197,8 +197,8 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
       leds_set_format_rgbw(leds, data, len, params);
       return 0;
 
-    case LEDS_FORMAT_RGBWI:
-      leds_set_format_rgbwi(leds, data, len, params);
+    case LEDS_FORMAT_RGBWXI:
+      leds_set_format_rgbwxi(leds, data, len, params);
       return 0;
 
     default:

@@ -239,7 +239,11 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
-  state->artnet->universe_leds_count = config_leds_artnet_universe_leds_count(config);
+  if (!(state->artnet->universe_leds_count = config_leds_artnet_universe_leds_count(config))) {
+    LOG_ERROR("invalid universe_leds_count, artnet_leds_group is too large?");
+    return -1;
+  }
+
   state->artnet->universe_count = config_leds_artnet_universe_count(config);
 
   LOG_INFO("universe_count=%u universe_leds_count=%u",

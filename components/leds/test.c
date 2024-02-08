@@ -12,11 +12,13 @@
 #define TEST_FRAME_TICKS (1000 / TEST_FRAME_RATE / portTICK_RATE_MS)
 
 #define TEST_MODE_COLOR_FRAMES 25
-#define TEST_MODE_CHASE_FRAMES 2
+#define TEST_MODE_CHASE_TICKS_TOTAL (10 * 1000 / portTICK_RATE_MS) // 10s for all pixels, minimum 1 tick per pixel
 #define TEST_MODE_RAINBOW_FADEIN_FRAMES 25
 
 int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color color)
 {
+  unsigned count = leds->options.count;
+  unsigned ticks = TEST_MODE_CHASE_TICKS_TOTAL / count;
   int err;
 
   switch (leds_parameter_type(leds)) {
@@ -37,15 +39,11 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
     return err;
   }
 
-  if (frame >= leds->options.count) {
-    return 0; // end
-  }
-
-  if ((err = leds_set(leds, frame, color))) {
+  if ((err = leds_set(leds, frame % count, color))) {
     return err;
   }
 
-  return TEST_FRAME_TICKS * TEST_MODE_CHASE_FRAMES;
+  return ticks > 0 ? ticks : 1;
 }
 
 int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color color)

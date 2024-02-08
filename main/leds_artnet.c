@@ -10,6 +10,58 @@
 #include <logging.h>
 #include <leds.h>
 
+static unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
+{
+  unsigned universe_leds_count = config->artnet_dmx_leds;
+
+  if (!universe_leds_count) {
+    universe_leds_count = leds_format_count(ARTNET_DMX_SIZE, config->artnet_leds_format, config->artnet_leds_group);
+  }
+
+  return universe_leds_count;
+}
+
+static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
+{
+  unsigned universe_leds_count = config_leds_artnet_universe_leds_count(config);
+  unsigned universe_count = config->artnet_universe_count;
+  unsigned leds_count = config->count;
+
+  if (config->artnet_leds_segment) {
+    // artnet pixel count
+    leds_count = leds_count / config->artnet_leds_segment;
+  }
+
+  if (!universe_count) {
+    // how many universes do we need to fit all of the frames?
+    universe_count = leds_count / universe_leds_count;
+
+    if (leds_count % universe_leds_count) {
+      universe_count += 1;
+    }
+  }
+
+  return universe_count;
+}
+
+unsigned count_leds_artnet_outputs()
+{
+  unsigned count = 0;
+
+  for (int i = 0; i < LEDS_COUNT; i++)
+  {
+    const struct leds_config *config = &leds_configs[i];
+
+    if (!config->enabled) {
+      continue;
+    }
+
+    count += config_leds_artnet_universe_count(config);
+  }
+
+  return count;
+}
+
 void leds_artnet_timeout_reset(struct leds_state *state)
 {
   const struct leds_config *config = state->config;
@@ -52,24 +104,10 @@ static int leds_artnet_set(struct leds_state *state, unsigned index, struct artn
     len -= addr;
   }
 
-  // count of LEDs per universe
-  unsigned count = config->artnet_dmx_leds;
-  unsigned segment = config->artnet_leds_segment;
-  unsigned group = config->artnet_leds_group;
-
-  if (!segment) {
-    segment = 1;
-  }
-
-  if (!group) {
-    group = 1;
-  }
-
-  if (count == 0) {
-    count = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE, group);
-  }
-
   // set LEDs from artnet data using configured byte format
+  unsigned count = state->artnet->universe_leds_count;
+  unsigned segment = config->artnet_leds_segment ? config->artnet_leds_segment : 1;
+
   struct leds_format_params params = {
     .count   = count,
     .offset  = index * count * segment,
@@ -183,54 +221,6 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
   return unsync || sync || timeout;
 }
 
-static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
-{
-  unsigned count = config->count;
-  unsigned artnet_dmx_leds = config->artnet_dmx_leds;
-  unsigned artnet_leds_segment = config->artnet_leds_segment;
-  unsigned artnet_universe_count = config->artnet_universe_count;
-  unsigned artnet_leds_group = config->artnet_leds_group;
-
-  if (artnet_leds_segment) {
-    count = count / artnet_leds_segment;
-  }
-
-  if (!artnet_dmx_leds) {
-    artnet_dmx_leds = leds_format_count(config->artnet_leds_format, ARTNET_DMX_SIZE, artnet_leds_group);
-  }
-
-  if (!artnet_universe_count) {
-    // how many universes do we need to fit all of the frames?
-    artnet_universe_count = count / artnet_dmx_leds;
-
-    if (count % artnet_dmx_leds) {
-      artnet_universe_count += 1;
-    }
-
-    LOG_DEBUG("count=%u artnet_dmx_leds=%u -> artnet_universe_count=%u", count, artnet_dmx_leds, artnet_universe_count);
-  }
-
-  return artnet_universe_count;
-}
-
-unsigned count_leds_artnet_outputs()
-{
-  unsigned count = 0;
-
-  for (int i = 0; i < LEDS_COUNT; i++)
-  {
-    const struct leds_config *config = &leds_configs[i];
-
-    if (!config->enabled) {
-      continue;
-    }
-
-    count += config_leds_artnet_universe_count(config);
-  }
-
-  return count;
-}
-
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)
 {
   LOG_INFO("leds%d: universe start=%u count=%u step=%u dmx addr=%u leds=%u leds format=%s segment=%u group=%u", index + 1,
@@ -249,7 +239,13 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
+  state->artnet->universe_leds_count = config_leds_artnet_universe_leds_count(config);
   state->artnet->universe_count = config_leds_artnet_universe_count(config);
+
+  LOG_INFO("universe_count=%u universe_leds_count=%u",
+    state->artnet->universe_count,
+    state->artnet->universe_leds_count
+  );
 
   if (!(state->artnet->outputs = calloc(state->artnet->universe_count, sizeof(*state->artnet->outputs)))) {
     LOG_ERROR("calloc");

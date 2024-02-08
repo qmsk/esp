@@ -2,9 +2,9 @@
 
 #include <logging.h>
 
-unsigned leds_format_count(enum leds_format format, size_t len, size_t group)
+unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
 {
-  if (group == 0) {
+  if (!group) {
     group = 1;
   }
 

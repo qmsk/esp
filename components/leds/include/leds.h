@@ -96,12 +96,17 @@ enum leds_format {
   LEDS_FORMAT_GRB,
   LEDS_FORMAT_RGBA,
   LEDS_FORMAT_RGBW,
+
+  LEDS_FORMAT_RGBXI, // grouped RGB + intensity
+  LEDS_FORMAT_RGBWXI, // grouped RGBW + intensity
 };
 
 /*
- * Return count of LEDs that fit into len bytes using the given format.
+ * Return count of pixels that fit into len bytes using the given format.
+ *
+ * This does not consider segments.
  */
-unsigned leds_format_count(enum leds_format format, size_t len);
+unsigned leds_format_count(size_t len, enum leds_format format, unsigned group);
 
 struct leds_format_params {
   /* Limit number of LED (segments) to read */
@@ -112,6 +117,9 @@ struct leds_format_params {
 
   /* Set segments of multiple consecutive LEDs per channel */
   unsigned segment;
+
+  /* Set color for group of LEDs */
+  unsigned group;
 };
 
 /*
@@ -316,10 +324,12 @@ struct leds_color {
     uint8_t parameter;
     uint8_t dimmer; // 0-255
     uint8_t white; // 0-255
+    uint8_t w; // 0-255
   };
 };
 
 bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
+struct leds_color leds_color_intensity (struct leds_color color, enum leds_parameter_type parameter_type, uint8_t intensity);
 
 enum leds_test_mode {
   TEST_MODE_NONE  = 0,

@@ -10,6 +10,7 @@
 
 struct leds_artnet_state {
   unsigned universe_count;
+  unsigned universe_leds_count;
 
   struct artnet_dmx dmx;
   struct artnet_output **outputs;

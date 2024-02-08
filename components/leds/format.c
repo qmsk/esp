@@ -12,11 +12,11 @@ unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
     case LEDS_FORMAT_RGB:
     case LEDS_FORMAT_BGR:
     case LEDS_FORMAT_GRB:
-      return len / 3;
+      return len / (3 * group) * group;
 
     case LEDS_FORMAT_RGBA:
     case LEDS_FORMAT_RGBW:
-      return len / 4;
+      return len / (4 * group) * group;
 
     case LEDS_FORMAT_RGBWXI:
       return len / (4 + group) * group;

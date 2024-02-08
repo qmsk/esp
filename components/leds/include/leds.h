@@ -96,6 +96,8 @@ enum leds_format {
   LEDS_FORMAT_GRB,
   LEDS_FORMAT_RGBA,
   LEDS_FORMAT_RGBW,
+
+  LEDS_FORMAT_RGBXI, // grouped RGB + intensity
   LEDS_FORMAT_RGBWXI, // grouped RGBW + intensity
 };
 

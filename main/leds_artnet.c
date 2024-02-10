@@ -10,6 +10,7 @@
 #include <logging.h>
 #include <leds.h>
 
+#define SYNC_BIT(index) (1 << (index))
 #define SYNC_BITS_MASK(count) ((1 << (count)) - 1)
 
 static unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
@@ -67,17 +68,17 @@ unsigned count_leds_artnet_outputs()
 static bool leds_artnet_sync_set(struct leds_state *state, unsigned index)
 {
   const struct leds_config *config = state->config;
-  struct leds_stats *stats = &leds_stats[state->index];
-  bool force_sync = false;
+  bool update = true;
 
-  if (!(state->artnet->sync_bits & (1 << index))) {
+  if (!(state->artnet->sync_bits & SYNC_BIT(index))) {
     // mark for sync as normal
-    state->artnet->sync_bits |= (1 << index);
-  } else if (state->artnet->sync_tick) {
-    // received multiple updates for output, skip update and force sync
-    stats_counter_increment(&stats->sync_forced);
+    state->artnet->sync_bits |= SYNC_BIT(index);
+  } else {
+    // mark for missed sync
+    state->artnet->sync_missed |= SYNC_BIT(index);
 
-    force_sync = true;
+    // delay update to next sync
+    update = false;
   }
 
   if (config->artnet_sync_timeout) {
@@ -89,7 +90,7 @@ static bool leds_artnet_sync_set(struct leds_state *state, unsigned index)
     state->artnet->sync_tick = 0;
   }
 
-  return force_sync;
+  return update;
 }
 
 static bool leds_artnet_sync_check(struct leds_state *state)
@@ -97,8 +98,22 @@ static bool leds_artnet_sync_check(struct leds_state *state)
   const struct leds_config *config = state->config;
   struct leds_stats *stats = &leds_stats[state->index];
 
+  if (!config->artnet_sync_timeout && state->artnet->sync_bits) {
+    // any output set, free-running
+    return true;
+  }
+
   if (state->artnet->sync_bits == SYNC_BITS_MASK(state->artnet->universe_count)) {
     // all outputs set
+    stats_counter_increment(&stats->sync_full);
+
+    return true;
+  }
+
+  if (state->artnet->sync_missed) {
+    // any outputs missed
+    stats_counter_increment(&stats->sync_missed);
+
     return true;
   }
 
@@ -109,19 +124,22 @@ static bool leds_artnet_sync_check(struct leds_state *state)
     return true;
   }
 
-  if (!config->artnet_sync_timeout && state->artnet->sync_bits) {
-    // free-running
-    return true;
-  }
-
   // wait for remaining outputs update before sync
   return false;
 }
 
 static void leds_artnet_sync_reset(struct leds_state *state)
 {
+  const struct leds_config *config = state->config;
+
   state->artnet->sync_bits = 0;
-  state->artnet->sync_tick = 0;
+
+  if (state->artnet->sync_missed && config->artnet_sync_timeout) {
+    // prepare to sync any missed updates per this tick
+    state->artnet->sync_tick = xTaskGetTickCount() + config->artnet_sync_timeout / portTICK_PERIOD_MS;
+  } else {
+    state->artnet->sync_tick = 0;
+  }
 }
 
 void leds_artnet_timeout_reset(struct leds_state *state)
@@ -137,6 +155,11 @@ void leds_artnet_timeout_reset(struct leds_state *state)
 
 TickType_t leds_artnet_wait(struct leds_state *state)
 {
+  if (state->artnet->sync_missed) {
+    // immediately
+    return xTaskGetTickCount();
+  }
+
   if (state->artnet->sync_tick) {
     return state->artnet->sync_tick;
   }
@@ -218,6 +241,10 @@ bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
     return true;
   }
 
+  if (state->artnet->sync_missed) {
+    return true;
+  }
+
   if (state->artnet->sync_tick) {
     if (xTaskGetTickCount() >= state->artnet->sync_tick) {
       return true;
@@ -235,17 +262,27 @@ bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
 
 int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 {
+  struct leds_stats *stats = &leds_stats[state->index];
   const struct leds_config *config = state->config;
 
   bool data = event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS;
   bool sync = event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT);
-  bool timeout = false;
+
+  bool sync_mode = false;
+  bool update = false;
 
   if (state->test) {
     if (data || sync) {
       // clear any test mode output
       leds_test_clear(state);
     }
+  }
+
+  if (state->artnet->sync_missed) {
+    // handle updates with missed sync
+    event_bits |= state->artnet->sync_missed;
+
+    state->artnet->sync_missed = 0;
   }
 
   if (data) {
@@ -255,9 +292,9 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         continue;
       }
 
-      if (leds_artnet_sync_set(state, index)) {
-        // skip, force sync
-        sync = true;
+      if (!leds_artnet_sync_set(state, index)) {
+        // skip, missed sync
+        continue;
       }
 
       if (artnet_output_read(state->artnet->outputs[index], &state->artnet->dmx, 0)) {
@@ -270,12 +307,24 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         LOG_WARN("leds%d: leds_artnet_set", state->index + 1);
         continue;
       }
+
+      if (state->artnet->dmx.sync_mode) {
+        sync_mode = true;
+      }
     }
   }
 
-  if (!sync && leds_artnet_sync_check(state)) {
-    // apply soft sync
-    sync = true;
+  if (sync) {
+    // hard sync
+    stats_counter_increment(&stats->artnet_sync);
+
+    update = true;
+  } else if (sync_mode) {
+    // wait for hard sync
+    update = false;
+  } else if (leds_artnet_sync_check(state)) {
+    // soft sync
+    update = true;
   }
 
   // timeouts
@@ -287,18 +336,18 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         LOG_WARN("leds_artnet_timeout");
       }
 
-      timeout = true;
+      update = true;
 
       // repeat
       leds_artnet_timeout_reset(state);
     }
   }
 
-  if (sync) {
+  if (update) {
     leds_artnet_sync_reset(state);
   }
 
-  return sync || timeout;
+  return update;
 }
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)

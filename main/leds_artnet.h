@@ -16,7 +16,8 @@ struct leds_artnet_state {
   struct artnet_output **outputs;
 
   unsigned sync_bits; // bitmask of outputs waiting for sync
-  TickType_t sync_tick; // tick for forced sync
+  unsigned sync_missed; // bitmask of outputs with missed sync
+  TickType_t sync_tick; // tick for soft sync
 
   TickType_t timeout_tick; // tick for forced reset
 };

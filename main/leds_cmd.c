@@ -365,8 +365,10 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "update",   &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
-    print_stats_counter("sync",   "forced",  &stats->sync_forced);
+    print_stats_counter("artnet", "sync",    &stats->artnet_sync);
     print_stats_counter("sync",   "timeout", &stats->sync_timeout);
+    print_stats_counter("sync",   "missed",  &stats->sync_missed);
+    print_stats_counter("sync",   "full",    &stats->sync_full);
     print_stats_counter("update", "timeout", &stats->update_timeout);
     printf("\n");
   }

@@ -349,7 +349,12 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   }
 
   for (unsigned i = 0; i < LEDS_COUNT; i++) {
+    const struct leds_config *config = &leds_configs[i];
     const struct leds_stats *stats = &leds_stats[i];
+
+    if (!config->enabled) {
+      continue;
+    }
 
     printf("leds%u:\n", i + 1);
 

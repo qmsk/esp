@@ -41,11 +41,13 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   // prepare header fields
   send->len = sizeof(send->packet->poll_reply);
 
+  memset(reply, 0, sizeof(*reply));
   memcpy(reply->id, artnet_id, sizeof(reply->id));
   reply->opcode = ARTNET_OP_POLL_REPLY;
 
   // prepare constant fields
-  memcpy(reply->ip_address, artnet->options.metadata.ip_address, 4);
+  memcpy(reply->ip_address, artnet->options.metadata.ip_address, sizeof(reply->ip_address));
+  memcpy(&reply->bind_ip, artnet->options.metadata.ip_address, sizeof(reply->bind_ip));
 
   reply->port_number = artnet_pack_u16lh(artnet->options.port);
   reply->net_switch = (artnet->options.address & 0x7F00) >> 8;

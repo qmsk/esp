@@ -16,6 +16,11 @@ struct leds_stats {
 
   struct stats_timer artnet;
   struct stats_counter artnet_timeout;
+  struct stats_counter artnet_sync;
+
+  struct stats_counter sync_timeout;
+  struct stats_counter sync_missed;
+  struct stats_counter sync_full;
 
   struct stats_timer sequence;
 

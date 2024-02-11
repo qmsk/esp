@@ -74,6 +74,8 @@ static bool leds_artnet_sync_set(struct leds_state *state, unsigned index)
     // mark for sync as normal
     state->artnet->sync_bits |= SYNC_BIT(index);
   } else {
+    LOG_DEBUG("missed index=%u", index);
+
     // mark for missed sync
     state->artnet->sync_missed |= SYNC_BIT(index);
 
@@ -267,6 +269,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   bool data = event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS;
   bool sync = event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT);
+  bool miss = false;
 
   bool sync_mode = false;
   bool update = false;
@@ -279,21 +282,31 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
   }
 
   if (state->artnet->sync_missed) {
+    miss = true;
+
+    LOG_DEBUG("event_bits=%08x + sync_missed=%08x", event_bits, state->artnet->sync_missed);
+
     // handle updates with missed sync
     event_bits |= state->artnet->sync_missed;
 
     state->artnet->sync_missed = 0;
   }
 
-  if (data) {
+  if (data || miss) {
     // set output from artnet universe
     for (unsigned index = 0; index < state->artnet->universe_count; index++) {
       if (!(event_bits & (1 << index))) {
         continue;
       }
 
-      if (!leds_artnet_sync_set(state, index)) {
-        // skip, missed sync
+      if (leds_artnet_sync_set(state, index)) {
+        // normal update
+      } else if (miss) {
+        LOG_DEBUG("hit index=%u", index);
+      } else {
+        LOG_DEBUG("skip index=%u", index);
+
+        // skip for update of previous missed sync
         continue;
       }
 

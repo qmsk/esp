@@ -1,0 +1,31 @@
+diff --git a/tools/kconfig/Makefile b/tools/kconfig/Makefile
+index 9fc367b4..fa680125 100644
+--- a/tools/kconfig/Makefile
++++ b/tools/kconfig/Makefile
+@@ -214,7 +214,7 @@ clean-files += $(all-objs) $(all-deps) conf-idf mconf-idf conf mconf
+ 
+ # Check that we have the required ncurses stuff installed for lxdialog (menuconfig)
+ PHONY += dochecklxdialog
+-$(addprefix ,$(lxdialog)): dochecklxdialog
++#$(addprefix ,$(lxdialog)): dochecklxdialog
+ dochecklxdialog: lxdialog
+ 	$(CONFIG_SHELL) $(check-lxdialog) -check $(CC) $(CFLAGS) $(LOADLIBES_mconf)
+ 
+@@ -349,4 +349,3 @@ clean:
+ 	rm -f $(clean-files)
+ 
+ -include $(all-deps)
+-
+diff --git a/tools/kconfig/lxdialog/check-lxdialog.sh b/tools/kconfig/lxdialog/check-lxdialog.sh
+index e9daa627..568564ad 100755
+--- a/tools/kconfig/lxdialog/check-lxdialog.sh
++++ b/tools/kconfig/lxdialog/check-lxdialog.sh
+@@ -56,7 +56,7 @@ ccflags()
+ }
+ 
+ # Temp file, try to clean up after us
+-tmp=.lxdialog.tmp
++tmp=/tmp/.lxdialog.tmp
+ trap "rm -f $tmp ${tmp%.tmp}.d" 0 1 2 3 15
+ 
+ # Check if we can link to ncurses

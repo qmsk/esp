@@ -82,7 +82,7 @@ jobs:
           tags: qmsk/esp-idf:dev
 
       - name: Build
-        run: docker-compose -f projects/esp32/docker-compose.yml run --rm build
+        run: docker compose -f projects/esp32/docker-compose.yml run --rm build
 
       - name: Upload esp32-build
         uses: actions/upload-artifact@v3
@@ -136,7 +136,7 @@ jobs:
           tags: qmsk/esp8266-rtos-sdk:dev
 
       - name: Build
-        run: docker-compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_args
+        run: docker compose -f projects/esp8266/docker-compose.yml run --rm build make defconfig all write_flash_args
 
       - name: Upload esp8266-build
         uses: actions/upload-artifact@v3

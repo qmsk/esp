@@ -1,8 +1,7 @@
 # Usage:
-#   USER_ID=$UID docker-compose run --rm npm install
-#   USER_ID=$UID docker-compose run --rm npm run build
-#   USER_ID=$UID API_URL=http://172.29.16.47 docker-compose run --rm npm start
-version: '3.8'
+#   USER_ID=$UID docker compose run --rm npm install
+#   USER_ID=$UID docker compose run --rm npm run build
+#   USER_ID=$UID API_URL=http://172.29.16.47 docker compose run --rm npm start
 services:
   npm:
     build:

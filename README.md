@@ -31,44 +31,44 @@ ESP8266/32 based Art-NET over WiFi node for RGBW pixel LEDs with support for mul
 
 Run the webpack build for the `web-dist` files to be included in the SPIFFS image:
 
-    $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm install
-    $ USER_ID=$UID docker-compose -f web/docker-compose.yml run --rm npm run build
+    $ USER_ID=$UID docker compose -f web/docker-compose.yml run --rm npm install
+    $ USER_ID=$UID docker compose -f web/docker-compose.yml run --rm npm run build
 
 ## ESP8266
 
 Using the docker-based [Espressif ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) [v3.4](https://github.com/espressif/ESP8266_RTOS_SDK/releases/tag/v3.4) + patches SDK/toolchain:
 
-    $ docker-compose -f projects/esp8266/docker-compose.yml build sdk
+    $ docker compose -f projects/esp8266/docker-compose.yml build sdk
 
 Build firmware images (bootloader + app + web-dist):
 
-    $ USER_ID=$UID docker-compose -f projects/esp8266/docker-compose.yml run --rm build
+    $ USER_ID=$UID docker compose -f projects/esp8266/docker-compose.yml run --rm build
 
 Flash firmware images (bootloader + app + web-dist) to NodeMCU devkit:
 
-    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp8266/docker-compose.yml run --rm flash
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp8266/docker-compose.yml run --rm flash
 
 Access the USB console:
 
-    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp8266/docker-compose.yml run --rm monitor
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp8266/docker-compose.yml run --rm monitor
 
 ## ESP32
 
 Using the docker-based [Espressif ESP-IDF](https://github.com/espressif/esp-idf) [v4.4](https://github.com/espressif/esp-idf/releases/tag/v4.4.4) + patches SDK/toolchain:
 
-    $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker-compose -f projects/esp32/docker-compose.yml build sdk
+    $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker compose -f projects/esp32/docker-compose.yml build sdk
 
 Build firmware images (bootloader + app + web-dist):
 
-    $ docker-compose -f projects/esp32/docker-compose.yml run --rm build
+    $ docker compose -f projects/esp32/docker-compose.yml run --rm build
 
 Flash firmware images (bootloader + app + web-dist) to the ESP32-devkit:
 
-    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp32/docker-compose.yml run --rm flash
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.yml run --rm flash
 
 Access the USB console:
 
-    $ ESPPORT=/dev/ttyUSB? docker-compose -f projects/esp32/docker-compose.yml run --rm monitor
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.yml run --rm monitor
 
 # Usage
 
@@ -82,7 +82,7 @@ Please configure a WiFi password, and optionally a HTTP username/password.
 
 By default, the ESP8266 will print log messages and open a CLI console on UART0, which can be accessed via the same USB UART used for bootloader flashing:
 
-    ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
+    ESPPORT=/dev/ttyUSB? docker compose run --rm monitor
 
 If using the UART0 pins for other IO (e.g. `spi-leds` I2S interface), the console can be closed manually using the `exit` command,
 or automatically at boot using the `timeout` config. The console can be re-started using a short press on the FLASH button;
@@ -357,7 +357,7 @@ artnet_universe = 0
 
 To recover from a broken configuration, either press and hold the FLASH button, or erase the SPIFFS partition using the USB bootloader:
 
-    ESPPORT=/dev/ttyUSB? docker-compose run --rm config-reset
+    ESPPORT=/dev/ttyUSB? docker compose run --rm config-reset
 
 # Components
 

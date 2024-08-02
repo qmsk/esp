@@ -1,13 +1,12 @@
 # USAGE:
 #
-#   docker-compose build sdk
-#   USER_ID=$UID docker-compose up build
-#   ESPPORT=/dev/ttyUSB? docker-compose up flash
-#   ESPPORT=/dev/ttyUSB? docker-compose run --rm monitor
-#   ESPPORT=/dev/ttyUSB? docker-compose up config-reset
+#   docker compose build sdk
+#   USER_ID=$UID docker compose up build
+#   ESPPORT=/dev/ttyUSB? docker compose up flash
+#   ESPPORT=/dev/ttyUSB? docker compose run --rm monitor
+#   ESPPORT=/dev/ttyUSB? docker compose up config-reset
 #
 # @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#environment-variables
-version: '3.8'
 services:
   sdk:
     image: qmsk/esp8266-rtos-sdk:dev

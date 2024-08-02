@@ -1,0 +1,50 @@
+# USAGE:
+#
+#   ESPPORT=/dev/ttyUSB? docker compose up flash
+#   ESPPORT=/dev/ttyUSB? docker compose run --rm monitor
+#   ESPPORT=/dev/ttyUSB? docker compose up config-reset
+#
+# @see https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#environment-variables
+services:
+  flash:
+    image: qmsk/esp8266-rtos-sdk:dev
+    volumes:
+      - ../..:/build
+    working_dir: /build/projects/esp8266
+    user: build
+    command: make flash
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
+      ESPPORT: "${ESPPORT}"
+
+  config-reset:
+    image: qmsk/esp8266-rtos-sdk:dev
+    volumes:
+      - ../..:/build
+    working_dir: /build/projects/esp8266
+    user: build
+    command: make config-reset
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
+      ESPPORT: "${ESPPORT}"
+
+  monitor:
+    image: qmsk/esp8266-rtos-sdk:dev
+    volumes:
+      - ../..:/build
+    working_dir: /build/projects/esp8266
+    user: build
+    command: make monitor MONITOR_OPTS="--baud $${MONITORBAUD} --port $${ESPPORT} --eol CRLF"
+    init: true
+    devices:
+      - "${ESPPORT}"
+    environment:
+      SDKCONFIG: sdkconfig@${BOARDCONFIG:-qmsk-esp}
+      ESPPORT: "${ESPPORT}"
+      MONITORBAUD: "${MONITORBAUD:-115200}"

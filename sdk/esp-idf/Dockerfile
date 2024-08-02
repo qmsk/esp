@@ -1,10 +1,10 @@
-FROM debian:bullseye
+FROM debian:bookworm
 
 # dependencies
 #   https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-setup.html
 RUN apt-get update && apt-get install -y \
   git wget flex bison gperf \
-  python3 python3-pip python3-setuptools \
+  python3 python3-pip python3-setuptools python3-virtualenv \
   cmake ninja-build ccache dfu-util \
   libffi-dev libssl-dev libusb-1.0-0
 

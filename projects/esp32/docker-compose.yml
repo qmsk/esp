@@ -1,7 +1,6 @@
 # Usage:
 #   $ BUILD_UID=$(id -u) BUILD_GID=$(id -g) docker compose build sdk
 #   $ docker compose run --rm build
-#   $ ESPPORT=/dev/ttyUSB0 docker compose run --rm monitor
 services:
   sdk:
     image: qmsk/esp-idf:dev
@@ -23,31 +22,4 @@ services:
     init: true
     read_only: true
     environment:
-      BOARDCONFIG: "${BOARDCONFIG}"
-
-  flash:
-    image: qmsk/esp-idf:dev
-    volumes:
-      - ../..:/build
-    working_dir: /build/projects/esp32
-    command: idf.py flash
-    init: true
-    read_only: true
-    devices:
-      - "${ESPPORT}"
-    environment:
-      ESPPORT: "${ESPPORT}"
-
-  monitor:
-    image: qmsk/esp-idf:dev
-    volumes:
-      - ../..:/build
-    working_dir: /build/projects/esp32
-    command: idf.py monitor
-    init: true
-    read_only: true
-    devices:
-      - "${ESPPORT}"
-    environment:
-      ESPPORT: "${ESPPORT}"
       BOARDCONFIG: "${BOARDCONFIG}"

@@ -64,11 +64,11 @@ Build firmware images (bootloader + app + web-dist):
 
 Flash firmware images (bootloader + app + web-dist) to the ESP32-devkit:
 
-    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.yml run --rm flash
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.devices.yml run --rm flash
 
 Access the USB console:
 
-    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.yml run --rm monitor
+    $ ESPPORT=/dev/ttyUSB? docker compose -f projects/esp32/docker-compose.devices.yml run --rm monitor
 
 # Usage
 

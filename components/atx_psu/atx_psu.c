@@ -15,7 +15,11 @@
 #define ATX_PSU_STATUS_POWER_ENABLE_BIT (1 << 0)
 #define ATX_PSU_STATUS_POWER_GOOD_BIT (1 << 1)
 
-#define ATX_PSU_POWER_GOOD_TICKS (100 / portTICK_PERIOD_MS)
+// poll for PG while ACTIVATE -> ACTIVE
+#define ATX_PSU_POWER_GOOD_ACTIVATE_TICKS (100 / portTICK_PERIOD_MS)
+
+// poll for PG while ACTIVATE
+#define ATX_PSU_POWER_GOOD_ACTIVE_TICKS (1000 / portTICK_PERIOD_MS)
 
 enum atx_psu_state {
   INACTIVE,
@@ -148,11 +152,12 @@ void atx_psu_main(void *arg)
 
         // indefinite wait for any bit
         if ((bits = atx_psu_wait(atx_psu, portMAX_DELAY))) {
-          LOG_DEBUG("INACTIVE -> ACTIVE<%08x>", bits);
+          LOG_DEBUG("INACTIVE -> ACTIVATE<%08x>", bits);
           set_power_enable(atx_psu);
           state = ACTIVATE;
+          LOG_INFO("power-on");
         } else {
-          LOG_DEBUG("INACTIVE -> ACTIVATE");
+          LOG_DEBUG("INACTIVE");
         }
 
         break;
@@ -160,16 +165,18 @@ void atx_psu_main(void *arg)
       case ACTIVATE:
         LOG_DEBUG("ACTIVATE...");
 
-        // indefinite wait for clear bit
-        if (get_power_good(atx_psu)) {
-          LOG_DEBUG("ACTIVATE -> ACTIVE");
-          state = ACTIVE;
-        } else if ((bits = atx_psu_wait_clear(atx_psu, ATX_PSU_POWER_GOOD_TICKS))) {
-          // test power_good
-        } else {
-          LOG_DEBUG("ACTIVE -> DEACTIVATE");
+        // poll for PG
+        if (!(bits = atx_psu_wait_clear(atx_psu, ATX_PSU_POWER_GOOD_ACTIVATE_TICKS))) {
+          LOG_DEBUG("ACTIVATE -> DEACTIVATE");
           // delay deactivation
           state = DEACTIVATE;
+        } else if (get_power_good(atx_psu)) {
+          LOG_DEBUG("ACTIVATE -> ACTIVE<%08x>", bits);
+          state = ACTIVE;
+          LOG_INFO("power-good");
+        } else {
+          // re-ACTIVATE to test power_good
+          LOG_DEBUG("ACTIVATE");
         }
 
         break;
@@ -177,13 +184,18 @@ void atx_psu_main(void *arg)
       case ACTIVE:
         LOG_DEBUG("ACTIVE...");
 
-        // indefinite wait for clear bit
-        if ((bits = atx_psu_wait_clear(atx_psu, portMAX_DELAY))) {
-          LOG_DEBUG("ACTIVE -> ACTIVE<%08x>", bits);
-        } else {
+        // wait for clear bit, poll for PG
+        if (!(bits = atx_psu_wait_clear(atx_psu, ATX_PSU_POWER_GOOD_ACTIVE_TICKS))) {
           LOG_DEBUG("ACTIVE -> DEACTIVATE");
           // delay deactivation
           state = DEACTIVATE;
+        } else if (get_power_good(atx_psu)) {
+          LOG_DEBUG("ACTIVE<%08x>", bits);
+        } else {
+          // re-ACTIVATE to test power_good
+          LOG_DEBUG("ACTIVE -> ACTIVATE");
+          state = ACTIVATE;
+          LOG_WARN("lost power-good!");
         }
 
         break;
@@ -192,13 +204,17 @@ void atx_psu_main(void *arg)
         LOG_DEBUG("DEACTIVATE...");
 
         // wait for any bit or deactivate on timeout
-        if ((bits = atx_psu_wait(atx_psu, atx_psu->options.timeout))) {
-          LOG_DEBUG("DEACTIVATE -> ACTIVE<%08x>", bits);
-          state = ACTIVE;
-        } else {
+        if (!(bits = atx_psu_wait(atx_psu, atx_psu->options.timeout))) {
           LOG_DEBUG("DEACTIVATE -> INACTIVE");
           clear_power_enable(atx_psu);
           state = INACTIVE;
+          LOG_INFO("power-off");
+        } else if (get_power_good(atx_psu)) {
+          LOG_DEBUG("DEACTIVATE -> ACTIVE<%08x>", bits);
+          state = ACTIVE;
+        } else {
+          LOG_DEBUG("DEACTIVATE -> ACTIVATE<%08x>", bits);
+          state = ACTIVATE;
         }
 
         break;
@@ -211,6 +227,8 @@ void atx_psu_main(void *arg)
 
 void atx_psu_power_enable(struct atx_psu *atx_psu, enum atx_psu_bit bit)
 {
+  LOG_DEBUG("bit=%08x", ATX_PSU_STATE_BIT(bit));
+
   xEventGroupSetBits(atx_psu->state, ATX_PSU_STATE_BIT(bit));
 }
 
@@ -227,7 +245,7 @@ int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t
   } else {
     bits = xEventGroupWaitBits(atx_psu->status, ATX_PSU_STATUS_POWER_ENABLE_BIT | ATX_PSU_STATUS_POWER_GOOD_BIT, pdFALSE, pdTRUE, timeout);
 
-    LOG_DEBUG("bits=%08x", bits);
+    //LOG_DEBUG("bits=%08x", bits);
 
     return (bits & ATX_PSU_STATUS_POWER_GOOD_BIT);
   }
@@ -235,6 +253,8 @@ int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t
 
 void atx_psu_standby(struct atx_psu *atx_psu, enum atx_psu_bit bit)
 {
+  LOG_DEBUG("bit=%08x", ATX_PSU_STATE_BIT(bit));
+
   xEventGroupClearBits(atx_psu->state, ATX_PSU_STATE_BIT(bit));
   xEventGroupSetBits(atx_psu->state, ATX_PSU_STATE_CLEAR_BIT);
 }

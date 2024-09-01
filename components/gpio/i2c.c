@@ -49,7 +49,7 @@
     switch(options->type) {
       case GPIO_I2C_TYPE_PCA9534:
       case GPIO_I2C_TYPE_PCA9554:
-        return gpio_i2c_pca54xx_init(&dev->state.pca54xx);
+        return gpio_i2c_pca54xx_init(dev);
 
       default:
         LOG_FATAL("unsupported type=%d", options->type);

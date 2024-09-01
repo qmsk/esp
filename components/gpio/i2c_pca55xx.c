@@ -48,6 +48,18 @@
     return 0;
   }
 
+  static int gpio_i2c_pca54xx_clear(const struct gpio_i2c_dev *dev)
+  {
+    uint8_t value;
+    int err;
+
+    if ((err = gpio_i2c_pca54xx_read(&dev->options, PCA55XX_CMD_INPUT_PORT, &value))) {
+      return err;
+    }
+
+    return 0;
+  }
+
   static int gpio_i2c_pca54xx_input(const struct gpio_i2c_dev *dev, uint8_t mask, uint8_t *valuep)
   {
     uint8_t value;
@@ -112,11 +124,19 @@ error:
     return err;
   }
 
-  int gpio_i2c_pca54xx_init(struct gpio_i2c_pca54xx_state *state)
+  int gpio_i2c_pca54xx_init(struct gpio_i2c_dev *i2c_dev)
   {
+    struct gpio_i2c_pca54xx_state *state = &i2c_dev->state.pca54xx;
+    int err;
+
     state->output = 0xff;
     state->inversion = 0x00;
     state->config = 0xff;
+
+    // clear interrupts
+    if ((err = gpio_i2c_pca54xx_clear(i2c_dev))) {
+      return err;
+    }
 
     return 0;
   }

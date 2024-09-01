@@ -38,7 +38,6 @@
     }
 
     if (options->int_pin > 0) {
-      // TODO: multiple gpio_i2c_dev sharing the same int_pin?
       gpio_intr_setup_i2c_pin(options->int_pin, dev);
 
       if ((err = gpio_host_setup_intr_pin(options->int_pin, GPIO_INTR_NEGEDGE))) {

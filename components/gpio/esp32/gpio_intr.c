@@ -45,8 +45,10 @@ static IRAM_ATTR void gpio_isr (void *arg)
           break;
 
         case GPIO_INTR_TYPE_I2C:
-          LOG_ISR_DEBUG("pin=%d i2c dev=%p", gpio, options->i2c_dev);
-          gpio_i2c_intr_handler(options->i2c_dev, pins);
+          for (const struct gpio_i2c_dev *i2c_dev = options->i2c_dev; i2c_dev; i2c_dev = i2c_dev->intr_link) {
+            LOG_ISR_DEBUG("pin=%d i2c dev=%p", gpio, i2c_dev);
+            gpio_i2c_intr_handler(i2c_dev, pins);
+          }
           break;
       }
     }
@@ -87,17 +89,26 @@ void gpio_intr_setup_host_pin(gpio_pin_t gpio, const struct gpio_options *option
   };
 }
 
-void gpio_intr_setup_i2c_pin(gpio_pin_t gpio, const struct gpio_i2c_dev *i2c_dev)
+void gpio_intr_setup_i2c_pin(gpio_pin_t gpio, struct gpio_i2c_dev *i2c_dev)
 {
   if (gpio >= GPIO_HOST_PIN_COUNT) {
     LOG_FATAL("[%d] invalid gpio_pin_t", gpio);
   }
 
-  if (gpio_intr_options[gpio].type) {
-    LOG_WARN("[%d] intr pin conflict type=%u", gpio, gpio_intr_options[gpio].type);
-  }
+  switch (gpio_intr_options[gpio].type) {
+    case GPIO_INTR_TYPE_NONE:
+      LOG_DEBUG("[%d] i2c dev=%p", gpio, i2c_dev);
+      break;
 
-  LOG_DEBUG("[%d] i2c dev=%p", gpio, i2c_dev);
+    case GPIO_INTR_TYPE_HOST:
+      LOG_WARN("[%d] intr pin conflict type=%u", gpio, gpio_intr_options[gpio].type);
+      break;
+
+    case GPIO_INTR_TYPE_I2C:
+      LOG_DEBUG("[%d] i2c dev=%p link=%p", gpio, i2c_dev, gpio_intr_options[gpio].i2c_dev);
+      i2c_dev->intr_link = gpio_intr_options[gpio].i2c_dev;
+      break;
+  }
 
   gpio_intr_options[gpio] = (struct gpio_intr_options) {
     .type     = GPIO_INTR_TYPE_I2C,

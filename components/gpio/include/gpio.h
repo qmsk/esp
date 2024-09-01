@@ -147,8 +147,6 @@ enum gpio_type {
     i2c_port_t port;
     uint8_t addr;
     gpio_pin_t int_pin;
-
-    /* XXX: no support for multiple i2c_gpio_dev sharing the same int_pin */
   };
 
   struct gpio_i2c_dev;

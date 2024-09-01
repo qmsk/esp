@@ -32,6 +32,7 @@ enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_DMX]                  = USER_LEDS_ON,
   [USER_ALERT_ERROR_LEDS_SEQUENCE]        = USER_LEDS_ON,
   [USER_ALERT_ERROR_LEDS_SEQUENCE_READ]   = USER_LEDS_FLASH,
+  [USER_ALERT_ERROR_ATX_PSU_TIMEOUT]      = USER_LEDS_ON,
 };
 
 // state

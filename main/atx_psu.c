@@ -2,6 +2,7 @@
 #include "atx_psu_config.h"
 #include "atx_psu_gpio.h"
 #include "atx_psu_state.h"
+#include "user.h"
 #include "tasks.h"
 
 #include <atx_psu.h>
@@ -79,7 +80,8 @@ int wait_atx_psu_bit(enum atx_psu_bit bit, TickType_t timeout)
   } else if (atx_psu_power_good(atx_psu, bit, timeout)) {
     return 0;
   } else {
-    LOG_WARN("power_good timeout=%d expired, is ATX-PSU connected?", timeout);
+    LOG_WARN("power_good timeout=%dms expired, is ATX-PSU connected?", timeout * portTICK_PERIOD_MS);
+    user_alert(USER_ALERT_ERROR_ATX_PSU_TIMEOUT); // TODO: clear alert?
     return -1;
   }
 }

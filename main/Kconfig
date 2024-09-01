@@ -342,8 +342,13 @@ menu "qmsk-esp-i2c"
     range 0 15
     default 0
 
+  config I2C_GPIO_TIMEOUT
+    depends on I2C_GPIO_ENABLED
+    int "Timeout for I2C GPIO expander operations"
+    default 20
+
   config I2C_GPIO_INT_PIN
-    depends on I2C_GPIO_TYPE_PCA9534 || I2C_GPIO_TYPE_PCA9554
+    depends on I2C_GPIO_ENABLED
     int "HOST GPIO pin for I2C bus interrupt, 0 to disable"
     range 0 39
     default 0

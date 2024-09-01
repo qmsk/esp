@@ -9,10 +9,6 @@
 
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  #if GPIO_I2C_ENABLED
-    #define LEDS_GPIO_I2C_TIMEOUT (20 / portTICK_RATE_MS)
-  #endif
-
   // by interface
   struct gpio_options leds_gpio_options[LEDS_INTERFACE_COUNT] = {
   #if CONFIG_LEDS_SPI_ENABLED
@@ -103,8 +99,6 @@
       #if GPIO_I2C_ENABLED
         case GPIO_TYPE_I2C:
           i2c_options = gpio_i2c_options(options->i2c_dev);
-
-          options->i2c_timeout = LEDS_GPIO_I2C_TIMEOUT;
 
           LOG_INFO("leds gpio[%s]: i2c type=%s port=%u addr=%u: out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
             config_enum_to_string(leds_interface_enum, interface),

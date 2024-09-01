@@ -22,11 +22,13 @@
     .type = GPIO_I2C_TYPE_PCA9534,
     .port = I2C_MASTER_PORT,
     .addr = CONFIG_I2C_GPIO_ADDR_PCA9534,
+    .timeout = (CONFIG_I2C_GPIO_TIMEOUT / portTICK_RATE_MS),
     .int_pin = CONFIG_I2C_GPIO_INT_PIN,
   #elif CONFIG_I2C_GPIO_TYPE_PCA9554
     .type = GPIO_I2C_TYPE_PCA9554,
     .port = I2C_MASTER_PORT,
     .addr = CONFIG_I2C_GPIO_ADDR_PCA9554,
+    .timeout = (CONFIG_I2C_GPIO_TIMEOUT / portTICK_RATE_MS),
     .int_pin = CONFIG_I2C_GPIO_INT_PIN,
   #else
     #error "Invalid I2C_GPIO_TYPE configured"
@@ -99,6 +101,7 @@
         .type     = config->type,
         .port     = I2C_MASTER_PORT,
         .addr     = config->addr,
+        .timeout = (CONFIG_I2C_GPIO_TIMEOUT / portTICK_RATE_MS),
         .int_pin  = config->int_pin,
       };
 

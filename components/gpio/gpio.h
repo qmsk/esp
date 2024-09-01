@@ -45,7 +45,8 @@ int gpio_host_set_all(const struct gpio_options *options);
 
 /* gpio_intr.c */
 int gpio_intr_init();
-void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio);
+void gpio_intr_setup_host_pin(gpio_pin_t gpio, const struct gpio_options *options);
+void gpio_intr_setup_i2c_pin(gpio_pin_t gpio, const struct gpio_i2c_dev *i2c_dev);
 
 #if !CONFIG_IDF_TARGET_ESP8266
   int gpio_intr_core();
@@ -53,7 +54,7 @@ void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio);
 
 #if GPIO_I2C_ENABLED
   /* i2c.cc */
-  void gpio_i2c_intr_handler (const struct gpio_options *options, gpio_pins_t pins);
+  void gpio_i2c_intr_handler (const struct gpio_i2c_dev *i2c_dev, gpio_pins_t pins);
 
   int gpio_i2c_setup(const struct gpio_options *options);
   int gpio_i2c_setup_input(const struct gpio_options *options, gpio_pins_t pins);

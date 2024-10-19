@@ -344,7 +344,7 @@ void atx_psu_power_enable(struct atx_psu *atx_psu, enum atx_psu_bit bit)
 
 int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t timeout)
 {
-  EventBits_t bits;
+  LOG_DEBUG("bit=%08x", ATX_PSU_BIT(bit));
 
   xEventGroupSetBits(atx_psu->bits, ATX_PSU_BIT(bit));
   xEventGroupSetBits(atx_psu->events, ATX_PSU_EVENTS_SET_BIT);
@@ -354,7 +354,7 @@ int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t
 
     return ATX_PSU_STATUS_POWER_GOOD_BIT;
   } else {
-    bits = xEventGroupWaitBits(atx_psu->status, ATX_PSU_STATUS_POWER_ENABLE_BIT | ATX_PSU_STATUS_POWER_GOOD_BIT, pdFALSE, pdTRUE, timeout);
+    EventBits_t bits = xEventGroupWaitBits(atx_psu->status, ATX_PSU_STATUS_POWER_ENABLE_BIT | ATX_PSU_STATUS_POWER_GOOD_BIT, pdFALSE, pdTRUE, timeout);
 
     //LOG_DEBUG("bits=%08x", bits);
 

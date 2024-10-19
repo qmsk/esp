@@ -26,7 +26,8 @@ static IRAM_ATTR void gpio_isr (void *arg)
 
       #if GPIO_I2C_ENABLED
         case GPIO_TYPE_I2C:
-          gpio_i2c_intr_handler(options, pins);
+          // TODO: 
+          gpio_i2c_intr_handler(i2c_dev, pins);
           break;
       #endif
       }
@@ -44,7 +45,7 @@ int gpio_intr_init()
   return 0;
 }
 
-void gpio_intr_setup_pin(const struct gpio_options *options, gpio_pin_t gpio)
+void gpio_intr_setup_host_pin(gpio_pin_t gpio, const struct gpio_options *options)
 {
   if (gpio >= 16) {
     LOG_WARN("[%d] -> %p: invalid gpio_pin_t", gpio, options);

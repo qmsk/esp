@@ -171,7 +171,7 @@ int gpio_host_setup(const struct gpio_options *options)
     }
     if (interrupt) {
       if (GPIO_HOST_PINS_HOST & GPIO_PINS(gpio)) {
-        gpio_intr_setup_pin(options, gpio);
+        gpio_intr_setup_host_pin(gpio, options);
       }
     }
   }

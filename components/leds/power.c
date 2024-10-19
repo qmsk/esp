@@ -3,6 +3,11 @@
 
 #include <logging.h>
 
+static inline unsigned div_ceil(unsigned x, unsigned y)
+{
+  return (x / y) + (x % y ? 1 : 0);
+}
+
 static inline unsigned leds_power_rgb(struct leds_color color)
 {
   return color.r + color.g + color.b;
@@ -52,21 +57,22 @@ unsigned leds_power_total(const struct leds_color *pixels, unsigned index, unsig
     }
   }
 
+  // use div_ceil() to ensure that we return >0 in case any led is set
   switch (power_mode) {
     case LEDS_POWER_NONE:
       return 0;
 
     case LEDS_POWER_RGB:
-      return power / (3 * 255);
+      return div_ceil(power, (3 * 255));
 
     case LEDS_POWER_RGBA:
-      return power / (3 * 255 * 31);
+      return div_ceil(power, (3 * 255 * 31));
 
     case LEDS_POWER_RGBW:
-      return power / (4 * 255);
+      return div_ceil(power, (4 * 255));
 
     case LEDS_POWER_RGB2W:
-      return power / (5 * 255);
+      return div_ceil(power, (5 * 255));
 
     default:
       LOG_FATAL("invalid power_mode=%d", power_mode);

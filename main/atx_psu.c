@@ -24,16 +24,14 @@ int init_atx_psu()
     return 0;
   }
 
-  if ((err = init_atx_psu_gpio(&atx_psu_config))) {
-    LOG_ERROR("init_atx_psu_gpio");
+  if ((err = config_atx_psu_gpio(&atx_psu_config, &options.gpio_options))) {
+    LOG_ERROR("config_atx_psu_gpio");
     return err;
   }
 
-  config_atx_psu_gpio(&atx_psu_config, &options);
-
   LOG_INFO("timeout=%u", options.timeout);
 
-  if (atx_psu_new(&atx_psu, options)) {
+  if (atx_psu_new(&atx_psu, &options)) {
     LOG_ERROR("atx_psu_new");
     return -1;
   }

@@ -35,9 +35,23 @@ struct atx_psu {
 
 } atx_psu;
 
-static int atx_psu_init(struct atx_psu *atx_psu, struct atx_psu_options options)
+static IRAM_ATTR void atx_psu_gpio_interrupt(gpio_pins_t pins, void *arg)
 {
-  atx_psu->options = options;
+  struct atx_psu *atx_psu = arg;
+
+  LOG_ISR_DEBUG("pins=" GPIO_PINS_FMT, GPIO_PINS_ARGS(pins));
+}
+
+static int atx_psu_init(struct atx_psu *atx_psu, const struct atx_psu_options *options)
+{
+  int err;
+
+  atx_psu->options = *options;
+
+  if ((err = gpio_setup(&atx_psu->options.gpio_options))) {
+    LOG_ERROR("gpio_setup");
+    return err;
+  }
 
   if (!(atx_psu->state = xEventGroupCreate())) {
     LOG_ERROR("xEventGroupCreate");
@@ -52,7 +66,7 @@ static int atx_psu_init(struct atx_psu *atx_psu, struct atx_psu_options options)
   return 0;
 }
 
-int atx_psu_new(struct atx_psu **atx_psup, struct atx_psu_options options)
+int atx_psu_new(struct atx_psu **atx_psup, const struct atx_psu_options *options)
 {
   struct atx_psu *atx_psu;
   int err = 0;
@@ -79,22 +93,22 @@ error:
 
 static void set_power_enable(struct atx_psu *atx_psu)
 {
-  LOG_DEBUG("pins=" GPIO_PINS_FMT " -> high", GPIO_PINS_ARGS(atx_psu->options.gpio_options->out_pins));
+  LOG_DEBUG("pins=" GPIO_PINS_FMT " -> high", GPIO_PINS_ARGS(atx_psu->options.gpio_options.out_pins));
 
   xEventGroupSetBits(atx_psu->status, ATX_PSU_STATUS_POWER_ENABLE_BIT);
 
-  if (gpio_out_set_all(atx_psu->options.gpio_options)) {
+  if (gpio_out_set_all(&atx_psu->options.gpio_options)) {
     LOG_WARN("gpio_out_set_all");
   }
 }
 
 static void clear_power_enable(struct atx_psu *atx_psu)
 {
-  LOG_DEBUG("pins=" GPIO_PINS_FMT " -> low", GPIO_PINS_ARGS(atx_psu->options.gpio_options->out_pins));
+  LOG_DEBUG("pins=" GPIO_PINS_FMT " -> low", GPIO_PINS_ARGS(atx_psu->options.gpio_options.out_pins));
 
   xEventGroupClearBits(atx_psu->status, ATX_PSU_STATUS_POWER_ENABLE_BIT | ATX_PSU_STATUS_POWER_GOOD_BIT);
 
-  if (gpio_out_clear(atx_psu->options.gpio_options)) {
+  if (gpio_out_clear(&atx_psu->options.gpio_options)) {
     LOG_WARN("gpio_out_clear");
   }
 }
@@ -104,11 +118,11 @@ static bool get_power_good(struct atx_psu *atx_psu)
   gpio_pins_t pins;
   int err;
 
-  if (!atx_psu->options.gpio_options->in_pins) {
+  if (!atx_psu->options.gpio_options.in_pins) {
     LOG_DEBUG("pins=" GPIO_PINS_FMT " unknown -> true", GPIO_PINS_ARGS(pins));
     xEventGroupSetBits(atx_psu->status, ATX_PSU_STATUS_POWER_GOOD_BIT);
     return true;
-  } else if ((err = gpio_in_get(atx_psu->options.gpio_options, &pins))) {
+  } else if ((err = gpio_in_get(&atx_psu->options.gpio_options, &pins))) {
     LOG_DEBUG("pins=" GPIO_PINS_FMT " error -> true", GPIO_PINS_ARGS(pins));
     return true;
   } else if (pins) {
@@ -238,7 +252,7 @@ int atx_psu_power_good(struct atx_psu *atx_psu, enum atx_psu_bit bit, TickType_t
 
   xEventGroupSetBits(atx_psu->state, ATX_PSU_STATE_BIT(bit));
 
-  if (!atx_psu->options.gpio_options->in_pins) {
+  if (!atx_psu->options.gpio_options.in_pins) {
     LOG_DEBUG("power_good_gpio disabled");
 
     return ATX_PSU_STATUS_POWER_GOOD_BIT;

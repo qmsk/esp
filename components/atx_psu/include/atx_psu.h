@@ -37,7 +37,7 @@ struct atx_psu_options {
    *
    * Use <0 to disable.
    */
-  const struct gpio_options *gpio_options;
+  struct gpio_options gpio_options;
 
   /*
    * Return ATX PSU into standby mode once all bits are inactive, and the timeout has passed.
@@ -45,7 +45,7 @@ struct atx_psu_options {
   TickType_t timeout;
 };
 
-int atx_psu_new(struct atx_psu **atx_psup, struct atx_psu_options options);
+int atx_psu_new(struct atx_psu **atx_psup, const struct atx_psu_options *options);
 
 /* Run as a separate task */
 void atx_psu_main(void *arg);

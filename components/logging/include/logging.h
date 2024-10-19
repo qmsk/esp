@@ -2,6 +2,14 @@
 
 #include <esp_log.h>
 
+#if CONFIG_IDF_TARGET_ESP8266
+  // compat
+  #define esp_rom_printf(fmt, ...) ets_printf(fmt, __VA_ARGS__)
+  #define esp_log_timestamp() esp_log_early_timestamp()
+
+  #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%u) %s: " format LOG_RESET_COLOR "\n"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 

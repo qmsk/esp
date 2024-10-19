@@ -30,7 +30,7 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
       break;
 
     case LEDS_PARAMETER_WHITE:
-      color.white = 0;
+      color.white = 255;
       break;
   }
 

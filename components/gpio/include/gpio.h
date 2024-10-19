@@ -146,9 +146,8 @@ enum gpio_type {
     enum gpio_i2c_type type;
     i2c_port_t port;
     uint8_t addr;
+    TickType_t timeout;
     gpio_pin_t int_pin;
-
-    /* XXX: no support for multiple i2c_gpio_dev sharing the same int_pin */
   };
 
   struct gpio_i2c_dev;
@@ -187,11 +186,6 @@ struct gpio_options {
   // interrupt handler
   gpio_interrupt_func_t interrupt_func;
   void *interrupt_arg;
-
-#if GPIO_I2C_ENABLED
-  // for i2c devices
-  TickType_t i2c_timeout;
-#endif
 };
 
 /* Setup input interrupt handler */

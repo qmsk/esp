@@ -145,7 +145,7 @@ int gpio_host_setup(const struct gpio_options *options)
       gpio_host_setup_rtc(gpio, inverted, !inverted);
     }
     if (interrupt) {
-      gpio_intr_setup_pin(options, gpio);
+      gpio_intr_setup_host_pin(gpio, options);
     }
   }
 

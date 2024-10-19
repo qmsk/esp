@@ -32,6 +32,7 @@ enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_DMX]                  = USER_LEDS_ON,
   [USER_ALERT_ERROR_LEDS_SEQUENCE]        = USER_LEDS_ON,
   [USER_ALERT_ERROR_LEDS_SEQUENCE_READ]   = USER_LEDS_FLASH,
+  [USER_ALERT_ERROR_ATX_PSU_TIMEOUT]      = USER_LEDS_ON,
 };
 
 // state
@@ -45,10 +46,6 @@ bool user_leds_override[USER_LEDS_COUNT];
 QueueHandle_t user_leds_input_queue;
 
 // config
-#if GPIO_I2C_ENABLED
-  #define USER_LEDS_GPIO_I2C_TIMEOUT (20 / portTICK_RATE_MS)
-#endif
-
 #define USER_LED_MODE_OUTPUT_BITS (USER_LEDS_MODE_OUTPUT_BIT)
 #if CONFIG_STATUS_LEDS_USER_MODE_TEST
   #define USER_LED_MODE_INPUT_BITS (USER_LEDS_MODE_INPUT_BIT | USER_LEDS_MODE_INTERRUPT_BIT)
@@ -108,7 +105,6 @@ static struct gpio_options user_leds_gpio = {
   .type = GPIO_TYPE_HOST,
 #elif CONFIG_STATUS_LEDS_GPIO_TYPE_I2C_GPIO_0
   .type = GPIO_TYPE_I2C,
-  .i2c_timeout = USER_LEDS_GPIO_I2C_TIMEOUT,
 #else
   #error "Invalid STATUS_LEDS_GPIO_TYPE"
 #endif
@@ -165,7 +161,7 @@ int init_user_leds()
   }
 
 #ifdef USER_LEDS_I2C_GPIO_DEV
-  // requires init_i2c_gpio()
+  // after init_i2c_gpio()
   user_leds_gpio.i2c_dev = USER_LEDS_I2C_GPIO_DEV;
 #endif
 
@@ -176,9 +172,7 @@ int init_user_leds()
 
   #if GPIO_I2C_ENABLED
     case GPIO_TYPE_I2C:
-      LOG_INFO("i2c gpio: timeout=%d",
-        user_leds_gpio.i2c_timeout
-      );
+      LOG_INFO("i2c gpio");
       break;
   #endif
   }

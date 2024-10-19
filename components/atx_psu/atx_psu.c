@@ -38,8 +38,17 @@ struct atx_psu {
 static IRAM_ATTR void atx_psu_gpio_interrupt(gpio_pins_t pins, void *arg)
 {
   struct atx_psu *atx_psu = arg;
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
   LOG_ISR_DEBUG("pins=" GPIO_PINS_FMT, GPIO_PINS_ARGS(pins));
+
+#if CONFIG_IDF_TARGET_ESP8266
+  if (xHigherPriorityTaskWoken == pdTRUE) {
+    portYIELD_FROM_ISR();
+  }
+#else
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+#endif
 }
 
 static int atx_psu_init(struct atx_psu *atx_psu, const struct atx_psu_options *options)
@@ -47,6 +56,11 @@ static int atx_psu_init(struct atx_psu *atx_psu, const struct atx_psu_options *o
   int err;
 
   atx_psu->options = *options;
+
+  // use interrupts for power_good input pins
+  atx_psu->options.gpio_options.interrupt_pins = atx_psu->options.gpio_options.in_pins;
+  atx_psu->options.gpio_options.interrupt_func = atx_psu_gpio_interrupt;
+  atx_psu->options.gpio_options.interrupt_arg = atx_psu;
 
   if ((err = gpio_setup(&atx_psu->options.gpio_options))) {
     LOG_ERROR("gpio_setup");

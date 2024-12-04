@@ -48,9 +48,9 @@ static void setup_gpio_pin(gpio_num_t gpio)
   gpio_ll_pulldown_en(&GPIO, gpio);
 }
 
-static void disable_gpio_pin(gpio_num_t gpio)
+static void clear_gpio_pin(gpio_num_t gpio)
 {
-  gpio_ll_output_disable(&GPIO, gpio);
+  gpio_ll_set_level(&GPIO, gpio, 0);
 }
 
 int i2s_out_pin_init(struct i2s_out *i2s_out)
@@ -126,6 +126,7 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     case I2S_OUT_MODE_16BIT_SERIAL:
     case I2S_OUT_MODE_32BIT_SERIAL:
       if (options->bck_gpio > 0) {
+        i2s_out->bck_gpio_inv = options->bck_inv;
         i2s_out->bck_gpios[0] = options->bck_gpio;
 
         setup_gpio_pin(options->bck_gpio);
@@ -158,6 +159,7 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     case I2S_OUT_MODE_8BIT_PARALLEL:
       for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
         if (options->bck_gpios[i] > 0) {
+          i2s_out->bck_gpio_inv = options->bck_inv;
           i2s_out->bck_gpios[i] = options->bck_gpios[i];
 
           setup_gpio_pin(options->bck_gpios[i]);
@@ -203,19 +205,25 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
 
   for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
     if (i2s_out->bck_gpios[i] >= 0) {
-      disable_gpio_pin(i2s_out->bck_gpios[i]);
+      clear_gpio_pin(i2s_out->bck_gpios[i]);
+
+      esp_rom_gpio_connect_out_signal(i2s_out->bck_gpios[i], SIG_GPIO_OUT_IDX, i2s_out->bck_gpio_inv, false);
 
       i2s_out->bck_gpios[i] = -1;
     }
 
     if (i2s_out->data_gpios[i] >= 0) {
-      disable_gpio_pin(i2s_out->data_gpios[i]);
+      clear_gpio_pin(i2s_out->data_gpios[i]);
+
+      esp_rom_gpio_connect_out_signal(i2s_out->data_gpios[i], SIG_GPIO_OUT_IDX, false, false);
 
       i2s_out->data_gpios[i] = -1;
     }
 
     if (i2s_out->inv_data_gpios[i] >= 0) {
-      disable_gpio_pin(i2s_out->inv_data_gpios[i]);
+      clear_gpio_pin(i2s_out->inv_data_gpios[i]);
+
+      esp_rom_gpio_connect_out_signal(i2s_out->inv_data_gpios[i], SIG_GPIO_OUT_IDX, true, false);
 
       i2s_out->inv_data_gpios[i] = -1;
     }

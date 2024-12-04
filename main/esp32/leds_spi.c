@@ -16,15 +16,15 @@
   };
 
   const struct config_enum leds_spi_host_enum[] = {
-    { "",       -1        },
+    { "",       .value = -1        },
   #if SOC_SPI_PERIPH_NUM >= 1
-    { "SPI1",   SPI1_HOST },
+    { "SPI1",   .value = SPI1_HOST },
   #endif
   #if (SOC_SPI_PERIPH_NUM >= 2) && !CONFIG_SDCARD_SPI_HOST
-    { "SPI2",   SPI2_HOST },
+    { "SPI2",   .value = SPI2_HOST },
   #endif
   #if SOC_SPI_PERIPH_NUM >= 3
-    { "SPI3",   SPI3_HOST },
+    { "SPI3",   .value = SPI3_HOST },
   #endif
     {}
   };

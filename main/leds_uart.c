@@ -11,15 +11,15 @@
   };
 
   const struct config_enum leds_uart_port_enum[] = {
-    { "",              -1       },
+    { "",              .value = -1       },
   #if defined(UART_0) && CONFIG_ESP_CONSOLE_UART_NUM != 0
-    { "UART0",         UART_0   },
+    { "UART0",         .value = UART_0   },
   #endif
   #if defined(UART_1) && CONFIG_ESP_CONSOLE_UART_NUM != 1
-    { "UART1",         UART_1   },
+    { "UART1",         .value = UART_1   },
   #endif
   #if defined(UART_2) && CONFIG_ESP_CONSOLE_UART_NUM != 2
-    { "UART2",         UART_2   },
+    { "UART2",         .value = UART_2   },
   #endif
     {},
   };

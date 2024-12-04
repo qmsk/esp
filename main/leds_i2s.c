@@ -17,12 +17,12 @@
   };
 
   const struct config_enum leds_i2s_port_enum[] = {
-    { "",              -1           },
+    { "",             .value = -1           },
   #if defined(I2S_PORT_0)
-    { "I2S0",         I2S_PORT_0    },
+    { "I2S0",         .value = I2S_PORT_0    },
   #endif
   #if defined(I2S_PORT_1)
-    { "I2S1",         I2S_PORT_1    },
+    { "I2S1",         .value = I2S_PORT_1    },
   #endif
     {},
   };

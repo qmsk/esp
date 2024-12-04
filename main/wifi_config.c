@@ -25,23 +25,23 @@
 struct wifi_config wifi_config = {};
 
 const struct config_enum wifi_mode_enum[] = {
-  { "OFF",    WIFI_MODE_NULL  },
-  { "STA",    WIFI_MODE_STA   },
-  { "AP",     WIFI_MODE_AP    },
+  { "OFF",    .value = WIFI_MODE_NULL  },
+  { "STA",    .value = WIFI_MODE_STA   },
+  { "AP",     .value = WIFI_MODE_AP    },
   // TODO: AP/STA?
   {}
 };
 
 const struct config_enum wifi_auth_mode_enum[] = {
-  { "OPEN",           WIFI_AUTH_OPEN },
-  { "WEP",            WIFI_AUTH_WEP },
-  { "WPA-PSK",        WIFI_AUTH_WPA_PSK },
-  { "WPA2-PSK",       WIFI_AUTH_WPA2_PSK },
-  { "WPA/2-PSK",      WIFI_AUTH_WPA_WPA2_PSK },
-  { "WPA3-PSK",       WIFI_AUTH_WPA3_PSK },
-  { "WPA2/3-PSK",     WIFI_AUTH_WPA2_WPA3_PSK },
+  { "OPEN",           .value = WIFI_AUTH_OPEN },
+  { "WEP",            .value = WIFI_AUTH_WEP },
+  { "WPA-PSK",        .value = WIFI_AUTH_WPA_PSK },
+  { "WPA2-PSK",       .value = WIFI_AUTH_WPA2_PSK },
+  { "WPA/2-PSK",      .value = WIFI_AUTH_WPA_WPA2_PSK },
+  { "WPA3-PSK",       .value = WIFI_AUTH_WPA3_PSK },
+  { "WPA2/3-PSK",     .value = WIFI_AUTH_WPA2_WPA3_PSK },
 #if !CONFIG_IDF_TARGET_ESP8266
-  { "WPAI-PSK",       WIFI_AUTH_WAPI_PSK },
+  { "WPAI-PSK",       .value = WIFI_AUTH_WAPI_PSK },
 #endif
   {}
 };

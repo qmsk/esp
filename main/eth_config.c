@@ -52,11 +52,11 @@
 #endif
 
   const struct config_enum eth_mode_enum[] = {
-    { "NONE",         ETH_MODE_NONE         },
-    { "STATIC",       ETH_MODE_STATIC       },
-    { "AUTOCONF",     ETH_MODE_AUTOCONF     },
-    { "DHCP_CLIENT",  ETH_MODE_DHCP_CLIENT  },
-    { "DHCP_SERVER",  ETH_MODE_DHCP_SERVER  },
+    { "NONE",         .value = ETH_MODE_NONE         },
+    { "STATIC",       .value = ETH_MODE_STATIC       },
+    { "AUTOCONF",     .value = ETH_MODE_AUTOCONF     },
+    { "DHCP_CLIENT",  .value = ETH_MODE_DHCP_CLIENT  },
+    { "DHCP_SERVER",  .value = ETH_MODE_DHCP_SERVER  },
     {}
   };
 

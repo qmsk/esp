@@ -1,4 +1,5 @@
 #include <config.h>
+#include <logging.h>
 
 #include <string.h>
 
@@ -6,6 +7,12 @@ int config_enum_lookup(const struct config_enum *e, const char *name, const stru
 {
   for (; e->name; e++) {
     if (strcmp(e->name, name) == 0) {
+      *enump = e;
+      return 0;
+    }
+
+    if (e->alias && strcmp(e->alias, name) == 0) {
+      LOG_WARN("deprecated enum alias %s, renamed to %s", name, e->name);
       *enump = e;
       return 0;
     }
@@ -41,6 +48,12 @@ int config_enum_to_value(const struct config_enum *e, const char *name)
 {
   for (; e->name; e++) {
     if (strcmp(e->name, name) == 0) {
+      return e->value;
+    }
+
+    if (e->alias && strcmp(e->alias, name) == 0) {
+      LOG_WARN("deprecated enum alias %s, renamed to %s", name, e->name);
+
       return e->value;
     }
   }

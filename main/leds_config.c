@@ -85,9 +85,11 @@ const struct config_enum leds_i2s_clock_enum[] = {
 
 #if CONFIG_LEDS_GPIO_ENABLED
 const struct config_enum leds_gpio_mode_enum[] = {
-  { "",     LEDS_GPIO_MODE_DISABLED   },
-  { "LOW",  LEDS_GPIO_MODE_LOW        },
-  { "HIGH", LEDS_GPIO_MODE_HIGH       },
+  { "",             LEDS_CONFIG_GPIO_MODE_DISABLED        },
+  { "SETUP_LOW",    LEDS_CONFIG_GPIO_MODE_SETUP_LOW       },
+  { "SETUP_HIGH",   LEDS_CONFIG_GPIO_MODE_SETUP_HIGH      },
+  { "ACTIVE_LOW",   LEDS_CONFIG_GPIO_MODE_ACTIVE_LOW      },
+  { "ACTIVE_HIGH",  LEDS_CONFIG_GPIO_MODE_ACTIVE_HIGH     },
   {}
 };
 #endif

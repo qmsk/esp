@@ -35,8 +35,7 @@
     struct uart *uart;
     struct uart_options uart_options;
 
-    struct gpio_options *gpio_options;
-    gpio_pins_t gpio_out_pins;
+    struct leds_interface_options_gpio gpio;
   };
 
   int leds_interface_uart_init(struct leds_interface_uart *interface, const struct leds_interface_uart_options *options, enum leds_interface_uart_mode mode, union leds_interface_uart_func func);

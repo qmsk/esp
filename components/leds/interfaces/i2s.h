@@ -59,9 +59,8 @@ struct leds_interface_i2s {
 
   struct i2s_out *i2s_out;
   struct i2s_out_options i2s_out_options;
-
-  struct gpio_options *gpio_options;
-  gpio_pins_t gpio_out_pins;
+  
+  struct leds_interface_options_gpio gpio;
 };
 
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);

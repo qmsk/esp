@@ -1,6 +1,7 @@
 #include "../uart.h"
 #include "../../leds.h"
 #include "../../stats.h"
+#include "../../gpio.h"
 
 #include <logging.h>
 
@@ -56,8 +57,7 @@ int leds_interface_uart_init(struct leds_interface_uart *interface, const struct
 
   interface->uart_options.pin_mutex = options->pin_mutex;
 
-  interface->gpio_options = options->gpio.gpio_options;
-  interface->gpio_out_pins = options->gpio.gpio_out_pins;
+  interface->gpio = options->gpio;
 
   return 0;
 }
@@ -116,9 +116,7 @@ int leds_interface_uart_tx(struct leds_interface_uart *interface, const struct l
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_set(interface->gpio_options, interface->gpio_out_pins);
-  }
+  leds_gpio_setup(&interface->gpio);
 #endif
 
   WITH_STATS_TIMER(&stats->tx) {
@@ -143,9 +141,7 @@ int leds_interface_uart_tx(struct leds_interface_uart *interface, const struct l
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_clear(interface->gpio_options);
-  }
+  leds_gpio_close(&interface->gpio);
 #endif
 
   if ((err = uart_close(interface->uart))) {

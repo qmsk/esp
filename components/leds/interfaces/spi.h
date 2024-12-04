@@ -65,8 +65,7 @@
     spi_device_handle_t device;
   #endif
 
-    struct gpio_options *gpio_options;
-    gpio_pins_t gpio_out_pins;
+    struct leds_interface_options_gpio gpio;
   };
 
   size_t leds_interface_spi_buffer_size(enum leds_interface_spi_mode mode, unsigned count);

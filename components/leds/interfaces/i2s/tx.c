@@ -1,6 +1,7 @@
 #include "../i2s.h"
 #include "../../leds.h"
 #include "../../stats.h"
+#include "../../gpio.h"
 
 #include <logging.h>
 
@@ -288,8 +289,7 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
   interface->i2s_out_options.inv_data_gpio = options->inv_data_pin;
 #endif
 
-  interface->gpio_options = options->gpio.gpio_options;
-  interface->gpio_out_pins = options->gpio.gpio_out_pins;
+  interface->gpio = options->gpio;
 
   return 0;
 }
@@ -332,9 +332,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_set(interface->gpio_options, interface->gpio_out_pins);
-  }
+  leds_gpio_setup(&interface->gpio);
 #endif
 
   WITH_STATS_TIMER(&stats->write) {
@@ -352,9 +350,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_clear(interface->gpio_options);
-  }
+  leds_gpio_close(&interface->gpio);
 #endif
 
   if ((err = i2s_out_close(interface->i2s_out))) {

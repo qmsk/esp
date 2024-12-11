@@ -17,10 +17,12 @@ struct leds_state *state;
 
   #define LEDS_GPIO_SIZE 8
 
-  enum leds_gpio_mode {
-    LEDS_GPIO_MODE_DISABLED = -1,
-    LEDS_GPIO_MODE_LOW      = 0,
-    LEDS_GPIO_MODE_HIGH     = 1,
+  enum leds_config_gpio_mode {
+    LEDS_CONFIG_GPIO_MODE_DISABLED,
+    LEDS_CONFIG_GPIO_MODE_SETUP_LOW,
+    LEDS_CONFIG_GPIO_MODE_SETUP_HIGH,
+    LEDS_CONFIG_GPIO_MODE_ACTIVE_LOW,
+    LEDS_CONFIG_GPIO_MODE_ACTIVE_HIGH,
   };
 
   extern const struct config_enum leds_gpio_mode_enum[];

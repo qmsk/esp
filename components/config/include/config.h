@@ -26,6 +26,9 @@ enum config_type {
 struct config_enum {
   const char *name;
 
+  /* Migrate from old name */
+  const char *alias;
+
   int value;
 };
 

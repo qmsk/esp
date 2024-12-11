@@ -6,9 +6,9 @@
 
 #if GPIO_I2C_ENABLED
   const struct config_enum i2c_gpio_type_enum[] = {
-    { "",         GPIO_I2C_TYPE_NONE        },
-    { "PCA9534",  GPIO_I2C_TYPE_PCA9534     },
-    { "PCA9554",  GPIO_I2C_TYPE_PCA9554     },
+    { "",         .value = GPIO_I2C_TYPE_NONE        },
+    { "PCA9534",  .value = GPIO_I2C_TYPE_PCA9534     },
+    { "PCA9554",  .value = GPIO_I2C_TYPE_PCA9554     },
     {},
   };
 #endif

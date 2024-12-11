@@ -41,7 +41,7 @@
         interface = leds_interface_for_protocol(config->protocol);
       }
 
-      if (config->gpio_mode == LEDS_GPIO_MODE_DISABLED) {
+      if (config->gpio_mode == LEDS_CONFIG_GPIO_MODE_DISABLED) {
         continue;
       }
 
@@ -65,8 +65,14 @@
 
         leds_gpio_options[interface].out_pins |= gpio_host_pin(config->gpio_pin[j]);
 
-        if (config->gpio_mode == LEDS_GPIO_MODE_LOW) {
-          leds_gpio_options[interface].inverted_pins |= gpio_host_pin(config->gpio_pin[j]);
+        switch (config->gpio_mode) {
+          case LEDS_CONFIG_GPIO_MODE_SETUP_LOW:
+          case LEDS_CONFIG_GPIO_MODE_ACTIVE_LOW:
+            leds_gpio_options[interface].inverted_pins |= gpio_host_pin(config->gpio_pin[j]);
+            break;
+
+          default:
+            break;
         }
       }
     }
@@ -129,12 +135,27 @@
 
   int config_leds_gpio(struct leds_state *state, const struct leds_config *config, enum leds_interface interface, struct leds_interface_options_gpio *options)
   {
-    if (config->gpio_mode == LEDS_GPIO_MODE_DISABLED) {
-      return 0;
-    }
-
     options->gpio_options = &leds_gpio_options[interface];
-    options->gpio_out_pins = 0;
+    options->pins = 0;
+
+    switch (config->gpio_mode) {
+      case LEDS_CONFIG_GPIO_MODE_DISABLED:
+        options->mode = LEDS_GPIO_MODE_NONE;
+        break;
+
+      case LEDS_CONFIG_GPIO_MODE_SETUP_LOW:
+      case LEDS_CONFIG_GPIO_MODE_SETUP_HIGH:
+        options->mode = LEDS_GPIO_MODE_SETUP;
+        break;
+
+      case LEDS_CONFIG_GPIO_MODE_ACTIVE_LOW:
+      case LEDS_CONFIG_GPIO_MODE_ACTIVE_HIGH:
+        options->mode = LEDS_GPIO_MODE_ACTIVE;
+        break;
+
+      default:
+        LOG_FATAL("config->gpio_mode=%d", config->gpio_mode);
+    }
 
     for (unsigned i = 0; i < config->gpio_count; i++) {
       LOG_INFO("leds%d: gpio[%s] mode=%s pin[%u]=%d", state->index + 1,
@@ -143,7 +164,7 @@
         i, config->gpio_pin[i]
       );
 
-      options->gpio_out_pins |= gpio_host_pin(config->gpio_pin[i]);
+      options->pins |= gpio_host_pin(config->gpio_pin[i]);
     }
 
     return 0;

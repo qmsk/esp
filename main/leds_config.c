@@ -16,117 +16,119 @@
 struct leds_config leds_configs[LEDS_COUNT] = {};
 
 const struct config_enum leds_interface_enum[] = {
-  { "DEFAULT",  LEDS_INTERFACE_NONE   },
+  { "DEFAULT",  .value = LEDS_INTERFACE_NONE   },
 #if CONFIG_LEDS_SPI_ENABLED
-  { "SPI",      LEDS_INTERFACE_SPI    },
+  { "SPI",      .value = LEDS_INTERFACE_SPI    },
 #endif
 #if CONFIG_LEDS_UART_ENABLED
-  { "UART",     LEDS_INTERFACE_UART   },
+  { "UART",     .value = LEDS_INTERFACE_UART   },
 #endif
 #if CONFIG_LEDS_I2S_ENABLED
-  { "I2S",      LEDS_INTERFACE_I2S    },
+  { "I2S",      .value = LEDS_INTERFACE_I2S    },
 #endif
   {}
 };
 
 const struct config_enum leds_protocol_enum[] = {
-  { "NONE",         LEDS_PROTOCOL_NONE        },
-  { "APA102",       LEDS_PROTOCOL_APA102      },
-  { "P9813",        LEDS_PROTOCOL_P9813       },
-  { "WS2812B",      LEDS_PROTOCOL_WS2812B     },
-  { "SK6812_GRBW",  LEDS_PROTOCOL_SK6812_GRBW },
-  { "WS2811",       LEDS_PROTOCOL_WS2811      },
-  { "SK9822",       LEDS_PROTOCOL_SK9822      },
-  { "SM16703",      LEDS_PROTOCOL_SM16703     },
+  { "NONE",         .value = LEDS_PROTOCOL_NONE        },
+  { "APA102",       .value = LEDS_PROTOCOL_APA102      },
+  { "P9813",        .value = LEDS_PROTOCOL_P9813       },
+  { "WS2812B",      .value = LEDS_PROTOCOL_WS2812B     },
+  { "SK6812_GRBW",  .value = LEDS_PROTOCOL_SK6812_GRBW },
+  { "WS2811",       .value = LEDS_PROTOCOL_WS2811      },
+  { "SK9822",       .value = LEDS_PROTOCOL_SK9822      },
+  { "SM16703",      .value = LEDS_PROTOCOL_SM16703     },
   {}
 };
 
 #if CONFIG_LEDS_SPI_ENABLED && !CONFIG_IDF_TARGET_ESP8266
 const struct config_enum leds_spi_cs_mode_enum[] = {
-  { "",     LEDS_SPI_CS_MODE_DISABLED },
-  { "HIGH", LEDS_SPI_CS_MODE_HIGH     },
-  { "LOW",  LEDS_SPI_CS_MODE_LOW      },
+  { "",     .value = LEDS_SPI_CS_MODE_DISABLED },
+  { "HIGH", .value = LEDS_SPI_CS_MODE_HIGH     },
+  { "LOW",  .value = LEDS_SPI_CS_MODE_LOW      },
   {}
 };
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED
 const struct config_enum leds_spi_clock_enum[] = {
-  { "20M",  SPI_CLOCK_20MHZ   },
-  { "10M",  SPI_CLOCK_10MHZ   },
-  { "5M",   SPI_CLOCK_5MHZ    },
-  { "2M",   SPI_CLOCK_2MHZ    },
-  { "1M",   SPI_CLOCK_1MHZ    },
-  { "500K", SPI_CLOCK_500KHZ  },
-  { "200K", SPI_CLOCK_200KHZ  },
-  { "100K", SPI_CLOCK_100KHZ  },
-  { "50K",  SPI_CLOCK_50KHZ   },
-  { "20K",  SPI_CLOCK_20KHZ   },
-  { "10K",  SPI_CLOCK_10KHZ   },
-  { "1K",   SPI_CLOCK_1KHZ    },
+  { "20M",  .value = SPI_CLOCK_20MHZ   },
+  { "10M",  .value = SPI_CLOCK_10MHZ   },
+  { "5M",   .value = SPI_CLOCK_5MHZ    },
+  { "2M",   .value = SPI_CLOCK_2MHZ    },
+  { "1M",   .value = SPI_CLOCK_1MHZ    },
+  { "500K", .value = SPI_CLOCK_500KHZ  },
+  { "200K", .value = SPI_CLOCK_200KHZ  },
+  { "100K", .value = SPI_CLOCK_100KHZ  },
+  { "50K",  .value = SPI_CLOCK_50KHZ   },
+  { "20K",  .value = SPI_CLOCK_20KHZ   },
+  { "10K",  .value = SPI_CLOCK_10KHZ   },
+  { "1K",   .value = SPI_CLOCK_1KHZ    },
   {}
 };
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
 const struct config_enum leds_i2s_clock_enum[] = {
-  { "20M",  I2S_CLOCK_20MHZ   },
-  { "10M",  I2S_CLOCK_10MHZ   },
-  { "5M",   I2S_CLOCK_5MHZ    },
-  { "2M",   I2S_CLOCK_2MHZ    },
-  { "1M",   I2S_CLOCK_1MHZ    },
-  { "500K", I2S_CLOCK_500KHZ  },
-  { "200K", I2S_CLOCK_200KHZ  },
-  { "100K", I2S_CLOCK_100KHZ  },
-  { "50K",  I2S_CLOCK_50KHZ   },
+  { "20M",  .value = I2S_CLOCK_20MHZ   },
+  { "10M",  .value = I2S_CLOCK_10MHZ   },
+  { "5M",   .value = I2S_CLOCK_5MHZ    },
+  { "2M",   .value = I2S_CLOCK_2MHZ    },
+  { "1M",   .value = I2S_CLOCK_1MHZ    },
+  { "500K", .value = I2S_CLOCK_500KHZ  },
+  { "200K", .value = I2S_CLOCK_200KHZ  },
+  { "100K", .value = I2S_CLOCK_100KHZ  },
+  { "50K",  .value = I2S_CLOCK_50KHZ   },
   {}
 };
 #endif
 
 #if CONFIG_LEDS_GPIO_ENABLED
 const struct config_enum leds_gpio_mode_enum[] = {
-  { "",     LEDS_GPIO_MODE_DISABLED   },
-  { "LOW",  LEDS_GPIO_MODE_LOW        },
-  { "HIGH", LEDS_GPIO_MODE_HIGH       },
+  { "",                               .value = LEDS_CONFIG_GPIO_MODE_DISABLED    },
+  { "SETUP_LOW",                      .value = LEDS_CONFIG_GPIO_MODE_SETUP_LOW   },
+  { "SETUP_HIGH",                     .value = LEDS_CONFIG_GPIO_MODE_SETUP_HIGH  },
+  { "ACTIVE_LOW",   .alias = "LOW",   .value = LEDS_CONFIG_GPIO_MODE_ACTIVE_LOW, },
+  { "ACTIVE_HIGH",  .alias = "HIGH",  .value = LEDS_CONFIG_GPIO_MODE_ACTIVE_HIGH },
   {}
 };
 #endif
 
 const struct config_enum leds_format_enum[] = {
-  { "RGB",    LEDS_FORMAT_RGB     },
-  { "BGR",    LEDS_FORMAT_BGR     },
-  { "GRB",    LEDS_FORMAT_GRB     },
-  { "RGBA",   LEDS_FORMAT_RGBA    },
-  { "RGBW",   LEDS_FORMAT_RGBW    },
-  { "RGBxI",  LEDS_FORMAT_RGBXI   },
-  { "RGBWxI", LEDS_FORMAT_RGBWXI  },
+  { "RGB",    .value = LEDS_FORMAT_RGB     },
+  { "BGR",    .value = LEDS_FORMAT_BGR     },
+  { "GRB",    .value = LEDS_FORMAT_GRB     },
+  { "RGBA",   .value = LEDS_FORMAT_RGBA    },
+  { "RGBW",   .value = LEDS_FORMAT_RGBW    },
+  { "RGBxI",  .value = LEDS_FORMAT_RGBXI   },
+  { "RGBWxI", .value = LEDS_FORMAT_RGBWXI  },
   {}
 };
 
 const struct config_enum leds_test_mode_enum[] = {
-  { "NONE",           TEST_MODE_NONE          },
-  { "CHASE",          TEST_MODE_CHASE         },
-  { "BLACK_RED",      TEST_MODE_BLACK_RED     },
-  { "RED_YELLOW",     TEST_MODE_RED_YELLOW    },
-  { "YELLOW_GREEN",   TEST_MODE_YELLOW_GREEN  },
-  { "GREEN_CYAN",     TEST_MODE_GREEN_CYAN    },
-  { "CYAN_BLUE",      TEST_MODE_CYAN_BLUE     },
-  { "BLUE_MAGENTA",   TEST_MODE_BLUE_MAGENTA  },
-  { "MAGENTA_RED",    TEST_MODE_MAGENTA_RED   },
-  { "RED_BLACK",      TEST_MODE_RED_BLACK     },
-  { "BLACK_WHITE",    TEST_MODE_BLACK_WHITE   },
-  { "WHITE_RGBW",     TEST_MODE_WHITE_RGBW    },
-  { "RGBW_RGB",       TEST_MODE_RGBW_RGB      },
-  { "RGB_BLACK",      TEST_MODE_RGB_BLACK     },
-  { "RAINBOW",        TEST_MODE_RAINBOW       },
-  { "BLACK",          TEST_MODE_BLACK         },
+  { "NONE",           .value = TEST_MODE_NONE          },
+  { "CHASE",          .value = TEST_MODE_CHASE         },
+  { "BLACK_RED",      .value = TEST_MODE_BLACK_RED     },
+  { "RED_YELLOW",     .value = TEST_MODE_RED_YELLOW    },
+  { "YELLOW_GREEN",   .value = TEST_MODE_YELLOW_GREEN  },
+  { "GREEN_CYAN",     .value = TEST_MODE_GREEN_CYAN    },
+  { "CYAN_BLUE",      .value = TEST_MODE_CYAN_BLUE     },
+  { "BLUE_MAGENTA",   .value = TEST_MODE_BLUE_MAGENTA  },
+  { "MAGENTA_RED",    .value = TEST_MODE_MAGENTA_RED   },
+  { "RED_BLACK",      .value = TEST_MODE_RED_BLACK     },
+  { "BLACK_WHITE",    .value = TEST_MODE_BLACK_WHITE   },
+  { "WHITE_RGBW",     .value = TEST_MODE_WHITE_RGBW    },
+  { "RGBW_RGB",       .value = TEST_MODE_RGBW_RGB      },
+  { "RGB_BLACK",      .value = TEST_MODE_RGB_BLACK     },
+  { "RAINBOW",        .value = TEST_MODE_RAINBOW       },
+  { "BLACK",          .value = TEST_MODE_BLACK         },
   {}
 };
 
 const struct config_enum leds_parameter_enum[] = {
-  { "NONE",     LEDS_PARAMETER_NONE   },
-  { "DIMMER",   LEDS_PARAMETER_DIMMER },
-  { "WHITE",    LEDS_PARAMETER_WHITE  },
+  { "NONE",     .value = LEDS_PARAMETER_NONE   },
+  { "DIMMER",   .value = LEDS_PARAMETER_DIMMER },
+  { "WHITE",    .value = LEDS_PARAMETER_WHITE  },
   {}
 };
 

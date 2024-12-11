@@ -131,14 +131,24 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
 #if CONFIG_LEDS_GPIO_ENABLED
   struct leds_interface_options_gpio {
+    enum leds_interface_gpio_mode {
+      LEDS_GPIO_MODE_NONE,
+
+      /* Set pins after interface setup, keep set after TX end */
+      LEDS_GPIO_MODE_SETUP,
+
+      /* Set pins after interface setup, clear at TX end */
+      LEDS_GPIO_MODE_ACTIVE,
+    } mode;
+
     /**
      * GPIO used for output multiplexing.
-     * The `gpio_out_pins` will be set before TX start, and cleared after TX end.
+     * The `pins` will be set.
      * Any other `gpio_options->pins` will be cleared.
      */
     struct gpio_options *gpio_options;
 
-    gpio_pins_t gpio_out_pins;
+    gpio_pins_t pins;
   };
 #endif
 

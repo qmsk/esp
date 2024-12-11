@@ -1,6 +1,7 @@
 #include "../spi.h"
 #include "../../leds.h"
 #include "../../stats.h"
+#include "../../gpio.h"
 
 #include <logging.h>
 
@@ -189,8 +190,7 @@ int leds_interface_spi_init(struct leds_interface_spi *interface, const struct l
     return err;
   }
 
-  interface->gpio_options = options->gpio.gpio_options;
-  interface->gpio_out_pins = options->gpio.gpio_out_pins;
+  interface->gpio = options->gpio;
 
   return 0;
 }
@@ -302,9 +302,7 @@ int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct led
   }
 
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_set(interface->gpio_options, interface->gpio_out_pins);
-  }
+  leds_gpio_setup(&interface->gpio);
 #endif
 
   WITH_STATS_TIMER(&stats->tx) {
@@ -327,9 +325,7 @@ int leds_interface_spi_tx(struct leds_interface_spi *interface, const struct led
 
 error:
 #if CONFIG_LEDS_GPIO_ENABLED
-  if (interface->gpio_options) {
-    gpio_out_clear(interface->gpio_options);
-  }
+  leds_gpio_close(&interface->gpio);
 #endif
 
   if ((err = leds_interface_spi_master_close(interface))) {

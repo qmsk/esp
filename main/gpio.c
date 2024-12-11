@@ -10,13 +10,13 @@
 
 
 const struct config_enum gpio_type_enum[] = {
-  { "HOST",       GPIO_TYPE_HOST              },
+  { "HOST",       .value = GPIO_TYPE_HOST       },
 #if CONFIG_I2C_GPIO_ENABLED
-  { "I2C-GPIO0",  GPIO_TYPE_I2C_DEV(0) },
-  { "I2C-GPIO1",  GPIO_TYPE_I2C_DEV(1) },
-  { "I2C-GPIO2",  GPIO_TYPE_I2C_DEV(2) },
-  { "I2C-GPIO3",  GPIO_TYPE_I2C_DEV(3) },
-  { "I2C-GPIO4",  GPIO_TYPE_I2C_DEV(4) },
+  { "I2C-GPIO0",  .value = GPIO_TYPE_I2C_DEV(0) },
+  { "I2C-GPIO1",  .value = GPIO_TYPE_I2C_DEV(1) },
+  { "I2C-GPIO2",  .value = GPIO_TYPE_I2C_DEV(2) },
+  { "I2C-GPIO3",  .value = GPIO_TYPE_I2C_DEV(3) },
+  { "I2C-GPIO4",  .value = GPIO_TYPE_I2C_DEV(4) },
 #endif
   {},
 };

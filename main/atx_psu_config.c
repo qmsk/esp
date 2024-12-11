@@ -10,9 +10,9 @@
 struct atx_psu_config atx_psu_config = {};
 
 const struct config_enum atx_psu_gpio_mode_enum[] = {
-  { "",     ATX_PSU_GPIO_MODE_DISABLED  },
-  { "LOW",  ATX_PSU_GPIO_MODE_LOW       },
-  { "HIGH", ATX_PSU_GPIO_MODE_HIGH      },
+  { "",     .value = ATX_PSU_GPIO_MODE_DISABLED  },
+  { "LOW",  .value = ATX_PSU_GPIO_MODE_LOW       },
+  { "HIGH", .value = ATX_PSU_GPIO_MODE_HIGH      },
   {}
 };
 

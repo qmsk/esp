@@ -5,6 +5,7 @@ import { createLogger } from 'vuex'
 import APIService from './services/api.service'
 import ArtNetService from './services/artnet.service'
 import ConfigService from './services/config.service'
+import LedsService from './services/leds.service'
 import SystemService from './services/system.service'
 import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
@@ -12,6 +13,7 @@ import WiFiService from './services/wifi.service'
 const apiService = new APIService();
 const artnetService = new ArtNetService(apiService);
 const configService = new ConfigService(apiService);
+const ledsService = new LedsService(apiService);
 const systemService = new SystemService(apiService);
 const vfsService = new VFSService(apiService);
 const wifiService = new WiFiService(apiService);
@@ -24,6 +26,7 @@ export default new Vuex.Store({
     artnet_inputs: null,
     artnet_outputs: null,
     config: null,
+    leds: null,
     system: null,
     wifi: null,
     wifi_scan: null,
@@ -96,6 +99,13 @@ export default new Vuex.Store({
       commit('updateArtNetOutputs', data);
     },
 
+    /* leds */
+    async loadLeds({ commit }) {
+      const data = await ledsService.get();
+
+      commit('updateLeds', data);
+    },
+
     /* VFS */
     async loadVFS({ commit }) {
       const vfsState = await vfsService.get();
@@ -165,6 +175,10 @@ export default new Vuex.Store({
     },
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
+    },
+
+    updateLeds(state, leds) {
+      state.leds = leds;
     },
 
     updateArtNet(state, artnet) {

@@ -107,6 +107,13 @@ nav a.active {
   border-radius: 0.25em 0.25em 0em 0em;
 }
 
+nav a.tabbed-active {
+  background-color: #888;
+  color: #133337;
+
+  border-radius: 0.25em 0.25em 0em 0em;
+}
+
 /* View */
 main.centered {
   padding: 1em 20%;
@@ -124,7 +131,6 @@ main.split {
 main.split .view {
   flex: 2;
 
-
   padding: 1em;
 }
 
@@ -133,6 +139,31 @@ main.split .controls {
   align-self: stretch;
 }
 
+main.tabbed {
+  background-color: #888;
+}
+
+main.tabbed nav {
+  font-size: 2em;
+
+  background-color: #888;
+}
+
+main.tabbed nav a {
+
+}
+
+main.tabbed nav a.active {
+  color: #111;
+}
+
+main.tabbed .view {
+  background-color: #aaa;
+  
+  padding: 1em 20%;
+}
+
+/* View header */
 main .view .header {
   display: flex;
   flex-direction: row;
@@ -140,7 +171,6 @@ main .view .header {
   justify-content: space-between;
 }
 
-/* Progress */
 main progress {
   display: block;
   width: 50%;

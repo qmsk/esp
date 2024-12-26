@@ -60,25 +60,38 @@
             <tr>
               <th>Group</th>
               <th>Count</th>
+              <th>Power</th>
               <th>Limit</th>
-              <th>Util</th>
+              <th>Utilization</th>
+              <th>Applied</th>
               <th>Output</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(limit, index) in status.limit_groups">
               <td class="name">Group {{ index }}</td>
               <td>{{ limit.count }}</td>
+              <td>{{ limit | limitPower | percentage }}</td>
               <td>{{ limit | limitConfig | percentage }}</td>
               <td>{{ limit | limitUtil | percentage }}</td>
+              <td>{{ limit | limitApplied | percentage }}</td>
               <td>{{ limit | limitOutput | percentage }}</td>
+              <td>
+                <meter min="0" :low="0" optimum="0" :high="limit.limit" :max="limit.count" :value="limit.power" :title="limit | limitUtil | percentage"></meter>
+              </td>
             </tr>
             <tr>
               <td class="name">Total</td>
               <td>{{ status.limit_total.count }}</td>
+              <td>{{ status.limit_total | limitPower | percentage }}</td>
               <td>{{ status.limit_total | limitConfig | percentage }}</td>
               <td>{{ status.limit_total | limitUtil | percentage }}</td>
+              <td>{{ status.limit_total | limitApplied | percentage }}</td>
               <td>{{ status.limit_total | limitOutput | percentage }}</td>
+              <td>
+                <meter min="0" :low="0" optimum="0" :high="status.limit_total.limit" :max="status.limit_total.count" :value="status.limit_total.power" :title="status.limit_total | limitUtil | percentage"></meter>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -113,6 +126,13 @@ data: () => ({
     },
   },
   filters: {
+    limitPower: function(limit) {
+      if (limit.power && limit.count) {
+        return limit.power / limit.count;
+      } else {
+        return 0.0;
+      }
+    },
     limitConfig: function(limit) {
       if (limit.limit && limit.count) {
         return limit.limit / limit.count;
@@ -127,11 +147,18 @@ data: () => ({
         return 0.0;
       }
     },
-    limitOutput: function(limit) {
+    limitApplied: function(limit) {
       if (limit.output && limit.power) {
         return limit.output / limit.power;
       } else {
         return 1.0;
+      }
+    },
+    limitOutput: function(limit) {
+      if (limit.output && limit.limit) {
+        return limit.output / limit.limit;
+      } else {
+        return 0.0;
       }
     },
   },

@@ -60,17 +60,23 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
     printf("\tActive   : %5u\n", active);
-    printf("\tTotal    : config %5.1f%% util %5.1f%% applied %5.1f%%\n",
-      leds_limit_status_configured(&limit_total_status) * 100.0f,
-      leds_limit_status_utilization(&limit_total_status) * 100.0f,
-      leds_limit_status_active(&limit_total_status) * 100.0f
+    printf("\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
+      limit_total_status.count,
+      leds_limit_status_power(&limit_total_status) * 100.0f,
+      leds_limit_status_limit(&limit_total_status) * 100.0f,
+      leds_limit_status_util(&limit_total_status) * 100.0f,
+      leds_limit_status_applied(&limit_total_status) * 100.0f,
+      leds_limit_status_output(&limit_total_status) * 100.0f
     );
 
     for (unsigned j = 0; j < groups; j++) {
-      printf("\tGroup[%2d]: config %5.1f%% util %5.1f%% applied %5.1f%%\n", j,
-        leds_limit_status_configured(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_utilization(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_active(&limit_groups_status[j]) * 100.0f
+      printf("\tGroup[%2d]: count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n", j,
+        limit_groups_status[j].count,
+        leds_limit_status_power(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_limit(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_util(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_applied(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_output(&limit_groups_status[j]) * 100.0f
       );
     }
 

@@ -105,6 +105,11 @@ export default new Vuex.Store({
 
       commit('updateLeds', data);
     },
+    async loadLedsStatus({ commit }, id) {
+      const status = await ledsService.getStatus(id);
+
+      commit('updateLedsStatus', {id, status});
+    },
 
     /* VFS */
     async loadVFS({ commit }) {
@@ -178,6 +183,12 @@ export default new Vuex.Store({
     },
 
     updateLeds(state, leds) {
+      state.leds = leds;
+    },
+    updateLedsStatus(state, {id, status}) {
+      // no reactive map support
+      let leds = new Map(state.leds);
+      leds.get(id).status = status;
       state.leds = leds;
     },
 

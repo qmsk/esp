@@ -98,6 +98,7 @@
         <table class="limits">
           <caption>
             Limits
+            <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
           </caption>
           <thead>
             <tr>
@@ -146,6 +147,7 @@
 export default {
 data: () => ({
     loading: true,
+    loadingStatus: false,
     activeID: "leds1",
   }),
   created() {
@@ -157,19 +159,24 @@ data: () => ({
         return [...this.$store.state.leds.keys()];
       }
     },
+    activeLeds() {
+      if (this.$store.state.leds) {
+        return this.$store.state.leds.get(this.activeID);
+      }
+    },
     options() {
-      if (this.$store.state.leds && this.activeID) {
-        return this.$store.state.leds.get(this.activeID).options;
+      if (this.activeLeds) {
+        return this.activeLeds.options;
       }
     },
     artnet() {
-      if (this.$store.state.leds && this.activeID) {
-        return this.$store.state.leds.get(this.activeID).artnet;
+      if (this.activeLeds) {
+        return this.activeLeds.artnet;
       }
     },
     status() {
-      if (this.$store.state.leds && this.activeID) {
-        return this.$store.state.leds.get(this.activeID).status;
+      if (this.activeLeds) {
+        return this.activeLeds.status;
       }
     },
   },
@@ -218,6 +225,15 @@ data: () => ({
         await this.$store.dispatch('loadLeds');
       } finally {
         this.loading = false;
+      }
+    },
+    async loadStatus() {
+      this.loadingStatus = true;
+
+      try {
+        await this.$store.dispatch('loadLedsStatus', this.activeID);
+      } finally {
+        this.loadingStatus = false;
       }
     },
     switchActive(id) {

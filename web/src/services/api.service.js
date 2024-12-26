@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 export default class APIService {
-  get(url) {
-    return axios.get(url);
+  get(url, params = {}) {
+    return axios.get(url, {params});
   }
 
   post(url, data) {

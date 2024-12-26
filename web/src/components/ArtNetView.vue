@@ -75,7 +75,6 @@
         </table>
       </template>
 
-
       <template v-if="outputs">
         <table class="outputs">
         <caption>

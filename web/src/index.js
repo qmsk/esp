@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Vuex from 'vuex'
 
 import App from "./App"
+import ArtNetView from "./components/ArtNetView"
 import ConfigView from "./components/ConfigView"
 import FilesView from "./components/FilesView"
 import SystemView from "./components/SystemView"
@@ -22,6 +23,7 @@ const router = new VueRouter({
   routes: [
     { path: '/config',  component: ConfigView },
     { path: '/wifi',    component: WiFiView },
+    { path: '/artnet',  component: ArtNetView },
     { path: '/files',   component: FilesView },
     { path: '/system',  component: SystemView },
   ],

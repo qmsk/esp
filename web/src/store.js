@@ -3,12 +3,14 @@ import Vuex from 'vuex'
 import { createLogger } from 'vuex'
 
 import APIService from './services/api.service'
+import ArtNetService from './services/artnet.service'
 import ConfigService from './services/config.service'
 import SystemService from './services/system.service'
 import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
 
 const apiService = new APIService();
+const artnetService = new ArtNetService(apiService);
 const configService = new ConfigService(apiService);
 const systemService = new SystemService(apiService);
 const vfsService = new VFSService(apiService);
@@ -18,6 +20,7 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    artnet: null,
     config: null,
     system: null,
     wifi: null,
@@ -72,6 +75,13 @@ export default new Vuex.Store({
       const data = await wifiService.scan();
 
       commit('updateWiFiScan', data);
+    },
+
+    /* artnet */
+    async loadArtNet({ commit }) {
+      const data = await artnetService.get();
+
+      commit('updateArtNet', data);
     },
 
     /* VFS */
@@ -144,6 +154,11 @@ export default new Vuex.Store({
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
     },
+
+    updateArtNet(state, artnet) {
+      state.artnet = artnet;
+    },
+
     updateVFS(state, vfsState) {
       state.vfs = vfsState;
     },

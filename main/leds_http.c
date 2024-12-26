@@ -64,28 +64,31 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
   );
 }
 
-static int leds_api_write_object(struct json_writer *w, int index, struct leds_state *state)
+static int leds_api_write_object(struct json_writer *w, struct leds_state *state)
 {
   return (
-        JSON_WRITE_MEMBER_UINT(w, "index", index + 1)
+        JSON_WRITE_MEMBER_UINT(w, "index", state->index + 1)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
   );
 }
 
-static int leds_api_write_array(struct json_writer *w)
+static int leds_api_write_objects(struct json_writer *w)
 {
   int err;
 
   for (int i = 0; i < LEDS_COUNT; i++)
   {
     struct leds_state *state = &leds_states[i];
+    char name[10];
 
     if (!state->config->enabled || !state->leds) {
       continue;
     }
 
-    if ((err = JSON_WRITE_OBJECT(w, leds_api_write_object(w, i, state)))) {
+    snprintf(name, sizeof(name), "leds%u", state->index + 1);
+
+    if ((err = JSON_WRITE_MEMBER_OBJECT(w, name, leds_api_write_object(w, state)))) {
       return err;
     }
   }
@@ -95,7 +98,7 @@ static int leds_api_write_array(struct json_writer *w)
 
 static int leds_api_write(struct json_writer *w, void *ctx)
 {
-  return JSON_WRITE_ARRAY(w, leds_api_write_array(w));
+  return JSON_WRITE_OBJECT(w, leds_api_write_objects(w));
 }
 
 int leds_api_get(struct http_request *request, struct http_response *response, void *ctx)

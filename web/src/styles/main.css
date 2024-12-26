@@ -157,9 +157,9 @@ main.tabbed nav a.active {
   color: #111;
 }
 
-main.tabbed .view {
+main.tabbed .view.centered {
   background-color: #aaa;
-  
+
   padding: 1em 20%;
 }
 

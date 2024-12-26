@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_artnet.h"
 #include "leds_test.h"
 #include "leds_config.h"
 #include "http_routes.h"
@@ -71,12 +72,26 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
   );
 }
 
+static int leds_api_write_object_artnet(struct json_writer *w, struct leds_state *state)
+{
+  return (
+        JSON_WRITE_MEMBER_UINT(w, "universe_start", state->config->artnet_universe_start)
+    ||  JSON_WRITE_MEMBER_UINT(w, "universe_count", state->artnet->universe_count)
+    ||  JSON_WRITE_MEMBER_UINT(w, "universe_leds", state->artnet->universe_leds_count)
+    ||  JSON_WRITE_MEMBER_UINT(w, "leds_segment", state->config->artnet_leds_segment)
+    ||  JSON_WRITE_MEMBER_UINT(w, "leds_group", state->config->artnet_leds_group)
+    ||  JSON_WRITE_MEMBER_STRING(w, "leds_format", config_enum_to_string(leds_format_enum, state->config->artnet_leds_format))
+    ||  JSON_WRITE_MEMBER_UINT(w, "dmx_timeout_ms", state->config->artnet_dmx_timeout)
+  );
+}
+
 static int leds_api_write_object(struct json_writer *w, struct leds_state *state)
 {
   return (
         JSON_WRITE_MEMBER_UINT(w, "index", state->index + 1)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
+    ||  (state->artnet ? JSON_WRITE_MEMBER_OBJECT(w, "artnet", leds_api_write_object_artnet(w, state)) : 0)
   );
 }
 

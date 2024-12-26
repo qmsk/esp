@@ -51,6 +51,32 @@
         </dl>
       </template>
 
+      <template v-if="artnet">
+        <h2>Art-Net</h2>
+        <dl>
+          <dt>Universe Start</dt>
+          <dd>{{ artnet.universe_start }}</dd>
+
+          <dt>Universe Count</dt>
+          <dd>{{ artnet.universe_count }}</dd>
+
+          <dt>Universe LEDs</dt>
+          <dd>{{ artnet.universe_leds }}</dd>
+
+          <dt>LEDs Segment</dt>
+          <dd>{{ artnet.leds_segment }}</dd>
+
+          <dt>LEDs Group</dt>
+          <dd>{{ artnet.leds_group }}</dd>
+
+          <dt>LEDs Format</dt>
+          <dd>{{ artnet.leds_format }}</dd>
+
+          <dt>DMX Timeout</dt>
+          <dd>{{ artnet.dmx_timeout_ms }}</dd>
+        </dl>
+      </template>
+
       <template v-if="status">
         <h2>Status</h2>
         <dl>
@@ -62,14 +88,13 @@
 
           <dt>Test Mode</dt>
           <dd>{{ status.test_mode }}</dd>
-
         </dl>
       </template>
 
       <template v-if="status">
         <table class="limits">
           <caption>
-            Limit Status
+            Limits
           </caption>
           <thead>
             <tr>
@@ -132,6 +157,11 @@ data: () => ({
     options() {
       if (this.$store.state.leds && this.activeID) {
         return this.$store.state.leds.get(this.activeID).options;
+      }
+    },
+    artnet() {
+      if (this.$store.state.leds && this.activeID) {
+        return this.$store.state.leds.get(this.activeID).artnet;
       }
     },
     status() {

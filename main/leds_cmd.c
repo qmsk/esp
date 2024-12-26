@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_artnet.h"
 #include "leds_test.h"
 #include "leds_config.h"
 #include "leds_stats.h"
@@ -34,6 +35,17 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %5u\n", "Count", options->count);
     printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
     printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);
+
+    if (state->artnet) {
+      printf("\t%-20s:\n", "Art-Net");
+      printf("\t\t%-20s: %5u\n", "Universe Start", config->artnet_universe_start);
+      printf("\t\t%-20s: %5u\n", "Universe Count", state->artnet->universe_count);
+      printf("\t\t%-20s: %5u\n", "Universe LEDs", state->artnet->universe_leds_count);
+      printf("\t\t%-20s: %5u\n", "LEDS Segment", config->artnet_leds_segment);
+      printf("\t\t%-20s: %5u\n", "LEDS Group", config->artnet_leds_group);
+      printf("\t\t%-20s: %s\n", "LEDS Format", config_enum_to_string(leds_format_enum, config->artnet_leds_format));
+      printf("\t\t%-20s: %u\n", "DMX Timeout", config->artnet_dmx_timeout);
+    }
     printf("\n");
   }
 

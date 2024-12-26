@@ -7,8 +7,11 @@
 <template>
   <main id="artnet-view" class="centered">
     <div class="view">
-      <h1>Art-Net</h1>
-      <progress v-show="loading">Loading...</progress>
+      <div class="header">
+        <h1>Art-Net</h1>
+        <progress v-show="loading">Loading...</progress>
+        <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
+      </div>
 
       <template v-if="artnet && artnet.config">
         <h2>Config</h2>

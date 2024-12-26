@@ -133,6 +133,13 @@ main.split .controls {
   align-self: stretch;
 }
 
+main .view .header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 /* Progress */
 main progress {
   display: block;

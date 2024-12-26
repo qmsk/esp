@@ -83,11 +83,14 @@
           <dt>Active</dt>
           <dd>{{ status.active }}</dd>
 
-          <dt>Last Update</dt>
-          <dd>{{ status.update_ms | interval('ms') }}</dd>
-
           <dt>Test Mode</dt>
           <dd>{{ status.test_mode }}</dd>
+
+          <dt>Updated</dt>
+          <dd>{{ status.update_ms | interval('ms') }}</dd>
+
+          <dt>Art-Net Updated</dt>
+          <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
         </dl>
       </template>
 

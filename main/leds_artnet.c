@@ -341,6 +341,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   // timeouts
   if (data || sync) {
+    state->artnet->dmx_tick = xTaskGetTickCount();
     leds_artnet_timeout_reset(state);
   } else if (state->artnet->timeout_tick) {
     if (xTaskGetTickCount() >= state->artnet->timeout_tick) {

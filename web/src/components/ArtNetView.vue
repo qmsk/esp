@@ -44,9 +44,12 @@
         </dl>
       </template>
 
-      <template v-if="artnet && artnet.inputs">
-        <h2>Inputs</h2>
+      <template v-if="inputs">
         <table class="inputs">
+          <caption>
+            Inputs
+            <button @click="loadInputs"><span :class="{spin: true, active: loadingInputs}">&#10227;</span></button>
+          </caption>
           <thead>
             <tr>
               <th>Port</th>
@@ -59,7 +62,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="input in artnet.inputs">
+            <tr v-for="input in inputs">
               <td>{{ input.port }}</td>
               <td>{{ input.index }}</td>
               <td>{{ input.net }}</td>
@@ -73,9 +76,12 @@
       </template>
 
 
-      <template v-if="artnet && artnet.outputs">
-        <h2>Outputs</h2>
+      <template v-if="outputs">
         <table class="outputs">
+        <caption>
+          Outputs
+          <button @click="loadOutputs"><span :class="{spin: true, active: loadingOutputs}">&#10227;</span></button>
+        </caption>
           <thead>
             <tr>
               <th>Port</th>
@@ -89,7 +95,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="output in artnet.outputs">
+            <tr v-for="output in outputs">
               <td>{{ output.port }}</td>
               <td>{{ output.index }}</td>
               <td>{{ output.name }}</td>
@@ -109,6 +115,8 @@
 export default {
 data: () => ({
     loading: true,
+    loadingInputs: false,
+    loadingOutputs: false,
   }),
   created() {
     this.load();
@@ -117,6 +125,16 @@ data: () => ({
     artnet() {
       if (this.$store.state.artnet) {
         return this.$store.state.artnet;
+      }
+    },
+    inputs() {
+      if (this.$store.state.artnet_inputs) {
+        return this.$store.state.artnet_inputs;
+      }
+    },
+    outputs() {
+      if (this.$store.state.artnet_outputs) {
+        return this.$store.state.artnet_outputs;
       }
     },
   },
@@ -128,6 +146,24 @@ data: () => ({
         await this.$store.dispatch('loadArtNet');
       } finally {
         this.loading = false;
+      }
+    },
+    async loadInputs() {
+      this.loadingInputs = true;
+
+      try {
+        await this.$store.dispatch('loadArtNetInputs');
+      } finally {
+        this.loadingInputs = false;
+      }
+    },
+    async loadOutputs() {
+      this.loadingOutputs = true;
+
+      try {
+        await this.$store.dispatch('loadArtNetOutputs');
+      } finally {
+        this.loadingOutputs = false;
       }
     },
   }

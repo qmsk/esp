@@ -21,6 +21,8 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     artnet: null,
+    artnet_inputs: null,
+    artnet_outputs: null,
     config: null,
     system: null,
     wifi: null,
@@ -82,6 +84,16 @@ export default new Vuex.Store({
       const data = await artnetService.get();
 
       commit('updateArtNet', data);
+    },
+    async loadArtNetInputs({ commit }) {
+      const data = await artnetService.getInputs();
+
+      commit('updateArtNetInputs', data);
+    },
+    async loadArtNetOutputs({ commit }) {
+      const data = await artnetService.getOutputs();
+
+      commit('updateArtNetOutputs', data);
     },
 
     /* VFS */
@@ -157,6 +169,14 @@ export default new Vuex.Store({
 
     updateArtNet(state, artnet) {
       state.artnet = artnet;
+      state.artnet_inputs = artnet.inputs;
+      state.artnet_outputs = artnet.outputs;
+    },
+    updateArtNetInputs(state, artnetInputs) {
+      state.artnet_inputs = artnetInputs;
+    },
+    updateArtNetOutputs(state, artnetOutputs) {
+      state.artnet_outputs = artnetOutputs;
     },
 
     updateVFS(state, vfsState) {

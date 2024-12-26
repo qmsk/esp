@@ -52,6 +52,18 @@
       </template>
 
       <template v-if="status">
+        <h2>Status</h2>
+        <dl>
+          <dt>Active</dt>
+          <dd>{{ status.active }}</dd>
+
+          <dt>Last Update</dt>
+          <dd>{{ status.update_ms | interval('ms') }}</dd>
+
+        </dl>
+      </template>
+
+      <template v-if="status">
         <table class="limits">
           <caption>
             Limit Status

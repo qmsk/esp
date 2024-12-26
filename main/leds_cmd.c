@@ -51,15 +51,17 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
 
     printf("leds%d:\n", i + 1);
 
-    unsigned active = leds_count_active(state->leds);
+    bool active = leds_is_active(state->leds);
     struct leds_limit_status limit_total_status;
     struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
     size_t groups = LEDS_LIMIT_GROUPS_MAX;
+    TickType_t tick = xTaskGetTickCount();
 
     leds_get_limit_total_status(state->leds, &limit_total_status);
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
-    printf("\tActive   : %5u\n", active);
+    printf("\tActive   : %s\n", active ? "true" : "false");
+    printf("\tUpdate   : %dms\n", state->update_tick ? (tick - state->update_tick) / portTICK_RATE_MS : 0);
     printf("\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
       limit_total_status.count,
       leds_limit_status_power(&limit_total_status) * 100.0f,

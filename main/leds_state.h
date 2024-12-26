@@ -9,6 +9,7 @@
 
 struct leds_config;
 
+struct leds_test_state;
 struct leds_artnet_state;
 struct leds_sequence_state;
 

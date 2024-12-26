@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_test.h"
 #include "leds_config.h"
 #include "leds_stats.h"
 
@@ -60,9 +61,10 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     leds_get_limit_total_status(state->leds, &limit_total_status);
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
-    printf("\tActive   : %s\n", active ? "true" : "false");
-    printf("\tUpdate   : %dms\n", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0);
-    printf("\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
+    printf("\tActive    : %s\n", active ? "true" : "false");
+    printf("\tTest Mode : %s\n", state->test->mode ? config_enum_to_string(leds_test_mode_enum, state->test->mode) : "");
+    printf("\tUpdate    : %dms\n", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0);
+    printf("\tTotal     : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
       limit_total_status.count,
       leds_limit_status_power(&limit_total_status) * 100.0f,
       leds_limit_status_limit(&limit_total_status) * 100.0f,
@@ -72,7 +74,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     );
 
     for (unsigned j = 0; j < groups; j++) {
-      printf("\tGroup[%2d]: count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n", j,
+      printf("\tGroup[%2d] : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n", j,
         limit_groups_status[j].count,
         leds_limit_status_power(&limit_groups_status[j]) * 100.0f,
         leds_limit_status_limit(&limit_groups_status[j]) * 100.0f,

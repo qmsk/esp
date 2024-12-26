@@ -60,6 +60,9 @@
           <dt>Last Update</dt>
           <dd>{{ status.update_ms | interval('ms') }}</dd>
 
+          <dt>Test Mode</dt>
+          <dd>{{ status.test_mode }}</dd>
+
         </dl>
       </template>
 

@@ -35,6 +35,7 @@ const struct http_route http_routes[] = {
 
   /* leds_http.c */
   { "GET",  "api/leds",           leds_api_get,           NULL },
+  { "GET",  "api/leds/status",    leds_api_get_status,    NULL },
   { "POST", "api/leds",           leds_api_post,          NULL },
 
   { "GET",  "api/leds/test",      leds_api_test_get,      NULL },

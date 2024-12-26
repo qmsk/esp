@@ -63,7 +63,7 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
   return (
         JSON_WRITE_MEMBER_BOOL(w, "active", active)
     ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", state->update_tick)
-    ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", state->update_tick ? (tick - state->update_tick) / portTICK_RATE_MS : 0)
+    ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &limit_total_status))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, limit_groups_status, groups))
   );

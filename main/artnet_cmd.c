@@ -85,7 +85,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       options->name,
       options->index,
       state.seq,
-      state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
+      state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );
   }
 

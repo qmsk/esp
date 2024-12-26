@@ -61,7 +61,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
     printf("\tActive   : %s\n", active ? "true" : "false");
-    printf("\tUpdate   : %dms\n", state->update_tick ? (tick - state->update_tick) / portTICK_RATE_MS : 0);
+    printf("\tUpdate   : %dms\n", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0);
     printf("\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
       limit_total_status.count,
       leds_limit_status_power(&limit_total_status) * 100.0f,

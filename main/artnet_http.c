@@ -21,7 +21,7 @@ static int artnet_api_write_input_object(struct json_writer *w, const struct art
     ||  JSON_WRITE_MEMBER_UINT(w, "universe", artnet_address_universe(options->address))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
               JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
-          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", state->tick ? (tick - state->tick) / portTICK_RATE_MS : 0)
+          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", state->tick ? (tick - state->tick) * portTICK_RATE_MS : 0)
           ||  JSON_WRITE_MEMBER_UINT(w, "len", state->len)
         )
   );
@@ -65,7 +65,7 @@ static int artnet_api_write_output_object(struct json_writer *w, const struct ar
     ||  JSON_WRITE_MEMBER_UINT(w, "universe", artnet_address_universe(options->address))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
               JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
-          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", state->tick ? (tick - state->tick) / portTICK_RATE_MS : 0)
+          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", state->tick ? (tick - state->tick) * portTICK_RATE_MS : 0)
           ||  JSON_WRITE_MEMBER_UINT(w, "seq", state->seq)
         )
   );

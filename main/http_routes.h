@@ -34,6 +34,8 @@ int wifi_api_scan_handler(struct http_request *request, struct http_response *re
 
 /* artnet_http.c */
 int artnet_api_handler(struct http_request *request, struct http_response *response, void *ctx);
+int artnet_api_inputs_handler(struct http_request *request, struct http_response *response, void *ctx);
+int artnet_api_outputs_handler(struct http_request *request, struct http_response *response, void *ctx);
 
 /* leds_http.c */
 int leds_api_get(struct http_request *request, struct http_response *response, void *ctx);

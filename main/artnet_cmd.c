@@ -49,16 +49,18 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   for (int i = 0; i < inputs_size && i < ARTNET_INPUTS_MAX; i++) {
     struct artnet_input_options *options = &artnet_input_options[i];
     struct artnet_input_state state;
+    TickType_t tick = xTaskGetTickCount();
 
     if ((err = artnet_get_input_state(artnet, i, &state))) {
       LOG_ERROR("artnet_get_input_state");
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u: len %3u\n", i,
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u: len %3u @ %d ms\n", i,
       options->port, options->index,
       artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
-      state.len
+      state.len,
+      state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
     );
   }
 
@@ -75,7 +77,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16.16s[%3u]: seq %3u @ %d ticks\n", i,
+    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16.16s[%3u]: seq %3u @ %d ms\n", i,
       options->port, options->index,
       artnet_address_net(options->address),
       artnet_address_subnet(options->address),
@@ -83,7 +85,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       options->name,
       options->index,
       state.seq,
-      state.tick ? tick - state.tick : 0
+      state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
     );
   }
 

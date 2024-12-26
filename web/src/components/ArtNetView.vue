@@ -65,7 +65,7 @@
               <td>{{ input.net }}</td>
               <td>{{ input.subnet }}</td>
               <td>{{ input.universe }}</td>
-              <td>{{ input.state.tick }}</td>
+              <td>{{ input.state.tick_ms | interval('ms') }}</td>
               <td>{{ input.state.len }}</td>
             </tr>
           </tbody>
@@ -96,7 +96,7 @@
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
-              <td>{{ output.state.tick }}</td>
+              <td>{{ output.state.tick_ms | interval('ms') }}</td>
               <td>{{ output.state.seq }}</td>
             </tr>
           </tbody>

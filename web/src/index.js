@@ -11,11 +11,13 @@ import WiFiView from "./components/WiFiView"
 
 import fileSizeFilter from "./filters/fileSize.filter"
 import fileTimeFilter from "./filters/fileTime.filter"
+import intervalFilter from "./filters/interval.filter";
 
 Vue.use(VueRouter);
 
 Vue.filter('fileSize', fileSizeFilter);
 Vue.filter('fileTime', fileTimeFilter);
+Vue.filter('interval', intervalFilter);
 
 const router = new VueRouter({
   linkActiveClass: 'active',

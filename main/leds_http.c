@@ -167,6 +167,11 @@ int leds_api_query(struct http_request *request, struct leds_api_query *query)
     }
   }
 
+  if (err < 0) {
+    LOG_WARN("http_request_query");
+    return err;
+  }
+
   if (!query->state) {
     LOG_WARN("missing ?leds=...");
     return HTTP_UNPROCESSABLE_ENTITY;

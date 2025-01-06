@@ -14,6 +14,7 @@ import fileSizeFilter from "./filters/fileSize.filter"
 import fileTimeFilter from "./filters/fileTime.filter"
 import intervalFilter from "./filters/interval.filter";
 import percentageFilter from "./filters/percentage.filter"
+import timestampFilter from "./filters/timestamp.filter"
 
 Vue.use(VueRouter);
 
@@ -21,6 +22,7 @@ Vue.filter('fileSize', fileSizeFilter);
 Vue.filter('fileTime', fileTimeFilter);
 Vue.filter('interval', intervalFilter);
 Vue.filter('percentage', percentageFilter);
+Vue.filter('timestamp', timestampFilter);
 
 const router = new VueRouter({
   linkActiveClass: 'active',

@@ -115,23 +115,46 @@ nav a.tabbed-active {
 }
 
 /* View */
-main.centered {
-  padding: 1em 20%;
+@media (orientation: landscape) {
+  main.split {
+    padding: 0;
+  
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  
+  main .view.centered {
+    padding: 1em 20%;
+  }
+
+  main.split .view {
+    padding: 1em;
+  }
 }
 
-main.split {
-  padding: 0;
+@media (orientation: portrait) {
+  main.split {
+    padding: 0;
+  
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  
+  main .view.centered {
+    padding: 1em;
+  }
 
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
+  main.split .view {
+    padding: 0.5em;
+  }
 }
 
 main.split .view {
   flex: 2;
-
-  padding: 1em;
 }
 
 main.split .controls {
@@ -159,8 +182,6 @@ main.tabbed nav a.active {
 
 main.tabbed .view.centered {
   background-color: #aaa;
-
-  padding: 1em 20%;
 }
 
 /* View header */

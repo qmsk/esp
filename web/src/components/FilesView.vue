@@ -2,8 +2,8 @@
 
 </style>
 <template>
-  <main id="files-view" class="split">
-    <div class="view">
+  <main id="files-view">
+    <div class="view centered">
       <h1>Files</h1>
       <progress v-show="loading">Loading...</progress>
 

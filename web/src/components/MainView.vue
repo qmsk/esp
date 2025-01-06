@@ -173,8 +173,8 @@
   }
 </style>
 <template>
-  <main id="main-view" class="centered">
-    <div class="view">
+  <main id="main-view">
+    <div class="view centered">
       <div class="header">
         <h1>Status</h1>
         <progress v-show="loading">Loading...</progress>

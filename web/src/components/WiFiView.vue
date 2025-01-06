@@ -2,8 +2,8 @@
 
 </style>
 <template>
-  <main id="wifi-view" class="split">
-    <div class="view">
+  <main id="wifi-view">
+    <div class="view centered">
       <h1>WiFi</h1>
       <progress v-show="loading">Loading...</progress>
 

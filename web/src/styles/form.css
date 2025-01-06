@@ -1,12 +1,25 @@
+@media (orientation: landscape) {
+  form fieldset {
+    margin: 1em;
+
+    grid-template-columns: 1fr 3fr 1fr;
+  }
+}
+
+@media (orientation: portrait) {
+  form fieldset {
+    margin: 0.5em;
+
+    grid-template-columns: 1fr 3.5fr;
+  }
+}
+
 /* fieldsets */
 form fieldset {
   display: grid;
 
-  margin: 1em;
-
   border: 1px solid #bbb;
 
-  grid-template-columns: 1fr 3fr 0.5fr;
   grid-gap: 1em;
 }
 

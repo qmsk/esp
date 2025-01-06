@@ -5,8 +5,8 @@
   }
 </style>
 <template>
-  <main id="artnet-view" class="centered">
-    <div class="view">
+  <main id="artnet-view">
+    <div class="view centered">
       <div class="header">
         <h1>Art-Net</h1>
         <progress v-show="loading">Loading...</progress>

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <config.h>
 #include <sdkconfig.h>
 
 enum user_led {

@@ -2,6 +2,7 @@
 #include "user_leds_config.h"
 #include "user_leds_input.h"
 #include "user_leds_output.h"
+#include "user_leds_state.h"
 #include "user.h"
 #include "i2c_gpio.h"
 #include "tasks.h"
@@ -12,6 +13,17 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <sdkconfig.h>
+
+const struct config_enum user_leds_state_enum[] = {
+  { "IDLE",     .value = USER_LEDS_IDLE     },
+  { "OFF",      .value = USER_LEDS_OFF      },
+  { "ON",       .value = USER_LEDS_ON       },
+  { "SLOW",     .value = USER_LEDS_SLOW     },
+  { "FAST",     .value = USER_LEDS_FAST     },
+  { "FLASH",    .value = USER_LEDS_FLASH    },
+  { "PULSE",    .value = USER_LEDS_PULSE    },
+  {}
+};
 
 enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
   [USER_STATE_BOOT]             = USER_LEDS_OFF,

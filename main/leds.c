@@ -192,7 +192,9 @@ int update_leds(struct leds_state *state, enum user_activity leds_activity)
     return err;
   }
 
-  user_activity(leds_activity);
+  if (leds_activity) {
+    user_activity(leds_activity);
+  }
 
   if ((err = leds_tx(state->leds))) {
     LOG_ERROR("leds_tx");

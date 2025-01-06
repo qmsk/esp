@@ -52,7 +52,6 @@ const char *user_activity_str(enum user_activity activity)
     case USER_ACTIVITY_LEDS_ARTNET:             return "LEDS_ARTNET";
     case USER_ACTIVITY_LEDS_ARTNET_TIMEOUT:     return "LEDS_ARTNET_TIMEOUT";
     case USER_ACTIVITY_LEDS_TEST:               return "LEDS_TEST";
-    case USER_ACTIVITY_LEDS_UPDATE_TIMEOUT:     return "LEDS_UPDATE_TIMEOUT";
 
     case USER_ACTIVITY_DMX_INPUT:     return "DMX_INPUT";
     case USER_ACTIVITY_DMX_OUTPUT:    return "DMX_OUTPUT";

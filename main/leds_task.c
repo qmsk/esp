@@ -104,6 +104,7 @@ static void leds_main(void *ctx)
   for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
     EventBits_t event_bits = leds_task_wait(state);
     enum user_activity update_activity = 0;
+    bool update_timeout = false;
 
     loop_sample = stats_timer_start(&stats->loop);
 
@@ -144,14 +145,15 @@ static void leds_main(void *ctx)
     }
 
     if (leds_update_active(state)) {
-      update_activity = USER_ACTIVITY_LEDS_UPDATE_TIMEOUT;
+      // update without activity
+      update_timeout = true;
 
       LOG_DEBUG("update timeout");
 
       stats_counter_increment(&stats->update_timeout);
     }
 
-    if (update_activity) {
+    if (update_activity || update_timeout) {
       state->update_tick = xTaskGetTickCount();
 
       WITH_STATS_TIMER(&stats->update) {

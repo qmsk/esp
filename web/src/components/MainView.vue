@@ -50,7 +50,7 @@
   div.user-leds-user {
     background: radial-gradient(#0000ff 50%, #000000ff 100%);
   }
-  div.user-leds-flash {
+  div.user-leds-activity {
     background: radial-gradient(#ffffff 50%, #000000ff 100%);
   }
   div.user-leds-alert {
@@ -72,7 +72,7 @@
   div.user-leds-fast {
     animation: 200ms infinite user-leds-fast;
   }
-  div.user-leds-flash-once {
+  div.user-leds-flash {
     opacity: 50%;
     animation: 100ms user-leds-flash;
   }
@@ -163,7 +163,7 @@
         </div>
 
         <div id="user-state" class="user-item">
-          <div class="user-leds-title">User</div>
+          <div class="user-leds-title">State</div>
           <div class="user-leds user-leds-user" :class="status.state.leds_state | userLedsClass"></div>
           <div class="user-leds-state">{{ status.state.type }}</div>
           <div class="user-leds-timestamp" v-if="status.state.tick">{{ tickToDate(status.state.tick) | timestamp }}</div>
@@ -171,8 +171,8 @@
         </div>
 
         <div id="user-state" class="user-item">
-          <div class="user-leds-title">Flash</div>
-          <div class="user-leds user-leds-flash" :class="status.activity.leds_state | userLedsClass"></div>
+          <div class="user-leds-title">Activity</div>
+          <div class="user-leds user-leds-activity" :class="status.activity.leds_state | userLedsClass"></div>
           <div class="user-leds-state">{{ status.activity.type }}</div>
           <div class="user-leds-timestamp" v-if="status.activity.tick">{{ tickToDate(status.activity.tick) | timestamp }}</div>
           <div class="user-leds-interval" v-if="status.activity.tick_ms">{{ status.activity.tick_ms | interval('ms', 's') }}</div>
@@ -212,7 +212,7 @@ export default {
         case "ON":      return "user-leds-on";
         case "SLOW":    return "user-leds-slow";
         case "FAST":    return "user-leds-fast";
-        case "FLASH":   return "user-leds-flash-once";
+        case "FLASH":   return "user-leds-flash";
         case "PULSE":   return "user-leds-pulse";
       }
     }

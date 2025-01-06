@@ -111,7 +111,7 @@ int leds_api_form(struct http_request *request, struct http_response *response)
   }
 
   if (req.state && req.state->leds) {
-    if ((err = update_leds(req.state)) < 0) {
+    if ((err = update_leds(req.state, USER_ACTIVITY_LEDS_HTTP)) < 0) {
       LOG_ERROR("update_leds");
       return HTTP_INTERNAL_SERVER_ERROR;
     } else if (err) {

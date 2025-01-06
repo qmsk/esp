@@ -6,6 +6,7 @@
 #include "leds_test.h"
 
 #include "tasks.h"
+#include "user.h"
 
 #include <logging.h>
 
@@ -102,14 +103,14 @@ static void leds_main(void *ctx)
 
   for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
     EventBits_t event_bits = leds_task_wait(state);
-    bool update = false;
+    enum user_activity update_activity = 0;
 
     loop_sample = stats_timer_start(&stats->loop);
 
     if (state->sequence && leds_sequence_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->sequence) {
         if (leds_sequence_update(state, event_bits)) {
-          update = true;
+          update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
         }
       }
     }
@@ -117,7 +118,7 @@ static void leds_main(void *ctx)
     if (state->artnet && leds_artnet_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->artnet) {
         if (leds_artnet_update(state, event_bits)) {
-          update = true;
+          update_activity = USER_ACTIVITY_LEDS_ARTNET;
         }
       }
     }
@@ -125,24 +126,24 @@ static void leds_main(void *ctx)
     if (state->test && leds_test_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->test) {
         if (leds_test_update(state, event_bits)) {
-          update = true;
+          update_activity = USER_ACTIVITY_LEDS_TEST;
         }
       }
     }
 
     if (leds_update_active(state)) {
+      update_activity = USER_ACTIVITY_LEDS_UPDATE_TIMEOUT;
+
       LOG_DEBUG("update timeout");
 
       stats_counter_increment(&stats->update_timeout);
-
-      update = true;
     }
 
-    if (update) {
+    if (update_activity) {
       state->update_tick = xTaskGetTickCount();
 
       WITH_STATS_TIMER(&stats->update) {
-        if (update_leds(state)) {
+        if (update_leds(state, update_activity)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);
           continue;
         }

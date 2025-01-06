@@ -149,7 +149,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -202,7 +202,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -258,7 +258,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = update_leds(state))) {
+  if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
     LOG_ERROR("update_leds");
     return err;
   }
@@ -320,7 +320,7 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -333,7 +333,7 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
         continue;
       }
 
-      if ((err = update_leds(state))) {
+      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
         LOG_ERROR("update_leds");
         return err;
       }

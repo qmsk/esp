@@ -9,6 +9,7 @@
 #include "wifi.h"
 
 #include <logging.h>
+#include <esp_system.h>
 
 struct user_log user_power_log;
 struct user_log user_state_log;
@@ -42,8 +43,16 @@ const char *user_state_str(enum user_state state)
 const char *user_activity_str(enum user_activity activity)
 {
   switch (activity) {
-    case USER_ACTIVITY_IDLE:          return "IDLE";
-    case USER_ACTIVITY_LEDS:          return "LEDS";
+    case USER_ACTIVITY_IDLE:    return "IDLE";
+
+    case USER_ACTIVITY_LEDS:                    return "LEDS";
+    case USER_ACTIVITY_LEDS_CMD:                return "LEDS_CMD";
+    case USER_ACTIVITY_LEDS_HTTP:               return "LEDS_HTTP";
+    case USER_ACTIVITY_LEDS_SEQUENCE:           return "LEDS_SEQUENCE";
+    case USER_ACTIVITY_LEDS_ARTNET:             return "LEDS_ARTNET";
+    case USER_ACTIVITY_LEDS_TEST:               return "LEDS_TEST";
+    case USER_ACTIVITY_LEDS_UPDATE_TIMEOUT:     return "LEDS_UPDATE_TIMEOUT";
+
     case USER_ACTIVITY_DMX_INPUT:     return "DMX_INPUT";
     case USER_ACTIVITY_DMX_OUTPUT:    return "DMX_OUTPUT";
 

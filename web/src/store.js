@@ -7,6 +7,7 @@ import ArtNetService from './services/artnet.service'
 import ConfigService from './services/config.service'
 import LedsService from './services/leds.service'
 import SystemService from './services/system.service'
+import UserService from './services/user.service'
 import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
 
@@ -15,6 +16,7 @@ const artnetService = new ArtNetService(apiService);
 const configService = new ConfigService(apiService);
 const ledsService = new LedsService(apiService);
 const systemService = new SystemService(apiService);
+const userService = new UserService(apiService);
 const vfsService = new VFSService(apiService);
 const wifiService = new WiFiService(apiService);
 
@@ -27,6 +29,8 @@ export default new Vuex.Store({
     artnet_outputs: null,
     config: null,
     leds: null,
+    status_timestamp: 0,
+    status: null,
     system: null,
     wifi: null,
     wifi_scan: null,
@@ -37,6 +41,13 @@ export default new Vuex.Store({
     createLogger(),
   ],
   actions: {
+    /* user */
+    async loadStatus({ commit }) {
+      const config = await userService.getStatus();
+
+      commit('loadStatus', config);
+    },
+
     /* config */
     async loadConfig({ commit }) {
       const config = await configService.get();
@@ -149,6 +160,11 @@ export default new Vuex.Store({
     },
   },
   mutations: {
+    loadStatus (state, status) {
+      state.status_timestamp = Date.now();
+      state.status = status;
+    },
+
     loadConfig (state, config) {
       state.config = config;
     },

@@ -6,6 +6,7 @@ import App from "./App"
 import ArtNetView from "./components/ArtNetView"
 import ConfigView from "./components/ConfigView"
 import FilesView from "./components/FilesView"
+import MainView from "./components/MainView"
 import LedsView from "./components/LedsView"
 import SystemView from "./components/SystemView"
 import WiFiView from "./components/WiFiView"
@@ -28,6 +29,7 @@ const router = new VueRouter({
   linkActiveClass: 'active',
 
   routes: [
+    { path: '/',        component: MainView },
     { path: '/config',  component: ConfigView },
     { path: '/wifi',    component: WiFiView },
     { path: '/artnet',  component: ArtNetView },

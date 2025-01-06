@@ -112,7 +112,7 @@
 </template>
 <script>
 export default {
-data: () => ({
+  data: () => ({
     loading: true,
     loadingInputs: false,
     loadingOutputs: false,

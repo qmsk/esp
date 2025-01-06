@@ -145,7 +145,7 @@
 </template>
 <script>
 export default {
-data: () => ({
+  data: () => ({
     loading: true,
     loadingStatus: false,
     activeID: "leds1",

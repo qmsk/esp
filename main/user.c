@@ -9,9 +9,10 @@
 
 #include <logging.h>
 
-static const char *user_state_str(enum user_state state)
+const char *user_state_str(enum user_state state)
 {
   switch (state) {
+    case USER_STATE_INIT:             return "INIT";
     case USER_STATE_BOOT:             return "BOOT";
     case USER_STATE_CONNECTING:       return "CONNECTING";
     case USER_STATE_CONNECTED:        return "CONNECTED";
@@ -23,9 +24,10 @@ static const char *user_state_str(enum user_state state)
   }
 }
 
-static const char *user_activity_str(enum user_activity activity)
+const char *user_activity_str(enum user_activity activity)
 {
   switch (activity) {
+    case USER_ACTIVITY_IDLE:          return "IDLE";
     case USER_ACTIVITY_LEDS:          return "LEDS";
     case USER_ACTIVITY_DMX_INPUT:     return "DMX_INPUT";
     case USER_ACTIVITY_DMX_OUTPUT:    return "DMX_OUTPUT";
@@ -34,9 +36,11 @@ static const char *user_activity_str(enum user_activity activity)
   }
 }
 
-static const char *user_alert_str(enum user_alert alert)
+const char *user_alert_str(enum user_alert alert)
 {
   switch (alert) {
+    case USER_ALERT_NONE:             return "NONE";
+
     case USER_ALERT_ERROR_BOOT:       return "ERROR_BOOT";
     case USER_ALERT_ERROR_CONFIG:     return "ERROR_CONFIG";
     case USER_ALERT_ERROR_SETUP:      return "ERROR_SETUP";

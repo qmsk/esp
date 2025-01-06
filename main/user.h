@@ -1,7 +1,8 @@
 #pragma once
 
 enum user_state {
-  // states
+  USER_STATE_INIT = 0,
+
   USER_STATE_BOOT,
   USER_STATE_CONNECTING,
   USER_STATE_CONNECTED,
@@ -14,6 +15,8 @@ enum user_state {
 };
 
 enum user_activity {
+  USER_ACTIVITY_IDLE = 0,
+
   USER_ACTIVITY_LEDS,
   USER_ACTIVITY_DMX_INPUT,
   USER_ACTIVITY_DMX_OUTPUT,
@@ -22,6 +25,8 @@ enum user_activity {
 };
 
 enum user_alert {
+  USER_ALERT_NONE = 0,
+
   USER_ALERT_ERROR_BOOT,
   USER_ALERT_ERROR_CONFIG,
   USER_ALERT_ERROR_SETUP,
@@ -33,6 +38,10 @@ enum user_alert {
   USER_ALERT_ERROR_ATX_PSU_TIMEOUT,
   USER_ALERT_MAX
 };
+
+const char *user_state_str(enum user_state state);
+const char *user_activity_str(enum user_activity activity);
+const char *user_alert_str(enum user_alert alert);
 
 // distribute events
 void user_state(enum user_state state);

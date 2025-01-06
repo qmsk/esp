@@ -6,14 +6,21 @@ const map = new Map([
     ['ms', 1 / 1000 ],
   ]);
   
-  export default function (value, unit = null) {
+  export default function (value, unit = null, round = null) {
     let parts = [];
 
     if (unit) {
       value = value * map.get(unit);
     }
+    if (round) {
+      round = map.get(round);
+    }
 
     for (const [suffix, unit] of map) {
+      if (unit < round) {
+        break;
+      }
+
       if (value >= unit) {
         const units = value / unit;
         value = value % unit;
@@ -25,7 +32,7 @@ const map = new Map([
     if (parts.length > 0) {
       return parts.join('');
     } else {
-      return value;
+      return value + 's';
     }
   }
   

@@ -218,33 +218,30 @@
       <div class="row" v-if="status">
         <div id="user-config" class="user-item">
           <label for="user-config-button" class="user-button-title">Config</label>
-          <button id="user-config-button" class="user-button user-button-config"
-            :class="{active: configActive}"
-            @click="clickConfig"
-          >
-
-          </button>
+          <UserButton id="user-config-button" class="user-button user-button-config"
+            pressAction="pressConfigButton"
+          ></UserButton>
         </div>
 
         <div id="user-test" class="user-item">
           <label for="user-test-button" class="user-button-title">Test</label>
-          <button id="user-test-button" class="user-button user-button-test"
-            :class="{active: testActive}"
-            @click="clickTest"
-          >
-
-          </button>
+          <UserButton id="user-test-button" class="user-button user-button-test"
+            pressAction="pressTestButton"
+          ></UserButton>
         </div>
       </div>
     </div>
   </main>
 </template>
 <script>
+import UserButton from "./UserButton"
+
 export default {
+  components: {
+    UserButton,
+  },
   data: () => ({
     loading: true,
-    configActive: false,
-    testActive: false,
   }),
   created() {
     this.load();
@@ -294,28 +291,6 @@ export default {
       let timestamp = status_timestamp - (status.tick - tick) * status.tick_rate_ms;
 
       return new Date(timestamp);
-    },
-    async clickConfig() {
-      this.loading = true;
-      this.configActive = true;
-
-      try {
-        await this.$store.dispatch('pressConfigButton');
-      } finally {
-        this.loading = false;
-        this.configActive = false;
-      }
-    },
-    async clickTest() {
-      this.loading = true;
-      this.testActive = true;
-
-      try {
-        await this.$store.dispatch('pressTestButton');
-      } finally {
-        this.loading = false;
-        this.testActive = false;
-      }
     },
   }
 }

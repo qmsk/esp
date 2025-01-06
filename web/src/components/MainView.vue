@@ -163,8 +163,12 @@
     background: radial-gradient(#444 50%, #000000ff 100%);
   }
 
-  button.user-button:active, button.user-button.active {
+  button.user-button:active {
     background: radial-gradient(#888 50%, #000000ff 100%);
+  }
+
+  button.user-button.active {
+    background: radial-gradient(#aaa 50%, #000000ff 100%);
   }
 
   button.user-button:disabled {
@@ -227,6 +231,8 @@
           <label for="user-test-button" class="user-button-title">Test</label>
           <UserButton id="user-test-button" class="user-button user-button-test"
             pressAction="pressTestButton"
+            holdAction="holdTestButton"
+            releaseAction="releaseTestButton"
           ></UserButton>
         </div>
       </div>

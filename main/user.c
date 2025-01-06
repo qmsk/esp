@@ -1,5 +1,6 @@
 #include "user.h"
 #include "user_leds.h"
+#include "user_log.h"
 
 #include "config.h"
 #include "console.h"
@@ -8,6 +9,10 @@
 #include "wifi.h"
 
 #include <logging.h>
+
+struct user_log user_state_log;
+struct user_log user_activity_log;
+struct user_log user_alert_log;
 
 const char *user_state_str(enum user_state state)
 {
@@ -66,6 +71,11 @@ void user_state(enum user_state state)
     LOG_INFO("%d", state);
   }
 
+  user_state_log = (struct user_log) {
+    .tick   = xTaskGetTickCount(),
+    .state  = state,
+  };
+
   set_user_leds_state(state);
 }
 
@@ -80,6 +90,11 @@ void user_activity(enum user_activity activity)
     LOG_DEBUG("%05x", activity);
   }
 
+  user_activity_log = (struct user_log) {
+    .tick     = xTaskGetTickCount(),
+    .activity = activity,
+  };
+
   set_user_leds_activity(activity);
 }
 
@@ -92,6 +107,11 @@ void user_alert(enum user_alert alert)
   } else {
     LOG_WARN("%d", alert);
   }
+
+  user_alert_log = (struct user_log) {
+    .tick     = xTaskGetTickCount(),
+    .alert    = alert,
+  };
 
   set_user_leds_alert(alert);
 }

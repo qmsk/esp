@@ -1,5 +1,6 @@
 <style>
   div.row {
+    margin: 1em;
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
@@ -153,7 +154,7 @@
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
       </div>
 
-      <div class="row">
+      <div class="row" v-if="status">
         <div id="user-power" class="user-item">
           <div class="user-leds-title">Power</div>
           <div class="user-leds user-leds-power" :class="status.power.leds_state | userLedsClass"></div>
@@ -170,7 +171,7 @@
           <div class="user-leds-interval" v-if="status.state.tick_ms">{{ status.state.tick_ms | interval('ms', 's') }}</div>
         </div>
 
-        <div id="user-state" class="user-item">
+        <div id="user-activity" class="user-item">
           <div class="user-leds-title">Activity</div>
           <div class="user-leds user-leds-activity" :class="status.activity.leds_state | userLedsClass"></div>
           <div class="user-leds-state">{{ status.activity.type }}</div>
@@ -178,7 +179,7 @@
           <div class="user-leds-interval" v-if="status.activity.tick_ms">{{ status.activity.tick_ms | interval('ms', 's') }}</div>
         </div>
 
-        <div id="user-state" class="user-item">
+        <div id="user-alert" class="user-item">
           <div class="user-leds-title">Alert</div>
           <div class="user-leds user-leds-alert" :class="status.alert.leds_state | userLedsClass"></div>
           <div class="user-leds-state">{{ status.alert.type }}</div>

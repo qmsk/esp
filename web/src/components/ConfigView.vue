@@ -61,8 +61,8 @@
     <div class="controls">
       <h2>Apply</h2>
       <fieldset class="actions">
-        <progress class="form" v-show="applying">Applying...</progress>
         <button type="submit" form="config">Apply</button>
+        <progress class="input" v-show="applying">Applying...</progress>
       </fieldset>
 
       <h2>Backup</h2>
@@ -154,6 +154,8 @@ export default {
 
       try {
         await this.$store.dispatch('postConfig', formdata);
+        await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadConfig');
       } catch (error) {
         // XXX: UI?
         alert(error.name + ": " + error.message);
@@ -170,6 +172,8 @@ export default {
 
       try {
         await this.$store.dispatch('uploadConfig', file);
+        await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadConfig');
       } catch (error) {
         input.setCustomValidity(error.name + ": " + error.message);
       } finally {

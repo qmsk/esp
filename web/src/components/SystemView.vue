@@ -286,6 +286,7 @@ export default {
 
       try {
         await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadSystem');
       } catch (error) {
 
       } finally {

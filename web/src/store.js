@@ -86,12 +86,9 @@ export default new Vuex.Store({
     },
     async postConfig({ state, dispatch }, formdata) {
       await configService.post(state.config, formdata);
-
-      await dispatch('loadConfig');
     },
     async uploadConfig({ dispatch }, file) {
       await configService.upload(file);
-      await dispatch('loadConfig');
     },
 
     /* system */
@@ -107,8 +104,6 @@ export default new Vuex.Store({
     },
     async restartSystem({ dispatch }) {
       await systemService.restart();
-
-      await dispatch('loadSystem');
     },
 
     /* wifi */

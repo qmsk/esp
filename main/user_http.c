@@ -131,12 +131,12 @@ int user_api_button(const struct user_api_button *api)
   if (api->config) {
     switch (api->config_event) {
       case USER_LEDS_INPUT_PRESS:
-        LOG_INFO("config mode");
+        LOG_INFO("config press");
         user_config_mode();
         break;
 
       case USER_LEDS_INPUT_HOLD:
-        LOG_INFO("config reset");
+        LOG_INFO("config hold");
         user_config_reset();
         break;
 
@@ -152,7 +152,7 @@ int user_api_button(const struct user_api_button *api)
   if (api->test) {
     switch (api->test_event) {
       case USER_LEDS_INPUT_PRESS:
-        LOG_INFO("test trigger");
+        LOG_INFO("test press");
         user_test_trigger();
         break;
 

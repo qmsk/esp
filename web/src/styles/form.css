@@ -10,7 +10,7 @@
   fieldset {
     margin: 0.5em;
 
-    grid-template-columns: 1fr 3.5fr;
+    grid-template-columns: 1fr 3.5fr 0.5fr;
   }
 }
 

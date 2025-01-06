@@ -43,9 +43,39 @@ export default new Vuex.Store({
   actions: {
     /* user */
     async loadStatus({ commit }) {
-      const config = await userService.getStatus();
+      const status = await userService.getStatus();
 
-      commit('loadStatus', config);
+      commit('loadStatus', status);
+    },
+    async pressConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "press");
+
+      commit('loadStatus', status);
+    },
+    async holdConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "hold");
+
+      commit('loadStatus', status);
+    },
+    async releaseConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "release");
+
+      commit('loadStatus', status);
+    },
+    async pressTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "press");
+
+      commit('loadStatus', status);
+    },
+    async holdTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "hold");
+
+      commit('loadStatus', status);
+    },
+    async releaseTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "release");
+
+      commit('loadStatus', status);
     },
 
     /* config */

@@ -144,6 +144,33 @@
       opacity: 100%;
     }
   }
+
+  label.user-button-title {
+    padding: 0.25em;
+    font-size: x-large;
+    font-variant-caps: small-caps;
+  }
+
+  button.user-button {
+    width: 100px;
+    height: 100px;
+    border: none;
+    border-radius: 50%;
+    background: radial-gradient(#444 50%, #222222ff 100%);
+  }
+
+  button.user-button:hover {
+    background: radial-gradient(#444 50%, #000000ff 100%);
+  }
+
+  button.user-button:active, button.user-button.active {
+    background: radial-gradient(#888 50%, #000000ff 100%);
+  }
+
+  button.user-button:disabled {
+    background: radial-gradient(#222 50%, #444444ff 100%);
+    opacity: 50%;
+  }
 </style>
 <template>
   <main id="main-view" class="centered">
@@ -187,6 +214,28 @@
           <div class="user-leds-interval" v-if="status.alert.tick_ms">{{ status.alert.tick_ms | interval('ms', 's') }}</div>
         </div>
       </div>
+
+      <div class="row" v-if="status">
+        <div id="user-config" class="user-item">
+          <label for="user-config-button" class="user-button-title">Config</label>
+          <button id="user-config-button" class="user-button user-button-config"
+            :class="{active: configActive}"
+            @click="clickConfig"
+          >
+
+          </button>
+        </div>
+
+        <div id="user-test" class="user-item">
+          <label for="user-test-button" class="user-button-title">Test</label>
+          <button id="user-test-button" class="user-button user-button-test"
+            :class="{active: testActive}"
+            @click="clickTest"
+          >
+
+          </button>
+        </div>
+      </div>
     </div>
   </main>
 </template>
@@ -194,6 +243,8 @@
 export default {
   data: () => ({
     loading: true,
+    configActive: false,
+    testActive: false,
   }),
   created() {
     this.load();
@@ -243,6 +294,28 @@ export default {
       let timestamp = status_timestamp - (status.tick - tick) * status.tick_rate_ms;
 
       return new Date(timestamp);
+    },
+    async clickConfig() {
+      this.loading = true;
+      this.configActive = true;
+
+      try {
+        await this.$store.dispatch('pressConfigButton');
+      } finally {
+        this.loading = false;
+        this.configActive = false;
+      }
+    },
+    async clickTest() {
+      this.loading = true;
+      this.testActive = true;
+
+      try {
+        await this.$store.dispatch('pressTestButton');
+      } finally {
+        this.loading = false;
+        this.testActive = false;
+      }
     },
   }
 }

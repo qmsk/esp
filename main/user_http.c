@@ -172,7 +172,7 @@ int user_api_button(const struct user_api_button *api)
     }
   }
 
-  return HTTP_NO_CONTENT;
+  return 0;
 }
 
 int user_api_post_button(struct http_request *request, struct http_response *response, void *ctx)
@@ -202,6 +202,12 @@ int user_api_post_button(struct http_request *request, struct http_response *res
 
   if ((err = user_api_button(&api)) < 0) {
     LOG_WARN("user_api_button");
+    return err;
+  }
+
+  // XXX: wait to ensure status is updated...?
+  if ((err = write_http_response_json(response, user_api_write_status, NULL))) {
+    LOG_WARN("write_http_response_json -> user_api_write_status");
     return err;
   }
 

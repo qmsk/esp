@@ -10,9 +10,19 @@
 
 #include <logging.h>
 
+struct user_log user_power_log;
 struct user_log user_state_log;
 struct user_log user_activity_log;
 struct user_log user_alert_log;
+
+const char *user_power_str(enum user_power power)
+{
+  switch (power) {
+    case USER_POWER_INIT:             return "INIT";
+    case USER_POWER_ON:               return "ON";
+    default:                          return NULL;
+  }
+}
 
 const char *user_state_str(enum user_state state)
 {
@@ -59,6 +69,39 @@ const char *user_alert_str(enum user_alert alert)
 
     default:                          return NULL;
   }
+}
+
+void init_user_power()
+{
+  user_power_log = (struct user_log) {
+    .tick   = xTaskGetTickCount(),
+    .state  = USER_POWER_ON,
+  };
+}
+
+int init_user()
+{
+  init_user_power();
+
+  return 0;
+}
+
+void user_power(enum user_power power)
+{
+  const char *str = user_power_str(power);
+
+  if (str) {
+    LOG_INFO("%s", str);
+  } else {
+    LOG_INFO("%d", power);
+  }
+
+  user_power_log = (struct user_log) {
+    .tick   = xTaskGetTickCount(),
+    .power  = power,
+  };
+
+  // TODO: set_user_leds_power(state);
 }
 
 void user_state(enum user_state state)

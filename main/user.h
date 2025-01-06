@@ -1,5 +1,13 @@
 #pragma once
 
+enum user_power {
+  USER_POWER_INIT = 0,
+
+  USER_POWER_ON,
+
+  USER_POWER_MAX
+};
+
 enum user_state {
   USER_STATE_INIT = 0,
 
@@ -39,11 +47,15 @@ enum user_alert {
   USER_ALERT_MAX
 };
 
+const char *user_power_str(enum user_power power);
 const char *user_state_str(enum user_state state);
 const char *user_activity_str(enum user_activity activity);
 const char *user_alert_str(enum user_alert alert);
 
 // distribute events
+int init_user();
+
+void user_power(enum user_power power);
 void user_state(enum user_state state);
 void user_activity(enum user_activity activity);
 void user_alert(enum user_alert alert);

@@ -11,13 +11,22 @@
 
 static int user_api_write_status(struct json_writer *w, void *ctx)
 {
+  const struct user_log *power_log = &user_power_log;
   const struct user_log *state_log = &user_state_log;
   const struct user_log *activity_log = &user_activity_log;
   const struct user_log *alert_log = &user_alert_log;
   TickType_t tick = xTaskGetTickCount();
 
   return JSON_WRITE_OBJECT(w, 
-        JSON_WRITE_MEMBER_OBJECT(w, "state", 
+        JSON_WRITE_MEMBER_UINT(w, "tick", tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_rate_ms", portTICK_RATE_MS)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "power",
+              JSON_WRITE_MEMBER_UINT(w, "tick", power_log->tick)
+          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, power_log->tick))
+          ||  JSON_WRITE_MEMBER_STRING(w, "type", user_power_str(power_log->state))
+          ||  JSON_WRITE_MEMBER_STRING(w, "leds_state", config_enum_to_string(user_leds_state_enum, USER_LEDS_ON)) // hardcoded
+        )
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
               JSON_WRITE_MEMBER_UINT(w, "tick", state_log->tick)
           ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, state_log->tick))
           ||  JSON_WRITE_MEMBER_STRING(w, "type", user_state_str(state_log->state))
@@ -25,7 +34,7 @@ static int user_api_write_status(struct json_writer *w, void *ctx)
           ||  JSON_WRITE_MEMBER_STRING(w, "leds_state", config_enum_to_string(user_leds_state_enum, user_leds_state[USER_LED]))
         #endif
         )
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "activity", 
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "activity",
               JSON_WRITE_MEMBER_UINT(w, "tick", activity_log->tick)
           ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, activity_log->tick))
           ||  JSON_WRITE_MEMBER_STRING(w, "type", user_activity_str(activity_log->state))
@@ -33,7 +42,7 @@ static int user_api_write_status(struct json_writer *w, void *ctx)
           ||  JSON_WRITE_MEMBER_STRING(w, "leds_state", config_enum_to_string(user_leds_state_enum, user_leds_state[FLASH_LED]))
         #endif
         )
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "alert", 
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "alert",
               JSON_WRITE_MEMBER_UINT(w, "tick", alert_log->tick)
           ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, alert_log->tick))
           ||  JSON_WRITE_MEMBER_STRING(w, "type", user_alert_str(alert_log->state))

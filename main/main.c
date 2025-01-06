@@ -71,6 +71,12 @@ void app_main(void)
   }
 #endif
 
+  if ((err = init_user())) {
+    LOG_ERROR("init_user");
+    user_alert(USER_ALERT_ERROR_BOOT);
+    abort();
+  }
+
   if ((err = init_user_leds())) {
     LOG_ERROR("init_user_leds");
     user_alert(USER_ALERT_ERROR_BOOT);

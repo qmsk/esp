@@ -259,6 +259,9 @@ int system_api_restart_handler(struct http_request *request, struct http_respons
 
   LOG_INFO("restarting...");
 
+  // give LWIP stack a chance to send the HTTP response!
+  vTaskDelay(1000 / portTICK_RATE_MS);
+
   // this function does not return
-  esp_restart();
+  system_restart();
 }

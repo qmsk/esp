@@ -43,6 +43,7 @@ const struct http_route http_routes[] = {
 
   /* user_http.c */
   { "GET",  "api/status",         user_api_get_status,    NULL },
+  { "POST", "api/button",         user_api_post_button,   NULL },
 
   {}
 };

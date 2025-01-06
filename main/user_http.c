@@ -7,6 +7,8 @@
 #include <logging.h>
 #include <json.h>
 
+#include <string.h>
+
 #define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
 
 static int user_api_write_status(struct json_writer *w, void *ctx)
@@ -68,4 +70,140 @@ int user_api_get_status(struct http_request *request, struct http_response *resp
   }
 
   return 0;
+}
+
+struct user_api_button {
+  bool config, test;
+
+  enum user_leds_input_event config_event;
+  enum user_leds_input_event test_event;
+};
+
+int user_api_event_parse(const char *value, enum user_leds_input_event *event)
+{
+  if (strcmp(value, "press") == 0) {
+    *event = USER_LEDS_INPUT_PRESS;
+    return 0;
+  } else if (strcmp(value, "hold") == 0) {
+    *event = USER_LEDS_INPUT_HOLD;
+    return 0;
+  } else if (strcmp(value, "release") == 0) {
+    *event = USER_LEDS_INPUT_RELEASE;
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
+int user_api_button_parse_form(struct http_request *request, struct user_api_button *api)
+{
+  char *key, *value;
+  int err;
+
+  while (!(err = http_request_form(request, &key, &value))) {
+    if (strcmp(key, "config") == 0) {
+      if (user_api_event_parse(value, &api->config_event)) {
+        LOG_WARN("user_api_event_parse: key=%s value=%s", key, value);
+        return HTTP_UNPROCESSABLE_ENTITY;
+      } else {
+        api->config = true;
+      }
+    } else if (strcmp(key, "test") == 0) {
+      if (user_api_event_parse(value, &api->test_event)) {
+        LOG_WARN("user_api_event_parse: key=%s value=%s", key, value);
+        return HTTP_UNPROCESSABLE_ENTITY;
+      } else {
+        api->test = true;
+      }
+    }
+  }
+
+  if (err < 0) {
+    LOG_ERROR("http_request_form");
+    return err;
+  }
+
+  return 0;
+}
+
+int user_api_button(const struct user_api_button *api)
+{
+  if (api->config) {
+    switch (api->config_event) {
+      case USER_LEDS_INPUT_PRESS:
+        LOG_INFO("config mode");
+        user_config_mode();
+        break;
+
+      case USER_LEDS_INPUT_HOLD:
+        LOG_INFO("config reset");
+        user_config_reset();
+        break;
+
+      case USER_LEDS_INPUT_RELEASE:
+        break;
+
+      default:
+        LOG_ERROR("unknown event");
+        break;
+    }
+  }
+
+  if (api->test) {
+    switch (api->test_event) {
+      case USER_LEDS_INPUT_PRESS:
+        LOG_INFO("test trigger");
+        user_test_trigger();
+        break;
+
+      case USER_LEDS_INPUT_HOLD:
+        LOG_INFO("test hold");
+        user_test_hold();
+        break;
+
+      case USER_LEDS_INPUT_RELEASE:
+        LOG_INFO("test release");
+        user_test_cancel();
+        break;
+
+      default:
+        LOG_ERROR("unknown event");
+        break;
+    }
+  }
+
+  return HTTP_NO_CONTENT;
+}
+
+int user_api_post_button(struct http_request *request, struct http_response *response, void *ctx)
+{
+  struct user_api_button api = {};
+  const struct http_request_headers *headers;
+  int err;
+
+  if ((err = http_request_headers(request, &headers))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  switch (headers->content_type) {
+    case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
+      if ((err = user_api_button_parse_form(request, &api))) {
+        return err;
+      }
+
+      break;
+
+    default:
+      LOG_WARN("Unknown Content-Type");
+
+      return HTTP_UNSUPPORTED_MEDIA_TYPE;
+  }
+
+  if ((err = user_api_button(&api)) < 0) {
+    LOG_WARN("user_api_button");
+    return err;
+  }
+
+  return err;
 }

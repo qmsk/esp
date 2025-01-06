@@ -117,8 +117,20 @@ static void leds_main(void *ctx)
 
     if (state->artnet && leds_artnet_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->artnet) {
-        if (leds_artnet_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_ARTNET;
+        switch (leds_artnet_update(state, event_bits)) {
+          case 0:
+            break;
+          
+          case LEDS_ARTNET_UPDATE:
+            update_activity = USER_ACTIVITY_LEDS_ARTNET;
+            break;
+          
+          case LEDS_ARTNET_UPDATE_TIMEOUT:
+            update_activity = USER_ACTIVITY_LEDS_ARTNET_TIMEOUT;
+            break;
+          
+          default:
+            LOG_ERROR("leds_artnet_update");
         }
       }
     }

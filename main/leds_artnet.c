@@ -272,6 +272,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   bool sync_mode = false;
   bool update = false;
+  bool timeout = false;
 
   if (state->test) {
     if (data || sync) {
@@ -345,11 +346,11 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     leds_artnet_timeout_reset(state);
   } else if (state->artnet->timeout_tick) {
     if (xTaskGetTickCount() >= state->artnet->timeout_tick) {
+      timeout = true;
+
       if (leds_artnet_timeout(state)) {
         LOG_WARN("leds_artnet_timeout");
       }
-
-      update = true;
 
       // repeat
       leds_artnet_timeout_reset(state);
@@ -360,7 +361,13 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     leds_artnet_sync_reset(state);
   }
 
-  return update;
+  if (timeout) {
+    return LEDS_ARTNET_UPDATE_TIMEOUT;
+  } else if (update) {
+    return LEDS_ARTNET_UPDATE;
+  } else {
+    return 0;
+  }
 }
 
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config)

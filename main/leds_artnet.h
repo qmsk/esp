@@ -38,3 +38,6 @@ bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits);
 
 /* Update LEDs from artnet outputs */
 int leds_artnet_update(struct leds_state *state, EventBits_t event_bits);
+
+#define LEDS_ARTNET_UPDATE 1
+#define LEDS_ARTNET_UPDATE_TIMEOUT 2

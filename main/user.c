@@ -50,6 +50,7 @@ const char *user_activity_str(enum user_activity activity)
     case USER_ACTIVITY_LEDS_HTTP:               return "LEDS_HTTP";
     case USER_ACTIVITY_LEDS_SEQUENCE:           return "LEDS_SEQUENCE";
     case USER_ACTIVITY_LEDS_ARTNET:             return "LEDS_ARTNET";
+    case USER_ACTIVITY_LEDS_ARTNET_TIMEOUT:     return "LEDS_ARTNET_TIMEOUT";
     case USER_ACTIVITY_LEDS_TEST:               return "LEDS_TEST";
     case USER_ACTIVITY_LEDS_UPDATE_TIMEOUT:     return "LEDS_UPDATE_TIMEOUT";
 

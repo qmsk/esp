@@ -261,9 +261,6 @@ export default {
     ptr: function(addr) {
       return "0x" + addr.toString(16).padStart(8, '0');
     },
-    percentage: function(value) {
-      return (value * 100).toFixed(1) + '%';
-    },
   },
   methods: {
     async load() {
@@ -289,6 +286,7 @@ export default {
 
       try {
         await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadSystem');
       } catch (error) {
 
       } finally {

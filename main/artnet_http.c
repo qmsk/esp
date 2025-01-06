@@ -9,8 +9,12 @@
 #include <logging.h>
 #include <json.h>
 
+#define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
 static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options, const struct artnet_input_state *state)
 {
+  TickType_t tick = xTaskGetTickCount();
+
   return (
         JSON_WRITE_MEMBER_UINT(w, "port", options->port)
     ||  JSON_WRITE_MEMBER_UINT(w, "index", options->index)
@@ -19,13 +23,15 @@ static int artnet_api_write_input_object(struct json_writer *w, const struct art
     ||  JSON_WRITE_MEMBER_UINT(w, "universe", artnet_address_universe(options->address))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
               JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
+          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, state->tick))
           ||  JSON_WRITE_MEMBER_UINT(w, "len", state->len)
         )
   );
 }
 
-static int artnet_api_write_inputs_array(struct json_writer *w)
+static int artnet_api_write_inputs_array(struct json_writer *w, void *ctx)
 {
+  struct artnet *artnet = ctx;
   struct artnet_input_options options;
   struct artnet_input_state state;
   int err;
@@ -50,6 +56,8 @@ static int artnet_api_write_inputs_array(struct json_writer *w)
 
 static int artnet_api_write_output_object(struct json_writer *w, const struct artnet_output_options *options, const struct artnet_output_state *state)
 {
+  TickType_t tick = xTaskGetTickCount();
+
   return (
         JSON_WRITE_MEMBER_UINT(w, "port", options->port)
     ||  JSON_WRITE_MEMBER_UINT(w, "index", options->index)
@@ -59,14 +67,16 @@ static int artnet_api_write_output_object(struct json_writer *w, const struct ar
     ||  JSON_WRITE_MEMBER_UINT(w, "universe", artnet_address_universe(options->address))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
               JSON_WRITE_MEMBER_UINT(w, "tick", state->tick)
+          ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, state->tick))
           ||  JSON_WRITE_MEMBER_UINT(w, "seq", state->seq)
         )
   );
 }
 
 
-static int artnet_api_write_outputs_array(struct json_writer *w)
+static int artnet_api_write_outputs_array(struct json_writer *w, void *ctx)
 {
+  struct artnet *artnet = ctx;
   struct artnet_output_options options;
   struct artnet_output_state state;
   int err;
@@ -87,6 +97,20 @@ static int artnet_api_write_outputs_array(struct json_writer *w)
   }
 
   return 0;
+}
+
+static int artnet_api_write_inputs(struct json_writer *w, void *ctx)
+{
+  struct artnet *artnet = ctx;
+
+  return JSON_WRITE_ARRAY(w, artnet_api_write_inputs_array(w, artnet));
+}
+
+static int artnet_api_write_outputs(struct json_writer *w, void *ctx)
+{
+  struct artnet *artnet = ctx;
+
+  return JSON_WRITE_ARRAY(w, artnet_api_write_outputs_array(w, artnet));
 }
 
 static int artnet_api_write(struct json_writer *w, void *ctx)
@@ -118,8 +142,8 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
         ||  JSON_WRITE_MEMBER_STRING(w, "short_name", options.metadata.short_name)
         ||  JSON_WRITE_MEMBER_STRING(w, "long_name", options.metadata.long_name)
         )
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w))
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w, artnet))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet))
   );
 }
 
@@ -143,4 +167,50 @@ int artnet_api_handler(struct http_request *request, struct http_response *respo
   }
 
   return 0;
+}
+
+int artnet_api_inputs_handler(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if (!artnet) {
+    // disabled
+    return HTTP_NO_CONTENT;
+  }
+
+  if ((err = write_http_response_json(response, artnet_api_write_inputs, artnet))) {
+    LOG_WARN("write_http_response_json -> artnet_api_write_inputs");
+    return err;
+  }
+
+  return 0;
+
+}
+
+int artnet_api_outputs_handler(struct http_request *request, struct http_response *response, void *ctx)
+{
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if (!artnet) {
+    // disabled
+    return HTTP_NO_CONTENT;
+  }
+
+  if ((err = write_http_response_json(response, artnet_api_write_outputs, artnet))) {
+    LOG_WARN("write_http_response_json -> artnet_api_write_outputs");
+    return err;
+  }
+
+  return 0;
+
 }

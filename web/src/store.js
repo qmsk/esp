@@ -3,14 +3,20 @@ import Vuex from 'vuex'
 import { createLogger } from 'vuex'
 
 import APIService from './services/api.service'
+import ArtNetService from './services/artnet.service'
 import ConfigService from './services/config.service'
+import LedsService from './services/leds.service'
 import SystemService from './services/system.service'
+import UserService from './services/user.service'
 import VFSService from './services/vfs.service'
 import WiFiService from './services/wifi.service'
 
 const apiService = new APIService();
+const artnetService = new ArtNetService(apiService);
 const configService = new ConfigService(apiService);
+const ledsService = new LedsService(apiService);
 const systemService = new SystemService(apiService);
+const userService = new UserService(apiService);
 const vfsService = new VFSService(apiService);
 const wifiService = new WiFiService(apiService);
 
@@ -18,7 +24,13 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    artnet: null,
+    artnet_inputs: null,
+    artnet_outputs: null,
     config: null,
+    leds: null,
+    status_timestamp: 0,
+    status: null,
     system: null,
     wifi: null,
     wifi_scan: null,
@@ -29,6 +41,43 @@ export default new Vuex.Store({
     createLogger(),
   ],
   actions: {
+    /* user */
+    async loadStatus({ commit }) {
+      const status = await userService.getStatus();
+
+      commit('loadStatus', status);
+    },
+    async pressConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "press");
+
+      commit('loadStatus', status);
+    },
+    async holdConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "hold");
+
+      commit('loadStatus', status);
+    },
+    async releaseConfigButton({ commit }, event) {
+      const status = await userService.postButton("config", "release");
+
+      commit('loadStatus', status);
+    },
+    async pressTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "press");
+
+      commit('loadStatus', status);
+    },
+    async holdTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "hold");
+
+      commit('loadStatus', status);
+    },
+    async releaseTestButton({ commit }, event) {
+      const status = await userService.postButton("test", "release");
+
+      commit('loadStatus', status);
+    },
+
     /* config */
     async loadConfig({ commit }) {
       const config = await configService.get();
@@ -37,12 +86,9 @@ export default new Vuex.Store({
     },
     async postConfig({ state, dispatch }, formdata) {
       await configService.post(state.config, formdata);
-
-      await dispatch('loadConfig');
     },
     async uploadConfig({ dispatch }, file) {
       await configService.upload(file);
-      await dispatch('loadConfig');
     },
 
     /* system */
@@ -58,8 +104,6 @@ export default new Vuex.Store({
     },
     async restartSystem({ dispatch }) {
       await systemService.restart();
-
-      await dispatch('loadSystem');
     },
 
     /* wifi */
@@ -72,6 +116,35 @@ export default new Vuex.Store({
       const data = await wifiService.scan();
 
       commit('updateWiFiScan', data);
+    },
+
+    /* artnet */
+    async loadArtNet({ commit }) {
+      const data = await artnetService.get();
+
+      commit('updateArtNet', data);
+    },
+    async loadArtNetInputs({ commit }) {
+      const data = await artnetService.getInputs();
+
+      commit('updateArtNetInputs', data);
+    },
+    async loadArtNetOutputs({ commit }) {
+      const data = await artnetService.getOutputs();
+
+      commit('updateArtNetOutputs', data);
+    },
+
+    /* leds */
+    async loadLeds({ commit }) {
+      const data = await ledsService.get();
+
+      commit('updateLeds', data);
+    },
+    async loadLedsStatus({ commit }, id) {
+      const status = await ledsService.getStatus(id);
+
+      commit('updateLedsStatus', {id, status});
     },
 
     /* VFS */
@@ -112,6 +185,11 @@ export default new Vuex.Store({
     },
   },
   mutations: {
+    loadStatus (state, status) {
+      state.status_timestamp = Date.now();
+      state.status = status;
+    },
+
     loadConfig (state, config) {
       state.config = config;
     },
@@ -144,6 +222,29 @@ export default new Vuex.Store({
     updateWiFiScan(state, wifi_scan) {
       state.wifi_scan = wifi_scan;
     },
+
+    updateLeds(state, leds) {
+      state.leds = leds;
+    },
+    updateLedsStatus(state, {id, status}) {
+      // no reactive map support
+      let leds = new Map(state.leds);
+      leds.get(id).status = status;
+      state.leds = leds;
+    },
+
+    updateArtNet(state, artnet) {
+      state.artnet = artnet;
+      state.artnet_inputs = artnet.inputs;
+      state.artnet_outputs = artnet.outputs;
+    },
+    updateArtNetInputs(state, artnetInputs) {
+      state.artnet_inputs = artnetInputs;
+    },
+    updateArtNetOutputs(state, artnetOutputs) {
+      state.artnet_outputs = artnetOutputs;
+    },
+
     updateVFS(state, vfsState) {
       state.vfs = vfsState;
     },

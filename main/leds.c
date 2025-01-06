@@ -182,7 +182,7 @@ void clear_leds_active(struct leds_state *state)
   clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
 }
 
-int update_leds(struct leds_state *state)
+int update_leds(struct leds_state *state, enum user_activity leds_activity)
 {
   int err;
 
@@ -192,7 +192,9 @@ int update_leds(struct leds_state *state)
     return err;
   }
 
-  user_activity(USER_ACTIVITY_LEDS);
+  if (leds_activity) {
+    user_activity(leds_activity);
+  }
 
   if ((err = leds_tx(state->leds))) {
     LOG_ERROR("leds_tx");

@@ -107,25 +107,54 @@ nav a.active {
   border-radius: 0.25em 0.25em 0em 0em;
 }
 
-/* View */
-main.centered {
-  padding: 1em 20%;
+nav a.tabbed-active {
+  background-color: #888;
+  color: #133337;
+
+  border-radius: 0.25em 0.25em 0em 0em;
 }
 
-main.split {
-  padding: 0;
+/* View */
+@media (orientation: landscape) {
+  main.split {
+    padding: 0;
+  
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  
+  main .view.centered {
+    padding: 1em 20%;
+  }
 
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
+  main.split .view {
+    padding: 1em;
+  }
+}
+
+@media (orientation: portrait) {
+  main.split {
+    padding: 0;
+  
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  
+  main .view.centered {
+    padding: 1em;
+  }
+
+  main.split .view {
+    padding: 0.5em;
+  }
 }
 
 main.split .view {
   flex: 2;
-
-
-  padding: 1em;
 }
 
 main.split .controls {
@@ -133,7 +162,36 @@ main.split .controls {
   align-self: stretch;
 }
 
-/* Progress */
+main.tabbed {
+  background-color: #888;
+}
+
+main.tabbed nav {
+  font-size: 2em;
+
+  background-color: #888;
+}
+
+main.tabbed nav a {
+
+}
+
+main.tabbed nav a.active {
+  color: #111;
+}
+
+main.tabbed .view.centered {
+  background-color: #aaa;
+}
+
+/* View header */
+main .view .header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 main progress {
   display: block;
   width: 50%;

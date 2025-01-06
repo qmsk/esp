@@ -8,7 +8,7 @@
       <h1>Configuration</h1>
       <progress v-show="loading">Loading...</progress>
       <template v-if="config">
-        <form method="post" @submit.prevent="submit">
+        <form id="config" method="post" @submit.prevent="submit">
           <fieldset v-for="mod in config.modules" :key="modName(mod)">
             <legend>{{ modName(mod) }}</legend>
             <div class="module-description" v-if="mod.description">
@@ -55,15 +55,16 @@
               </div>
             </template>
           </fieldset>
-
-          <fieldset class="actions">
-            <progress class="form" v-show="applying">Applying...</progress>
-            <button type="submit">Apply</button>
-          </fieldset>
         </form>
       </template>
     </div>
     <div class="controls">
+      <h2>Apply</h2>
+      <fieldset class="actions">
+        <button type="submit" form="config">Apply</button>
+        <progress class="input" v-show="applying">Applying...</progress>
+      </fieldset>
+
       <h2>Backup</h2>
       <form method="get" action="/config.ini">
         <fieldset>
@@ -153,6 +154,8 @@ export default {
 
       try {
         await this.$store.dispatch('postConfig', formdata);
+        await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadConfig');
       } catch (error) {
         // XXX: UI?
         alert(error.name + ": " + error.message);
@@ -169,6 +172,8 @@ export default {
 
       try {
         await this.$store.dispatch('uploadConfig', file);
+        await this.$store.dispatch('restartSystem');
+        await this.$store.dispatch('loadConfig');
       } catch (error) {
         input.setCustomValidity(error.name + ": " + error.message);
       } finally {

@@ -2,6 +2,7 @@
 #include "user_leds_config.h"
 #include "user_leds_input.h"
 #include "user_leds_output.h"
+#include "user_leds_state.h"
 #include "user.h"
 #include "i2c_gpio.h"
 #include "tasks.h"
@@ -13,7 +14,18 @@
 #include <freertos/task.h>
 #include <sdkconfig.h>
 
-enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
+const struct config_enum user_leds_state_enum[] = {
+  { "IDLE",     .value = USER_LEDS_IDLE     },
+  { "OFF",      .value = USER_LEDS_OFF      },
+  { "ON",       .value = USER_LEDS_ON       },
+  { "SLOW",     .value = USER_LEDS_SLOW     },
+  { "FAST",     .value = USER_LEDS_FAST     },
+  { "FLASH",    .value = USER_LEDS_FLASH    },
+  { "PULSE",    .value = USER_LEDS_PULSE    },
+  {}
+};
+
+static const enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
   [USER_STATE_BOOT]             = USER_LEDS_OFF,
   [USER_STATE_CONNECTING]       = USER_LEDS_FAST,
   [USER_STATE_CONNECTED]        = USER_LEDS_ON,
@@ -23,7 +35,7 @@ enum user_leds_state user_state_led_state[USER_STATE_MAX] = {
   [USER_STATE_RESET]            = USER_LEDS_OFF,
 };
 
-enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
+static const enum user_leds_state user_alert_led_state[USER_ALERT_MAX] = {
   [USER_ALERT_ERROR_BOOT]                 = USER_LEDS_FAST,
   [USER_ALERT_ERROR_CONFIG]               = USER_LEDS_SLOW,
   [USER_ALERT_ERROR_SETUP]                = USER_LEDS_ON,

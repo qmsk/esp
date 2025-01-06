@@ -1,5 +1,7 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_artnet.h"
+#include "leds_test.h"
 #include "leds_config.h"
 #include "leds_stats.h"
 
@@ -33,6 +35,17 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %5u\n", "Count", options->count);
     printf("\t%-20s: %5u\n", "Limit (total)", options->limit_total);
     printf("\t%-20s: %5u / %5u\n", "Limit (group)", options->limit_group, options->limit_groups);
+
+    if (state->artnet) {
+      printf("\t%-20s:\n", "Art-Net");
+      printf("\t\t%-20s: %5u\n", "Universe Start", config->artnet_universe_start);
+      printf("\t\t%-20s: %5u\n", "Universe Count", state->artnet->universe_count);
+      printf("\t\t%-20s: %5u\n", "Universe LEDs", state->artnet->universe_leds_count);
+      printf("\t\t%-20s: %5u\n", "LEDS Segment", config->artnet_leds_segment);
+      printf("\t\t%-20s: %5u\n", "LEDS Group", config->artnet_leds_group);
+      printf("\t\t%-20s: %s\n", "LEDS Format", config_enum_to_string(leds_format_enum, config->artnet_leds_format));
+      printf("\t\t%-20s: %u\n", "DMX Timeout", config->artnet_dmx_timeout);
+    }
     printf("\n");
   }
 
@@ -51,26 +64,44 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
 
     printf("leds%d:\n", i + 1);
 
-    unsigned active = leds_count_active(state->leds);
+    bool active = leds_is_active(state->leds);
     struct leds_limit_status limit_total_status;
     struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
     size_t groups = LEDS_LIMIT_GROUPS_MAX;
+    TickType_t tick = xTaskGetTickCount();
 
     leds_get_limit_total_status(state->leds, &limit_total_status);
     leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
 
-    printf("\tActive   : %5u\n", active);
-    printf("\tTotal    : config %5.1f%% util %5.1f%% applied %5.1f%%\n",
-      leds_limit_status_configured(&limit_total_status) * 100.0f,
-      leds_limit_status_utilization(&limit_total_status) * 100.0f,
-      leds_limit_status_active(&limit_total_status) * 100.0f
+    printf("\tActive    : %s\n", active ? "true" : "false");
+    printf("\tUpdate    : %dms\n", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0);
+    if (state->test) {
+      printf("\tTest:\n");
+      printf("\t\tMode : %s\n", state->test->mode ? config_enum_to_string(leds_test_mode_enum, state->test->mode) : "");
+    }
+    if (state->artnet) {
+      printf("\tArt-Net:\n");
+      printf("\t\tUpdate    : %dms\n", state->artnet->dmx_tick ? (tick - state->artnet->dmx_tick) * portTICK_RATE_MS : 0);
+    }
+
+    printf("\tLimit:\n");
+    printf("\t\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
+      limit_total_status.count,
+      leds_limit_status_power(&limit_total_status) * 100.0f,
+      leds_limit_status_limit(&limit_total_status) * 100.0f,
+      leds_limit_status_util(&limit_total_status) * 100.0f,
+      leds_limit_status_applied(&limit_total_status) * 100.0f,
+      leds_limit_status_output(&limit_total_status) * 100.0f
     );
 
     for (unsigned j = 0; j < groups; j++) {
-      printf("\tGroup[%2d]: config %5.1f%% util %5.1f%% applied %5.1f%%\n", j,
-        leds_limit_status_configured(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_utilization(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_active(&limit_groups_status[j]) * 100.0f
+      printf("\t\tGroup[%2d]: count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n", j,
+        limit_groups_status[j].count,
+        leds_limit_status_power(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_limit(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_util(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_applied(&limit_groups_status[j]) * 100.0f,
+        leds_limit_status_output(&limit_groups_status[j]) * 100.0f
       );
     }
 
@@ -118,7 +149,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -171,7 +202,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -227,7 +258,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if ((err = update_leds(state))) {
+  if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
     LOG_ERROR("update_leds");
     return err;
   }
@@ -289,7 +320,7 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state))) {
+    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
       LOG_ERROR("update_leds");
       return err;
     }
@@ -302,7 +333,7 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
         continue;
       }
 
-      if ((err = update_leds(state))) {
+      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
         LOG_ERROR("update_leds");
         return err;
       }

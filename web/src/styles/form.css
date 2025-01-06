@@ -1,20 +1,33 @@
-/* fieldsets */
-form fieldset {
-  display: grid;
+@media (orientation: landscape) {
+  fieldset {
+    margin: 1em;
 
-  margin: 1em;
+    grid-template-columns: 1fr 3fr 1fr;
+  }
+}
+
+@media (orientation: portrait) {
+  fieldset {
+    margin: 0.5em;
+
+    grid-template-columns: 1fr 3.5fr 0.5fr;
+  }
+}
+
+/* fieldsets */
+fieldset {
+  display: grid;
 
   border: 1px solid #bbb;
 
-  grid-template-columns: 1fr 3fr 0.5fr;
   grid-gap: 1em;
 }
 
-form fieldset.actions {
+fieldset.actions {
   border: none;
 }
 
-form fieldset legend {
+fieldset legend {
   margin: 0.5em 0em;
   padding: 0.5em;
 
@@ -24,41 +37,41 @@ form fieldset legend {
   font-weight: bold;
 }
 
-form fieldset div.module-description {
+fieldset div.module-description {
   grid-column: 1 / 4;
 
   margin: 0em 1em;
 }
 
 /* TODO: stretch background, vertically align content? */
-form fieldset label {
+fieldset label {
   grid-column: 1 / 2;
 }
 
-form fieldset div.module-description {
+fieldset div.module-description {
   grid-column: 1 / 3;
 }
 
-form fieldset progress.input {
+fieldset progress.input {
   grid-column: 3 / 4;
   width: 100%;
 }
 
-form fieldset progress.form {
+fieldset progress.form {
   grid-column: 2 / 3;
 }
 
-form fieldset button {
+fieldset button {
   grid-column: 3;
 }
 
 /* general styles */
-form fieldset p {
+fieldset p {
   font-style: italic;
   font-size: small;
 }
 
-form fieldset label {
+fieldset label {
   margin-left: 1em;
   padding: 0.5em;
 
@@ -68,25 +81,25 @@ form fieldset label {
   color: #ccc;
 }
 
-form fieldset input, form fieldset select {
+fieldset input, form fieldset select {
   width: 100%;
   height: 1.8em;
 }
 
-form fieldset input:invalid {
+fieldset input:invalid {
   box-shadow: 0 0 5px 1px red;
 }
 
-form fieldset input[type="checkbox"] {
+fieldset input[type="checkbox"] {
   width: 2em;
 }
 
-form fieldset input[type="file"] {
+fieldset input[type="file"] {
   margin: auto 0;
 }
 
 /* Button styling */
-form fieldset button {
+fieldset button {
   padding: 0.5em 1em;
 
   background-color: #133337;
@@ -99,17 +112,17 @@ form fieldset button {
   font-weight: bold;
 }
 
-form fieldset button:hover {
+fieldset button:hover {
   border: 0.25px solid #eee;
 }
 
-form fieldset button:active {
+fieldset button:active {
   transform: scale(0.99);
 }
 
-form fieldset button:disabled {
+fieldset button:disabled {
   background-color: #888;
 }
-form fieldset button:disabled:hover {
+fieldset button:disabled:hover {
   border: 0.25px solid #000;
 }

@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "leds.h"
+#include "user.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
@@ -9,6 +10,7 @@
 
 struct leds_config;
 
+struct leds_test_state;
 struct leds_artnet_state;
 struct leds_sequence_state;
 
@@ -46,7 +48,10 @@ extern struct leds_state leds_states[LEDS_COUNT];
   int check_leds_i2s(struct leds_state *state);
 #endif
 
-int update_leds(struct leds_state *state);
+/*
+ * Update LEDs output with given USER_ACTIVITY_LEDS_* source.
+ */
+int update_leds(struct leds_state *state, enum user_activity leds_activity);
 
 /*
  * Variant of update_leds() that turns off all LEDs, and does NOT flash the status leds.

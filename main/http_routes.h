@@ -34,10 +34,17 @@ int wifi_api_scan_handler(struct http_request *request, struct http_response *re
 
 /* artnet_http.c */
 int artnet_api_handler(struct http_request *request, struct http_response *response, void *ctx);
+int artnet_api_inputs_handler(struct http_request *request, struct http_response *response, void *ctx);
+int artnet_api_outputs_handler(struct http_request *request, struct http_response *response, void *ctx);
 
 /* leds_http.c */
 int leds_api_get(struct http_request *request, struct http_response *response, void *ctx);
+int leds_api_get_status(struct http_request *request, struct http_response *response, void *ctx);
 int leds_api_post(struct http_request *request, struct http_response *response, void *ctx);
 
 int leds_api_test_get(struct http_request *request, struct http_response *response, void *ctx);
 int leds_api_test_post(struct http_request *request, struct http_response *response, void *ctx);
+
+/* user_http.c */
+int user_api_get_status(struct http_request *request, struct http_response *response, void *ctx);
+int user_api_post_button(struct http_request *request, struct http_response *response, void *ctx);

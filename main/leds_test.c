@@ -121,7 +121,7 @@ TickType_t leds_test_wait(struct leds_state *state)
 
 bool leds_test_active(struct leds_state *state, EventBits_t bits)
 {
-  if (state->test->mode && state->test->frame_tick) {
+  if (state->test->mode) {
     return true;
   }
 
@@ -140,6 +140,12 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
     state->test->frame_tick = xTaskGetTickCount();
 
     LOG_INFO("test mode=%d", state->test->mode);
+  } else if (state->test->frame_tick) {
+
+  } else {
+    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> idle", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+
+    return 0;
   }
 
   if ((frame_ticks = leds_set_test(state->leds, state->test->mode, state->test->frame)) < 0) {

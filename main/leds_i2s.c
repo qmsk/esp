@@ -76,12 +76,15 @@
       size_t size, align;
 
     #if LEDS_I2S_GPIO_PINS_ENABLED
-      if (config->i2s_data_pin_count > 1) {
+      if (config->i2s_data_pin_count > 1 || config->i2s_data_inv_pin_count > 1) {
         // parallel output
-        size = leds_i2s_parallel_buffer_size(config->protocol, config->count, config->i2s_data_pin_count);
-        align = leds_i2s_parallel_buffer_align(config->protocol, config->i2s_data_pin_count);
+        unsigned pin_count = config->i2s_data_pin_count > config->i2s_data_inv_pin_count ? config->i2s_data_pin_count : config->i2s_data_inv_pin_count;
 
-        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, config->i2s_data_pin_count, size, align);
+        // parallel output
+        size = leds_i2s_parallel_buffer_size(config->protocol, config->count, pin_count);
+        align = leds_i2s_parallel_buffer_align(config->protocol, pin_count);
+
+        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, pin_count, size, align);
       } else {
         size = leds_i2s_serial_buffer_size(config->protocol, config->count);
         align = leds_i2s_serial_buffer_align(config->protocol);
@@ -134,9 +137,9 @@
     options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
     options->pin_timeout = LEDS_I2S_PIN_TIMEOUT;
   #elif LEDS_I2S_GPIO_PINS_ENABLED
-    if (config->i2s_data_pin_count > 1) {
+    if (config->i2s_data_pin_count > 1 || config->i2s_data_inv_pin_count > 1) {
       // parallel output
-      options->data_pins_count = config->i2s_data_pin_count;
+      options->data_pins_count = config->i2s_data_pin_count >= config->i2s_data_inv_pin_count ? config->i2s_data_pin_count : config->i2s_data_inv_pin_count;
 
       for (int i = 0; i < config->i2s_data_pin_count || i < config->i2s_data_inv_pin_count; i++) {
           options->data_pins[i] = i < config->i2s_data_pin_count ? config->i2s_data_pins[i] : GPIO_NUM_NC;

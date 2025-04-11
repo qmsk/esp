@@ -37,6 +37,18 @@
       return -1;
     }
 
+    switch(options->type) {
+      case GPIO_I2C_TYPE_PCA9534:
+      case GPIO_I2C_TYPE_PCA9554:
+        if ((err = gpio_i2c_pca54xx_init(dev))) {
+          return err;
+        }
+        break;
+
+      default:
+        LOG_FATAL("unsupported type=%d", options->type);
+    }
+
     if (options->int_pin > 0) {
       gpio_intr_setup_i2c_pin(options->int_pin, dev);
 
@@ -44,15 +56,6 @@
         LOG_ERROR("gpio_host_setup_intr_pin");
         return err;
       }
-    }
-
-    switch(options->type) {
-      case GPIO_I2C_TYPE_PCA9534:
-      case GPIO_I2C_TYPE_PCA9554:
-        return gpio_i2c_pca54xx_init(dev);
-
-      default:
-        LOG_FATAL("unsupported type=%d", options->type);
     }
 
     return 0;

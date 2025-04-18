@@ -51,7 +51,10 @@ struct configtab {
   bool readonly;
   bool secret;
   bool migrated; // read -> migrate, no write
-  void *migrate_ctx;
+
+  // callbacks
+  void *ctx;
+  int (*validate_func)(void *ctx);
 
   union {
     struct {
@@ -163,6 +166,11 @@ int config_get(const struct configmod *mod, const struct configtab *tab, unsigne
 
 /* Print value at index (typically 0, if not multi-valued) to file */
 int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file);
+
+/* Check config valid after changes. */
+int configtab_valid(const struct configmod *module, unsigned index, const struct configtab *tab);
+int configmod_valid(const struct configmod *module, unsigned index, const struct configtab *table);
+int config_valid(struct config *config);
 
 /*
  * Initialize to empty / default values.

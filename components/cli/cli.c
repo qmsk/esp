@@ -130,7 +130,7 @@ static int cli_eval(struct cli *cli)
   if ((err = cmd_eval(cli->cmd_eval, &cli->cmdtab, line)) < 0) {
     LOG_ERROR("cmd_eval %s: %s", line, cmd_strerror(-err));
   } else if (err) {
-    LOG_ERROR("cmd %s: %d", line, err);
+    LOG_WARN("%s: exit %d", line, err);
   }
 
   return err;

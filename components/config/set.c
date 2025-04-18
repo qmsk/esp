@@ -80,7 +80,7 @@ static int config_set_uint16(const struct configmod *mod, const struct configtab
   }
   
   if (tab->migrated) {
-    return tab->uint16_type.migrate_func(value, tab->migrate_ctx);
+    return tab->uint16_type.migrate_func(value, tab->ctx);
   }
 
   tab->uint16_type.value[index] = (uint16_t) value;
@@ -101,7 +101,7 @@ static int config_set_bool(const struct configmod *mod, const struct configtab *
   }
 
   if (tab->migrated) {
-    return tab->bool_type.migrate_func(value, tab->migrate_ctx);
+    return tab->bool_type.migrate_func(value, tab->ctx);
   }
 
   tab->bool_type.value[index] = value;

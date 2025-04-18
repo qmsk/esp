@@ -39,8 +39,6 @@ int init_dmx_output(struct dmx_output_state *state, int index, const struct dmx_
 
   // artnet
   if (config->artnet_enabled) {
-    LOG_INFO("dmx-output%d: artnet universe=%u", index + 1, config->artnet_universe);
-
     if (!(state->artnet_dmx = calloc(1, sizeof(*state->artnet_dmx)))) {
       LOG_ERROR("calloc: artnet_dmx");
       return -1;
@@ -130,8 +128,6 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
     .affinity   = DMX_OUTPUT_TASK_AFFINITY,
   };
   struct artnet_output_options options = {
-    .port     = (enum artnet_port) (state->index), // use dmx%d index as output port number
-    .index    = 0,
     .address  = config->artnet_universe, // net/subnet set by add_artnet_output()
   };
   int err;

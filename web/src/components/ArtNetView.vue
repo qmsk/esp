@@ -52,8 +52,6 @@
           </caption>
           <thead>
             <tr>
-              <th>Port</th>
-              <th>Index</th>
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
@@ -63,8 +61,6 @@
           </thead>
           <tbody>
             <tr v-for="input in inputs">
-              <td>{{ input.port }}</td>
-              <td>{{ input.index }}</td>
               <td>{{ input.net }}</td>
               <td>{{ input.subnet }}</td>
               <td>{{ input.universe }}</td>
@@ -83,8 +79,6 @@
         </caption>
           <thead>
             <tr>
-              <th>Port</th>
-              <th>Index</th>
               <th>Name</th>
               <th>Net</th>
               <th>Subnet</th>
@@ -95,8 +89,6 @@
           </thead>
           <tbody>
             <tr v-for="output in outputs">
-              <td>{{ output.port }}</td>
-              <td>{{ output.index }}</td>
               <td>{{ output.name }}</td>
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>

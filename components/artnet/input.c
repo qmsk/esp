@@ -18,17 +18,12 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
     return -1;
   }
 
-  if (options.index > ARTNET_INDEX_MAX) {
-    LOG_ERROR("index=%u overflow", options.index);
-    return -1;
-  }
-
   if ((options.address & 0xFFF0) != artnet->options.address) {
-    LOG_ERROR("port=%u index=%u address=%04x mismatch with artnet.universe=%04x", options.port, options.index, options.address, artnet->options.address);
+    LOG_ERROR("address=%04x mismatch with artnet.universe=%04x", options.address, artnet->options.address);
     return -1;
   }
 
-  LOG_DEBUG("input=%d port=%d index=%u address=%04x", artnet->input_count, options.port, options.index, options.address);
+  LOG_DEBUG("index=%u address=%04x", artnet->input_count, options.address);
 
   if (!(queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");

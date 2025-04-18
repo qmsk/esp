@@ -414,8 +414,6 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
 {
   for (unsigned i = 0; i < state->artnet->universe_count; i++) {
     struct artnet_output_options options = {
-      .port = (enum artnet_port) (state->index), // use ledsX index as output port
-      .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
       .event_group = state->event_group,
       .event_bits = (1 << i),

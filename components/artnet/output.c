@@ -22,17 +22,8 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     return -1;
   }
 
-  if (options.index > ARTNET_INDEX_MAX) {
-    LOG_ERROR("index=%u overflow", options.index);
-    return -1;
-  }
-
-  if (options.port >= 4) {
-    LOG_WARN("port=%u >= 4, will not be discoverable", options.port);
-  }
-
   if ((options.address & 0xFFF0) != artnet->options.address) {
-    LOG_WARN("port=%u index=%u address=%04x mismatch with artnet.universe=%04x, will not be discoverable", options.port, options.index, options.address, artnet->options.address);
+    LOG_WARN("address=%04x mismatch with artnet.universe=%04x, will not be discoverable", options.address, artnet->options.address);
   }
 
   if (!options.event_group) {
@@ -47,7 +38,7 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     LOG_DEBUG("event_bits=%08x", options.event_bits);
   }
 
-  LOG_DEBUG("output=%d port=%d index=%u address=%04x", artnet->output_count, options.port, options.index, options.address);
+  LOG_DEBUG("output=%d address=%04x", artnet->output_count, options.address);
 
   if (!(queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
     LOG_ERROR("xQueueCreate");
@@ -252,21 +243,23 @@ int artnet_outputs_dmx(struct artnet *artnet, uint16_t address, struct artnet_dm
 
 int artnet_sync_outputs(struct artnet *artnet)
 {
-  EventGroupHandle_t port_event_groups[ARTNET_PORT_COUNT] = {};
+  EventGroupHandle_t event_group = NULL;
 
   for (unsigned i = 0; i < artnet->output_count; i++) {
     struct artnet_output *output = &artnet->output_ports[i];
+    
+    if (!output->options.event_group) {
+      // sync not supported
+      continue;
+    }
 
     stats_counter_increment(&output->stats.sync_recv);
 
-    if (!output->options.event_group) {
-      // sync not supported
-    } else if (output->options.event_group == port_event_groups[output->options.port]) {
-      // only notify each event_group once
-    } else {
-      port_event_groups[output->options.port] = output->options.event_group;
-
+    if (output->options.event_group != event_group) {
       xEventGroupSetBits(output->options.event_group, (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT));
+
+      // only notify each event_group once
+      event_group = output->options.event_group;
     }
   }
 

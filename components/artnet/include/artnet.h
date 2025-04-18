@@ -29,6 +29,7 @@
 // flag bit to force output sync
 #define ARTNET_OUTPUT_EVENT_SYNC_BIT 20
 
+// limited by ARTNET_INPUT_TASK_INDEX_BITS
 #define ARTNET_INPUTS_MAX 16
 #define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
 
@@ -73,32 +74,12 @@ struct artnet_dmx {
   uint8_t data[ARTNET_DMX_SIZE];
 };
 
-enum artnet_port {
-  ARTNET_PORT_1,
-  ARTNET_PORT_2,
-  ARTNET_PORT_3,
-  ARTNET_PORT_4,
-  ARTNET_PORT_COUNT
-};
-
 struct artnet_input_options {
-  /* ArtNet physical input port 1-4 */
-  enum artnet_port port;
-
-  /* Output index, used for discovery bind index and task notification bits */
-  unsigned index;
-
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;
 };
 
 struct artnet_output_options {
-  /* ArtNet physical output port 1-4 */
-  enum artnet_port port;
-
-  /* Output index, used for discovery bind index and task notification bits */
-  unsigned index;
-
   /* Human-friendly name */
   char name[ARTNET_OUTPUT_NAME_MAX];
 

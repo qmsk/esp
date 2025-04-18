@@ -48,14 +48,9 @@ int init_dmx_input()
   // artnet
   if (config->artnet_enabled) {
     struct artnet_input_options artnet_options = {
-      .port         = ARTNET_PORT_1,
-      .index        = 0,
-
       .address      = config->artnet_universe,
     };
     int err;
-
-    LOG_INFO("dmx-input: artnet port=%u universe=%u", artnet_options.port, artnet_options.address);
 
     if ((err = add_artnet_input(&state->artnet_input, artnet_options))) {
       LOG_ERROR("add_artnet_input");

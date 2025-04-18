@@ -130,10 +130,25 @@ struct artnet_output_state {
  *
  * NOTE: artnet_address() will interpret universes >= 16 as overflowing into the next net/subnet.
  */
-uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
-uint16_t artnet_address_net(uint16_t address);
-uint16_t artnet_address_subnet(uint16_t address);
-uint16_t artnet_address_universe(uint16_t address);
+static inline uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
+{
+  return (((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0)) + uni;
+}
+
+static inline uint16_t artnet_address_net(uint16_t address)
+{
+  return (address & 0x7F00) >> 8;
+}
+
+static inline uint16_t artnet_address_subnet(uint16_t address)
+{
+  return (address & 0x00F0) >> 4;
+}
+
+static inline uint16_t artnet_address_universe(uint16_t address)
+{
+  return (address & 0x000F);
+}
 
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 

@@ -35,6 +35,11 @@ static unsigned config_leds_artnet_universe_count(const struct leds_config *conf
     leds_count = leds_count / config->artnet_leds_segment;
   }
 
+  if (!universe_leds_count) {
+    // invalid
+    return 0;
+  }
+
   if (!universe_count) {
     // how many universes do we need to fit all of the frames?
     universe_count = leds_count / universe_leds_count;

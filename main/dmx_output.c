@@ -128,14 +128,21 @@ int start_dmx_output(struct dmx_output_state *state, const struct dmx_output_con
     .affinity   = DMX_OUTPUT_TASK_AFFINITY,
   };
   struct artnet_output_options options = {
-    .address  = config->artnet_universe, // net/subnet set by add_artnet_output()
+    .address  = artnet_address(config->artnet_net, config->artnet_subnet, config->artnet_universe),
   };
   int err;
 
   snprintf(options.name, sizeof(options.name), "dmx-output%u", state->index + 1);
 
-  if ((err = add_artnet_output(&state->artnet_output, options))) {
-    LOG_ERROR("add_artnet_output");
+  if (!artnet) {
+    LOG_ERROR("artnet disabled");
+    return -1;
+  }
+
+  LOG_INFO("artnet output%u address=%04x", state->index + 1, options.address);
+
+  if ((err = artnet_add_output(artnet, &state->artnet_output, options))) {
+    LOG_ERROR("artnet_add_output");
     return err;
   }
 

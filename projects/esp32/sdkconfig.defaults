@@ -38,13 +38,15 @@ CONFIG_ETH_USE_SPI_ETHERNET=n
 CONFIG_ETH_USE_OPENETH=n
 
 ## Art-Net
-CONFIG_ARTNET_OUTPUTS_MAX=16
+CONFIG_ARTNET_OUTPUTS_MAX=20
 
-# Tune ethernet -> lwip receive stack to handle UDP bursts for 16 artnet universes
+# Tune ethernet -> lwip receive stack to handle UDP bursts for 20 artnet universes
 CONFIG_ETH_DMA_BUFFER_SIZE=1600
-CONFIG_ETH_DMA_RX_BUFFER_NUM=20
+CONFIG_ETH_DMA_RX_BUFFER_NUM=24
+
+# Tune TX for ArtPollReply bursts (1/4 of universe count)
 CONFIG_ETH_DMA_TX_BUFFER_NUM=10
 
 # critically important for handling UDP bursts
 # the default =6 causes the majority of packets to be dropped for artnet universes >6
-CONFIG_LWIP_UDP_RECVMBOX_SIZE=20
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=24

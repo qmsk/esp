@@ -158,6 +158,16 @@ int artnet_set_metadata(struct artnet *artnet, const struct artnet_metadata *met
  */
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options);
 
+/**
+ * Return pointer to stored copy of options used for artnet input.
+ */
+const struct artnet_input_options *artnet_input_options(struct artnet_input *artnet_input);
+
+/**
+ * Return current state information for input.
+ */
+struct artnet_input_state artnet_input_state(struct artnet_input *artnet_input);
+
 /** Processs input DMX.
  *
  * dmx->len must be set correctly.
@@ -181,6 +191,16 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options);
+
+/**
+ * Return pointer to stored copy of options used for artnet output.
+ */
+const struct artnet_output_options *artnet_output_options(struct artnet_output *artnet_output);
+
+/**
+ * Return current state information for output.
+ */
+struct artnet_output_state artnet_output_state(struct artnet_output *artnet_output);
 
 /*
  * Read updated `struct artnet_dmx` from output. Call when artnet_output_wait() indicates that a new packet is available.

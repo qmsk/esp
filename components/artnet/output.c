@@ -54,6 +54,16 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
   return 0;
 }
 
+const struct artnet_output_options *artnet_output_options(struct artnet_output *artnet_output)
+{
+  return &artnet_output->options;
+}
+
+struct artnet_output_state artnet_output_state(struct artnet_output *artnet_output)
+{
+  return artnet_output->state;
+}
+
 int artnet_output_read(struct artnet_output *output, struct artnet_dmx *dmx, TickType_t ticks)
 {
   if (!xQueueReceive(output->queue, dmx, ticks)) {

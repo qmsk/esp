@@ -40,6 +40,16 @@ int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct
   return 0;
 }
 
+const struct artnet_input_options *artnet_input_options(struct artnet_input *artnet_input)
+{
+  return &artnet_input->options;
+}
+
+struct artnet_input_state artnet_input_state(struct artnet_input *artnet_input)
+{
+  return artnet_input->state;
+}
+
 void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx)
 {
   stats_counter_increment(&input->stats.dmx_recv);

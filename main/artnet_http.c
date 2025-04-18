@@ -117,11 +117,9 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
   struct artnet_options options = artnet_get_options(artnet);
 
   return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_OBJECT(w, "config",
+        JSON_WRITE_MEMBER_OBJECT(w, "info",
             JSON_WRITE_MEMBER_UINT(w, "port", options.port)
-        )
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "metadata",
-            JSON_WRITE_MEMBER_RAW(w, "ip_address", "\"%u.%u.%u.%u\"",
+        ||  JSON_WRITE_MEMBER_RAW(w, "ip_address", "\"%u.%u.%u.%u\"",
               options.metadata.ip_address[0],
               options.metadata.ip_address[1],
               options.metadata.ip_address[2],

@@ -25,13 +25,24 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   size_t inputs_size = ARTNET_INPUTS_MAX, outputs_size = ARTNET_OUTPUTS_MAX;
   int err;
 
-  printf("Listen port=%u\n", options.port);
-  printf("Metadata:\n");
-  printf("\tNetwork IPv4=%u.%u.%u.%u MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-    options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3],
-    options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]
+  printf("Config:\n");
+  printf("\tIPv4: address=%u.%u.%u.%u\n",
+    options.metadata.ip_address[0],
+    options.metadata.ip_address[1],
+    options.metadata.ip_address[2],
+    options.metadata.ip_address[3]
   );
-  printf("\tName short=%s long=%s\n", options.metadata.short_name, options.metadata.long_name);
+  printf("\tMAC: address=%02x:%02x:%02x:%02x:%02x:%02x\n",
+    options.metadata.mac_address[0],
+    options.metadata.mac_address[1],
+    options.metadata.mac_address[2],
+    options.metadata.mac_address[3],
+    options.metadata.mac_address[4],
+    options.metadata.mac_address[5]
+  );
+  printf("\tUDP: port=%u\n", options.port);
+  printf("\tShort name: %s\n", options.metadata.short_name);
+  printf("\tLong name: %s\n", options.metadata.long_name);
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");

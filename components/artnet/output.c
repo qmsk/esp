@@ -22,10 +22,6 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     return -1;
   }
 
-  if ((options.address & 0xFFF0) != artnet->options.address) {
-    LOG_WARN("address=%04x mismatch with artnet.universe=%04x, will not be discoverable", options.address, artnet->options.address);
-  }
-
   if (!options.event_group) {
     LOG_DEBUG("event_bits unused");
   } else if (!options.event_bits) {

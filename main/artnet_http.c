@@ -4,6 +4,7 @@
 #include "http_handlers.h"
 
 #include <artnet.h>
+#include "artnet_config.h"
 #include <artnet_stats.h>
 
 #include <logging.h>
@@ -114,12 +115,13 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
 {
   struct artnet *artnet = ctx;
   struct artnet_options options = artnet_get_options(artnet);
+  const struct artnet_config *config = &artnet_config;
 
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_OBJECT(w, "config",
             JSON_WRITE_MEMBER_UINT(w, "port", options.port)
-        ||  JSON_WRITE_MEMBER_UINT(w, "net", artnet_address_net(options.address))
-        ||  JSON_WRITE_MEMBER_UINT(w, "subnet", artnet_address_subnet(options.address))
+        ||  JSON_WRITE_MEMBER_UINT(w, "net", config->net)
+        ||  JSON_WRITE_MEMBER_UINT(w, "subnet", config->subnet)
         )
     ||  JSON_WRITE_MEMBER_OBJECT(w, "metadata",
             JSON_WRITE_MEMBER_RAW(w, "ip_address", "\"%u.%u.%u.%u\"",

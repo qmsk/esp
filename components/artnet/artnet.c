@@ -21,11 +21,6 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
 
-  if (options.address & 0xF) {
-    LOG_ERROR("address=%04X has universe bits set", options.address);
-    return -1;
-  }
-
   if (options.inputs > ARTNET_INPUTS_MAX) {
     LOG_ERROR("inputs=%u exceeds max=%u", options.inputs, ARTNET_INPUTS_MAX);
     return -1;

@@ -2,6 +2,7 @@
 #include "artnet_state.h"
 
 #include <artnet.h>
+#include "artnet_config.h"
 #include <artnet_stats.h>
 #include <logging.h>
 #include <stats_print.h>
@@ -18,6 +19,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return 1;
   }
 
+  const struct artnet_config *config = &artnet_config;
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
@@ -25,13 +27,13 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   int err;
 
   printf("Listen port=%u\n", options.port);
-  printf("Address net=%u subnet=%u\n", artnet_address_net(options.address), artnet_address_subnet(options.address));
   printf("Metadata:\n");
   printf("\tNetwork IPv4=%u.%u.%u.%u MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
     options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3],
     options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]
   );
   printf("\tName short=%s long=%s\n", options.metadata.short_name, options.metadata.long_name);
+  printf("Config: net=%u subnet=%u\n", config->net, config->subnet);
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");

@@ -42,9 +42,6 @@ struct artnet_options {
   // UDP used for listen()
   uint16_t port;
 
-  // all output ports must be within the same sub-net (lower 4 bits)
-  uint16_t address;
-
   // metadata used for poll reply, not listen()
   struct artnet_metadata {
     uint8_t ip_address[4];

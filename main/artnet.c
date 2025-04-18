@@ -84,7 +84,6 @@ int init_artnet()
   const struct artnet_config *config = &artnet_config;
   struct artnet_options options = {
     .port     = ARTNET_UDP_PORT,
-    .address  = artnet_address(config->net, config->subnet, 0),
     .inputs   = count_artnet_inputs(),
     .outputs  = count_artnet_outputs(),
   };
@@ -100,14 +99,14 @@ int init_artnet()
     return err;
   }
 
-  LOG_INFO("port=%u address=%04x inputs=%u outputs=%u",
+  LOG_INFO("config net=%d subnet=%d", config->net, config->subnet);
+  LOG_INFO("options port=%u inputs=%u outputs=%u",
     options.port,
-    options.address,
     options.inputs,
     options.outputs
   );
-  LOG_INFO("ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
-  LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);
+  LOG_INFO("metadata ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
+  LOG_INFO("metadata mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);
 
   if ((err = artnet_new(&artnet, options))) {
     LOG_ERROR("artnet_new");

@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep)
+int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tablep)
 {
   for (const struct configmod *mod = modules; mod->name; mod++) {
     if (mod->tables_count) {
@@ -40,7 +40,10 @@ int configmod_lookup(const struct configmod *modules, const char *name, const st
         continue;
       }
 
-      if (!index) {
+      if (index < 0) {
+        LOG_WARN("invalid %s, suffix has dash", name);
+        break;
+      } else if (!index) {
         LOG_WARN("invalid %s, min suffix is 1", name);
         break;
       } else if (index > mod->tables_count) {
@@ -49,6 +52,7 @@ int configmod_lookup(const struct configmod *modules, const char *name, const st
       }
 
       *modp = mod;
+      *indexp = (unsigned) index;
       *tablep = mod->tables[index - 1];
 
       return 0;
@@ -65,6 +69,7 @@ int configmod_lookup(const struct configmod *modules, const char *name, const st
       }
 
       *modp = mod;
+      *indexp = 0;
       *tablep = mod->table;
 
       return 0;
@@ -93,11 +98,11 @@ int configtab_lookup(const struct configtab *table, const char *name, const stru
   return 1;
 }
 
-int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp)
+int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tabp)
 {
     const struct configtab *table;
 
-    if (configmod_lookup(config->modules, module, modp, &table)) {
+    if (configmod_lookup(config->modules, module, modp, indexp, &table)) {
       return 1;
     }
     if (configtab_lookup(table, name, tabp)) {

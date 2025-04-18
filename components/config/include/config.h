@@ -133,9 +133,9 @@ int config_file_walk(const struct config_file_path *paths, int (*func)(const str
 
 FILE *config_file_open(const struct config_file_path *paths, const char *value);
 
-int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, const struct configtab **tablep);
+int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tablep);
 int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);
-int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, const struct configtab **tabp);
+int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tabp);
 
 /* Return count of values for use with index. This is typically typically 1, if not multi-valued */
 static inline int configtab_count(const struct configtab *tab)

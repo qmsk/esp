@@ -152,27 +152,14 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
   }
 }
 
-static void print_configmod(const struct configmod *mod, const struct configtab *table)
+static void print_configmod(const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   if (mod->description) {
     print_comment(mod->description);
   }
 
-  if (mod->tables_count) {
-    int index = -1;
-
-    for (int i = 0; i < mod->tables_count; i++) {
-      if (mod->tables[i] == table) {
-        index = i;
-      }
-    }
-
-    if (index >= 0) {
-      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name, index + 1);
-    } else {
-      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s???" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
-    }
-
+  if (index > 0) {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name, index);
   } else {
     printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
   }
@@ -188,11 +175,11 @@ static void print_config(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
-      for (int i = 0; i < mod->tables_count; i++) {
-        print_configmod(mod, mod->tables[i]);
+      for (unsigned i = 0; i < mod->tables_count; i++) {
+        print_configmod(mod, i, mod->tables[i]);
       }
     } else {
-      print_configmod(mod, mod->table);
+      print_configmod(mod, 0, mod->table);
     }
   }
 }
@@ -276,6 +263,7 @@ int config_cmd_show(int argc, char **argv, void *ctx)
 {
   const struct config *config = ctx;
   const struct configmod *mod;
+  unsigned index;
   const struct configtab *table;
   const char *section;
   int err;
@@ -285,12 +273,12 @@ int config_cmd_show(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if (configmod_lookup(config->modules, section, &mod, &table)) {
+    if (configmod_lookup(config->modules, section, &mod, &index, &table)) {
       LOG_ERROR("Unkown config section: %s", section);
       return -CMD_ERR_ARGV;
     }
 
-    print_configmod(mod, table);
+    print_configmod(mod, index, table);
   } else {
     print_config(config);
   }
@@ -304,6 +292,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
   int err;
 
   const struct configmod *mod;
+  unsigned index;
   const struct configtab *tab;
   const char *section, *name;
   char value[CONFIG_VALUE_SIZE];
@@ -315,7 +304,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &mod, &index, &tab)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
@@ -338,6 +327,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   int err;
 
   const struct configmod *mod;
+  unsigned index;
   const struct configtab *tab;
   const char *section, *name, *value;
 
@@ -348,7 +338,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &mod, &index, &tab)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
@@ -391,6 +381,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
   int err;
 
   const struct configmod *mod;
+  unsigned index;
   const struct configtab *tab;
   const char *section, *name;
 
@@ -401,7 +392,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &mod, &index, &tab)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
@@ -421,6 +412,7 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   const char *section = NULL, *name = NULL;
   const struct configmod *module = NULL;
+  unsigned index;
   const struct configtab *table = NULL;
   int err;
 
@@ -432,7 +424,7 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   }
 
   if (section) {
-    if (configmod_lookup(config->modules, section, &module, &table)) {
+    if (configmod_lookup(config->modules, section, &module, &index, &table)) {
       LOG_ERROR("Unkonwn config section: %s", section);
       return -CMD_ERR_ARGV;
     }

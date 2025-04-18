@@ -134,6 +134,7 @@ int config_read(struct config *config, FILE *file)
   int lineno = 0;
 
   const struct configmod *mod = NULL;
+  unsigned index;
   const struct configtab *table = NULL;
   const struct configtab *tab = NULL;
 
@@ -154,10 +155,10 @@ int config_read(struct config *config, FILE *file)
     if (section) {
       mod = NULL;
 
-      if (configmod_lookup(config->modules, section, &mod, &table)) {
+      if (configmod_lookup(config->modules, section, &mod, &index, &table)) {
         LOG_WARN("Unknown section: %s", section);
       } else {
-        LOG_DEBUG("mod=%s", mod->name);
+        LOG_DEBUG("mod=%s index=%u", mod->name, index);
       }
     }
 
@@ -171,7 +172,7 @@ int config_read(struct config *config, FILE *file)
       } else if (config_set(mod, tab, value)) {
         LOG_WARN("Invalid value for section %s name %s: %s", mod->name, tab->name, value);
       } else {
-        LOG_DEBUG("mod=%s tab=%s value=%s", mod->name, tab->name, value);
+        LOG_DEBUG("mod=%s index=%u tab=%s value=%s", mod->name, index, tab->name, value);
       }
     }
   }

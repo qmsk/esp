@@ -56,8 +56,9 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: net %3u subnet %2u universe %2u: len %3u @ %d ms\n", i,
+    printf("\t%2d: net %3u subnet %2u universe %2u <- %-16.16s: len %3u @ %d ms\n", i,
       artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
+      options->name,
       state.len,
       state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
     );
@@ -76,7 +77,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: net %3u subnet %2u universe %2u -> %16.16s: seq %3u @ %d ms\n", i,
+    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: seq %3u @ %d ms\n", i,
       artnet_address_net(options->address),
       artnet_address_subnet(options->address),
       artnet_address_universe(options->address),

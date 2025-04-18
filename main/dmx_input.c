@@ -52,6 +52,8 @@ int init_dmx_input()
     };
     int err;
 
+    snprintf(artnet_options.name, sizeof(artnet_options.name), "dmx-input");
+
     if ((err = add_artnet_input(&state->artnet_input, artnet_options))) {
       LOG_ERROR("add_artnet_input");
       return err;

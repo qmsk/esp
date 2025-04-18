@@ -52,6 +52,7 @@
           </caption>
           <thead>
             <tr>
+              <th>Name</th>
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
@@ -61,6 +62,7 @@
           </thead>
           <tbody>
             <tr v-for="input in inputs">
+              <td>{{ input.name }}</td>
               <td>{{ input.net }}</td>
               <td>{{ input.subnet }}</td>
               <td>{{ input.universe }}</td>

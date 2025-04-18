@@ -16,6 +16,7 @@
 #define ARTNET_UNIVERSE_MAX 15
 #define ARTNET_INDEX_MAX 255
 
+#define ARTNET_INPUT_NAME_MAX 16
 #define ARTNET_OUTPUT_NAME_MAX 16
 
 // limited to 20 by the available FreeRTOS event group bits
@@ -75,6 +76,9 @@ struct artnet_dmx {
 };
 
 struct artnet_input_options {
+  /* Human-friendly name */
+  char name[ARTNET_OUTPUT_NAME_MAX];
+  
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;
 };

@@ -54,6 +54,12 @@
       <template v-if="artnet">
         <h2>Art-Net</h2>
         <dl>
+          <dt>Net</dt>
+          <dd>{{ artnet.net }}</dd>
+
+          <dt>Sub-Net</dt>
+          <dd>{{ artnet.sub_net }}</dd>
+
           <dt>Universe Start</dt>
           <dd>{{ artnet.universe_start }}</dd>
 

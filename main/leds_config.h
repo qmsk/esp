@@ -155,6 +155,8 @@ struct leds_config {
   bool test_auto;
 
   bool artnet_enabled;
+  uint16_t artnet_net;
+  uint16_t artnet_subnet;
   uint16_t artnet_universe_start;
   uint16_t artnet_universe_count;
   uint16_t artnet_universe_step;

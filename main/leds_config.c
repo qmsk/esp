@@ -132,15 +132,15 @@ const struct config_enum leds_parameter_enum[] = {
   {}
 };
 
-static int validate_artnet_leds_group (void *ctx)
+static int validate_artnet_leds_group (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
 {
-  struct leds_config *config = ctx;
+  struct leds_config *config = path.tab->ctx;
 
   // check that groups fits into one Art-NET universe with the given used format
   unsigned universe_leds_count = leds_format_count(ARTNET_DMX_SIZE, config->artnet_leds_format, config->artnet_leds_group);
 
   if (universe_leds_count == 0) {
-    LOG_WARN("artnet_leds_format=%s with artnet_leds_group=%u does not fit into a single Art-NET universe!",
+    handler(path, ctx, "leds artnet_leds_format=%s with artnet_leds_group=%u does not fit into a single Art-NET universe!",
       config_enum_to_string(leds_format_enum, config->artnet_leds_format),
       config->artnet_leds_group
     );

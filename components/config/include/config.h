@@ -47,6 +47,9 @@ struct config_path {
   const struct configtab *tab;
 };
 
+typedef void (config_invalid_handler_t)(const struct config_path path, void *ctx, const char *fmt, ...);
+typedef int (config_validate_func_t)(config_invalid_handler_t *handler, const struct config_path path, void *ctx);
+
 struct configtab {
   enum config_type type;
   const char *name;
@@ -64,7 +67,7 @@ struct configtab {
 
   // callbacks
   void *ctx;
-  int (*validate_func)(void *ctx);
+  config_validate_func_t *validate_func;
 
   union {
     struct {
@@ -178,10 +181,10 @@ int config_get(const struct config_path path, unsigned tabindex, char *buf, size
 /* Print value at index (typically 0, if not multi-valued) to file */
 int config_print(const struct config_path path, unsigned tabindex, FILE *file);
 
-/* Check config valid after changes. */
-int configtab_valid(const struct configmod *module, unsigned index, const struct configtab *tab);
-int configmod_valid(const struct configmod *module, unsigned index, const struct configtab *table);
-int config_valid(struct config *config);
+/* Check config valid */
+int configtab_valid(const struct config_path path, config_invalid_handler_t handler, void *ctx);
+int configmod_valid(const struct configmod *module, unsigned index, const struct configtab *table, config_invalid_handler_t handler, void *ctx);
+int config_valid(struct config *config, config_invalid_handler_t handler, void *ctx);
 
 /*
  * Initialize to empty / default values.

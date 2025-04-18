@@ -62,6 +62,19 @@ static void print_comment(const char *comment)
   }
 }
 
+static void print_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+{
+  va_list args;
+
+  printf(CLI_FMT_WARNING "? ");
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf(CLI_FMT_RESET "\n");
+}
+
 static int print_configtab_file(const struct config_file_path *p, const char *name, void *ctx)
 {
   printf(CLI_FMT_COMMENT "#   * %s @ %s\n", name, p->prefix);
@@ -140,10 +153,8 @@ static void print_configtab(const struct config_path path)
     return;
   }
 
-  if ((err = configtab_valid(mod, index, tab)) < 0) {
-    printf(CLI_FMT_ERROR "! " CLI_FMT_RESET "\n");
-  } else if (err) {
-    printf(CLI_FMT_WARNING "? " CLI_FMT_RESET "\n");
+  if ((err = configtab_valid(path, print_invalid, NULL)) < 0) {
+    LOG_ERROR("configtab_valid");
   }
 
   switch(tab->type) {
@@ -477,6 +488,33 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static void print_valid_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+{
+  unsigned count = configtab_count(path.tab);
+  va_list args;
+
+  if (path.index > 0) {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name, path.index);
+  } else {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name);
+  }
+
+  printf(" " CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, path.tab->name);
+
+  for (unsigned index = 0; index < count; index++) {
+    config_print(path, index, stdout);
+    printf(" ");
+  }
+
+  printf(CLI_FMT_WARNING "? ");
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf(CLI_FMT_RESET "\n");
+}
+
 int config_cmd_valid(int argc, char **argv, void *ctx)
 {
   struct config *config = ctx;
@@ -484,7 +522,7 @@ int config_cmd_valid(int argc, char **argv, void *ctx)
   const struct configmod *module = NULL;
   unsigned index;
   const struct configtab *table = NULL;
-  int err;
+  int err, ret = 0;
 
   if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &section))) {
     return err;
@@ -501,41 +539,36 @@ int config_cmd_valid(int argc, char **argv, void *ctx)
   }
 
   if (section && name) {
-    const struct configtab *tab = NULL;
+    struct config_path path = { module, index, NULL };
 
-    if (configtab_lookup(table, name, &tab)) {
+    if (configtab_lookup(module, index, table, name, &path.tab)) {
       LOG_ERROR("Unkonwn config name: %s.%s", section, name);
       return -CMD_ERR_ARGV;
     }
 
-    if ((err = configtab_valid(module, index, tab)) < 0) {
-      LOG_ERROR("configtab_valid: %s%d.%s", module->name, index, tab->name);
+    if ((err = configtab_valid(path, print_valid_invalid, NULL)) < 0) {
+      LOG_ERROR("configtab_valid: %s%d.%s", path.mod->name, path.index, path.tab->name);
       return -1;
     } else if (err) {
-      LOG_WARN("configtab_valid: %s%d.%s", module->name, index, tab->name);
-      return -1;
+      ret = -1;
     }
   } else if (section) {
-    if ((err = configmod_valid(module, index, table)) < 0) {
+    if ((err = configmod_valid(module, index, table, print_valid_invalid, NULL)) < 0) {
       LOG_ERROR("configmod_valid: %s%d", module->name, index);
       return -1;
     } else if (err) {
-      LOG_WARN("configmod_valid: %s%d", module->name, index);
-      return -1;
+      ret = -1;
     }
   } else {
-    if ((err = config_valid(config)) < 0) {
+    if ((err = config_valid(config, print_valid_invalid, NULL)) < 0) {
       LOG_ERROR("config_valid");
       return -1;
     } else if (err) {
-      LOG_WARN("config_valid");
-      return 1;
+      ret = -1;
     }
   }
 
-  LOG_WARN("config modified, use `config save` and reboot");
-
-  return 0;
+  return ret;
 }
 
 const struct cmd config_commands[] = {

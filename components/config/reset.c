@@ -4,8 +4,10 @@
 
 #include <string.h>
 
-int configtab_reset(const struct configtab *tab)
+int configtab_reset(const struct config_path path)
 {
+  const struct configtab *tab = path.tab;
+  
   if (tab->migrated) {
     return 0;
   }
@@ -46,13 +48,15 @@ int configtab_reset(const struct configtab *tab)
   return 0;
 }
 
-int configmod_reset(const struct configmod *module, const struct configtab *table)
+int configmod_reset(const struct configmod *module, unsigned index, const struct configtab *table)
 {
   int err;
 
   for (const struct configtab *tab = table; tab->name; tab++) {
-    if ((err = configtab_reset(tab))) {
-      LOG_ERROR("configtab_reset %s.%s", module->name, tab->name);
+    struct config_path path = { module, index, tab };
+
+    if ((err = configtab_reset(path))) {
+      LOG_ERROR("configtab_reset %s%d.%s", module->name, index, tab->name);
       return err;
     }
   }
@@ -67,13 +71,13 @@ int config_reset(struct config *config)
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
       for (int i = 0; i < mod->tables_count; i++) {
-        if ((err = configmod_reset(mod, mod->tables[i]))) {
+        if ((err = configmod_reset(mod, i + 1, mod->tables[i]))) {
           LOG_ERROR("configmod_reset: %s%d", mod->name, i + 1);
           return err;
         }
       }
     } else {
-      if ((err = configmod_reset(mod, mod->table))) {
+      if ((err = configmod_reset(mod, 0, mod->table))) {
         LOG_ERROR("configmod_reset: %s", mod->name);
         return err;
       }

@@ -69,8 +69,9 @@ static int print_configtab_file(const struct config_file_path *p, const char *na
   return 0;
 }
 
-static void print_configtab(const struct configmod *mod, unsigned index, const struct configtab *tab)
+static void print_configtab(const struct config_path path)
 {
+  const struct configtab *tab = path.tab;
   unsigned count = configtab_count(tab);
   int err;
   
@@ -160,7 +161,7 @@ static void print_configtab(const struct configmod *mod, unsigned index, const s
     } else {
       printf(CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, tab->name);
 
-      config_print(mod, tab, index, stdout);
+      config_print(path, index, stdout);
 
       printf(CLI_FMT_RESET "\n");
     }
@@ -180,7 +181,9 @@ static void print_configmod(const struct configmod *mod, unsigned index, const s
   }
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
-    print_configtab(mod, index, tab);
+    struct config_path path = { mod, index, tab };
+
+    print_configtab(path);
   }
 
   printf("\n");
@@ -306,9 +309,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  unsigned index;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name;
   char value[CONFIG_VALUE_SIZE];
 
@@ -319,14 +320,14 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &index, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  for (unsigned count = configtab_count(tab), index = 0; index < count; index++) {
-    if (config_get(mod, tab, index, value, sizeof(value))) {
-      LOG_ERROR("Invalid config %s.%s[%u] value: %s", mod->name, tab->name, index, value);
+  for (unsigned count = configtab_count(path.tab), index = 0; index < count; index++) {
+    if (config_get(path, index, value, sizeof(value))) {
+      LOG_ERROR("Invalid config %s%d.%s[%u] value: %s", path.mod->name, path.index, path.tab->name, index, value);
       return -CMD_ERR;
     }
 
@@ -341,9 +342,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  unsigned index;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name, *value;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
@@ -353,14 +352,14 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &index, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (tab->count) {
-    if (config_clear(mod, tab)) {
-      LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+  if (path.tab->count) {
+    if (config_clear(path)) {
+      LOG_ERROR("config_clear %s%d.%s", path.mod->name, path.index, path.tab->name);
       return -CMD_ERR_ARGV;
     }
 
@@ -369,8 +368,8 @@ int config_cmd_set(int argc, char **argv, void *ctx)
         return err;
       }
 
-      if (config_set(mod, tab, value)) {
-        LOG_ERROR("Invalid config %s.%s value[%u]: %s", mod->name, tab->name, index, value);
+      if (config_set(path, value)) {
+        LOG_ERROR("Invalid config %s%d.%s value[%u]: %s", path.mod->name, path.index, path.tab->name, index, value);
         return -CMD_ERR_ARGV;
       }
     }
@@ -379,8 +378,8 @@ int config_cmd_set(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if (config_set(mod, tab, value)) {
-      LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
+    if (config_set(path, value)) {
+      LOG_ERROR("Invalid config %s%d.%s value: %s", path.mod->name, path.index, path.tab->name, value);
       return -CMD_ERR_ARGV;
     }
   }
@@ -395,9 +394,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  unsigned index;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
@@ -407,13 +404,13 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &index, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_clear(mod, tab)) {
-    LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+  if (config_clear(path)) {
+    LOG_ERROR("config_clear %s%d.%s", path.mod->name, path.index, path.tab->name);
     return -CMD_ERR_ARGV;
   }
 
@@ -446,23 +443,23 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   }
 
   if (section && name) {
-    const struct configtab *tab = NULL;
+    struct config_path path = { module, index, NULL };
 
-    if (configtab_lookup(table, name, &tab)) {
+    if (configtab_lookup(module, index, table, name, &path.tab)) {
       LOG_ERROR("Unkonwn config name: %s.%s", section, name);
       return -CMD_ERR_ARGV;
     }
 
     LOG_INFO("reset [%s] %s...", section, name);
 
-    if (configtab_reset(tab)) {
+    if (configtab_reset(path)) {
       LOG_ERROR("configtab_reset");
       return -1;
     }
   } else if (section) {
     LOG_INFO("reset [%s]...", section);
 
-    if (configmod_reset(module, table)) {
+    if (configmod_reset(module, index, table)) {
       LOG_ERROR("configmod_reset");
       return -1;
     }

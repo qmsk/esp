@@ -13,6 +13,7 @@
 #define CONFIG_NAME_SIZE 64
 #define CONFIG_VALUE_SIZE 256
 
+
 enum config_type {
   CONFIG_TYPE_NULL,
 
@@ -35,6 +36,15 @@ struct config_enum {
 struct config_file_path {
   const char *prefix;
   const char *suffix;
+};
+
+struct configmod;
+struct configtab;
+
+struct config_path {
+  const struct configmod *mod;
+  unsigned index; // 0 or 1-N
+  const struct configtab *tab;
 };
 
 struct configtab {
@@ -65,7 +75,7 @@ struct configtab {
 
       uint16_t default_value;
 
-      int (*migrate_func)(uint16_t value, void *ctx);
+      int (*migrate_func)(const struct config_path path, uint16_t value);
     } uint16_type;
 
     struct {
@@ -78,7 +88,7 @@ struct configtab {
       bool *value;
       bool default_value;
 
-      int (*migrate_func)(bool value, void *ctx);
+      int (*migrate_func)(const struct config_path path, bool value);
     } bool_type;
 
     struct {
@@ -137,8 +147,9 @@ int config_file_walk(const struct config_file_path *paths, int (*func)(const str
 FILE *config_file_open(const struct config_file_path *paths, const char *value);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tablep);
-int configtab_lookup(const struct configtab *table, const char *name, const struct configtab **tabp);
-int config_lookup(const struct config *config, const char *module, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tabp);
+int configtab_lookup(const struct configmod *module, unsigned index, const struct configtab *table, const char *name, const struct configtab **tabp);
+
+int config_lookup(const struct config *config, const char *module, const char *name, struct config_path *path);
 
 /* Return count of values for use with index. This is typically typically 1, if not multi-valued */
 static inline int configtab_count(const struct configtab *tab)
@@ -151,21 +162,21 @@ static inline int configtab_count(const struct configtab *tab)
 }
 
 /* Reset value to defaults */
-int configtab_reset(const struct configtab *tab);
-int configmod_reset(const struct configmod *module, const struct configtab *table);
+int configtab_reset(const struct config_path path);
+int configmod_reset(const struct configmod *module, unsigned index, const struct configtab *table);
 int config_reset(struct config *config);
 
 /* Set empty value, or reset count to 0 if multi-valued */
-int config_clear(const struct configmod *mod, const struct configtab *tab);
+int config_clear(const struct config_path path);
 
 /* Set value, or add new value for multi-valued configtab */
-int config_set(const struct configmod *mod, const struct configtab *tab, const char *value);
+int config_set(const struct config_path path, const char *value);
 
 /* Get value at index (typically 0, if not multi-valued) */
-int config_get(const struct configmod *mod, const struct configtab *tab, unsigned index, char *buf, size_t size);
+int config_get(const struct config_path path, unsigned tabindex, char *buf, size_t size);
 
 /* Print value at index (typically 0, if not multi-valued) to file */
-int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file);
+int config_print(const struct config_path path, unsigned tabindex, FILE *file);
 
 /* Check config valid after changes. */
 int configtab_valid(const struct configmod *module, unsigned index, const struct configtab *tab);

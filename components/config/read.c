@@ -133,10 +133,8 @@ int config_read(struct config *config, FILE *file)
   char buf[CONFIG_LINE];
   int lineno = 0;
 
-  const struct configmod *mod = NULL;
-  unsigned index;
+  struct config_path path;
   const struct configtab *table = NULL;
-  const struct configtab *tab = NULL;
 
   while (fgets(buf, sizeof(buf), file) != NULL) {
     const char *section = NULL;
@@ -153,26 +151,26 @@ int config_read(struct config *config, FILE *file)
     }
 
     if (section) {
-      mod = NULL;
+      path.mod = NULL;
 
-      if (configmod_lookup(config->modules, section, &mod, &index, &table)) {
+      if (configmod_lookup(config->modules, section, &path.mod, &path.index, &table)) {
         LOG_WARN("Unknown section: %s", section);
       } else {
-        LOG_DEBUG("mod=%s index=%u", mod->name, index);
+        LOG_DEBUG("mod=%s index=%u", path.mod->name, path.index);
       }
     }
 
     if (name && value) {
-      if (!mod) {
+      if (!path.mod) {
         LOG_WARN("Invalid name without section: %s", name);
       } else if (!table) {
-        LOG_WARN("Invalid mod=%s without table", mod->name);
-      } else if (configtab_lookup(table, name, &tab)) {
-        LOG_WARN("Unknown name in section %s: %s", mod->name, name);
-      } else if (config_set(mod, tab, value)) {
-        LOG_WARN("Invalid value for section %s name %s: %s", mod->name, tab->name, value);
+        LOG_WARN("Invalid mod=%s without table", path.mod->name);
+      } else if (configtab_lookup(path.mod, path.index, table, name, &path.tab)) {
+        LOG_WARN("Unknown name in section %s: %s", path.mod->name, name);
+      } else if (config_set(path, value)) {
+        LOG_WARN("Invalid value for section %s name %s: %s", path.mod->name, path.tab->name, value);
       } else {
-        LOG_DEBUG("mod=%s index=%u tab=%s value=%s", mod->name, index, tab->name, value);
+        LOG_DEBUG("mod=%s index=%u tab=%s value=%s", path.mod->name, path.index, path.tab->name, value);
       }
     }
   }

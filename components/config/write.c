@@ -3,8 +3,9 @@
 
 #include <stdio.h>
 
-static int configtab_write(const struct configmod *mod, const struct configtab *tab, FILE *file)
+static int configtab_write(const struct config_path path, FILE *file)
 {
+  const struct configtab *tab = path.tab;
   unsigned count = configtab_count(tab);
 
   if (tab->migrated) {
@@ -19,7 +20,7 @@ static int configtab_write(const struct configmod *mod, const struct configtab *
       return -1;
     }
 
-    if (config_print(mod, tab, index, file)) {
+    if (config_print(path, index, file)) {
       return -1;
     }
 
@@ -42,7 +43,9 @@ static int configmod_write(const struct configmod *mod, FILE *file)
       }
 
       for (const struct configtab *tab = mod->tables[i]; tab->name; tab++) {
-        if (configtab_write(mod, tab, file)) {
+        struct config_path path = { mod, i + 1, tab };
+
+        if (configtab_write(path, file)) {
           return -1;
         }
       }
@@ -60,7 +63,9 @@ static int configmod_write(const struct configmod *mod, FILE *file)
     }
 
     for (const struct configtab *tab = mod->table; tab->name; tab++) {
-      if (configtab_write(mod, tab, file)) {
+      struct config_path path = { mod, 0, tab };
+
+      if (configtab_write(path, file)) {
         return -1;
       }
     }

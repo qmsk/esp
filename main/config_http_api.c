@@ -297,9 +297,7 @@ static int config_api_parse_name (char *key, const char **modulep, const char **
 static int config_api_set (struct config *config, char *key, char *value)
 {
   const char *module, *name;
-  const struct configmod *mod;
-  unsigned index;
-  const struct configtab *tab;
+  struct config_path path;
   int err;
 
   if ((err = config_api_parse_name(key, &module, &name))) {
@@ -307,23 +305,23 @@ static int config_api_set (struct config *config, char *key, char *value)
     return err;
   }
 
-  if ((err = config_lookup(config, module, name, &mod, &index, &tab))) {
+  if ((err = config_lookup(config, module, name, &path))) {
     LOG_WARN("config_lookup: module=%s name=%s", module, name);
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
   if (value && *value) {
-    LOG_INFO("module=%s index=%u name=%s: set value=%s", module, index, name, value);
+    LOG_INFO("module=%s index=%u name=%s: set value=%s", path.mod->name, path.index, path.tab->name, value);
 
-    if ((err = config_set(mod, tab, value))) {
-      LOG_WARN("config_set: module=%s index=%u name=%s: value=%s", module, index, name, value);
+    if ((err = config_set(path, value))) {
+      LOG_WARN("config_set: module=%s index=%u name=%s: value=%s", path.mod->name, path.index, path.tab->name, value);
       return HTTP_UNPROCESSABLE_ENTITY;
     }
   } else {
-    LOG_INFO("module=%s index=%u name=%s: clear", module, index, name);
+    LOG_INFO("module=%s index=%u name=%s: clear", path.mod->name, path.index, path.tab->name);
 
-    if ((err = config_clear(mod, tab))) {
-      LOG_WARN("config_clear: module=%s index=%u name=%s", module, index, name);
+    if ((err = config_clear(path))) {
+      LOG_WARN("config_clear: module=%s index=%u name=%s", path.mod->name, path.index, path.tab->name);
       return HTTP_UNPROCESSABLE_ENTITY;
     }
   }

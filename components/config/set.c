@@ -4,15 +4,17 @@
 
 #include <string.h>
 
-int config_clear(const struct configmod *mod, const struct configtab *tab)
+int config_clear(const struct config_path path)
 {
+  const struct configtab *tab = path.tab;
+
   if (tab->migrated) {
-    LOG_WARN("%s.%s: migrated", mod->name, tab->name);
+    LOG_WARN("%s%d.%s: migrated", path.mod->name, path.index, path.tab->name);
     return -1;
   }
 
   if (tab->readonly) {
-    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
+    LOG_WARN("%s%d.%s: readonly", path.mod->name, path.index, path.tab->name);
     return -1;
   }
 
@@ -50,8 +52,10 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
   return 0;
 }
 
-static int config_set_string(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+static int config_set_string(const struct config_path path, unsigned index, const char *str)
 {
+  const struct configtab *tab = path.tab;
+
   if (tab->migrated) {
     LOG_FATAL("TODO: migrated STRING");
   }
@@ -63,8 +67,9 @@ static int config_set_string(const struct configmod *mod, const struct configtab
   return 0;
 }
 
-static int config_set_uint16(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+static int config_set_uint16(const struct config_path path, unsigned index, const char *str)
 {
+  const struct configtab *tab = path.tab;
   unsigned value;
 
   if (sscanf(str, "%u", &value) <= 0) {
@@ -80,7 +85,7 @@ static int config_set_uint16(const struct configmod *mod, const struct configtab
   }
   
   if (tab->migrated) {
-    return tab->uint16_type.migrate_func(value, tab->ctx);
+    return tab->uint16_type.migrate_func(path, value);
   }
 
   tab->uint16_type.value[index] = (uint16_t) value;
@@ -88,8 +93,9 @@ static int config_set_uint16(const struct configmod *mod, const struct configtab
   return 0;
 }
 
-static int config_set_bool(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+static int config_set_bool(const struct config_path path, unsigned index, const char *str)
 {
+  const struct configtab *tab = path.tab;
   bool value;
 
   if (strcmp(str, "true") == 0) {
@@ -101,7 +107,7 @@ static int config_set_bool(const struct configmod *mod, const struct configtab *
   }
 
   if (tab->migrated) {
-    return tab->bool_type.migrate_func(value, tab->ctx);
+    return tab->bool_type.migrate_func(path, value);
   }
 
   tab->bool_type.value[index] = value;
@@ -109,12 +115,13 @@ static int config_set_bool(const struct configmod *mod, const struct configtab *
   return 0;
 }
 
-int config_set_enum(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *value)
+static int config_set_enum(const struct config_path path, unsigned index, const char *value)
 {
+  const struct configtab *tab = path.tab;
   const struct config_enum *e;
 
   if (config_enum_lookup(tab->enum_type.values, value, &e)) {
-    LOG_WARN("%s.%s: unknown value: %s", mod->name, tab->name, value);
+    LOG_WARN("%s%d.%s: unknown value: %s", path.mod->name, path.index, tab->name, value);
     return -1;
   }
 
@@ -127,8 +134,9 @@ int config_set_enum(const struct configmod *mod, const struct configtab *tab, un
   return 0;
 }
 
-int config_set_file(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *value)
+static int config_set_file(const struct config_path path, unsigned index, const char *value)
 {
+  const struct configtab *tab = path.tab;
   int err;
   
   if (tab->migrated) {
@@ -138,10 +146,10 @@ int config_set_file(const struct configmod *mod, const struct configtab *tab, un
   if (!*value) {
     // empty
   } else if ((err = config_file_check(tab->file_type.paths, value)) < 0) {
-    LOG_WARN("%s.%s: invalid file: %s", mod->name, tab->name, value);
+    LOG_WARN("%s%d.%s: invalid file: %s", path.mod->name, path.index, tab->name, value);
     return -1;
   } else if (err) {
-    LOG_WARN("%s.%s: file not found: %s", mod->name, tab->name, value);
+    LOG_WARN("%s%d.%s: file not found: %s", path.mod->name, path.index, tab->name, value);
     return -1;
   }
 
@@ -152,12 +160,13 @@ int config_set_file(const struct configmod *mod, const struct configtab *tab, un
   return 0;
 }
 
-int config_set(const struct configmod *mod, const struct configtab *tab, const char *value)
+int config_set(const struct config_path path, const char *value)
 {
+  const struct configtab *tab = path.tab;
   unsigned index;
 
   if (tab->readonly) {
-    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
+    LOG_WARN("%s%d.%s: readonly", path.mod->name, path.index, tab->name);
     return -1;
   }
 
@@ -166,31 +175,31 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
   } else if (*tab->count < tab->size) {
     index = (*tab->count)++;
   } else {
-    LOG_WARN("%s.%s: too many values", mod->name, tab->name);
+    LOG_WARN("%s%d.%s: too many values", path.mod->name, path.index, tab->name);
     return -1;
   }
 
   if (tab->migrated) {
-    LOG_WARN("%s.%s: migrate", mod->name, tab->name);
+    LOG_WARN("%s%d.%s: migrate", path.mod->name, path.index, tab->name);
   }
 
   LOG_DEBUG("type=%u name=%s index=%u", tab->type, tab->name, index);
 
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
-      return config_set_string(mod, tab, index, value);
+      return config_set_string(path, index, value);
 
     case CONFIG_TYPE_UINT16:
-      return config_set_uint16(mod, tab, index, value);
+      return config_set_uint16(path, index, value);
 
     case CONFIG_TYPE_BOOL:
-      return config_set_bool(mod, tab, index, value);
+      return config_set_bool(path, index, value);
 
     case CONFIG_TYPE_ENUM:
-      return config_set_enum(mod, tab, index, value);
+      return config_set_enum(path, index, value);
 
     case CONFIG_TYPE_FILE:
-      return config_set_file(mod, tab, index, value);
+      return config_set_file(path, index, value);
 
     default:
       LOG_ERROR("invalid type=%d", tab->type);

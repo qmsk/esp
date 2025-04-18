@@ -62,7 +62,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
       options->name,
       state.len,
-      state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
+      state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );
   }
 

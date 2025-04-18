@@ -418,6 +418,7 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
       .index = i,
       .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
       .event_group = state->event_group,
+      .event_bits = (1 << i),
     };
 
     snprintf(options.name, sizeof(options.name), "leds%u", state->index + 1);

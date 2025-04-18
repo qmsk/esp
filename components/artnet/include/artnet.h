@@ -105,8 +105,11 @@ struct artnet_output_options {
   /* ArtNet net/subnet/uni address, should match artnet_options.address for discovery */
   uint16_t address;
 
-  /* Task associated with output, will receive task notifications on updates */
+  /* Set event group bits on DMX updates */
   EventGroupHandle_t event_group;
+
+  /* Only bits matching ARTNET_OUTPUT_EVENT_INDEX_BITS are supported */
+  EventBits_t event_bits;
 };
 
 struct artnet_input_state {

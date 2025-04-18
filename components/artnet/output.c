@@ -35,6 +35,18 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     LOG_WARN("port=%u index=%u address=%04x mismatch with artnet.universe=%04x, will not be discoverable", options.port, options.index, options.address, artnet->options.address);
   }
 
+  if (!options.event_group) {
+    LOG_DEBUG("event_bits unused");
+  } else if (!options.event_bits) {
+    LOG_ERROR("event_bits=%08x empty", options.event_bits);
+    return -1;
+  } else if ((options.event_bits & ~ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
+    LOG_ERROR("event_bits=%08x overflow", options.event_bits);
+    return -1;
+  } else {
+    LOG_DEBUG("event_bits=%08x", options.event_bits);
+  }
+
   LOG_DEBUG("output=%d port=%d index=%u address=%04x", artnet->output_count, options.port, options.index, options.address);
 
   if (!(queue = xQueueCreate(1, sizeof(struct artnet_dmx)))) {
@@ -211,7 +223,7 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   }
 
   if (output->options.event_group) {
-    xEventGroupSetBits(output->options.event_group, (1 << output->options.index) & ARTNET_OUTPUT_EVENT_INDEX_BITS);
+    xEventGroupSetBits(output->options.event_group, output->options.event_bits);
   }
 }
 

@@ -140,7 +140,7 @@ static int validate_artnet_leds_group (config_invalid_handler_t *handler, const 
   unsigned universe_leds_count = leds_format_count(ARTNET_DMX_SIZE, config->artnet_leds_format, config->artnet_leds_group);
 
   if (universe_leds_count == 0) {
-    handler(path, ctx, "leds artnet_leds_format=%s with artnet_leds_group=%u does not fit into a single Art-NET universe!",
+    handler(path, ctx, "LEDs group does not fit into one Art-NET universe with format %s",
       config_enum_to_string(leds_format_enum, config->artnet_leds_format),
       config->artnet_leds_group
     );

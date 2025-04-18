@@ -62,7 +62,34 @@ static void print_comment(const char *comment)
   }
 }
 
-static void print_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+static void print_valid_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+{
+  unsigned count = configtab_count(path.tab);
+  va_list args;
+
+  if (path.index > 0) {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name, path.index);
+  } else {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name);
+  }
+
+  printf(" " CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, path.tab->name);
+
+  for (unsigned index = 0; index < count; index++) {
+    config_print(path, index, stdout);
+    printf(" ");
+  }
+
+  printf(CLI_FMT_WARNING "? ");
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf(CLI_FMT_RESET "\n");
+}
+
+static void print_configtab_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
 {
   va_list args;
 
@@ -153,7 +180,7 @@ static void print_configtab(const struct config_path path)
     return;
   }
 
-  if ((err = configtab_valid(path, print_invalid, NULL)) < 0) {
+  if ((err = configtab_valid(path, print_configtab_invalid, NULL)) < 0) {
     LOG_ERROR("configtab_valid");
   }
 
@@ -395,7 +422,14 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     }
   }
 
-  LOG_WARN("config modified, use `config save` and reboot");
+  if ((err = configtab_valid(path, print_valid_invalid, NULL)) < 0){
+    LOG_ERROR("configtab_valid");
+    return err;
+  } else if (err) {
+    LOG_WARN("config invalid, fix before `config save`");
+  } else {
+    LOG_INFO("config modified, use `config save` and reboot");
+  }
 
   return 0;
 }
@@ -425,7 +459,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return -CMD_ERR_ARGV;
   }
 
-  LOG_WARN("config modified, use `config save` and reboot");
+  LOG_INFO("config modified, use `config save` and reboot");
 
   return 0;
 }
@@ -486,33 +520,6 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   LOG_WARN("config modified, use `config save` and reboot");
 
   return 0;
-}
-
-static void print_valid_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
-{
-  unsigned count = configtab_count(path.tab);
-  va_list args;
-
-  if (path.index > 0) {
-    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name, path.index);
-  } else {
-    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name);
-  }
-
-  printf(" " CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, path.tab->name);
-
-  for (unsigned index = 0; index < count; index++) {
-    config_print(path, index, stdout);
-    printf(" ");
-  }
-
-  printf(CLI_FMT_WARNING "? ");
-
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-
-  printf(CLI_FMT_RESET "\n");
 }
 
 int config_cmd_valid(int argc, char **argv, void *ctx)

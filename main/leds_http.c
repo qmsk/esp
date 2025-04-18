@@ -78,7 +78,9 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
 static int leds_api_write_object_artnet(struct json_writer *w, struct leds_state *state)
 {
   return (
-        JSON_WRITE_MEMBER_UINT(w, "universe_start", state->config->artnet_universe_start)
+        JSON_WRITE_MEMBER_UINT(w, "net", state->config->artnet_net)
+    ||  JSON_WRITE_MEMBER_UINT(w, "subnet", state->config->artnet_subnet)
+    ||  JSON_WRITE_MEMBER_UINT(w, "universe_start", state->config->artnet_universe_start)
     ||  JSON_WRITE_MEMBER_UINT(w, "universe_count", state->artnet->universe_count)
     ||  JSON_WRITE_MEMBER_UINT(w, "universe_leds", state->artnet->universe_leds_count)
     ||  JSON_WRITE_MEMBER_UINT(w, "leds_segment", state->config->artnet_leds_segment)

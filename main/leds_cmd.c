@@ -38,6 +38,8 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
 
     if (state->artnet) {
       printf("\t%-20s:\n", "Art-Net");
+      printf("\t\t%-20s: %5u\n", "Network", config->artnet_net);
+      printf("\t\t%-20s: %5u\n", "Sub-Net", config->artnet_subnet);
       printf("\t\t%-20s: %5u\n", "Universe Start", config->artnet_universe_start);
       printf("\t\t%-20s: %5u\n", "Universe Count", state->artnet->universe_count);
       printf("\t\t%-20s: %5u\n", "Universe LEDs", state->artnet->universe_leds_count);

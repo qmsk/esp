@@ -2,6 +2,7 @@
 #include "artnet_state.h"
 
 #include <artnet.h>
+#include "artnet_config.h"
 #include <artnet_stats.h>
 #include <logging.h>
 #include <stats_print.h>
@@ -24,14 +25,24 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   size_t inputs_size = ARTNET_INPUTS_MAX, outputs_size = ARTNET_OUTPUTS_MAX;
   int err;
 
-  printf("Listen port=%u\n", options.port);
-  printf("Address net=%u subnet=%u\n", artnet_address_net(options.address), artnet_address_subnet(options.address));
-  printf("Metadata:\n");
-  printf("\tNetwork IPv4=%u.%u.%u.%u MAC=%02x:%02x:%02x:%02x:%02x:%02x\n",
-    options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3],
-    options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]
+  printf("Config:\n");
+  printf("\tIPv4: address=%u.%u.%u.%u\n",
+    options.metadata.ip_address[0],
+    options.metadata.ip_address[1],
+    options.metadata.ip_address[2],
+    options.metadata.ip_address[3]
   );
-  printf("\tName short=%s long=%s\n", options.metadata.short_name, options.metadata.long_name);
+  printf("\tMAC: address=%02x:%02x:%02x:%02x:%02x:%02x\n",
+    options.metadata.mac_address[0],
+    options.metadata.mac_address[1],
+    options.metadata.mac_address[2],
+    options.metadata.mac_address[3],
+    options.metadata.mac_address[4],
+    options.metadata.mac_address[5]
+  );
+  printf("\tUDP: port=%u\n", options.port);
+  printf("\tShort name: %s\n", options.metadata.short_name);
+  printf("\tLong name: %s\n", options.metadata.long_name);
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");
@@ -56,11 +67,11 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u: len %3u @ %d ms\n", i,
-      options->port, options->index,
+    printf("\t%2d: net %3u subnet %2u universe %2u <- %-16.16s: len %3u @ %d ms\n", i,
       artnet_address_net(options->address), artnet_address_subnet(options->address), artnet_address_universe(options->address),
+      options->name,
       state.len,
-      state.tick ? (tick - state.tick) / portTICK_RATE_MS : 0
+      state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );
   }
 
@@ -77,13 +88,11 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: port=%1d index=%3u @ net %3u subnet %2u universe %2u -> %16.16s[%3u]: seq %3u @ %d ms\n", i,
-      options->port, options->index,
+    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: seq %3u @ %d ms\n", i,
       artnet_address_net(options->address),
       artnet_address_subnet(options->address),
       artnet_address_universe(options->address),
       options->name,
-      options->index,
       state.seq,
       state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );

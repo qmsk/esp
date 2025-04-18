@@ -13,34 +13,23 @@
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
       </div>
 
-      <template v-if="artnet && artnet.config">
-        <h2>Config</h2>
+      <template v-if="artnet && artnet.info">
+        <h2>Info</h2>
         <dl>
           <dt>Port</dt>
-          <dd>{{ artnet.config.port }}</dd>
-
-          <dt>Net</dt>
-          <dd>{{ artnet.config.net }}</dd>
-
-          <dt>Subnet</dt>
-          <dd>{{ artnet.config.subnet }}</dd>
-        </dl>
-      </template>
-
-      <template v-if="artnet && artnet.metadata">
-        <h2>Metadata</h2>
-        <dl>
+          <dd>{{ artnet.info.port }}</dd>
+          
           <dt>IP</dt>
-          <dd>{{ artnet.metadata.ip_address }}</dd>
+          <dd>{{ artnet.info.ip_address }}</dd>
 
           <dt>MAC</dt>
-          <dd>{{ artnet.metadata.mac_address }}</dd>
+          <dd>{{ artnet.info.mac_address }}</dd>
 
           <dt>Short Name</dt>
-          <dd>{{ artnet.metadata.short_name }}</dd>
+          <dd>{{ artnet.info.short_name }}</dd>
 
           <dt>Long Name</dt>
-          <dd>{{ artnet.metadata.long_name }}</dd>
+          <dd>{{ artnet.info.long_name }}</dd>
         </dl>
       </template>
 
@@ -52,8 +41,7 @@
           </caption>
           <thead>
             <tr>
-              <th>Port</th>
-              <th>Index</th>
+              <th>Name</th>
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
@@ -63,8 +51,7 @@
           </thead>
           <tbody>
             <tr v-for="input in inputs">
-              <td>{{ input.port }}</td>
-              <td>{{ input.index }}</td>
+              <td>{{ input.name }}</td>
               <td>{{ input.net }}</td>
               <td>{{ input.subnet }}</td>
               <td>{{ input.universe }}</td>
@@ -83,8 +70,6 @@
         </caption>
           <thead>
             <tr>
-              <th>Port</th>
-              <th>Index</th>
               <th>Name</th>
               <th>Net</th>
               <th>Subnet</th>
@@ -95,8 +80,6 @@
           </thead>
           <tbody>
             <tr v-for="output in outputs">
-              <td>{{ output.port }}</td>
-              <td>{{ output.index }}</td>
               <td>{{ output.name }}</td>
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>

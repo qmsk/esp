@@ -2,6 +2,7 @@
 #include "dmx_config.h"
 #include "dmx_state.h"
 
+#include <artnet.h>
 #include <dmx_input_stats.h>
 #include <logging.h>
 #include <stats_print.h>
@@ -10,6 +11,8 @@
 
 int dmx_cmd_info(int argc, char **argv, void *ctx)
 {
+  TickType_t tick = xTaskGetTickCount();
+
   // inputs
   const struct dmx_input_config *input_config = &dmx_input_config;
   struct dmx_input_state *input_state = &dmx_input_state;
@@ -17,6 +20,20 @@ int dmx_cmd_info(int argc, char **argv, void *ctx)
   printf("dmx-input:\n");
   printf("\t%-20s: %s\n", "Enabled", input_config->enabled ? "true" : "false");
   printf("\t%-20s: %s\n", "Initialized", input_state->dmx_input ? "true" : "false");
+
+  if (input_state->artnet_input) {
+    const struct artnet_input_options *input_options = artnet_input_options(input_state->artnet_input);
+    struct artnet_input_state artnet_state = artnet_input_state(input_state->artnet_input);
+  
+    printf("\t%-20s: \n", "Art-Net");
+    printf("\t\t%-20s: net %u sub-net %u universe %u\n", "Address",
+      artnet_address_net(input_options->address),
+      artnet_address_subnet(input_options->address),
+      artnet_address_universe(input_options->address)
+    );
+    printf("\t\t%-20s: %u\n", "Length", artnet_state.len);
+    printf("\t\t%-20s: %d ms\n", "Tick", artnet_state.tick ? (tick - artnet_state.tick) * portTICK_RATE_MS : 0);
+  }
 
   // outputs
   for (int i = 0; i < DMX_OUTPUT_COUNT; i++) {
@@ -27,8 +44,18 @@ int dmx_cmd_info(int argc, char **argv, void *ctx)
     printf("\t%-20s: %s\n", "Enabled", output_config->enabled ? "true" : "false");
     printf("\t%-20s: %s\n", "Initialized", output_state->dmx_output ? "true" : "false");
 
-    if (!output_config->enabled || !output_state->dmx_output) {
-      continue;
+    if (output_state->artnet_output) {
+      const struct artnet_output_options *output_options = artnet_output_options(output_state->artnet_output);
+      struct artnet_output_state artnet_state = artnet_output_state(output_state->artnet_output);
+    
+      printf("\t%-20s: \n", "Art-Net");
+      printf("\t\t%-20s: net %u sub-net %u universe %u\n", "Address",
+        artnet_address_net(output_options->address),
+        artnet_address_subnet(output_options->address),
+        artnet_address_universe(output_options->address)
+      );
+      printf("\t\t%-20s: %u\n", "Seq", artnet_state.seq);
+      printf("\t\t%-20s: %d ms\n", "Tick", artnet_state.tick ? (tick - artnet_state.tick) * portTICK_RATE_MS : 0);
     }
   }
 

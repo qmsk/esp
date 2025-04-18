@@ -16,6 +16,7 @@
 #define ARTNET_UNIVERSE_MAX 15
 #define ARTNET_INDEX_MAX 255
 
+#define ARTNET_INPUT_NAME_MAX 16
 #define ARTNET_OUTPUT_NAME_MAX 16
 
 // limited to 20 by the available FreeRTOS event group bits
@@ -29,6 +30,7 @@
 // flag bit to force output sync
 #define ARTNET_OUTPUT_EVENT_SYNC_BIT 20
 
+// limited by ARTNET_INPUT_TASK_INDEX_BITS
 #define ARTNET_INPUTS_MAX 16
 #define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
 
@@ -39,9 +41,6 @@ struct artnet_output;
 struct artnet_options {
   // UDP used for listen()
   uint16_t port;
-
-  // all output ports must be within the same sub-net (lower 4 bits)
-  uint16_t address;
 
   // metadata used for poll reply, not listen()
   struct artnet_metadata {
@@ -73,40 +72,26 @@ struct artnet_dmx {
   uint8_t data[ARTNET_DMX_SIZE];
 };
 
-enum artnet_port {
-  ARTNET_PORT_1,
-  ARTNET_PORT_2,
-  ARTNET_PORT_3,
-  ARTNET_PORT_4,
-  ARTNET_PORT_COUNT
-};
-
 struct artnet_input_options {
-  /* ArtNet physical input port 1-4 */
-  enum artnet_port port;
-
-  /* Output index, used for discovery bind index and task notification bits */
-  unsigned index;
-
+  /* Human-friendly name */
+  char name[ARTNET_OUTPUT_NAME_MAX];
+  
   /* ArtNet net/subnet/uni address, must match artnet_options.address */
   uint16_t address;
 };
 
 struct artnet_output_options {
-  /* ArtNet physical output port 1-4 */
-  enum artnet_port port;
-
-  /* Output index, used for discovery bind index and task notification bits */
-  unsigned index;
-
   /* Human-friendly name */
   char name[ARTNET_OUTPUT_NAME_MAX];
 
   /* ArtNet net/subnet/uni address, should match artnet_options.address for discovery */
   uint16_t address;
 
-  /* Task associated with output, will receive task notifications on updates */
+  /* Set event group bits on DMX updates */
   EventGroupHandle_t event_group;
+
+  /* Only bits matching ARTNET_OUTPUT_EVENT_INDEX_BITS are supported */
+  EventBits_t event_bits;
 };
 
 struct artnet_input_state {
@@ -130,10 +115,25 @@ struct artnet_output_state {
  *
  * NOTE: artnet_address() will interpret universes >= 16 as overflowing into the next net/subnet.
  */
-uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni);
-uint16_t artnet_address_net(uint16_t address);
-uint16_t artnet_address_subnet(uint16_t address);
-uint16_t artnet_address_universe(uint16_t address);
+static inline uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
+{
+  return (((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0)) + uni;
+}
+
+static inline uint16_t artnet_address_net(uint16_t address)
+{
+  return (address & 0x7F00) >> 8;
+}
+
+static inline uint16_t artnet_address_subnet(uint16_t address)
+{
+  return (address & 0x00F0) >> 4;
+}
+
+static inline uint16_t artnet_address_universe(uint16_t address)
+{
+  return (address & 0x000F);
+}
 
 int artnet_new(struct artnet **artnetp, struct artnet_options options);
 
@@ -158,6 +158,16 @@ int artnet_set_metadata(struct artnet *artnet, const struct artnet_metadata *met
  */
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options);
 
+/**
+ * Return pointer to stored copy of options used for artnet input.
+ */
+const struct artnet_input_options *artnet_input_options(struct artnet_input *artnet_input);
+
+/**
+ * Return current state information for input.
+ */
+struct artnet_input_state artnet_input_state(struct artnet_input *artnet_input);
+
 /** Processs input DMX.
  *
  * dmx->len must be set correctly.
@@ -181,6 +191,16 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx);
  * NOT concurrent-safe, must be called between artnet_new() and artnet_main()!
  */
 int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options);
+
+/**
+ * Return pointer to stored copy of options used for artnet output.
+ */
+const struct artnet_output_options *artnet_output_options(struct artnet_output *artnet_output);
+
+/**
+ * Return current state information for output.
+ */
+struct artnet_output_state artnet_output_state(struct artnet_output *artnet_output);
 
 /*
  * Read updated `struct artnet_dmx` from output. Call when artnet_output_wait() indicates that a new packet is available.

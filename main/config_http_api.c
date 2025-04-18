@@ -68,13 +68,19 @@ static int config_api_write_configtab_values(struct json_writer *w, const struct
 
 static int config_api_write_configtab_type_members(struct json_writer *w, const struct configtab *tab, const char *type)
 {
-  return (
-        JSON_WRITE_MEMBER_STRING(w, "type", type)
-    || (tab->count
-          ? JSON_WRITE_MEMBER_OBJECT(w, "values", JSON_WRITE_MEMBER_ARRAY(w, type, config_api_write_configtab_values(w, tab)))
-          : JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER(w, type, config_api_write_configtab_value(w, tab, 0)))
-       )
-  );
+  int err = 0;
+
+  if ((err = JSON_WRITE_MEMBER_STRING(w, "type", type))) {
+    return err;
+  }
+
+  if (tab->migrated) {
+    return 0;
+  } else if (tab->count) {
+    return JSON_WRITE_MEMBER_OBJECT(w, "values", JSON_WRITE_MEMBER_ARRAY(w, type, config_api_write_configtab_values(w, tab)));
+  } else {
+    return JSON_WRITE_MEMBER_OBJECT(w, "value", JSON_WRITE_MEMBER(w, type, config_api_write_configtab_value(w, tab, 0)));
+  }
 }
 
 static int config_api_write_configtab_members_uint16(struct json_writer *w, const struct configtab *tab)
@@ -181,6 +187,7 @@ static int config_api_write_configtab(struct json_writer *w, const struct config
     ||  (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0)
     ||  JSON_WRITE_MEMBER_BOOL(w, "readonly", tab->readonly)
     ||  JSON_WRITE_MEMBER_BOOL(w, "secret", tab->secret)
+    ||  JSON_WRITE_MEMBER_BOOL(w, "migrated", tab->migrated)
     ||  (tab->count ? JSON_WRITE_MEMBER_UINT(w, "count", *tab->count) : 0)
     ||  (tab->size ? JSON_WRITE_MEMBER_UINT(w, "size", tab->size) : 0)
     ||  config_api_write_configtab_members(w, tab)

@@ -63,6 +63,8 @@ struct __attribute__((packed)) artnet_packet_poll {
   uint8_t priority;
 };
 
+#define ARTNET_POLL_REPLY_BIND_INDEX_MAX 255
+
 struct __attribute__((packed)) artnet_packet_poll_reply {
   uint8_t id[8];
   uint16_t opcode;

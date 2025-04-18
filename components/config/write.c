@@ -7,6 +7,11 @@ static int configtab_write(const struct configmod *mod, const struct configtab *
 {
   unsigned count = configtab_count(tab);
 
+  if (tab->migrated) {
+    LOG_DEBUG("type=%u name=%s migrate", tab->type, tab->name);
+    return 0;
+  }
+
   LOG_DEBUG("type=%u name=%s count=%u", tab->type, tab->name, count);
 
   for (unsigned index = 0; index < count; index++) {

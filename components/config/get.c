@@ -22,6 +22,11 @@ int config_get_enum(const struct configmod *mod, const struct configtab *tab, un
 
 int config_get(const struct configmod *mod, const struct configtab *tab, unsigned index, char *buf, size_t size)
 {
+  if (tab->migrated) {
+    LOG_ERROR("migrated name=%s", tab->name);
+    return -1;
+  }
+  
   if (index >= configtab_count(tab)) {
     LOG_ERROR("invalid index=%u for count=%u", index, configtab_count(tab));
   }

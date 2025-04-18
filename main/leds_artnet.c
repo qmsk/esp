@@ -412,18 +412,26 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
 
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config)
 {
+  if (!artnet) {
+    LOG_ERROR("artnet disabled");
+    return -1;
+  }
+
   for (unsigned i = 0; i < state->artnet->universe_count; i++) {
+    unsigned artnet_universe = config->artnet_universe_start + i * config->artnet_universe_step;
+
     struct artnet_output_options options = {
-      .port = (enum artnet_port) (state->index), // use ledsX index as output port
-      .index = i,
-      .address = config->artnet_universe_start + i * config->artnet_universe_step, // net/subnet is set by add_artnet_output()
+      .address = artnet_address(config->artnet_net, config->artnet_subnet, artnet_universe),
       .event_group = state->event_group,
+      .event_bits = (1 << i),
     };
 
     snprintf(options.name, sizeof(options.name), "leds%u", state->index + 1);
+  
+    LOG_INFO("name=%s address=%04x", options.name, options.address);
 
-    if (add_artnet_output(&state->artnet->outputs[i], options)) {
-      LOG_ERROR("add_artnet_output");
+    if (artnet_add_output(artnet, &state->artnet->outputs[i], options)) {
+      LOG_ERROR("artnet_add_output");
       return -1;
     }
   }

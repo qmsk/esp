@@ -3,26 +3,6 @@
 #include <logging.h>
 #include <stdlib.h>
 
-uint16_t artnet_address(uint16_t net, uint16_t subnet, uint16_t uni)
-{
-  return (((net << 8) & 0x7F00) | ((subnet << 4) & 0x00F0)) + uni;
-}
-
-uint16_t artnet_address_net(uint16_t address)
-{
-  return (address & 0x7F00) >> 8;
-}
-
-uint16_t artnet_address_subnet(uint16_t address)
-{
-  return (address & 0x00F0) >> 4;
-}
-
-uint16_t artnet_address_universe(uint16_t address)
-{
-  return (address & 0x000F);
-}
-
 void artnet_init_stats(struct artnet *artnet)
 {
   stats_timer_init(&artnet->stats.recv);
@@ -40,11 +20,6 @@ void artnet_init_stats(struct artnet *artnet)
 int artnet_init(struct artnet *artnet, struct artnet_options options)
 {
   int err;
-
-  if (options.address & 0xF) {
-    LOG_ERROR("address=%04X has universe bits set", options.address);
-    return -1;
-  }
 
   if (options.inputs > ARTNET_INPUTS_MAX) {
     LOG_ERROR("inputs=%u exceeds max=%u", options.inputs, ARTNET_INPUTS_MAX);

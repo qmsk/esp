@@ -47,18 +47,23 @@ int init_dmx_input()
 
   // artnet
   if (config->artnet_enabled) {
-    struct artnet_input_options artnet_options = {
-      .port         = ARTNET_PORT_1,
-      .index        = 0,
 
-      .address      = config->artnet_universe,
+    struct artnet_input_options artnet_options = {
+      .address      = artnet_address(config->artnet_net, config->artnet_subnet, config->artnet_universe),
     };
     int err;
 
-    LOG_INFO("dmx-input: artnet port=%u universe=%u", artnet_options.port, artnet_options.address);
+    snprintf(artnet_options.name, sizeof(artnet_options.name), "dmx-input");
 
-    if ((err = add_artnet_input(&state->artnet_input, artnet_options))) {
-      LOG_ERROR("add_artnet_input");
+    if (!artnet) {
+      LOG_ERROR("artnet disabled");
+      return -1;
+    }
+
+    LOG_INFO("artnet input address=%04x", artnet_options.address);
+
+    if ((err = artnet_add_input(artnet, &state->artnet_input, artnet_options))) {
+      LOG_ERROR("artnet_add_input");
       return err;
     }
   }

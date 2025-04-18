@@ -50,8 +50,6 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
   memcpy(&reply->bind_ip, artnet->options.metadata.ip_address, sizeof(reply->bind_ip));
 
   reply->port_number = artnet_pack_u16lh(artnet->options.port);
-  reply->net_switch = (artnet->options.address & 0x7F00) >> 8;
-  reply->sub_switch = (artnet->options.address & 0x00F0) >> 4;
 
   strncpy((char *) reply->short_name, artnet->options.metadata.short_name, sizeof(reply->short_name));
   strncpy((char *) reply->long_name, artnet->options.metadata.long_name, sizeof(reply->long_name));
@@ -60,70 +58,74 @@ int artnet_send_poll_reply(struct artnet *artnet, struct artnet_sendrecv *send)
 
   reply->status2 = ARTNET_STATUS2_ARTNET3_SUPPORT | ARTNET_STATUS2_DHCP_SUPPORT;
 
-  // per-bind fields
-  for (unsigned index = 0; index <= ARTNET_INDEX_MAX; index++) {
-    uint16_t num_ports = 0;
+  // per-input/output fields
+  unsigned bind_index = 0;
+  struct artnet_input *input_port = artnet->input_ports;
+  struct artnet_output *output_port = artnet->output_ports;
+
+  while (input_port < artnet->input_ports + artnet->input_count || output_port < artnet->output_ports + artnet->output_count) {
+    uint16_t ports_address = 0;
+    uint16_t input_ports = 0, output_ports = 0;
+
+    if (output_port < artnet->output_ports + artnet->output_count) {
+      ports_address = (output_port->options.address & 0x7FF0);
+    }
+    if (input_port < artnet->input_ports + artnet->input_count) {
+      ports_address = (input_port->options.address & 0x7FF0);
+    }
 
     memset(reply->port_types, 0, sizeof(reply->port_types));
     memset(reply->good_output, 0, sizeof(reply->good_output));
     memset(reply->good_input, 0, sizeof(reply->good_input));
     memset(reply->sw_out, 0, sizeof(reply->sw_out));
 
-    for (struct artnet_input *input = artnet->input_ports; input < artnet->input_ports + artnet->input_count; input++) {
-      if (input->options.index != index) {
-        continue;
+    while (input_port < artnet->input_ports + artnet->input_count) {
+      if ((input_port->options.address & 0x7FF0) != ports_address) {
+        break;
       }
 
-      if ((input->options.address & 0x7FF0) != artnet->options.address) {
-        LOG_WARN("skip input address=%04x does not match artnet address=%04x", input->options.address, artnet->options.address);
-        continue;
+      if (input_ports >= 4) {
+        break;
       }
 
-      if (input->options.port >= 4) {
-        LOG_WARN("skip input port=%d index=%u", input->options.port, input->options.index);
-        continue;
-      } else if (input->options.port >= num_ports) {
-        num_ports = input->options.port + 1;
-      }
+      reply->port_types[input_ports] |= ARTNET_PORT_TYPE_INPUT;
+      reply->good_input[input_ports] = 0;
+      reply->sw_in[input_ports] = (input_port->options.address & 0x000F);
 
-      reply->port_types[input->options.port] |= ARTNET_PORT_TYPE_INPUT;
-      reply->good_input[input->options.port] = 0;
-      reply->sw_in[input->options.port] = (input->options.address & 0x000F);
+      input_ports++;
+      input_port++;
     }
 
-    for (struct artnet_output *output = artnet->output_ports; output < artnet->output_ports + artnet->output_count; output++) {
-      if (output->options.index != index) {
-        continue;
+    while (output_port < artnet->output_ports + artnet->output_count) {
+      if ((output_port->options.address & 0x7FF0) != ports_address) {
+        break;
       }
 
-      if ((output->options.address & 0x7FF0) != artnet->options.address) {
-        LOG_DEBUG("skip output address=%04x does not match artnet address=%04x", output->options.address, artnet->options.address);
-        continue;
+      if (output_ports >= 4) {
+        break;
       }
 
-      if (output->options.port >= 4) {
-        LOG_DEBUG("skip output port=%d index=%u", output->options.port, output->options.index);
-        continue;
-      } else if (output->options.port >= num_ports) {
-        num_ports = output->options.port + 1;
-      }
+      reply->port_types[output_ports] |= ARTNET_PORT_TYPE_OUTPUT;
+      reply->good_output[output_ports] = ARTNET_OUTPUT_TRANSMITTING;
+      reply->sw_out[output_ports] = (output_port->options.address & 0x000F);
 
-      reply->port_types[output->options.port] |= ARTNET_PORT_TYPE_OUTPUT;
-      reply->good_output[output->options.port] = ARTNET_OUTPUT_TRANSMITTING;
-      reply->sw_out[output->options.port] = (output->options.address & 0x000F);
+      output_ports++;
+      output_port++;
     }
 
-    reply->num_ports = artnet_pack_u16hl(num_ports);
-    reply->bind_index = index + 1;
-
-    if (index > 0 && num_ports == 0) {
-      // no more ports
-      break;
-    }
+    reply->net_switch = (ports_address & 0x7F00) >> 8;
+    reply->sub_switch = (ports_address & 0x00F0) >> 4;
+    reply->num_ports = artnet_pack_u16hl(output_ports > input_ports ? output_ports : input_ports);
+    reply->bind_index = bind_index++;
 
     if ((err = artnet_send(artnet->socket, send))) {
       LOG_ERROR("artnet_send");
       return err;
+    }
+
+    if (bind_index >= ARTNET_POLL_REPLY_BIND_INDEX_MAX) {
+      LOG_WARN("bind_index=%d overflow", bind_index);
+      break;
     }
   }
 

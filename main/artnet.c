@@ -84,13 +84,12 @@ int init_artnet()
   const struct artnet_config *config = &artnet_config;
   struct artnet_options options = {
     .port     = ARTNET_UDP_PORT,
-    .address  = artnet_address(config->net, config->subnet, 0),
     .inputs   = count_artnet_inputs(),
     .outputs  = count_artnet_outputs(),
   };
   int err;
 
-  if (!artnet_config.enabled) {
+  if (!config->enabled) {
     LOG_INFO("disabled");
     return 0;
   }
@@ -100,14 +99,13 @@ int init_artnet()
     return err;
   }
 
-  LOG_INFO("port=%u address=%04x inputs=%u outputs=%u",
+  LOG_INFO("options port=%u inputs=%u outputs=%u",
     options.port,
-    options.address,
     options.inputs,
     options.outputs
   );
-  LOG_INFO("ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
-  LOG_INFO("mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);
+  LOG_INFO("metadata ip_address=%u.%u.%u.%u", options.metadata.ip_address[0], options.metadata.ip_address[1], options.metadata.ip_address[2], options.metadata.ip_address[3]);
+  LOG_INFO("metadata mac_address=%02x:%02x:%02x:%02x:%02x:%02x", options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]);
 
   if ((err = artnet_new(&artnet, options))) {
     LOG_ERROR("artnet_new");
@@ -115,37 +113,6 @@ int init_artnet()
   }
 
   return 0;
-}
-
-int add_artnet_input(struct artnet_input **inputp, struct artnet_input_options options)
-{
-  const struct artnet_config *config = &artnet_config;
-
-  if (!artnet) {
-    LOG_ERROR("artnet disabled");
-    return -1;
-  }
-
-  options.address = artnet_address(config->net, config->subnet, options.address);
-
-  return artnet_add_input(artnet, inputp, options);
-}
-
-int add_artnet_output(struct artnet_output **outputp, struct artnet_output_options options)
-{
-  const struct artnet_config *config = &artnet_config;
-
-  if (!artnet) {
-    LOG_ERROR("artnet disabled");
-    return -1;
-  }
-
-  options.address = artnet_address(config->net, config->subnet, options.address);
-
-
-  LOG_INFO("port=%d name=%s index=%u address=%04x", options.port, options.name, options.index, options.address);
-
-  return artnet_add_output(artnet, outputp, options);
 }
 
 // task

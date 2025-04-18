@@ -15,7 +15,7 @@
               <p v-for="line in splitlines(mod.description)">{{ line }}</p>
             </div>
 
-            <template v-for="tab in mod.table">
+            <template v-for="tab in mod.table" v-if="!tab.migrated">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
               <div class="tab-values">
                 <template v-for="value in fieldValues(mod, tab)">

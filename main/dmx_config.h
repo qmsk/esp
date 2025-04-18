@@ -33,6 +33,8 @@ struct dmx_input_config {
   uint16_t gpio_pin;
 
   bool artnet_enabled;
+  uint16_t artnet_net;
+  uint16_t artnet_subnet;
   uint16_t artnet_universe;
 };
 
@@ -45,6 +47,8 @@ struct dmx_output_config {
   unsigned gpio_count;
 
   bool artnet_enabled;
+  uint16_t artnet_net;
+  uint16_t artnet_subnet;
   uint16_t artnet_universe;
 };
 

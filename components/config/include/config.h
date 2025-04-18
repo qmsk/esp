@@ -50,6 +50,8 @@ struct configtab {
 
   bool readonly;
   bool secret;
+  bool migrated; // read -> migrate, no write
+  void *migrate_ctx;
 
   union {
     struct {
@@ -59,6 +61,8 @@ struct configtab {
       uint16_t max;
 
       uint16_t default_value;
+
+      int (*migrate_func)(uint16_t value, void *ctx);
     } uint16_type;
 
     struct {
@@ -70,6 +74,8 @@ struct configtab {
     struct {
       bool *value;
       bool default_value;
+
+      int (*migrate_func)(bool value, void *ctx);
     } bool_type;
 
     struct {

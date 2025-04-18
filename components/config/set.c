@@ -6,6 +6,11 @@
 
 int config_clear(const struct configmod *mod, const struct configtab *tab)
 {
+  if (tab->migrated) {
+    LOG_WARN("%s.%s: migrated", mod->name, tab->name);
+    return -1;
+  }
+
   if (tab->readonly) {
     LOG_WARN("%s.%s: readonly", mod->name, tab->name);
     return -1;
@@ -45,6 +50,65 @@ int config_clear(const struct configmod *mod, const struct configtab *tab)
   return 0;
 }
 
+static int config_set_string(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+{
+  if (tab->migrated) {
+    LOG_FATAL("TODO: migrated STRING");
+  }
+  
+  if (snprintf(&tab->string_type.value[index * tab->string_type.size], tab->string_type.size, "%s", str) >= tab->string_type.size) {
+    return -1;
+  }
+
+  return 0;
+}
+
+static int config_set_uint16(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+{
+  unsigned value;
+
+  if (sscanf(str, "%u", &value) <= 0) {
+    return -1;
+  }
+  
+  if (value > UINT16_MAX) {
+    return -1;
+  }
+  
+  if (tab->uint16_type.max && value > tab->uint16_type.max) {
+    return -1;
+  }
+  
+  if (tab->migrated) {
+    return tab->uint16_type.migrate_func(value, tab->migrate_ctx);
+  }
+
+  tab->uint16_type.value[index] = (uint16_t) value;
+
+  return 0;
+}
+
+static int config_set_bool(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *str)
+{
+  bool value;
+
+  if (strcmp(str, "true") == 0) {
+    value = true;
+  } else if (strcmp(str, "false") == 0) {
+    value = false;
+  } else {
+    return -1;
+  }
+
+  if (tab->migrated) {
+    return tab->bool_type.migrate_func(value, tab->migrate_ctx);
+  }
+
+  tab->bool_type.value[index] = value;
+
+  return 0;
+}
+
 int config_set_enum(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *value)
 {
   const struct config_enum *e;
@@ -52,6 +116,10 @@ int config_set_enum(const struct configmod *mod, const struct configtab *tab, un
   if (config_enum_lookup(tab->enum_type.values, value, &e)) {
     LOG_WARN("%s.%s: unknown value: %s", mod->name, tab->name, value);
     return -1;
+  }
+
+  if (tab->migrated) {
+    LOG_FATAL("TODO: migrated ENUM");
   }
 
   tab->enum_type.value[index] = e->value;
@@ -62,7 +130,11 @@ int config_set_enum(const struct configmod *mod, const struct configtab *tab, un
 int config_set_file(const struct configmod *mod, const struct configtab *tab, unsigned index, const char *value)
 {
   int err;
-
+  
+  if (tab->migrated) {
+    LOG_FATAL("TODO: migrated FILE");
+  }
+  
   if (!*value) {
     // empty
   } else if ((err = config_file_check(tab->file_type.paths, value)) < 0) {
@@ -83,7 +155,11 @@ int config_set_file(const struct configmod *mod, const struct configtab *tab, un
 int config_set(const struct configmod *mod, const struct configtab *tab, const char *value)
 {
   unsigned index;
-  unsigned uvalue;
+
+  if (tab->readonly) {
+    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
+    return -1;
+  }
 
   if (!tab->count) {
     index = 0;
@@ -94,43 +170,21 @@ int config_set(const struct configmod *mod, const struct configtab *tab, const c
     return -1;
   }
 
-  LOG_DEBUG("type=%u name=%s index=%u", tab->type, tab->name, index);
-
-  if (tab->readonly) {
-    LOG_WARN("%s.%s: readonly", mod->name, tab->name);
-    return -1;
+  if (tab->migrated) {
+    LOG_WARN("%s.%s: migrate", mod->name, tab->name);
   }
+
+  LOG_DEBUG("type=%u name=%s index=%u", tab->type, tab->name, index);
 
   switch (tab->type) {
     case CONFIG_TYPE_STRING:
-      if (snprintf(&tab->string_type.value[index * tab->string_type.size], tab->string_type.size, "%s", value) >= tab->string_type.size) {
-        return -1;
-      } else {
-        break;
-      }
+      return config_set_string(mod, tab, index, value);
 
     case CONFIG_TYPE_UINT16:
-      if (sscanf(value, "%u", &uvalue) <= 0) {
-        return -1;
-      } else if (uvalue > UINT16_MAX) {
-        return -1;
-      } else if (tab->uint16_type.max && uvalue > tab->uint16_type.max) {
-        return -1;
-      } else {
-        tab->uint16_type.value[index] = (uint16_t) uvalue;
-        break;
-      }
+      return config_set_uint16(mod, tab, index, value);
 
     case CONFIG_TYPE_BOOL:
-      if (strcmp(value, "true") == 0) {
-        tab->bool_type.value[index] = true;
-      } else if (strcmp(value, "false") == 0) {
-        tab->bool_type.value[index] = false;
-      } else {
-        return -1;
-      }
-
-      break;
+      return config_set_bool(mod, tab, index, value);
 
     case CONFIG_TYPE_ENUM:
       return config_set_enum(mod, tab, index, value);

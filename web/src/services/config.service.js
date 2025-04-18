@@ -17,7 +17,9 @@ export default class ConfigService {
         let modname = mod.index ? mod.name + mod.index.toString() : mod.name;
         let name = '[' + modname + ']' + tab.name;
 
-        if (tab.count !== undefined) {
+        if (tab.migrated) {
+          // skip
+        } else if (tab.count !== undefined) {
           // clear to override existing values
           data.append(name, "");
 

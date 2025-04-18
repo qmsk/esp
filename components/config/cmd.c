@@ -64,7 +64,7 @@ static int print_configtab_file(const struct config_file_path *p, const char *na
 static void print_configtab(const struct configmod *mod, const struct configtab *tab)
 {
   unsigned count = configtab_count(tab);
-
+  
   if (tab->count) {
     printf(CLI_FMT_COMMENT "# %s[%u/%u] = ", tab->name, count, tab->size);
   } else {
@@ -116,10 +116,18 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
       break;
   }
 
+  if (tab->migrated) {
+    printf(" ! migrated");
+  }
+
   printf(CLI_FMT_RESET "\n");
 
   if (tab->description) {
     print_comment(tab->description);
+  }
+
+  if (tab->migrated) {
+    return;
   }
 
   switch(tab->type) {

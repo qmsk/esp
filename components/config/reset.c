@@ -6,6 +6,10 @@
 
 int configtab_reset(const struct configtab *tab)
 {
+  if (tab->migrated) {
+    return 0;
+  }
+  
   if (tab->count) {
     *tab->count = 0;
   }

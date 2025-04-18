@@ -24,6 +24,11 @@ static int config_print_enum(const struct configmod *mod, const struct configtab
 
 int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file)
 {
+  if (tab->migrated) {
+    LOG_ERROR("type=%u name=%s migrated", tab->type, tab->name);
+    return -1;
+  }
+
   if (index >= configtab_count(tab)) {
     LOG_ERROR("invalid index=%u for count=%u", index, configtab_count(tab));
   }

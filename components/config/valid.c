@@ -11,17 +11,14 @@ int configtab_valid(const struct configmod *module, unsigned index, const struct
   }
 
   if ((err = tab->validate_func(tab->ctx)) < 0) {
-    LOG_ERROR("%s%d.%s: failed", module->name, index, tab->name);
-    return err;
+    LOG_DEBUG("%s%d.%s: failed", module->name, index, tab->name);
   } else if (err) {
-    LOG_WARN("%s%d.%s: invalid", module->name, index, tab->name);
-    return err;
+    LOG_DEBUG("%s%d.%s: invalid", module->name, index, tab->name);
   } else {
-    LOG_INFO("%s%d.%s: ok", module->name, index, tab->name);
-    return err;
+    LOG_DEBUG("%s%d.%s: ok", module->name, index, tab->name);
   }
 
-  return 0;
+  return err;
 }
 
 int configmod_valid(const struct configmod *module, unsigned index, const struct configtab *table)
@@ -30,9 +27,10 @@ int configmod_valid(const struct configmod *module, unsigned index, const struct
 
   for (const struct configtab *tab = table; tab->name; tab++) {
     if ((err = configtab_valid(module, index, tab)) < 0) {
-      LOG_ERROR("configtab_valid %s%d.%s", module->name, index, tab->name);
+      LOG_ERROR("%s%d.%s", module->name, index, tab->name);
       return err;
     } else if (err) {
+      LOG_WARN("%s%d.%s", module->name, index, tab->name);
       ret = err;
     }
   }

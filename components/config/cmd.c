@@ -10,17 +10,23 @@
   #define CLI_FMT_RESET "\033[0m"
 
   #define CLI_FMT_COLOR(code)   "\033[0;" code "m"
+  #define CLI_FMT_COLOR_BLACK   "30"
+  #define CLI_FMT_COLOR_RED     "31"
+  #define CLI_FMT_COLOR_GREEN   "32"
   #define CLI_FMT_COLOR_YELLOW  "33"
   #define CLI_FMT_COLOR_BLUE    "34"
   #define CLI_FMT_COLOR_MAGENTA "35"
   #define CLI_FMT_COLOR_CYAN    "36"
+  #define CLI_FMT_COLOR_GREY    "37"
   #define CLI_FMT_COLOR_DEFAULT "39"
 
   #define CLI_FMT_COMMENT   CLI_FMT_COLOR(CLI_FMT_COLOR_BLUE)
   #define CLI_FMT_SECTION   CLI_FMT_COLOR(CLI_FMT_COLOR_MAGENTA)
   #define CLI_FMT_NAME      CLI_FMT_COLOR(CLI_FMT_COLOR_CYAN)
-  #define CLI_FMT_SEP       CLI_FMT_COLOR(CLI_FMT_COLOR_YELLOW)
+  #define CLI_FMT_SEP       CLI_FMT_COLOR(CLI_FMT_COLOR_MAGENTA)
   #define CLI_FMT_VALUE     CLI_FMT_COLOR(CLI_FMT_COLOR_DEFAULT)
+  #define CLI_FMT_ERROR     CLI_FMT_COLOR(CLI_FMT_COLOR_RED)
+  #define CLI_FMT_WARNING   CLI_FMT_COLOR(CLI_FMT_COLOR_YELLOW)
 #else
   #define CLI_FMT_RESET ""
   #define CLI_FMT_COMMENT ""
@@ -28,6 +34,8 @@
   #define CLI_FMT_NAME ""
   #define CLI_FMT_SEP ""
   #define CLI_FMT_VALUE ""
+  #define CLI_FMT_ERROR ""
+  #define CLI_FMT_WARNING ""
 #endif
 
 static void print_comment(const char *comment)
@@ -61,9 +69,10 @@ static int print_configtab_file(const struct config_file_path *p, const char *na
   return 0;
 }
 
-static void print_configtab(const struct configmod *mod, const struct configtab *tab)
+static void print_configtab(const struct configmod *mod, unsigned index, const struct configtab *tab)
 {
   unsigned count = configtab_count(tab);
+  int err;
   
   if (tab->count) {
     printf(CLI_FMT_COMMENT "# %s[%u/%u] = ", tab->name, count, tab->size);
@@ -130,6 +139,12 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
     return;
   }
 
+  if ((err = configtab_valid(mod, index, tab)) < 0) {
+    printf(CLI_FMT_ERROR "! " CLI_FMT_RESET "\n");
+  } else if (err) {
+    printf(CLI_FMT_WARNING "? " CLI_FMT_RESET "\n");
+  }
+
   switch(tab->type) {
     case CONFIG_TYPE_FILE:
       config_file_walk(tab->file_type.paths, print_configtab_file, NULL);
@@ -165,7 +180,7 @@ static void print_configmod(const struct configmod *mod, unsigned index, const s
   }
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
-    print_configtab(mod, tab);
+    print_configtab(mod, index, tab);
   }
 
   printf("\n");

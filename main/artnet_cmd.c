@@ -19,7 +19,6 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return 1;
   }
 
-  const struct artnet_config *config = &artnet_config;
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
@@ -33,7 +32,6 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     options.metadata.mac_address[0], options.metadata.mac_address[1], options.metadata.mac_address[2], options.metadata.mac_address[3], options.metadata.mac_address[4], options.metadata.mac_address[5]
   );
   printf("\tName short=%s long=%s\n", options.metadata.short_name, options.metadata.long_name);
-  printf("Config: net=%u subnet=%u\n", config->net, config->subnet);
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "leds.h"
 #include "i2c_config.h"
 
 #include <config.h>

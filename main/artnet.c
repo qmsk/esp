@@ -89,7 +89,7 @@ int init_artnet()
   };
   int err;
 
-  if (!artnet_config.enabled) {
+  if (!config->enabled) {
     LOG_INFO("disabled");
     return 0;
   }
@@ -99,7 +99,6 @@ int init_artnet()
     return err;
   }
 
-  LOG_INFO("config net=%d subnet=%d", config->net, config->subnet);
   LOG_INFO("options port=%u inputs=%u outputs=%u",
     options.port,
     options.inputs,
@@ -114,38 +113,6 @@ int init_artnet()
   }
 
   return 0;
-}
-
-int add_artnet_input(struct artnet_input **inputp, struct artnet_input_options options)
-{
-  const struct artnet_config *config = &artnet_config;
-
-  if (!artnet) {
-    LOG_ERROR("artnet disabled");
-    return -1;
-  }
-
-  options.address = artnet_address(config->net, config->subnet, options.address);
-
-  LOG_INFO("address=%04x", options.address);
-
-  return artnet_add_input(artnet, inputp, options);
-}
-
-int add_artnet_output(struct artnet_output **outputp, struct artnet_output_options options)
-{
-  const struct artnet_config *config = &artnet_config;
-
-  if (!artnet) {
-    LOG_ERROR("artnet disabled");
-    return -1;
-  }
-
-  options.address = artnet_address(config->net, config->subnet, options.address);
-
-  LOG_INFO("name=%s address=%04x", options.name, options.address);
-
-  return artnet_add_output(artnet, outputp, options);
 }
 
 // task

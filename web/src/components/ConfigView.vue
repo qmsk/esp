@@ -9,8 +9,19 @@
       <progress v-show="loading">Loading...</progress>
       <template v-if="config">
         <form id="config" method="post" @submit.prevent="submit">
-          <fieldset v-for="mod in config.modules" :key="modName(mod)">
-            <legend>{{ modName(mod) }}</legend>
+          <fieldset v-for="mod in config.modules" :key="modName(mod)" :class="{ collapse: true, open: showModule(mod), close: !showModule(mod) }">
+            <legend @click="toggleModule(mod)">
+              <span>{{ modName(mod) }}</span>
+
+              <button type="button">
+                <template v-if="showModule(mod)">
+                  -
+                </template>
+                <template v-else>
+                  +
+                </template>
+              </button>
+            </legend>
             <div class="module-description" v-if="mod.description">
               <p v-for="line in splitlines(mod.description)">{{ line }}</p>
             </div>
@@ -114,6 +125,7 @@ export default {
     configErrors: null,
 
     // 
+    showModules: {},
     showDescriptions: {},
 
     // 
@@ -216,6 +228,15 @@ export default {
       }
     },
 
+    toggleModule(mod) {
+      let name = this.modName(mod);
+
+      if (this.showModules[name]) {
+        this.$set(this.showModules, name, false);
+      } else {
+        this.$set(this.showModules, name, true);
+      }
+    },
     toggleDescription(mod, tab) {
       let name = this.fieldName(mod, tab);
 
@@ -224,6 +245,11 @@ export default {
       } else {
         this.$set(this.showDescriptions, name, true);
       }
+    },
+    showModule(mod) {
+      let name = this.modName(mod);
+
+      return this.showModules[name];
     },
     showDescription(mod, tab) {
       let name = this.fieldName(mod, tab);

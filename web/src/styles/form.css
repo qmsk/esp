@@ -48,14 +48,52 @@ fieldset {
   grid-gap: 1em;
 }
 
+fieldset.collapse.close {
+  border: 1px solid #0000;
+}
+
+fieldset.collapse.close > * {
+  display: none;
+}
+
+fieldset.collapse.close legend {
+  display: flex;
+}
+
 fieldset legend {
   margin: 0.5em 0em;
   padding: 0.5em;
 
   background-color: #888;
   color: #111;
+
   font-size: 2em;
   font-weight: bold;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+fieldset legend span {
+
+}
+
+fieldset legend button {
+  width: 1.8em;
+  height: 1.8em;
+  
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 1em;
+
+  font-size: 1em;
+}
+
+fieldset legend button:hover {
+  background: #ddd;
 }
 
 /* TODO: stretch background, vertically align content? */

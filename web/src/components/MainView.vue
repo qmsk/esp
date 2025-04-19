@@ -228,6 +228,9 @@
             holdTimeout="5000"
             releaseAction="releaseConfigButton"
           ></UserButton>
+          <div class="user-leds-state">{{ status.config.state }}</div>
+          <div class="user-leds-timestamp" v-if="status.config.tick">{{ tickToDate(status.config.tick) | timestamp }}</div>
+          <div class="user-leds-interval" v-if="status.config.tick_ms">{{ status.config.tick_ms | interval('ms', 's') }}</div>
         </div>
 
         <div id="user-test" class="user-item">

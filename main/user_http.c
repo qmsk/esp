@@ -1,6 +1,7 @@
-  #include "user.h"
+#include "user.h"
 #include "user_leds_state.h"
 #include "user_log.h"
+#include "config.h"
 #include "http_routes.h"
 #include "http_handlers.h"
 
@@ -10,6 +11,17 @@
 #include <string.h>
 
 #define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
+static int user_api_write_config_status(struct json_writer *w, const struct config *config)
+{
+  TickType_t tick = xTaskGetTickCount();
+
+  return (
+        JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
+    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
+  );
+}
 
 static int user_api_write_status(struct json_writer *w, void *ctx)
 {
@@ -22,6 +34,7 @@ static int user_api_write_status(struct json_writer *w, void *ctx)
   return JSON_WRITE_OBJECT(w, 
         JSON_WRITE_MEMBER_UINT(w, "tick", tick)
     ||  JSON_WRITE_MEMBER_UINT(w, "tick_rate_ms", portTICK_RATE_MS)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "config", user_api_write_config_status(w, &config))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "power",
               JSON_WRITE_MEMBER_UINT(w, "tick", power_log->tick)
           ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, power_log->tick))

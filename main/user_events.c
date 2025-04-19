@@ -114,7 +114,7 @@ void on_user_input(struct user_leds_input input)
 
   #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
     case FLASH_LED:
-      on_user_config_input(input,);
+      on_user_config_input(input);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST

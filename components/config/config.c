@@ -1,4 +1,5 @@
 #include <config.h>
+#include "state.h"
 
 #include <logging.h>
 
@@ -28,6 +29,21 @@ int config_init(struct config *config)
   config_state(config, CONFIG_STATE_INIT);
 
   return config_reset(config);
+}
+
+static int config_filename(struct config *config, const char *filename, const char *ext, char *buf, size_t size)
+{
+  if (!match_fileext(filename, ext)) {
+    LOG_ERROR("filename must end with .%s: %s", ext, filename);
+    return -1;
+  }
+
+  if (snprintf(buf, size, "%s", filename) >= size) {
+    LOG_ERROR("filename too long: %s", filename);
+    return -1;
+  }
+
+  return 0;
 }
 
 static int config_path(struct config *config, const char *filename, const char *ext, char *buf, size_t size)
@@ -89,6 +105,10 @@ int config_load(struct config *config, const char *filename)
   }
 
   LOG_INFO("%s", path);
+
+  if ((err = config_filename(config, filename, CONFIG_FILE_EXT, config->filename, sizeof(config->filename)))) {
+    return err;
+  }
 
   if ((err = config_init(config))) {
     goto error;

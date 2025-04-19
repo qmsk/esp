@@ -138,7 +138,8 @@ struct config {
   const char *path;
 
   const struct configmod *modules;
-
+  
+  char filename[CONFIG_PATH_SIZE];
   enum config_state state;
   TickType_t tick;
 };

@@ -1,4 +1,5 @@
 #include <config.h>
+#include "state.h"
 
 #include <logging.h>
 
@@ -62,6 +63,12 @@ int config_valid(struct config *config, config_invalid_handler_t handler, void *
         ret = err;
       }
     }
+  }
+
+  if (ret) {
+    LOG_WARN("state invalid");
+
+    config_state(config, CONFIG_STATE_INVALID);
   }
 
   return ret;

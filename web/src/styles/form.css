@@ -57,12 +57,18 @@ fieldset div.actions {
   grid-column: 3;
 }
 
+fieldset div.description {
+  grid-column: 2 / 3;
+}
+
 fieldset div.errors {
   grid-column: 2 / 3;
 }
 
 /* general styles */
 fieldset p {
+  margin: 0em 0.5em;
+
   font-style: italic;
   font-size: small;
 }
@@ -92,6 +98,25 @@ fieldset input[type="checkbox"] {
 
 fieldset input[type="file"] {
   margin: auto 0;
+}
+
+fieldset div.actions button {
+  width: 1.8em;
+  height: 1.8em;
+  
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 1em;
+}
+
+fieldset div.actions button:hover {
+  background: #ddd;
+}
+
+fieldset div.actions button:active,
+fieldset div.actions button.active
+{
+  background: #888;
 }
 
 fieldset div.errors {
@@ -162,4 +187,18 @@ fieldset.actions div.symbol {
 fieldset.actions div.symbol.error {
   background: #ff000080;
   border-radius: 0.5em;
+}
+
+/* animations */
+fieldset div.collapse {
+  transition: max-height 0.5s ease-in allow-discrete;
+
+  display: none;
+  max-height: 0px;
+  overflow: hidden;
+}
+
+fieldset div.collapse.open {
+  display: block;
+  max-height: 100px;
 }

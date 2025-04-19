@@ -60,6 +60,14 @@
                 </template>
               </div>
 
+              <div class="actions">
+                <button type="button" v-show="tab.description" @click="toggleDescription(mod, tab)" :class="{ active: showDescription(mod, tab) }">?</button>
+              </div>
+
+              <div class="description" v-if="tab.description" :class="{ collapse: true, open: showDescription(mod, tab) }">
+                <p v-for="line in splitlines(tab.description)">{{ line }}</p>
+              </div>
+
               <div class="errors" v-for="error in fieldErrors(mod, tab)">
                 {{ error }}
               </div>
@@ -104,6 +112,9 @@ export default {
     loading: true,
     configValues: null,
     configErrors: null,
+
+    // 
+    showDescriptions: {},
 
     // 
     applying: false,
@@ -203,6 +214,21 @@ export default {
       } else {
         return null;
       }
+    },
+
+    toggleDescription(mod, tab) {
+      let name = this.fieldName(mod, tab);
+
+      if (this.showDescriptions[name]) {
+        this.$set(this.showDescriptions, name, false);
+      } else {
+        this.$set(this.showDescriptions, name, true);
+      }
+    },
+    showDescription(mod, tab) {
+      let name = this.fieldName(mod, tab);
+
+      return this.showDescriptions[name];
     },
 
     submitErrors(form, errors) {

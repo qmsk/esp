@@ -98,9 +98,9 @@ static int config_api_set_error (struct config_api_set *ctx, const char *key, co
   }
 
   if (key) {
-    LOG_WARN("%s=%s: %s", key, value, error);
+    LOG_WARN("%s=%s: %s", key, value ? value : "", error);
   } else if (module && name) {
-    LOG_WARN("[%s]%s=%s: %s", module, name, value, error);
+    LOG_WARN("[%s]%s=%s: %s", module, name, value ? value : "", error);
   }
 
   return JSON_WRITE_OBJECT(&ctx->json_writer, 

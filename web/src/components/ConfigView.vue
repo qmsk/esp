@@ -1,4 +1,64 @@
 <style>
+  div.config-state {
+    float: right;
+
+    margin: 1em auto;
+    padding: 1em;
+    width: 50%;
+    border-radius: 1em;
+
+    text-align: center;
+  }
+
+  div.config-state-init {
+    background-color: #bbbbbb88;
+    color: #111;
+
+  }
+
+  div.config-state-load {
+    background-color: #44aaff88;
+    color: #ccc;
+  }
+
+  div.config-state-boot {
+    background-color: #44884488;
+    color: #111;
+  }
+
+  div.config-state-dirty {
+    background-color: #ff880088;
+    color: #111;
+  }
+
+  div.config-state-save {
+    background-color: #44bb4488;
+    color: #111;
+  }
+
+  div.config-state-reset {
+    background-color: #ffbb0088;
+    color: #111;
+  }
+
+  div.config-state-error {
+    background-color: #ff444488;
+    color: #111;
+  }
+
+  span.state {
+    font-family: monospace;
+    font-size: large;
+    font-weight: bold;
+  }
+
+  span.interval {
+    font-style: italic;
+  }
+
+  span.filename {
+    font-family: monospace;
+  }
 
 </style>
 
@@ -7,6 +67,7 @@
     <div class="view">
       <h1>Configuration</h1>
       <progress v-show="loading">Loading...</progress>
+
       <template v-if="config">
         <form id="config" method="post" @submit.prevent="submit">
           <fieldset v-for="mod in config.modules" :key="modName(mod)" :class="{ collapse: true, open: showModule(mod), close: !showModule(mod) }">
@@ -100,6 +161,13 @@
       </template>
     </div>
     <div class="controls">
+      <h2>State</h2>
+      <div :class="['config-state', configStateClass]" v-if="config">
+          <span class="state">{{ config.state }}</span>
+        @ <span class="interval">{{ config.tick_ms | interval('ms', 's')  }}</span>
+        (<span class="filename">{{ config.filename }}</span>)
+      </div>
+
       <h2>Apply</h2>
       <fieldset class="actions">
         <button type="submit" form="config">Apply</button>
@@ -153,6 +221,13 @@ export default {
   computed: {
     config() {
       return this.$store.state.config;
+    },
+    configStateClass() {
+      if (this.config && this.config.state) {
+        return 'config-state-' + this.config.state.toLowerCase();
+      } else {
+        return null;
+      }
     },
   },
   methods: {

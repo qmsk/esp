@@ -16,6 +16,7 @@ struct config_api_set {
   FILE *file;
 
   bool set_errors;
+  bool validation_errors;
 };
 
 static int config_api_start_response (struct config_api_set *ctx, enum http_status status, const char *reason)
@@ -126,6 +127,66 @@ static int config_api_set_done (struct config_api_set *ctx)
   return HTTP_UNPROCESSABLE_ENTITY;
 }
 
+static int config_api_validation_error (struct config_api_set *ctx, const struct config_path path, const char *fmt, va_list args)
+{
+  char buf[128];
+  int ret, err;
+
+  if (!http_response_get_status(ctx->response)) {
+    if ((err = config_api_start_response(ctx, HTTP_UNPROCESSABLE_ENTITY, NULL))) {
+      return err;
+    }
+  }
+
+  if (!ctx->validation_errors) {
+    if ((err = json_open_object_member(&ctx->json_writer, "validation_errors"))) {
+      return err;
+    }
+    if ((err = json_open_array(&ctx->json_writer))) {
+      return err;
+    }
+
+    ctx->validation_errors = true;
+  }
+
+  ret = vsnprintf(buf, sizeof(buf), fmt, args);
+
+  if (ret >= sizeof(buf)) {
+    // truncated
+    buf[sizeof(buf) - 1] = '.';
+    buf[sizeof(buf) - 2] = '.';
+    buf[sizeof(buf) - 3] = '.';
+  }
+
+  LOG_WARN("[%s%d] %s: %s", path.mod->name, path.index, path.tab->name, buf);
+
+  return JSON_WRITE_OBJECT(&ctx->json_writer, 
+        JSON_WRITE_MEMBER_STRING(&ctx->json_writer, "module", path.mod->name)
+    ||  JSON_WRITE_MEMBER_UINT(&ctx->json_writer, "index", path.index)
+    ||  JSON_WRITE_MEMBER_STRING(&ctx->json_writer, "name", path.tab->name)
+    ||  JSON_WRITE_MEMBER_STRING(&ctx->json_writer, "error", buf)
+  );
+}
+
+static int config_api_validation_done (struct config_api_set *ctx)
+{
+  int err;
+
+  if (!ctx->validation_errors) {
+    return 0;
+  }
+
+  if ((err = json_close_array(&ctx->json_writer))) {
+    return err;
+  }
+
+  if ((err = config_api_close_response(ctx))) {
+    return err;
+  }
+
+  return HTTP_UNPROCESSABLE_ENTITY;
+}
+
 static int config_api_parse_name (char *key, const char **modulep, const char **namep)
 {
   *modulep = *namep = NULL;
@@ -150,7 +211,7 @@ static int config_api_parse_name (char *key, const char **modulep, const char **
   return 0;
 }
 
-static int config_api_set (struct config_api_set *ctx, char *key, char *value, struct http_response *response)
+static int config_api_set (struct config_api_set *ctx, char *key, char *value)
 {
   const char *module, *name;
   struct config_path path;
@@ -181,6 +242,33 @@ static int config_api_set (struct config_api_set *ctx, char *key, char *value, s
   return 0;
 }
 
+static void config_api_invalid(const struct config_path path, void *_ctx, const char *fmt, ...)
+{
+  struct config_api_set *ctx = _ctx;
+  va_list args;
+  int err;
+
+  va_start(args, fmt);
+  err = config_api_validation_error(ctx, path, fmt, args);
+  va_end(args);
+
+  if (err) {
+    LOG_ERROR("config_api_validation_error");
+  }
+}
+
+static int config_api_valid (struct config_api_set *ctx)
+{
+  int err;
+
+  if ((err = config_valid(ctx->config, config_api_invalid, ctx)) < 0) {
+    LOG_ERROR("config_valid");
+    return err;
+  }
+
+  return config_api_validation_done(ctx);
+}
+
 /* POST /api/config application/x-www-form-urlencoded */
 int config_api_post_form (struct http_request *request, struct http_response *response)
 {
@@ -189,7 +277,7 @@ int config_api_post_form (struct http_request *request, struct http_response *re
   int err;
 
   while (!(err = http_request_form(request, &key, &value))) {
-    if ((err = config_api_set(&ctx, key, value, response))) {
+    if ((err = config_api_set(&ctx, key, value))) {
       LOG_WARN("config_api_set %s", key);
       return err;
     }
@@ -206,6 +294,16 @@ int config_api_post_form (struct http_request *request, struct http_response *re
   } else if (err) {
     LOG_WARN("set errors -> %u", err);
     return err;
+  }
+
+  if ((err = config_api_valid(&ctx)) < 0) {
+    LOG_ERROR("config_api_valid");
+    return err;
+  } else if (err) {
+    LOG_WARN("valid errors -> %u", err);
+    return err;
+  } else {
+    LOG_INFO("valid");
   }
 
   LOG_INFO("config save %s", CONFIG_BOOT_FILE);

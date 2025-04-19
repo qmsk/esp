@@ -18,6 +18,11 @@ void disable_config();
 int init_config();
 
 /*
+ * Config has been booted.
+ */
+int boot_config();
+
+/*
  * Best attempt to reset persistent configuration for next boot.
  */
 void reset_config();

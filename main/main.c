@@ -234,4 +234,12 @@ void app_main(void)
   }
 
   LOG_INFO("fini");
+
+  if ((err = boot_config()) < 0) {
+    LOG_ERROR("boot_config");
+    user_alert(USER_ALERT_ERROR_CONFIG);
+  } else if (err > 0) {
+    LOG_WARN("boot_config: not configured");
+    user_alert(USER_ALERT_ERROR_CONFIG);
+  }
 }

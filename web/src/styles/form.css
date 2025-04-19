@@ -28,10 +28,6 @@ fieldset {
   grid-gap: 1em;
 }
 
-fieldset.actions {
-  border: none;
-}
-
 fieldset legend {
   margin: 0.5em 0em;
   padding: 0.5em;
@@ -44,7 +40,7 @@ fieldset legend {
 
 /* TODO: stretch background, vertically align content? */
 fieldset label {
-  grid-column: 1 / 2;
+  grid-column: 1;
 }
 
 fieldset div.module-description {
@@ -62,7 +58,11 @@ fieldset progress.form {
   grid-column: 2 / 3;
 }
 
-fieldset button {
+fieldset div.inputs {
+  grid-column: 2;
+}
+
+fieldset div.actions {
   grid-column: 3;
 }
 
@@ -110,8 +110,22 @@ fieldset div.errors {
   box-shadow: 0 0 5px 1px red;
 }
 
-/* Button styling */
-fieldset button {
+/* Controls styling */
+fieldset.actions {
+  margin: 0;
+
+  border: none;
+}
+
+fieldset.actions label {
+  grid-column: 1;
+
+  font-weight: bold;
+}
+
+fieldset.actions button {
+  grid-column: 2;
+
   padding: 0.5em 1em;
 
   background-color: #133337;
@@ -124,23 +138,23 @@ fieldset button {
   font-weight: bold;
 }
 
-fieldset button:hover {
+fieldset.actions button:hover {
   border: 0.25px solid #eee;
 }
 
-fieldset button:active {
+fieldset.actions button:active {
   transform: scale(0.99);
 }
 
-fieldset button:disabled {
+fieldset.actions button:disabled {
   background-color: #888;
 }
-fieldset button:disabled:hover {
+fieldset.actions button:disabled:hover {
   border: 0.25px solid #000;
 }
 
-fieldset div.symbol {
-  grid-column: 3 / 4;
+fieldset.actions div.symbol {
+  grid-column: 3;
 
   padding: 0.5em;
   width: 2em;
@@ -149,7 +163,7 @@ fieldset div.symbol {
   text-align: center;
 }
 
-fieldset div.symbol.error {
+fieldset.actions div.symbol.error {
   background: #ff000080;
   border-radius: 0.5em;
 }

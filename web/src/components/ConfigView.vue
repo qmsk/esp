@@ -17,7 +17,7 @@
 
             <template v-for="tab in mod.table" v-if="!tab.migrated">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
-              <div class="tab-values">
+              <div class="inputs">
                 <template v-for="(value, index) in fieldValues(mod, tab)">
                   <input v-if="tab.type == 'uint16'" type="number"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
@@ -72,24 +72,24 @@
       <h2>Apply</h2>
       <fieldset class="actions">
         <button type="submit" form="config">Apply</button>
-        <progress class="input" v-show="applying">Applying...</progress>
+        <progress v-show="applying">Applying...</progress>
         <div class="symbol error" v-if="applyError" :title="applyError">!</div>
       </fieldset>
 
       <h2>Backup</h2>
       <form method="get" action="/config.ini">
-        <fieldset>
+        <fieldset class="actions">
           <button type="submit">Backup</button>
         </fieldset>
       </form>
 
       <h2>Restore</h2>
       <form method="post" @submit.prevent="restoreSubmit">
-        <fieldset>
+        <fieldset class="actions">
           <label for="restore-file">File</label>
           <input type="file" id="restore-file" name="file" @invalid="restoreInvalid"
             accept="text/plain,.ini">
-          <progress class="input" v-show="uploading">Uploading...</progress>
+          <progress v-show="uploading">Uploading...</progress>
 
           <button type="submit" :disabled="uploading">Restore</button>
         </fieldset>

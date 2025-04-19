@@ -12,6 +12,11 @@
 
     grid-template-columns: 1fr 3.5fr 0.5fr;
   }
+
+  fieldset div.errors {
+    grid-column: 1 / 3 !important;
+  }
+  
 }
 
 /* fieldsets */
@@ -37,12 +42,6 @@ fieldset legend {
   font-weight: bold;
 }
 
-fieldset div.module-description {
-  grid-column: 1 / 4;
-
-  margin: 0em 1em;
-}
-
 /* TODO: stretch background, vertically align content? */
 fieldset label {
   grid-column: 1 / 2;
@@ -50,26 +49,13 @@ fieldset label {
 
 fieldset div.module-description {
   grid-column: 1 / 3;
+
+  margin: 0em 1em;
 }
 
 fieldset progress.input {
   grid-column: 3 / 4;
   width: 100%;
-}
-
-fieldset div.symbol {
-  grid-column: 3 / 4;
-
-  padding: 0.5em;
-  width: 2em;
-
-  font-size: 2em;
-  text-align: center;
-}
-
-fieldset div.symbol.error {
-  background: #ff000080;
-  border-radius: 0.5em;
 }
 
 fieldset progress.form {
@@ -78,6 +64,10 @@ fieldset progress.form {
 
 fieldset button {
   grid-column: 3;
+}
+
+fieldset div.errors {
+  grid-column: 2 / 3;
 }
 
 /* general styles */
@@ -147,4 +137,19 @@ fieldset button:disabled {
 }
 fieldset button:disabled:hover {
   border: 0.25px solid #000;
+}
+
+fieldset div.symbol {
+  grid-column: 3 / 4;
+
+  padding: 0.5em;
+  width: 2em;
+
+  font-size: 2em;
+  text-align: center;
+}
+
+fieldset div.symbol.error {
+  background: #ff000080;
+  border-radius: 0.5em;
 }

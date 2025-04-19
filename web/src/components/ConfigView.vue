@@ -58,10 +58,10 @@
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
                 </template>
+              </div>
 
-                <div class="errors" v-for="error in fieldErrors(mod, tab)">
-                  {{ error }}
-                </div>
+              <div class="errors" v-for="error in fieldErrors(mod, tab)">
+                {{ error }}
               </div>
             </template>
           </fieldset>

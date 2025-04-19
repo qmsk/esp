@@ -55,9 +55,30 @@ static int config_api_start_response (struct config_api_set *ctx, enum http_stat
   return 0;
 }
 
+static int config_api_write_config_members(struct config_api_set *ctx)
+{
+  const struct config *config = ctx->config;
+  struct json_writer *w = &ctx->json_writer;
+  TickType_t tick = xTaskGetTickCount();
+
+  return (
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
+  );
+}
+
+
 static int config_api_close_response (struct config_api_set *ctx)
 {
   int err;
+
+  // status
+  if ((err = config_api_write_config_members(ctx))) {
+    LOG_ERROR("config_api_write_config_members");
+    return err;
+  }
 
   if ((err = json_close_object(&ctx->json_writer))) {
     LOG_ERROR("json_close_object");
@@ -273,19 +294,6 @@ static int config_api_valid (struct config_api_set *ctx)
   return config_api_validation_done(ctx);
 }
 
-static int config_api_write_config_state(struct json_writer *w, void *ctx)
-{
-  const struct config *config = ctx;
-  TickType_t tick = xTaskGetTickCount();
-
-  return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
-    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
-    ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
-    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
-  );
-}
-
 /* POST /api/config application/x-www-form-urlencoded */
 int config_api_post_form (struct http_request *request, struct http_response *response)
 {
@@ -330,12 +338,14 @@ int config_api_post_form (struct http_request *request, struct http_response *re
     return err;
   }
 
-  if ((err = write_http_response_json(response, config_api_write_config_state, &config))) {
-    LOG_WARN("write_http_response_json -> config_api_write_config_state");
+  if ((err = config_api_start_response(&ctx, HTTP_OK, NULL))) {
     return err;
   }
 
-  
+  if ((err = config_api_close_response(&ctx))) {
+    return err;
+  }
+
   return 0;
 }
 

@@ -162,8 +162,10 @@ static int config_api_write_configtab_members_file(struct json_writer *w, const 
   );
 }
 
-static int config_api_write_configtab_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members(struct json_writer *w, const struct config_path *path)
 {
+  const struct configtab *tab = path->tab;
+
   switch (tab->type) {
     case CONFIG_TYPE_UINT16:
       return config_api_write_configtab_members_uint16(w, tab);
@@ -180,8 +182,38 @@ static int config_api_write_configtab_members(struct json_writer *w, const struc
   }
 }
 
-static int config_api_write_configtab(struct json_writer *w, const struct configtab *tab)
+static void config_api_write_configtab_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
 {
+  struct json_writer *w = ctx;
+  char buf[128];
+  int ret;
+  va_list va;
+
+  va_start(va, fmt);
+  ret = vsnprintf(buf, sizeof(buf), fmt, va);
+  va_end(va);
+
+  if (ret  >= sizeof(buf)) {
+    // truncated
+    buf[sizeof(buf) - 1] = '.';
+    buf[sizeof(buf) - 2] = '.';
+    buf[sizeof(buf) - 3] = '.';
+  }
+
+  json_write_nstring(w, buf, sizeof(buf));
+}
+
+static int config_api_write_configtab_valid(struct json_writer *w, const struct config_path *path)
+{
+  return JSON_WRITE_MEMBER_ARRAY(w, "validation_errors",
+    (configtab_valid(*path, config_api_write_configtab_invalid, w) < 0)
+  );
+}
+
+static int config_api_write_configtab(struct json_writer *w, const struct config_path *path)
+{
+  const struct configtab *tab = path->tab;
+  
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_STRING(w, "name", tab->name)
     ||  (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0)
@@ -190,16 +222,19 @@ static int config_api_write_configtab(struct json_writer *w, const struct config
     ||  JSON_WRITE_MEMBER_BOOL(w, "migrated", tab->migrated)
     ||  (tab->count ? JSON_WRITE_MEMBER_UINT(w, "count", *tab->count) : 0)
     ||  (tab->size ? JSON_WRITE_MEMBER_UINT(w, "size", tab->size) : 0)
-    ||  config_api_write_configtab_members(w, tab)
+    ||  config_api_write_configtab_members(w, path)
+    ||  config_api_write_configtab_valid(w, path)
   );
 }
 
-static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod, const struct configtab *table)
+static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   int err = 0;
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
-    if ((err = config_api_write_configtab(w, tab))) {
+    struct config_path path = { mod, index, tab };
+
+    if ((err = config_api_write_configtab(w, &path))) {
       LOG_ERROR("config_api_write_configtab: mod=%s tab=%s", mod->name, tab->name);
       return err;
     }
@@ -208,13 +243,13 @@ static int config_api_write_configmod_table(struct json_writer *w, const struct 
   return err;
 }
 
-static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod, int index, const struct configtab *table)
+static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "name", mod->name) ||
     (mod->description ? JSON_WRITE_MEMBER_STRING(w, "description", mod->description) : 0) ||
     (index ? JSON_WRITE_MEMBER_INT(w, "index", index) : 0) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod, table)) // assume all are the same
+    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod, index, table)) // assume all are the same
   );
 }
 
@@ -224,7 +259,7 @@ static int config_api_write_config_modules(struct json_writer *w, const struct c
 
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
-      for (int i = 0; i < mod->tables_count; i++) {
+      for (unsigned i = 0; i < mod->tables_count; i++) {
         if ((err = config_api_write_configmod(w, mod, i + 1, mod->tables[i]))) {
           LOG_ERROR("config_api_write_configmod: mod=%s", mod->name);
           return err;
@@ -266,115 +301,4 @@ int config_api_get(struct http_request *request, struct http_response *response,
   }
 
   return 0;
-}
-
-static int config_api_parse_name (char *key, const char **modulep, const char **namep)
-{
-  *modulep = *namep = NULL;
-
-  for (char *c = key; *c; c++) {
-    if (*c == '[') {
-      *modulep = c+1;
-    } else if (*c == ']' ) {
-      *c = '\0';
-      *namep = c+1;
-    }
-  }
-
-  if (!*modulep) {
-    LOG_WARN("no [module]... given");
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  if (!*namep) {
-    LOG_WARN("no [...]name given");
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  return 0;
-}
-
-static int config_api_set (struct config *config, char *key, char *value)
-{
-  const char *module, *name;
-  const struct configmod *mod;
-  const struct configtab *tab;
-  int err;
-
-  if ((err = config_api_parse_name(key, &module, &name))) {
-    LOG_WARN("config_api_parse_name: %s", key);
-    return err;
-  }
-
-  if ((err = config_lookup(config, module, name, &mod, &tab))) {
-    LOG_WARN("config_lookup: module=%s name=%s", module, name);
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  if (value && *value) {
-    LOG_INFO("module=%s name=%s: set value=%s", module, name, value);
-
-    if ((err = config_set(mod, tab, value))) {
-      LOG_WARN("config_set: module=%s name=%s: value=%s", module, name, value);
-      return HTTP_UNPROCESSABLE_ENTITY;
-    }
-  } else {
-    LOG_INFO("module=%s name=%s: clear", module, name);
-
-    if ((err = config_clear(mod, tab))) {
-      LOG_WARN("config_clear: module=%s name=%s", module, name);
-      return HTTP_UNPROCESSABLE_ENTITY;
-    }
-  }
-
-  return 0;
-}
-
-/* POST /api/config application/x-www-form-urlencoded */
-int config_api_post_form(struct http_request *request, struct http_response *response, void *ctx)
-{
-    char *key, *value;
-    int err;
-
-    while (!(err = http_request_form(request, &key, &value))) {
-      if ((err = config_api_set(&config, key, value))) {
-        LOG_WARN("config_api_set %s", key);
-        return err;
-      }
-    }
-
-    if (err < 0) {
-      LOG_ERROR("http_request_form");
-      return err;
-    }
-
-    LOG_INFO("config save %s", CONFIG_BOOT_FILE);
-
-    if ((err = config_save(&config, CONFIG_BOOT_FILE))) {
-      LOG_ERROR("config_save");
-      return err;
-    }
-
-    return HTTP_NO_CONTENT;
-}
-
-int config_api_post(struct http_request *request, struct http_response *response, void *ctx)
-{
-  const struct http_request_headers *headers;
-  int err;
-
-  if ((err = http_request_headers(request, &headers))) {
-    LOG_WARN("http_request_headers");
-    return err;
-  }
-
-  switch (headers->content_type) {
-    case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
-      return config_api_post_form(request, response, ctx);
-
-    default:
-      LOG_WARN("Unkonwn Content-Type");
-
-      return HTTP_UNSUPPORTED_MEDIA_TYPE;
-  }
 }

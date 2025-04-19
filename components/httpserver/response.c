@@ -135,9 +135,8 @@ int http_response_sendfile (struct http_response *response, int fd, size_t conte
     return 0;
 }
 
-int http_response_print (struct http_response *response, const char *fmt, ...)
+int http_response_vprintf (struct http_response *response, const char *fmt, va_list args)
 {
-    va_list args;
     int err = 0;
 
     LOG_DEBUG("response=%p fmt=%s", response, fmt);
@@ -172,13 +171,11 @@ int http_response_print (struct http_response *response, const char *fmt, ...)
     // body
     response->body = true;
 
-    va_start(args, fmt);
     if (response->chunked) {
         err = http_vprint_chunk(response->http, fmt, args);
     } else {
         err = http_vwrite(response->http, fmt, args);
     }
-    va_end(args);
 
     if (err) {
         LOG_WARN("http_write");
@@ -186,6 +183,18 @@ int http_response_print (struct http_response *response, const char *fmt, ...)
     }
 
     return 0;
+}
+
+int http_response_printf (struct http_response *response, const char *fmt, ...)
+{
+    int ret;
+    va_list args;
+
+    va_start(args, fmt);
+    ret = http_response_vprintf(response, fmt, args);
+    va_end(args);
+
+    return ret;
 }
 
 int http_response_open (struct http_response *response, FILE **filep)
@@ -249,27 +258,36 @@ int http_response_redirect (struct http_response *response, const char *host, co
     return err;
 }
 
-int http_response_error (struct http_response *response, enum http_status status, const char *reason, const char *detail)
+int http_response_error (struct http_response *response, enum http_status status, const char *reason, const char *fmt, ...)
 {
+    va_list args;
     int err = 0;
 
-    LOG_DEBUG("response=%p status=%d reason=%s detail=%s", response, status, reason, detail);
+    LOG_DEBUG("response=%p status=%d reason=%s", response, status, reason);
 
-    if (!reason)
+    if (!reason) {
         reason = http_status_str(status);
+    }
 
-    err |= http_response_start(response, status, reason);
-    err |= http_response_header(response, "Content-Type", "text/html");
-    err |= http_response_headers(response);
-    err |= http_response_print(response, "<html><head><title>HTTP %d %s</title></head><body>\n", status, reason);
-    err |= http_response_print(response, "<h1>HTTP %d %s</h1>", status, reason);
+    err = (
+            http_response_start(response, status, reason)
+        ||  http_response_header(response, "Content-Type", "text/plain")
+        ||  http_response_headers(response)
+    );
 
-    if (detail)
-        err |= http_response_print(response, "<p>%s</p>", detail);
+    if (err) {
+        return err;
+    }
 
-    err |= http_response_print(response, "</body></html>\n");
+    va_start(args, fmt);
+    err = http_response_vprintf(response, fmt, args);
+    va_end(args);
 
-    return err;
+    if (err) {
+        return err;
+    }
+
+    return status;
 }
 
 int http_response_close (struct http_response *response)

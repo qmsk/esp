@@ -4,12 +4,13 @@
 
 #include <stdio.h>
 
-int config_get_enum(const struct configmod *mod, const struct configtab *tab, unsigned index, char *buf, size_t size)
+int config_get_enum(const struct config_path path, unsigned index, char *buf, size_t size)
 {
+  const struct configtab *tab = path.tab;
   const struct config_enum *e;
 
   if (config_enum_find_by_value(tab->enum_type.values, tab->enum_type.value[index], &e)) {
-    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, tab->enum_type.value[index]);
+    LOG_ERROR("%s%d.%s: unknown value: %#x", path.mod->name, path.index, tab->name, tab->enum_type.value[index]);
     return -1;
   }
 
@@ -20,8 +21,10 @@ int config_get_enum(const struct configmod *mod, const struct configtab *tab, un
   return 0;
 }
 
-int config_get(const struct configmod *mod, const struct configtab *tab, unsigned index, char *buf, size_t size)
+int config_get(const struct config_path path, unsigned index, char *buf, size_t size)
 {
+  const struct configtab *tab = path.tab;
+  
   if (tab->migrated) {
     LOG_ERROR("migrated name=%s", tab->name);
     return -1;
@@ -59,7 +62,7 @@ int config_get(const struct configmod *mod, const struct configtab *tab, unsigne
       }
 
     case CONFIG_TYPE_ENUM:
-      return config_get_enum(mod, tab, index, buf, size);
+      return config_get_enum(path, index, buf, size);
 
     case CONFIG_TYPE_FILE:
       if (snprintf(buf, size, "%s", &tab->file_type.value[index * tab->file_type.size]) >= size) {

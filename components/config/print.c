@@ -4,16 +4,17 @@
 
 #include <stdio.h>
 
-static int config_print_enum(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file)
+static int config_print_enum(const struct config_path path, unsigned index, FILE *file)
 {
+  const struct configtab *tab = path.tab;
   const struct config_enum *e;
 
   if (config_enum_find_by_value(tab->enum_type.values, tab->enum_type.value[index], &e)) {
-    LOG_ERROR("%s.%s: unknown value: %#x", mod->name, tab->name, tab->enum_type.value[index]);
+    LOG_ERROR("%s%d.%s: unknown value: %#x", path.mod->name, path.index, tab->name, tab->enum_type.value[index]);
     return -1;
   }
 
-  LOG_DEBUG("%s.%s: value=%#x enum=%s", mod->name, tab->name, tab->enum_type.value[index], e->name);
+  LOG_DEBUG("%s%d.%s: value=%#x enum=%s", path.mod->name, path.index, tab->name, tab->enum_type.value[index], e->name);
 
   if (fprintf(file, "%s", e->name) < 0) {
     return -1;
@@ -22,8 +23,10 @@ static int config_print_enum(const struct configmod *mod, const struct configtab
   return 0;
 }
 
-int config_print(const struct configmod *mod, const struct configtab *tab, unsigned index, FILE *file)
+int config_print(const struct config_path path, unsigned index, FILE *file)
 {
+  const struct configtab *tab = path.tab;
+  
   if (tab->migrated) {
     LOG_ERROR("type=%u name=%s migrated", tab->type, tab->name);
     return -1;
@@ -58,7 +61,7 @@ int config_print(const struct configmod *mod, const struct configtab *tab, unsig
     break;
 
   case CONFIG_TYPE_ENUM:
-    return config_print_enum(mod, tab, index, file);
+    return config_print_enum(path, index, file);
 
   case CONFIG_TYPE_FILE:
     if (fprintf(file, "%s", &tab->file_type.value[index * tab->file_type.size]) < 0) {

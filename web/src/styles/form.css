@@ -57,6 +57,21 @@ fieldset progress.input {
   width: 100%;
 }
 
+fieldset div.symbol {
+  grid-column: 3 / 4;
+
+  padding: 0.5em;
+  width: 2em;
+
+  font-size: 2em;
+  text-align: center;
+}
+
+fieldset div.symbol.error {
+  background: #ff000080;
+  border-radius: 0.5em;
+}
+
 fieldset progress.form {
   grid-column: 2 / 3;
 }
@@ -96,6 +111,13 @@ fieldset input[type="checkbox"] {
 
 fieldset input[type="file"] {
   margin: auto 0;
+}
+
+fieldset div.errors {
+  padding: 0.5em;
+  
+  background-color: #ff000080;
+  box-shadow: 0 0 5px 1px red;
 }
 
 /* Button styling */

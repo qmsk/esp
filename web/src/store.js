@@ -84,10 +84,10 @@ export default new Vuex.Store({
 
       commit('loadConfig', config);
     },
-    async postConfig({ state, dispatch }, formdata) {
+    async postConfig({ state, commit }, formdata) {
       await configService.post(state.config, formdata);
     },
-    async uploadConfig({ dispatch }, file) {
+    async uploadConfig({ commit }, file) {
       await configService.upload(file);
     },
 
@@ -102,7 +102,7 @@ export default new Vuex.Store({
 
       commit('updateSystemTasks', data);
     },
-    async restartSystem({ dispatch }) {
+    async restartSystem({ commit }) {
       await systemService.restart();
     },
 

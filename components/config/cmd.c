@@ -10,17 +10,23 @@
   #define CLI_FMT_RESET "\033[0m"
 
   #define CLI_FMT_COLOR(code)   "\033[0;" code "m"
+  #define CLI_FMT_COLOR_BLACK   "30"
+  #define CLI_FMT_COLOR_RED     "31"
+  #define CLI_FMT_COLOR_GREEN   "32"
   #define CLI_FMT_COLOR_YELLOW  "33"
   #define CLI_FMT_COLOR_BLUE    "34"
   #define CLI_FMT_COLOR_MAGENTA "35"
   #define CLI_FMT_COLOR_CYAN    "36"
+  #define CLI_FMT_COLOR_GREY    "37"
   #define CLI_FMT_COLOR_DEFAULT "39"
 
   #define CLI_FMT_COMMENT   CLI_FMT_COLOR(CLI_FMT_COLOR_BLUE)
   #define CLI_FMT_SECTION   CLI_FMT_COLOR(CLI_FMT_COLOR_MAGENTA)
   #define CLI_FMT_NAME      CLI_FMT_COLOR(CLI_FMT_COLOR_CYAN)
-  #define CLI_FMT_SEP       CLI_FMT_COLOR(CLI_FMT_COLOR_YELLOW)
+  #define CLI_FMT_SEP       CLI_FMT_COLOR(CLI_FMT_COLOR_MAGENTA)
   #define CLI_FMT_VALUE     CLI_FMT_COLOR(CLI_FMT_COLOR_DEFAULT)
+  #define CLI_FMT_ERROR     CLI_FMT_COLOR(CLI_FMT_COLOR_RED)
+  #define CLI_FMT_WARNING   CLI_FMT_COLOR(CLI_FMT_COLOR_YELLOW)
 #else
   #define CLI_FMT_RESET ""
   #define CLI_FMT_COMMENT ""
@@ -28,6 +34,8 @@
   #define CLI_FMT_NAME ""
   #define CLI_FMT_SEP ""
   #define CLI_FMT_VALUE ""
+  #define CLI_FMT_ERROR ""
+  #define CLI_FMT_WARNING ""
 #endif
 
 static void print_comment(const char *comment)
@@ -54,6 +62,46 @@ static void print_comment(const char *comment)
   }
 }
 
+static void print_valid_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+{
+  unsigned count = configtab_count(path.tab);
+  va_list args;
+
+  if (path.index > 0) {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name, path.index);
+  } else {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET, path.mod->name);
+  }
+
+  printf(" " CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, path.tab->name);
+
+  for (unsigned index = 0; index < count; index++) {
+    config_print(path, index, stdout);
+    printf(" ");
+  }
+
+  printf(CLI_FMT_WARNING "? ");
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf(CLI_FMT_RESET "\n");
+}
+
+static void print_configtab_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
+{
+  va_list args;
+
+  printf(CLI_FMT_WARNING "? ");
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf(CLI_FMT_RESET "\n");
+}
+
 static int print_configtab_file(const struct config_file_path *p, const char *name, void *ctx)
 {
   printf(CLI_FMT_COMMENT "#   * %s @ %s\n", name, p->prefix);
@@ -61,9 +109,11 @@ static int print_configtab_file(const struct config_file_path *p, const char *na
   return 0;
 }
 
-static void print_configtab(const struct configmod *mod, const struct configtab *tab)
+static void print_configtab(const struct config_path path)
 {
+  const struct configtab *tab = path.tab;
   unsigned count = configtab_count(tab);
+  int err;
   
   if (tab->count) {
     printf(CLI_FMT_COMMENT "# %s[%u/%u] = ", tab->name, count, tab->size);
@@ -130,6 +180,10 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
     return;
   }
 
+  if ((err = configtab_valid(path, print_configtab_invalid, NULL)) < 0) {
+    LOG_ERROR("configtab_valid");
+  }
+
   switch(tab->type) {
     case CONFIG_TYPE_FILE:
       config_file_walk(tab->file_type.paths, print_configtab_file, NULL);
@@ -145,40 +199,29 @@ static void print_configtab(const struct configmod *mod, const struct configtab 
     } else {
       printf(CLI_FMT_NAME "%s" CLI_FMT_SEP " = " CLI_FMT_VALUE, tab->name);
 
-      config_print(mod, tab, index, stdout);
+      config_print(path, index, stdout);
 
       printf(CLI_FMT_RESET "\n");
     }
   }
 }
 
-static void print_configmod(const struct configmod *mod, const struct configtab *table)
+static void print_configmod(const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   if (mod->description) {
     print_comment(mod->description);
   }
 
-  if (mod->tables_count) {
-    int index = -1;
-
-    for (int i = 0; i < mod->tables_count; i++) {
-      if (mod->tables[i] == table) {
-        index = i;
-      }
-    }
-
-    if (index >= 0) {
-      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name, index + 1);
-    } else {
-      printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s???" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
-    }
-
+  if (index > 0) {
+    printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s%d" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name, index);
   } else {
     printf(CLI_FMT_SEP "[" CLI_FMT_SECTION "%s" CLI_FMT_SEP "]" CLI_FMT_RESET "\n", mod->name);
   }
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
-    print_configtab(mod, tab);
+    struct config_path path = { mod, index, tab };
+
+    print_configtab(path);
   }
 
   printf("\n");
@@ -188,11 +231,11 @@ static void print_config(const struct config *config)
 {
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
-      for (int i = 0; i < mod->tables_count; i++) {
-        print_configmod(mod, mod->tables[i]);
+      for (unsigned i = 0; i < mod->tables_count; i++) {
+        print_configmod(mod, i, mod->tables[i]);
       }
     } else {
-      print_configmod(mod, mod->table);
+      print_configmod(mod, 0, mod->table);
     }
   }
 }
@@ -205,6 +248,14 @@ int config_cmd_save(int argc, char **argv, void *ctx)
 
   if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &filename))) {
     return err;
+  }
+
+  if ((err = config_valid(config, print_valid_invalid, NULL)) < 0) {
+    LOG_ERROR("config_valid");
+    return -1;
+  } else if (err) {
+    LOG_WARN("config invalid, refusing to save");
+    return 1;
   }
 
   if (config_save(config, filename)) {
@@ -276,6 +327,7 @@ int config_cmd_show(int argc, char **argv, void *ctx)
 {
   const struct config *config = ctx;
   const struct configmod *mod;
+  unsigned index;
   const struct configtab *table;
   const char *section;
   int err;
@@ -285,12 +337,12 @@ int config_cmd_show(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if (configmod_lookup(config->modules, section, &mod, &table)) {
+    if (configmod_lookup(config->modules, section, &mod, &index, &table)) {
       LOG_ERROR("Unkown config section: %s", section);
       return -CMD_ERR_ARGV;
     }
 
-    print_configmod(mod, table);
+    print_configmod(mod, index, table);
   } else {
     print_config(config);
   }
@@ -303,8 +355,7 @@ int config_cmd_get(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name;
   char value[CONFIG_VALUE_SIZE];
 
@@ -315,14 +366,14 @@ int config_cmd_get(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  for (unsigned count = configtab_count(tab), index = 0; index < count; index++) {
-    if (config_get(mod, tab, index, value, sizeof(value))) {
-      LOG_ERROR("Invalid config %s.%s[%u] value: %s", mod->name, tab->name, index, value);
+  for (unsigned count = configtab_count(path.tab), index = 0; index < count; index++) {
+    if (config_get(path, index, value, sizeof(value))) {
+      LOG_ERROR("Invalid config %s%d.%s[%u] value: %s", path.mod->name, path.index, path.tab->name, index, value);
       return -CMD_ERR;
     }
 
@@ -337,8 +388,7 @@ int config_cmd_set(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name, *value;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
@@ -348,14 +398,14 @@ int config_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (tab->count) {
-    if (config_clear(mod, tab)) {
-      LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+  if (path.tab->count) {
+    if (config_clear(path)) {
+      LOG_ERROR("config_clear %s%d.%s", path.mod->name, path.index, path.tab->name);
       return -CMD_ERR_ARGV;
     }
 
@@ -364,8 +414,8 @@ int config_cmd_set(int argc, char **argv, void *ctx)
         return err;
       }
 
-      if (config_set(mod, tab, value)) {
-        LOG_ERROR("Invalid config %s.%s value[%u]: %s", mod->name, tab->name, index, value);
+      if (config_set(path, value)) {
+        LOG_ERROR("Invalid config %s%d.%s value[%u]: %s", path.mod->name, path.index, path.tab->name, index, value);
         return -CMD_ERR_ARGV;
       }
     }
@@ -374,13 +424,20 @@ int config_cmd_set(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if (config_set(mod, tab, value)) {
-      LOG_ERROR("Invalid config %s.%s value: %s", mod->name, tab->name, value);
+    if (config_set(path, value)) {
+      LOG_ERROR("Invalid config %s%d.%s value: %s", path.mod->name, path.index, path.tab->name, value);
       return -CMD_ERR_ARGV;
     }
   }
 
-  LOG_WARN("config modified, use `config save` and reboot");
+  if ((err = configtab_valid(path, print_valid_invalid, NULL)) < 0){
+    LOG_ERROR("configtab_valid");
+    return err;
+  } else if (err) {
+    LOG_WARN("config invalid, fix before `config save`");
+  } else {
+    LOG_INFO("config modified, use `config save` and reboot");
+  }
 
   return 0;
 }
@@ -390,8 +447,7 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   int err;
 
-  const struct configmod *mod;
-  const struct configtab *tab;
+  struct config_path path;
   const char *section, *name;
 
   if ((err = cmd_arg_str(argc, argv, 1, &section))) {
@@ -401,17 +457,17 @@ int config_cmd_clear(int argc, char **argv, void *ctx)
     return err;
   }
 
-  if (config_lookup(config, section, name, &mod, &tab)) {
+  if (config_lookup(config, section, name, &path)) {
     LOG_ERROR("Unkown config: %s.%s", section, name);
     return -CMD_ERR_ARGV;
   }
 
-  if (config_clear(mod, tab)) {
-    LOG_ERROR("config_clear %s.%s", mod->name, tab->name);
+  if (config_clear(path)) {
+    LOG_ERROR("config_clear %s%d.%s", path.mod->name, path.index, path.tab->name);
     return -CMD_ERR_ARGV;
   }
 
-  LOG_WARN("config modified, use `config save` and reboot");
+  LOG_INFO("config modified, use `config save` and reboot");
 
   return 0;
 }
@@ -421,6 +477,7 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   struct config *config = ctx;
   const char *section = NULL, *name = NULL;
   const struct configmod *module = NULL;
+  unsigned index;
   const struct configtab *table = NULL;
   int err;
 
@@ -432,30 +489,30 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   }
 
   if (section) {
-    if (configmod_lookup(config->modules, section, &module, &table)) {
+    if (configmod_lookup(config->modules, section, &module, &index, &table)) {
       LOG_ERROR("Unkonwn config section: %s", section);
       return -CMD_ERR_ARGV;
     }
   }
 
   if (section && name) {
-    const struct configtab *tab = NULL;
+    struct config_path path = { module, index, NULL };
 
-    if (configtab_lookup(table, name, &tab)) {
+    if (configtab_lookup(module, index, table, name, &path.tab)) {
       LOG_ERROR("Unkonwn config name: %s.%s", section, name);
       return -CMD_ERR_ARGV;
     }
 
     LOG_INFO("reset [%s] %s...", section, name);
 
-    if (configtab_reset(tab)) {
+    if (configtab_reset(path)) {
       LOG_ERROR("configtab_reset");
       return -1;
     }
   } else if (section) {
     LOG_INFO("reset [%s]...", section);
 
-    if (configmod_reset(module, table)) {
+    if (configmod_reset(module, index, table)) {
       LOG_ERROR("configmod_reset");
       return -1;
     }
@@ -473,6 +530,62 @@ int config_cmd_reset(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int config_cmd_valid(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+  const char *section = NULL, *name = NULL;
+  const struct configmod *module = NULL;
+  unsigned index;
+  const struct configtab *table = NULL;
+  int err, ret = 0;
+
+  if (argc >= 2 && (err = cmd_arg_str(argc, argv, 1, &section))) {
+    return err;
+  }
+  if (argc >= 3 && (err = cmd_arg_str(argc, argv, 2, &name))) {
+    return err;
+  }
+
+  if (section) {
+    if (configmod_lookup(config->modules, section, &module, &index, &table)) {
+      LOG_ERROR("Unkonwn config section: %s", section);
+      return -CMD_ERR_ARGV;
+    }
+  }
+
+  if (section && name) {
+    struct config_path path = { module, index, NULL };
+
+    if (configtab_lookup(module, index, table, name, &path.tab)) {
+      LOG_ERROR("Unkonwn config name: %s.%s", section, name);
+      return -CMD_ERR_ARGV;
+    }
+
+    if ((err = configtab_valid(path, print_valid_invalid, NULL)) < 0) {
+      LOG_ERROR("configtab_valid: %s%d.%s", path.mod->name, path.index, path.tab->name);
+      return -1;
+    } else if (err) {
+      ret = -1;
+    }
+  } else if (section) {
+    if ((err = configmod_valid(module, index, table, print_valid_invalid, NULL)) < 0) {
+      LOG_ERROR("configmod_valid: %s%d", module->name, index);
+      return -1;
+    } else if (err) {
+      ret = -1;
+    }
+  } else {
+    if ((err = config_valid(config, print_valid_invalid, NULL)) < 0) {
+      LOG_ERROR("config_valid");
+      return -1;
+    } else if (err) {
+      ret = -1;
+    }
+  }
+
+  return ret;
+}
+
 const struct cmd config_commands[] = {
   { "save",              config_cmd_save,   .usage = "[FILE]",                          .describe = "Save config to filesystem"  },
   { "load",              config_cmd_load,   .usage = "[FILE]",                          .describe = "Load config from filesystem"  },
@@ -484,5 +597,6 @@ const struct cmd config_commands[] = {
   { "set",               config_cmd_set,    .usage = "SECTION NAME VALUE [VALUE ...]",  .describe = "Set config value"  },
   { "clear",             config_cmd_clear,  .usage = "SECTION NAME",                    .describe = "Clear config value"  },
   { "reset",             config_cmd_reset,  .usage = "[SECTION] [NAME]",                .describe = "Reset config values to default"  },
+  { "valid",             config_cmd_valid,  .usage = "[SECTION] [NAME]",                .describe = "Check config values are valid"   },
   {}
 };

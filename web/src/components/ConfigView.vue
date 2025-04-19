@@ -18,40 +18,50 @@
             <template v-for="tab in mod.table" v-if="!tab.migrated">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
               <div class="tab-values">
-                <template v-for="value in fieldValues(mod, tab)">
+                <template v-for="(value, index) in fieldValues(mod, tab)">
                   <input v-if="tab.type == 'uint16'" type="number"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && !tab.secret" type="text"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && tab.secret" type="password"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'bool'" type="checkbox"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="true" :checked=value
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <select v-if="tab.type == 'enum'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    @input="syncInput"
                     :disabled="tab.readonly">
                     <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
 
                   <select v-if="tab.type == 'file'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    @input="syncInput"
                     :disabled="tab.readonly">
                     <option value="" :selected="!value"></option>
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
                 </template>
+
+                <div class="errors" v-for="error in fieldErrors(mod, tab)">
+                  {{ error }}
+                </div>
               </div>
             </template>
           </fieldset>
@@ -63,6 +73,7 @@
       <fieldset class="actions">
         <button type="submit" form="config">Apply</button>
         <progress class="input" v-show="applying">Applying...</progress>
+        <div class="symbol error" v-if="applyError" :title="applyError">!</div>
       </fieldset>
 
       <h2>Backup</h2>
@@ -91,21 +102,59 @@
 export default {
   data: () => ({
     loading: true,
+    configValues: null,
+    configErrors: null,
+
+    // 
     applying: false,
+    applyError: null,
 
     // restore
     uploading: false,
     restoreError: null,
   }),
   created() {
-    this.load()
+    this.load();
   },
   computed: {
     config() {
-      return this.$store.state.config
-    }
+      return this.$store.state.config;
+    },
   },
   methods: {
+    updateConfigValues(config) {
+      let configValues = {};
+
+      for (const mod of config.modules) {
+        for (const tab of mod.table) {
+          let name = this.fieldName(mod, tab);
+
+          if (tab.migrated) {
+            continue;
+          }
+
+          if (tab.count === undefined) {
+            configValues[name] = [tab.value[tab.type]];
+          } else {
+            configValues[name] = [...Array(tab.size).keys()].map(i => i < tab.count ? tab.values[tab.type][i] : null);
+          }
+        }
+      }
+
+      this.configValues = configValues;
+    },
+    syncInput(event) {
+      let name = event.target.name;
+      let value = event.target.value;
+      let index = event.target.dataset.index;
+
+      // TODO: null vs ""?
+      // TODO: 0 vs "0"?
+      this.configValues[name][index] = value;
+      
+      // required to allow re-submit after validation errors
+      event.target.setCustomValidity("");
+    },
     async load() {
       this.loading = true;
 
@@ -114,6 +163,8 @@ export default {
       } finally {
         this.loading = false;
       }
+
+      this.updateConfigValues(this.$store.state.config);
     },
     splitlines(description) {
       return description.split('\n');
@@ -133,35 +184,89 @@ export default {
       }
     },
     fieldValues(mod, tab) {
-      if (tab.count !== undefined) {
-        return  [...Array(tab.size).keys()].map(i => {
-          return i < tab.count ? tab.values[tab.type][i] : null;
-        });
+      let field = this.fieldName(mod, tab);
+
+      if (!this.configValues) {
+        return null;
+      }
+
+      return this.configValues[field];
+    },
+    fieldErrors(mod, tab) {
+      let name = this.fieldName(mod, tab);
+      let error = this.configErrors ? this.configErrors[name] : null
+
+      if (error) {
+        return [error];
+      } else if (tab.validation_errors) {
+        return tab.validation_errors;
       } else {
-        return [tab.value[tab.type]];
+        return null;
       }
     },
-    restoreInvalid(event) {
-      const input = event.target;
 
-      this.restoreError = input.validity ? null : input.validationMessage;
+    submitErrors(form, errors) {
+      let configErrors = {}
+
+      if (errors.set_errors) {
+        for (const e of errors.set_errors) {
+          if (e.module && e.name) {
+            let field = '[' + e.module + ']' + e.name;
+            let input = form.elements[field];
+
+            if (input) {
+              input.setCustomValidity(e.error);
+            }
+
+            configErrors[field] = e.error;
+          }
+        }
+      }
+
+      if (errors.validation_errors) {
+        for (const e of errors.validation_errors) {
+          let field = '[' + e.module + (e.index ? e.index : '') + ']' + e.name
+          let input = form.elements[field];
+
+          if (input) {
+            input.setCustomValidity(e.error);
+          }
+
+          configErrors[field] = e.error;
+        }
+      }
+
+      this.configErrors = configErrors;
+
+      form.reportValidity();
     },
     async submit(event) {
       const form = event.target;
       const formdata = new FormData(form);
 
       this.applying = true;
+      this.applyError = null;
 
       try {
         await this.$store.dispatch('postConfig', formdata);
         await this.$store.dispatch('restartSystem');
         await this.$store.dispatch('loadConfig');
       } catch (error) {
-        // XXX: UI?
-        alert(error.name + ": " + error.message);
+        if (error.name == "APIError" && error.data) {
+          this.applyError = error.message;
+          this.submitErrors(form, error.data);
+        } else {
+          throw error;
+        }
       } finally {
         this.applying = false;
       }
+    },
+
+    restoreInvalid(event) {
+      const input = event.target;
+
+      this.restoreError = input.validity ? null : input.validationMessage;
     },
     async restoreSubmit(event) {
       const form = event.target;

@@ -18,7 +18,7 @@ struct artnet_config artnet_config = {
 
 };
 
-static int artnet_migrate_net(uint16_t value, void *ctx)
+static int artnet_migrate_net(const struct config_path path, uint16_t value)
 {
   LOG_INFO("dmx-input.artnet_net = %u", value);
   dmx_input_config.artnet_net = value;
@@ -36,7 +36,7 @@ static int artnet_migrate_net(uint16_t value, void *ctx)
   return 0;
 }
 
-static int artnet_migrate_subnet(uint16_t value, void *ctx)
+static int artnet_migrate_subnet(const struct config_path path, uint16_t value)
 {
   LOG_INFO("dmx-input.artnet_subnet = %u", value);
   dmx_input_config.artnet_subnet = value;

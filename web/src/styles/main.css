@@ -121,7 +121,7 @@ nav a.tabbed-active {
   
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: space-between;
   }
   
@@ -140,7 +140,7 @@ nav a.tabbed-active {
   
     display: flex;
     flex-direction: column-reverse;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: space-between;
   }
   
@@ -159,7 +159,6 @@ main.split .view {
 
 main.split .controls {
   flex: 1;
-  align-self: stretch;
 }
 
 main.tabbed {
@@ -209,22 +208,6 @@ main progress {
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
-}
-
-.controls fieldset {
-  margin: 0;
-
-  border: none;
-}
-
-.controls fieldset label {
-  grid-column: 1 / 2;
-
-  font-weight: bold;
-}
-
-.controls fieldset button {
-  grid-column: 2 / 3;
 }
 
 /* Components */

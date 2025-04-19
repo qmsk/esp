@@ -14,16 +14,16 @@
 </template>
 <script>
 export default {
-  props: [
-    'pressAction',
-    'holdAction',
-    'releaseAction',
-  ],
+  props: {
+    pressAction: String,
+    holdAction: String,
+    holdTimeout: Number, // ms
+    releaseAction: String
+  },
   data: () => ({
     active: false,
     holdActive: false,
     holdTimer: null,
-    holdTimeout: 500, // ms
   }),
   methods: {
     setHold() {

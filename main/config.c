@@ -121,6 +121,21 @@ void disable_config()
   config_disabled = true;
 }
 
+int load_config()
+{
+  if (config_load(&config, CONFIG_BOOT_FILE)) {
+    if (errno == ENOENT) {
+      LOG_WARN("spiffs %s file at %s not found", CONFIG_VFS_PATH, CONFIG_BOOT_FILE);
+      return 1;
+    } else {
+      LOG_ERROR("config_load(%s)", CONFIG_BOOT_FILE);
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 int init_config()
 {
   int err;
@@ -143,17 +158,46 @@ int init_config()
     return 1;
   }
 
-  if (config_load(&config, CONFIG_BOOT_FILE)) {
-    if (errno == ENOENT) {
-      LOG_WARN("spiffs %s file at %s not found", CONFIG_VFS_PATH, CONFIG_BOOT_FILE);
-      return 1;
-    } else {
-      LOG_ERROR("config_load(%s)", CONFIG_BOOT_FILE);
-      return -1;
-    }
+  if ((err = load_config())) {
+    return err;
   }
 
   LOG_INFO("loaded boot config");
+
+  return 0;
+}
+
+int boot_config()
+{
+  int err;
+
+  switch (config.state) {
+    case CONFIG_STATE_INIT:
+      // boot with disable_config()
+      LOG_WARN("load config for fixing");
+
+      if ((err = load_config())) {
+        return err;
+      }
+
+      break;
+    
+    case CONFIG_STATE_LOAD:
+      LOG_INFO("config booted");
+
+      config_boot(&config);
+
+      break;
+
+    case CONFIG_STATE_ERROR:
+      LOG_WARN("config error");
+
+      break;
+    
+    default:
+      LOG_WARN("unexpected state %s", config_state_str(config.state));
+      break;
+  }
 
   return 0;
 }

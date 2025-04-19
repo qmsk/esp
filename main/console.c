@@ -211,7 +211,7 @@ int start_console()
   }
 
   if (console_cli_task) {
-    LOG_WARN("running: task=%p", console_cli_task);
+    LOG_INFO("running: task=%p", console_cli_task);
     return 1;
   } else if (start_task(task_options)) {
     LOG_ERROR("start_task");

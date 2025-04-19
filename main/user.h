@@ -67,11 +67,12 @@ void user_state(enum user_state state);
 void user_activity(enum user_activity activity);
 void user_alert(enum user_alert alert);
 
-// user actions
-void user_config_disable();
-void user_config_mode();
-void user_config_reset();
+// user_buttons.c
+void user_config_boot();
+void user_config_press();
+void user_config_hold();
+void user_config_release();
 
-void user_test_trigger();
+void user_test_press();
 void user_test_hold();
-void user_test_cancel();
+void user_test_release();

@@ -2,14 +2,10 @@
 #include "user_leds.h"
 #include "user_log.h"
 
-#include "config.h"
-#include "console.h"
-#include "leds_test.h"
-#include "system.h"
-#include "wifi.h"
-
 #include <logging.h>
 #include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 struct user_log user_power_log;
 struct user_log user_state_log;
@@ -166,41 +162,4 @@ void user_alert(enum user_alert alert)
   };
 
   set_user_leds_alert(alert);
-}
-
-void user_config_disable()
-{
-  disable_config();
-}
-
-void user_config_mode()
-{
-  if (start_console() < 0) {
-    user_alert(USER_ALERT_ERROR_START);
-  }
-
-  if (start_wifi_config()) {
-    user_alert(USER_ALERT_ERROR_WIFI);
-  }
-}
-
-void user_config_reset()
-{
-  reset_config();
-  system_restart();
-}
-
-void user_test_trigger()
-{
-  trigger_leds_test();
-}
-
-void user_test_hold()
-{
-  auto_leds_test();
-}
-
-void user_test_cancel()
-{
-  reset_leds_test();
 }

@@ -1,4 +1,5 @@
 #include <config.h>
+#include "state.h"
 
 #include <logging.h>
 
@@ -25,7 +26,24 @@ static bool match_fileext(const char *filename, const char *ext)
 
 int config_init(struct config *config)
 {
+  config_state(config, CONFIG_STATE_INIT);
+
   return config_reset(config);
+}
+
+static int config_filename(struct config *config, const char *filename, const char *ext, char *buf, size_t size)
+{
+  if (!match_fileext(filename, ext)) {
+    LOG_ERROR("filename must end with .%s: %s", ext, filename);
+    return -1;
+  }
+
+  if (snprintf(buf, size, "%s", filename) >= size) {
+    LOG_ERROR("filename too long: %s", filename);
+    return -1;
+  }
+
+  return 0;
 }
 
 static int config_path(struct config *config, const char *filename, const char *ext, char *buf, size_t size)
@@ -78,28 +96,50 @@ int config_load(struct config *config, const char *filename)
   int err = 0;
 
   if ((err = config_path(config, filename, CONFIG_FILE_EXT, path, sizeof(path)))) {
-    return err;
+    goto path_error;
   }
 
   if ((file = fopen(path, "r")) == NULL) {
     LOG_ERROR("fopen %s: %s", path, strerror(errno));
-    return -1;
+    err = -1;
+    goto path_error;
   }
 
   LOG_INFO("%s", path);
 
+  if ((err = config_filename(config, filename, CONFIG_FILE_EXT, config->filename, sizeof(config->filename)))) {
+    goto path_error;
+  }
+
   if ((err = config_init(config))) {
-    goto error;
+    goto file_error;
   }
 
   if ((err = config_read(config, file))) {
-    goto error;
+    goto file_error;
   }
 
-error:
+  LOG_INFO("state load");
+
+
+file_error:
   fclose(file);
 
+path_error:
+  if (err) {
+    config_state(config, CONFIG_STATE_ERROR);
+  } else {
+    config_state(config, CONFIG_STATE_LOAD);
+  }
+
   return err;
+}
+
+void config_boot(struct config *config)
+{
+  LOG_INFO("state boot");
+
+  config_state(config, CONFIG_STATE_BOOT);
 }
 
 int config_save(struct config *config, const char *filename)
@@ -148,6 +188,10 @@ int config_save(struct config *config, const char *filename)
     LOG_ERROR("rename %s -> %s: %s", newfile, path, strerror(errno));
     return -1;
   }
+
+  LOG_INFO("state save");
+
+  config_state(config, CONFIG_STATE_SAVE);
 
   return err;
 }

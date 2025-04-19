@@ -17,7 +17,12 @@
 // wait up to one second for ATX-PSU to signal power good
 #define LEDS_ATX_PSU_POWER_GOOD_TIMEOUT (1000 / portTICK_PERIOD_MS)
 
-struct leds_state leds_states[LEDS_COUNT] = {};
+struct leds_state leds_states[LEDS_COUNT] = {
+  { .index = 0, .config = &leds_configs[0] },
+  { .index = 1, .config = &leds_configs[1] },
+  { .index = 2, .config = &leds_configs[2] },
+  { .index = 3, .config = &leds_configs[3] },
+};
 
 int init_leds()
 {
@@ -63,9 +68,6 @@ int init_leds()
   {
     struct leds_state *state = &leds_states[i];
     const struct leds_config *config = &leds_configs[i];
-
-    state->index = i;
-    state->config = config;
 
     if (!config->enabled) {
       continue;

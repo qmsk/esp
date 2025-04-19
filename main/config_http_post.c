@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <freertos/task.h>
+
+#define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
 struct config_api_set {
   struct config *config;
   struct http_response *response;
@@ -51,9 +55,30 @@ static int config_api_start_response (struct config_api_set *ctx, enum http_stat
   return 0;
 }
 
+static int config_api_write_config_members(struct config_api_set *ctx)
+{
+  const struct config *config = ctx->config;
+  struct json_writer *w = &ctx->json_writer;
+  TickType_t tick = xTaskGetTickCount();
+
+  return (
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
+  );
+}
+
+
 static int config_api_close_response (struct config_api_set *ctx)
 {
   int err;
+
+  // status
+  if ((err = config_api_write_config_members(ctx))) {
+    LOG_ERROR("config_api_write_config_members");
+    return err;
+  }
 
   if ((err = json_close_object(&ctx->json_writer))) {
     LOG_ERROR("json_close_object");
@@ -94,9 +119,9 @@ static int config_api_set_error (struct config_api_set *ctx, const char *key, co
   }
 
   if (key) {
-    LOG_WARN("%s=%s: %s", key, value, error);
+    LOG_WARN("%s=%s: %s", key, value ? value : "", error);
   } else if (module && name) {
-    LOG_WARN("[%s]%s=%s: %s", module, name, value, error);
+    LOG_WARN("[%s]%s=%s: %s", module, name, value ? value : "", error);
   }
 
   return JSON_WRITE_OBJECT(&ctx->json_writer, 
@@ -312,8 +337,16 @@ int config_api_post_form (struct http_request *request, struct http_response *re
     LOG_ERROR("config_save");
     return err;
   }
-  
-  return HTTP_NO_CONTENT;
+
+  if ((err = config_api_start_response(&ctx, HTTP_OK, NULL))) {
+    return err;
+  }
+
+  if ((err = config_api_close_response(&ctx))) {
+    return err;
+  }
+
+  return 0;
 }
 
 int config_api_post (struct http_request *request, struct http_response *response, void *ctx)

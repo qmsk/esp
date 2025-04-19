@@ -224,7 +224,13 @@
           <label for="user-config-button" class="user-button-title">Config</label>
           <UserButton id="user-config-button" class="user-button user-button-config"
             pressAction="pressConfigButton"
+            holdAction="holdConfigButton"
+            holdTimeout="5000"
+            releaseAction="releaseConfigButton"
           ></UserButton>
+          <div class="user-leds-state">{{ status.config.state }}</div>
+          <div class="user-leds-timestamp" v-if="status.config.tick">{{ tickToDate(status.config.tick) | timestamp }}</div>
+          <div class="user-leds-interval" v-if="status.config.tick_ms">{{ status.config.tick_ms | interval('ms', 's') }}</div>
         </div>
 
         <div id="user-test" class="user-item">
@@ -232,6 +238,7 @@
           <UserButton id="user-test-button" class="user-button user-button-test"
             pressAction="pressTestButton"
             holdAction="holdTestButton"
+            holdTimeout="500"
             releaseAction="releaseTestButton"
           ></UserButton>
         </div>

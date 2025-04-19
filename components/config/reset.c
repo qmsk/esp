@@ -1,4 +1,5 @@
 #include <config.h>
+#include "state.h"
 
 #include <logging.h>
 
@@ -82,6 +83,13 @@ int config_reset(struct config *config)
         return err;
       }
     }
+  }
+
+  // retain CONFIG_STATE_INIT
+  if (config->state) {
+    LOG_WARN("state reset");
+
+    config_state(config, CONFIG_STATE_RESET);
   }
 
   return 0;

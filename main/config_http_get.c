@@ -5,6 +5,10 @@
 #include <logging.h>
 #include <json.h>
 
+#include <freertos/task.h>
+
+#define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
 static int config_api_write_enum_value(struct json_writer *w, const struct configtab *tab, unsigned index)
 {
   const struct config_enum *e;
@@ -279,9 +283,13 @@ static int config_api_write_config_modules(struct json_writer *w, const struct c
 static int config_api_write_config(struct json_writer *w, void *ctx)
 {
   const struct config *config = ctx;
+  TickType_t tick = xTaskGetTickCount();
 
   return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_STRING(w, "filename", CONFIG_BOOT_FILE)
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "modules", config_api_write_config_modules(w, config))
   );
 }

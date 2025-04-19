@@ -4,6 +4,18 @@
 
     grid-template-columns: 1fr 3fr 1fr;
   }
+
+  fieldset legend {
+    width: 33%; 
+  }
+
+  fieldset div.errors {
+    grid-column: 2 / 3;
+  }
+
+  fieldset div.description {
+    grid-column: 2 / 3;
+  }
 }
 
 @media (orientation: portrait) {
@@ -11,6 +23,22 @@
     margin: 0.5em;
 
     grid-template-columns: 1fr 3.5fr 0.5fr;
+  }
+
+  fieldset legend {
+    width: 100%;
+  }
+
+  fieldset div.errors {
+    grid-column: 1 / 3;
+
+    margin-left: 1em; /* to match legend */
+  }
+
+  fieldset div.description {
+    grid-column: 1 / 3;
+
+    margin-left: 1em; /* to match legend */
   }
 }
 
@@ -20,11 +48,20 @@ fieldset {
 
   border: 1px solid #bbb;
 
-  grid-gap: 1em;
+  column-gap: 1em;
+  row-gap: 0;
 }
 
-fieldset.actions {
-  border: none;
+fieldset.collapse.close {
+  border: 1px solid #0000;
+}
+
+fieldset.collapse.close > * {
+  display: none;
+}
+
+fieldset.collapse.close legend {
+  display: flex;
 }
 
 fieldset legend {
@@ -33,55 +70,59 @@ fieldset legend {
 
   background-color: #888;
   color: #111;
+
   font-size: 2em;
   font-weight: bold;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
 }
 
-fieldset div.module-description {
-  grid-column: 1 / 4;
+fieldset legend span {
 
-  margin: 0em 1em;
+}
+
+fieldset legend button {
+  width: 1.8em;
+  height: 1.8em;
+  
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 1em;
+
+  font-size: 1em;
+}
+
+fieldset legend button:hover {
+  background: #ddd;
 }
 
 /* TODO: stretch background, vertically align content? */
 fieldset label {
-  grid-column: 1 / 2;
+  grid-column: 1;
 }
 
 fieldset div.module-description {
   grid-column: 1 / 3;
+
+  margin-bottom: 2em;
 }
 
-fieldset progress.input {
-  grid-column: 3 / 4;
-  width: 100%;
+fieldset div.inputs {
+  grid-column: 2;
 }
 
-fieldset div.symbol {
-  grid-column: 3 / 4;
-
-  padding: 0.5em;
-  width: 2em;
-
-  font-size: 2em;
-  text-align: center;
-}
-
-fieldset div.symbol.error {
-  background: #ff000080;
-  border-radius: 0.5em;
-}
-
-fieldset progress.form {
-  grid-column: 2 / 3;
-}
-
-fieldset button {
+fieldset div.actions {
   grid-column: 3;
 }
 
 /* general styles */
 fieldset p {
+  margin: 1em 0.5em;
+
   font-style: italic;
   font-size: small;
 }
@@ -96,32 +137,92 @@ fieldset label {
   color: #ccc;
 }
 
-fieldset input, form fieldset select {
+fieldset input,
+fieldset select {
   width: 100%;
-  height: 1.8em;
+  height: 2.2em;
+
+  box-sizing: border-box;
+  border: 1px solid #444;
+  padding: 0em 0.25em;
 }
 
-fieldset input:invalid {
+fieldset input:invalid,
+fieldset input.invalid {
   box-shadow: 0 0 5px 1px red;
 }
 
 fieldset input[type="checkbox"] {
-  width: 2em;
+  width: 2.2em;
 }
 
 fieldset input[type="file"] {
   margin: auto 0;
 }
 
+fieldset div.actions button {
+  width: 1.8em;
+  height: 1.8em;
+  
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 1em;
+}
+
+fieldset div.actions button:hover {
+  background: #ddd;
+}
+
+fieldset div.actions button:active,
+fieldset div.actions button.active
+{
+  background: #888;
+}
+
 fieldset div.errors {
   padding: 0.5em;
   
   background-color: #ff000080;
-  box-shadow: 0 0 5px 1px red;
 }
 
-/* Button styling */
-fieldset button {
+fieldset div.description {
+  padding: 0em;
+  margin-bottom: 1em;
+
+  background-color: #bbb;
+}
+
+/* animations */
+fieldset div.collapse {
+  transition: max-height 0.5s ease-in allow-discrete;
+
+  display: none;
+  max-height: 0px;
+  overflow: hidden;
+}
+
+fieldset div.collapse.open {
+  display: block;
+  max-height: 100px;
+}
+
+
+/* Controls styling */
+fieldset.actions {
+  margin: 0;
+
+  border: none;
+}
+
+fieldset.actions label {
+  grid-column: 1;
+
+  font-weight: bold;
+}
+
+fieldset.actions button {
+  grid-column: 2;
+
   padding: 0.5em 1em;
 
   background-color: #133337;
@@ -134,17 +235,38 @@ fieldset button {
   font-weight: bold;
 }
 
-fieldset button:hover {
+fieldset.actions button:hover {
   border: 0.25px solid #eee;
 }
 
-fieldset button:active {
+fieldset.actions button:active {
   transform: scale(0.99);
 }
 
-fieldset button:disabled {
+fieldset.actions button:disabled {
   background-color: #888;
 }
-fieldset button:disabled:hover {
+
+fieldset.actions button:disabled:hover {
   border: 0.25px solid #000;
+}
+
+fieldset.actions progress {
+  grid-column: 3;
+  width: 100%;
+}
+
+fieldset.actions div.symbol {
+  grid-column: 3;
+
+  padding: 0.5em;
+  width: 2em;
+
+  font-size: 2em;
+  text-align: center;
+}
+
+fieldset.actions div.symbol.error {
+  background: #ff000080;
+  border-radius: 0.5em;
 }

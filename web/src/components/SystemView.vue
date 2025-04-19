@@ -180,7 +180,7 @@ table.tasks td.stack-free {
     </div>
     <div class="controls">
       <form @submit="restartSubmit">
-        <fieldset>
+        <fieldset class="actions">
           <button type="submit">Restart</button>
           <progress v-show="restarting">Restarting...</progress>
         </fieldset>

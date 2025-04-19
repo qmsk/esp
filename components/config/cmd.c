@@ -6,6 +6,10 @@
 
 #include <sdkconfig.h>
 
+#include <freertos/task.h>
+
+#define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
 #if CONFIG_LOG_COLORS
   #define CLI_FMT_RESET "\033[0m"
 
@@ -238,6 +242,19 @@ static void print_config(const struct config *config)
       print_configmod(mod, 0, mod->table);
     }
   }
+}
+
+int config_cmd_state(int argc, char **argv, void *ctx)
+{
+  struct config *config = ctx;
+  TickType_t tick = xTaskGetTickCount();
+
+  printf("Config:\n");
+  printf("\tPath: %s\n", config->path);
+  printf("\tFilename: %s\n", config->filename);
+  printf("\tState: %s @ %dms\n", config_state_str(config->state), TICK_MS(tick, config->tick));
+
+  return 0;
 }
 
 int config_cmd_save(int argc, char **argv, void *ctx)
@@ -587,6 +604,8 @@ int config_cmd_valid(int argc, char **argv, void *ctx)
 }
 
 const struct cmd config_commands[] = {
+  { "state",             config_cmd_state,  .usage = "",                                .describe = "Show config state"  },
+
   { "save",              config_cmd_save,   .usage = "[FILE]",                          .describe = "Save config to filesystem"  },
   { "load",              config_cmd_load,   .usage = "[FILE]",                          .describe = "Load config from filesystem"  },
   { "list",              config_cmd_list,   .usage = "",                                .describe = "List configs from filesystem"  },

@@ -264,7 +264,8 @@ export default {
       if (errors.set_errors) {
         for (const e of errors.set_errors) {
           if (e.module && e.name) {
-            let field = '[' + e.module + ']' + e.name;
+            let module = e.module;
+            let field = '[' + module + ']' + e.name;
             let input = form.elements[field];
 
             if (input) {
@@ -272,13 +273,15 @@ export default {
             }
 
             configErrors[field] = e.error;
+            this.$set(this.showModules, module, true);
           }
         }
       }
 
       if (errors.validation_errors) {
         for (const e of errors.validation_errors) {
-          let field = '[' + e.module + (e.index ? e.index : '') + ']' + e.name
+          let module = e.module + (e.index ? e.index : '');
+          let field = '[' + module + ']' + e.name;
           let input = form.elements[field];
 
           if (input) {
@@ -286,12 +289,16 @@ export default {
           }
 
           configErrors[field] = e.error;
+          this.$set(this.showModules, module, true);
         }
       }
 
       this.configErrors = configErrors;
 
-      form.reportValidity();
+      // let DOM update to expand modules
+      this.$nextTick(() => {
+        form.reportValidity();
+      });
     },
     async submit(event) {
       const form = event.target;

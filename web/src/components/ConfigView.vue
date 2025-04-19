@@ -52,6 +52,10 @@
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
                 </template>
+
+                <div class="errors" v-if="configErrors && configErrors.set && configErrors.set[fieldName(mod, tab)]">
+                  {{ configErrors.set[fieldName(mod, tab)] }}
+                </div>
               </div>
             </template>
           </fieldset>
@@ -63,6 +67,7 @@
       <fieldset class="actions">
         <button type="submit" form="config">Apply</button>
         <progress class="input" v-show="applying">Applying...</progress>
+        <div class="symbol error" v-if="applyError" :title="applyError">!</div>
       </fieldset>
 
       <h2>Backup</h2>
@@ -91,19 +96,25 @@
 export default {
   data: () => ({
     loading: true,
+
+    // 
     applying: false,
+    applyError: null,
 
     // restore
     uploading: false,
     restoreError: null,
   }),
   created() {
-    this.load()
+    this.load();
   },
   computed: {
     config() {
-      return this.$store.state.config
-    }
+      return this.$store.state.config;
+    },
+    configErrors() {
+      return this.$store.state.configErrors;
+    },
   },
   methods: {
     async load() {
@@ -156,6 +167,12 @@ export default {
         await this.$store.dispatch('postConfig', formdata);
         await this.$store.dispatch('restartSystem');
         await this.$store.dispatch('loadConfig');
+      } catch (error) {
+        if (error.name == "APIError" && error.data) {
+          this.applyError = error.message;
+        } else {
+          throw error;
+        }
       } finally {
         this.applying = false;
       }

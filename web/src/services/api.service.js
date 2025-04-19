@@ -4,10 +4,13 @@ class APIError extends Error {
   static fromAxios(error) {
     let message = `HTTP ${error.config.method} ${error.config.url} => HTTP ${error.response.status} ${error.response.statusText}`;
     let text = null;
+    let data = null;
 
     if (error.response.headers['content-type'] == 'text/plain') {
       text = error.response.data;
       message = `${message}\n${text}`;
+    } else if (error.response.headers['content-type'] == 'application/json') {
+      data = error.response.data;
     }
 
     return new APIError(
@@ -15,12 +18,12 @@ class APIError extends Error {
       error.config.url,
       error.response.status,
       error.response.statusText,
-      text,
+      text, data,
       message
     );
   }
 
-  constructor(method, url, status, statusText, text, message) {
+  constructor(method, url, status, statusText, text, data, message) {
     super(message);
 
     this.name = "APIError";
@@ -30,6 +33,7 @@ class APIError extends Error {
     this.status = status;
     this.statusText = statusText;
     this.text = text;
+    this.data = data;
   }
 }
 

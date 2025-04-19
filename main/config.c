@@ -170,7 +170,7 @@ int init_config()
 int boot_config()
 {
   int err;
-  
+
   switch (config.state) {
     case CONFIG_STATE_INIT:
       // boot with disable_config()
@@ -186,6 +186,11 @@ int boot_config()
       LOG_INFO("config booted");
 
       config_boot(&config);
+
+      break;
+
+    case CONFIG_STATE_ERROR:
+      LOG_WARN("config error");
 
       break;
     

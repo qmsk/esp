@@ -22,6 +22,7 @@ enum config_state {
   CONFIG_STATE_DIRTY, // TODO
   CONFIG_STATE_SAVE,
   CONFIG_STATE_RESET,
+  CONFIG_STATE_ERROR,
 };
 
 const char *config_state_str(enum config_state state);

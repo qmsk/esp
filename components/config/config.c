@@ -96,34 +96,41 @@ int config_load(struct config *config, const char *filename)
   int err = 0;
 
   if ((err = config_path(config, filename, CONFIG_FILE_EXT, path, sizeof(path)))) {
-    return err;
+    goto path_error;
   }
 
   if ((file = fopen(path, "r")) == NULL) {
     LOG_ERROR("fopen %s: %s", path, strerror(errno));
-    return -1;
+    err = -1;
+    goto path_error;
   }
 
   LOG_INFO("%s", path);
 
   if ((err = config_filename(config, filename, CONFIG_FILE_EXT, config->filename, sizeof(config->filename)))) {
-    return err;
+    goto path_error;
   }
 
   if ((err = config_init(config))) {
-    goto error;
+    goto file_error;
   }
 
   if ((err = config_read(config, file))) {
-    goto error;
+    goto file_error;
   }
 
   LOG_INFO("state load");
 
-  config_state(config, CONFIG_STATE_LOAD);
 
-error:
+file_error:
   fclose(file);
+
+path_error:
+  if (err) {
+    config_state(config, CONFIG_STATE_ERROR);
+  } else {
+    config_state(config, CONFIG_STATE_LOAD);
+  }
 
   return err;
 }

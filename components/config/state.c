@@ -12,6 +12,7 @@ const char *config_state_str(enum config_state state)
     case CONFIG_STATE_DIRTY:  return "DIRTY";
     case CONFIG_STATE_SAVE:   return "SAVE";
     case CONFIG_STATE_RESET:  return "RESET";
+    case CONFIG_STATE_ERROR:  return "ERROR";
     default:                  return "?";
   }
 }

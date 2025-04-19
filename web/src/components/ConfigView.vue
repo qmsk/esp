@@ -53,8 +53,8 @@
                   </select>
                 </template>
 
-                <div class="errors" v-if="configErrors && configErrors.set && configErrors.set[fieldName(mod, tab)]">
-                  {{ configErrors.set[fieldName(mod, tab)] }}
+                <div class="errors" v-for="error in fieldErrors(mod, tab)">
+                  {{ error }}
                 </div>
               </div>
             </template>
@@ -150,6 +150,19 @@ export default {
         });
       } else {
         return [tab.value[tab.type]];
+      }
+    },
+    fieldErrors(mod, tab) {
+      let configErrors = this.configErrors;
+      let name = this.fieldName(mod, tab);
+      let error = configErrors && configErrors.fields && configErrors.fields[name];
+
+      if (error) {
+        return [error];
+      } else if (tab.validation_errors) {
+        return tab.validation_errors;
+      } else {
+        return null;
       }
     },
     restoreInvalid(event) {

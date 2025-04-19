@@ -94,7 +94,7 @@ export default new Vuex.Store({
         if (error.name == "APIError" && error.data) {
           commit('setConfigErrors', error.data);
         }
-        
+
         throw error;
       }
     },
@@ -207,14 +207,22 @@ export default new Vuex.Store({
     setConfigErrors (state, errors) {
       let configErrors = {
         unknown: [],
-        set: {},
+        fields: {},
       };
 
-      for (const e of errors.set_errors) {
-        if (e.module && e.name) {
-          configErrors.set['[' + e.module + ']' + e.name] = e.error;
-        } else {
-          configErrors.unknown.push(e.key + ': ' + e.error);
+      if (errors.set_errors) {
+        for (const e of errors.set_errors) {
+          if (e.module && e.name) {
+            configErrors.fields['[' + e.module + ']' + e.name] = e.error;
+          } else {
+            configErrors.unknown.push(e.key + ': ' + e.error);
+          }
+        }
+      }
+
+      if (errors.validation_errors) {
+        for (const e of errors.validation_errors) {
+          configErrors.fields['[' + e.module + (e.index ? e.index : '') + ']' + e.name] = e.error;
         }
       }
 

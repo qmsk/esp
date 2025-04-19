@@ -18,41 +18,41 @@
             <template v-for="tab in mod.table" v-if="!tab.migrated">
               <label :for="mod.name + '-' + tab.name">{{ tab.name }}</label>
               <div class="tab-values">
-                <template v-for="value in fieldValues(mod, tab)">
+                <template v-for="(value, index) in fieldValues(mod, tab)">
                   <input v-if="tab.type == 'uint16'" type="number"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
-                    @input="clearErrors"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && !tab.secret" type="text"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value"
-                    @input="clearErrors"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && tab.secret" type="password"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="value"
-                    @input="clearErrors"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'bool'" type="checkbox"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
                     :value="true" :checked=value
-                    @input="clearErrors"
+                    @input="syncInput"
                     :readonly="tab.readonly">
 
                   <select v-if="tab.type == 'enum'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                    @input="clearErrors"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    @input="syncInput"
                     :disabled="tab.readonly">
                     <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
 
                   <select v-if="tab.type == 'file'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
-                    @input="clearErrors"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    @input="syncInput"
                     :disabled="tab.readonly">
                     <option value="" :selected="!value"></option>
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
@@ -102,6 +102,7 @@
 export default {
   data: () => ({
     loading: true,
+    configValues: null,
 
     // 
     applying: false,
@@ -123,6 +124,39 @@ export default {
     },
   },
   methods: {
+    updateConfigValues(config) {
+      let configValues = {};
+
+      for (const mod of config.modules) {
+        for (const tab of mod.table) {
+          let name = this.fieldName(mod, tab);
+
+          if (tab.migrated) {
+            continue;
+          }
+
+          if (tab.count === undefined) {
+            configValues[name] = [tab.value[tab.type]];
+          } else {
+            configValues[name] = [...Array(tab.size).keys()].map(i => i < tab.count ? tab.values[tab.type][i] : null);
+          }
+        }
+      }
+
+      this.configValues = configValues;
+    },
+    syncInput(event) {
+      let name = event.target.name;
+      let value = event.target.value;
+      let index = event.target.dataset.index;
+
+      // TODO: null vs ""?
+      // TODO: 0 vs "0"?
+      this.configValues[name][index] = value;
+      
+      // required to allow re-submit after validation errors
+      event.target.setCustomValidity("");
+    },
     async load() {
       this.loading = true;
 
@@ -131,6 +165,8 @@ export default {
       } finally {
         this.loading = false;
       }
+
+      this.updateConfigValues(this.$store.state.config);
     },
     splitlines(description) {
       return description.split('\n');
@@ -150,13 +186,13 @@ export default {
       }
     },
     fieldValues(mod, tab) {
-      if (tab.count !== undefined) {
-        return  [...Array(tab.size).keys()].map(i => {
-          return i < tab.count ? tab.values[tab.type][i] : null;
-        });
-      } else {
-        return [tab.value[tab.type]];
+      let field = this.fieldName(mod, tab);
+
+      if (!this.configValues) {
+        return null;
       }
+
+      return this.configValues[field];
     },
     fieldErrors(mod, tab) {
       let configErrors = this.configErrors;
@@ -198,11 +234,6 @@ export default {
       }
 
       form.reportValidity();
-    },
-    clearErrors(event) {
-      let input = event.target;
-
-      input.setCustomValidity("");
     },
     async submit(event) {
       const form = event.target;

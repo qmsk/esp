@@ -121,7 +121,7 @@ nav a.tabbed-active {
   
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: space-between;
   }
   
@@ -140,7 +140,7 @@ nav a.tabbed-active {
   
     display: flex;
     flex-direction: column-reverse;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: space-between;
   }
   
@@ -159,7 +159,6 @@ main.split .view {
 
 main.split .controls {
   flex: 1;
-  align-self: stretch;
 }
 
 main.tabbed {

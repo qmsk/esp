@@ -4,6 +4,19 @@
 
     grid-template-columns: 1fr 3fr 1fr;
   }
+
+  fieldset legend {
+    width: 33%; 
+  }
+
+  fieldset div.errors {
+    grid-column: 2 / 3;
+  }
+
+  fieldset div.description {
+    grid-column: 2 / 3;
+  }
+  
 }
 
 @media (orientation: portrait) {
@@ -13,10 +26,17 @@
     grid-template-columns: 1fr 3.5fr 0.5fr;
   }
 
-  fieldset div.errors {
-    grid-column: 1 / 3 !important;
+  fieldset legend {
+    width: 100%;
   }
-  
+
+  fieldset div.errors {
+    grid-column: 1 / 3;
+  }
+
+  fieldset div.description {
+    grid-column: 1 / 3;
+  }
 }
 
 /* fieldsets */
@@ -57,12 +77,19 @@ fieldset div.actions {
   grid-column: 3;
 }
 
-fieldset div.description {
-  grid-column: 2 / 3;
+
+/* animations */
+fieldset div.collapse {
+  transition: max-height 0.5s ease-in allow-discrete;
+
+  display: none;
+  max-height: 0px;
+  overflow: hidden;
 }
 
-fieldset div.errors {
-  grid-column: 2 / 3;
+fieldset div.collapse.open {
+  display: block;
+  max-height: 100px;
 }
 
 /* general styles */
@@ -126,6 +153,10 @@ fieldset div.errors {
   box-shadow: 0 0 5px 1px red;
 }
 
+fieldset div.description {
+  margin-bottom: 1em;
+}
+
 /* Controls styling */
 fieldset.actions {
   margin: 0;
@@ -165,6 +196,7 @@ fieldset.actions button:active {
 fieldset.actions button:disabled {
   background-color: #888;
 }
+
 fieldset.actions button:disabled:hover {
   border: 0.25px solid #000;
 }
@@ -187,18 +219,4 @@ fieldset.actions div.symbol {
 fieldset.actions div.symbol.error {
   background: #ff000080;
   border-radius: 0.5em;
-}
-
-/* animations */
-fieldset div.collapse {
-  transition: max-height 0.5s ease-in allow-discrete;
-
-  display: none;
-  max-height: 0px;
-  overflow: hidden;
-}
-
-fieldset div.collapse.open {
-  display: block;
-  max-height: 100px;
 }

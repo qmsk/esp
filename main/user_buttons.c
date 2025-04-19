@@ -18,7 +18,7 @@ void user_config_boot()
 
 void user_config_press()
 {
-  LOG_WARN("start config mode");
+  LOG_INFO("start config mode");
 
   if (start_console() < 0) {
     user_alert(USER_ALERT_ERROR_START);
@@ -49,7 +49,7 @@ void user_test_press()
 {
   user_test_held = false;
 
-  LOG_WARN("trigger test mode");
+  LOG_INFO("trigger test mode");
 
   trigger_leds_test();
 }
@@ -57,7 +57,7 @@ void user_test_press()
 void user_test_hold()
 {
   if (!user_test_held) {
-    LOG_WARN("auto test mode");
+    LOG_INFO("auto test mode");
 
     auto_leds_test();
   }
@@ -68,7 +68,7 @@ void user_test_hold()
 void user_test_release()
 {
   if (user_test_held) {
-    LOG_WARN("reset test mode");
+    LOG_INFO("reset test mode");
 
     reset_leds_test();
   }

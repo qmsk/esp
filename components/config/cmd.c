@@ -250,6 +250,14 @@ int config_cmd_save(int argc, char **argv, void *ctx)
     return err;
   }
 
+  if ((err = config_valid(config, print_valid_invalid, NULL)) < 0) {
+    LOG_ERROR("config_valid");
+    return -1;
+  } else if (err) {
+    LOG_WARN("config invalid, refusing to save");
+    return 1;
+  }
+
   if (config_save(config, filename)) {
     LOG_ERROR("config_save %s", filename);
     return -CMD_ERR;

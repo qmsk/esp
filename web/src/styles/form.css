@@ -49,15 +49,6 @@ fieldset div.module-description {
   margin: 0em 1em;
 }
 
-fieldset progress.input {
-  grid-column: 3 / 4;
-  width: 100%;
-}
-
-fieldset progress.form {
-  grid-column: 2 / 3;
-}
-
 fieldset div.inputs {
   grid-column: 2;
 }
@@ -151,6 +142,11 @@ fieldset.actions button:disabled {
 }
 fieldset.actions button:disabled:hover {
   border: 0.25px solid #000;
+}
+
+fieldset.actions progress {
+  grid-column: 3;
+  width: 100%;
 }
 
 fieldset.actions div.symbol {

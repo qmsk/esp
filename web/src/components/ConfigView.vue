@@ -162,10 +162,10 @@
     </div>
     <div class="controls">
       <h2>State</h2>
-      <div :class="['config-state', configStateClass]" v-if="config">
-          <span class="state">{{ config.state }}</span>
-        @ <span class="interval">{{ config.tick_ms | interval('ms', 's')  }}</span>
-        (<span class="filename">{{ config.filename }}</span>)
+      <div :class="['config-state', configStateClass]" v-if="configState">
+          <span class="state">{{ configState.state }}</span>
+        @ <span class="interval">{{ configState.tick_ms | interval('ms', 's')  }}</span>
+        (<span class="filename">{{ configState.filename }}</span>)
       </div>
 
       <h2>Apply</h2>
@@ -222,9 +222,12 @@ export default {
     config() {
       return this.$store.state.config;
     },
+    configState() {
+      return this.$store.state.configState;
+    },
     configStateClass() {
-      if (this.config && this.config.state) {
-        return 'config-state-' + this.config.state.toLowerCase();
+      if (this.configState) {
+        return 'config-state-' + this.configState.state.toLowerCase();
       } else {
         return null;
       }

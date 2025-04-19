@@ -43,6 +43,8 @@ export default class ConfigService {
     }
 
     const response = await this.apiService.post('/api/config', data);
+
+    return response.data;
   }
 
   async upload(file) {

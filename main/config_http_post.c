@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <freertos/task.h>
+
+#define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
+
 struct config_api_set {
   struct config *config;
   struct http_response *response;
@@ -269,6 +273,19 @@ static int config_api_valid (struct config_api_set *ctx)
   return config_api_validation_done(ctx);
 }
 
+static int config_api_write_config_state(struct json_writer *w, void *ctx)
+{
+  const struct config *config = ctx;
+  TickType_t tick = xTaskGetTickCount();
+
+  return JSON_WRITE_OBJECT(w,
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
+    ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))
+  );
+}
+
 /* POST /api/config application/x-www-form-urlencoded */
 int config_api_post_form (struct http_request *request, struct http_response *response)
 {
@@ -312,8 +329,14 @@ int config_api_post_form (struct http_request *request, struct http_response *re
     LOG_ERROR("config_save");
     return err;
   }
+
+  if ((err = write_http_response_json(response, config_api_write_config_state, &config))) {
+    LOG_WARN("write_http_response_json -> config_api_write_config_state");
+    return err;
+  }
+
   
-  return HTTP_NO_CONTENT;
+  return 0;
 }
 
 int config_api_post (struct http_request *request, struct http_response *response, void *ctx)

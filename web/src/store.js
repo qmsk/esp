@@ -28,6 +28,7 @@ export default new Vuex.Store({
     artnet_inputs: null,
     artnet_outputs: null,
     config: null,
+    configState: null,
     leds: null,
     status_timestamp: 0,
     status: null,
@@ -85,10 +86,12 @@ export default new Vuex.Store({
       commit('loadConfig', config);
     },
     async postConfig({ state, commit }, formdata) {
-      await configService.post(state.config, formdata);
+      const configState = await configService.post(state.config, formdata);
+
+      commit('postConfig', configState);
     },
     async uploadConfig({ commit }, file) {
-      await configService.upload(file);
+      const configState = await configService.upload(file);
     },
 
     /* system */
@@ -192,6 +195,10 @@ export default new Vuex.Store({
 
     loadConfig (state, config) {
       state.config = config;
+      state.configState = config;
+    },
+    postConfig (state, configState) {
+      state.configState = configState;
     },
     updateSystem(state, system) {
       state.system = system;

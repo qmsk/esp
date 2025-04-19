@@ -132,15 +132,17 @@ int user_api_button(const struct user_api_button *api)
     switch (api->config_event) {
       case USER_LEDS_INPUT_PRESS:
         LOG_INFO("config press");
-        user_config_mode();
+        user_config_press();
         break;
 
       case USER_LEDS_INPUT_HOLD:
         LOG_INFO("config hold");
-        user_config_reset();
+        user_config_hold();
         break;
 
       case USER_LEDS_INPUT_RELEASE:
+        LOG_INFO("config release");
+        user_config_release();
         break;
 
       default:
@@ -153,7 +155,7 @@ int user_api_button(const struct user_api_button *api)
     switch (api->test_event) {
       case USER_LEDS_INPUT_PRESS:
         LOG_INFO("test press");
-        user_test_trigger();
+        user_test_press();
         break;
 
       case USER_LEDS_INPUT_HOLD:
@@ -163,7 +165,7 @@ int user_api_button(const struct user_api_button *api)
 
       case USER_LEDS_INPUT_RELEASE:
         LOG_INFO("test release");
-        user_test_cancel();
+        user_test_release();
         break;
 
       default:

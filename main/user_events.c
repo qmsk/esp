@@ -8,11 +8,11 @@
 
 #include <logging.h>
 
-// reset if held for >5s
-#define USER_LEDS_CONFIG_RESET_THRESHOLD (5000 / portTICK_RATE_MS)
+// when held for >5s
+#define USER_LEDS_CONFIG_HOLD_THRESHOLD (5000 / portTICK_RATE_MS)
 
-// reset if held for >1s
-#define USER_LEDS_TEST_RESET_THRESHOLD (500 / portTICK_RATE_MS)
+// when held for >1s
+#define USER_LEDS_TEST_HOLD_THRESHOLD (500 / portTICK_RATE_MS)
 
 xTaskHandle user_events_task;
 
@@ -24,8 +24,8 @@ void init_user_config_input(enum user_led led)
   if ((ret = get_user_led(led)) < 0) {
     LOG_ERROR("get_user_led");
   } else if (ret) {
-    LOG_WARN("config boot disabled");
-    user_config_disable();
+    LOG_INFO("config boot");
+    user_config_boot();
   }
 }
 
@@ -36,31 +36,39 @@ void on_user_config_input(struct user_leds_input input, enum user_led led)
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
       // enter config mode
-      LOG_WARN("config start");
+      LOG_INFO("press");
       pressed = true;
       override_user_led(led, USER_LEDS_PULSE); // feedback
-      user_config_mode();
+      user_config_press();
       break;
 
     case USER_LEDS_INPUT_HOLD:
       if (!pressed) {
         // ignore when held at boot without press event
-        LOG_WARN("config ignore");
-      } else if (input.hold < USER_LEDS_CONFIG_RESET_THRESHOLD) {
-        LOG_WARN("config hold");
+        LOG_INFO("ignore (boot)");
+      } else if (input.hold < USER_LEDS_CONFIG_HOLD_THRESHOLD) {
+        LOG_INFO("wait");
       } else {
-        LOG_WARN("config reset");
+        LOG_INFO("hold");
         user_state(USER_STATE_RESET);
         revert_user_led(led);
-        user_config_reset();
+        user_config_hold();
       }
       break;
 
     case USER_LEDS_INPUT_RELEASE:
-      LOG_WARN("cancel");
+      if (!pressed) {
+        // ignore when held at boot without press event
+        LOG_INFO("release (boot)");
+      } else if (input.hold < USER_LEDS_CONFIG_HOLD_THRESHOLD) {
+        LOG_INFO("release (hold)");
+      } else {
+        LOG_INFO("release (press)");
+      }
+
       pressed = false;
       revert_user_led(led);
-
+      user_config_release();
       break;
   }
 }
@@ -69,28 +77,29 @@ void on_user_test_input(struct user_leds_input input)
 {
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
-      LOG_WARN("trigger");
-      user_test_trigger();
+      LOG_INFO("press");
+      user_test_press();
 
       break;
 
     case USER_LEDS_INPUT_HOLD:
-      if (input.hold > USER_LEDS_TEST_RESET_THRESHOLD) {
-        LOG_WARN("hold");
+      if (input.hold > USER_LEDS_TEST_HOLD_THRESHOLD) {
+        LOG_INFO("hold");
         user_test_hold();
       } else {
-        LOG_WARN("wait");
+        LOG_INFO("wait");
       }
 
       break;
 
     case USER_LEDS_INPUT_RELEASE:
-      if (input.hold > USER_LEDS_TEST_RESET_THRESHOLD) {
-        LOG_WARN("cancel");
-        user_test_cancel();
+      if (input.hold > USER_LEDS_TEST_HOLD_THRESHOLD) {
+        LOG_INFO("release (hold)");
       } else {
-        LOG_WARN("coast");
+        LOG_INFO("release (press)");
       }
+
+      user_test_release();
 
       break;
   }

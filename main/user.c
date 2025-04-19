@@ -2,14 +2,10 @@
 #include "user_leds.h"
 #include "user_log.h"
 
-#include "config.h"
-#include "console.h"
-#include "leds_test.h"
-#include "system.h"
-#include "wifi.h"
-
 #include <logging.h>
 #include <esp_system.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 struct user_log user_power_log;
 struct user_log user_state_log;

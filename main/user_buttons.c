@@ -1,15 +1,25 @@
 #include "user.h"
-#include "user_leds.h"
+
+#include "config.h"
+#include "console.h"
+#include "leds_test.h"
+#include "system.h"
+#include "wifi.h"
 
 #include <logging.h>
 
-void user_config_disable()
+/* config */
+void user_config_boot()
 {
+  LOG_WARN("disable config boot");
+
   disable_config();
 }
 
-void user_config_mode()
+void user_config_press()
 {
+  LOG_WARN("start config mode");
+
   if (start_console() < 0) {
     user_alert(USER_ALERT_ERROR_START);
   }
@@ -19,23 +29,49 @@ void user_config_mode()
   }
 }
 
-void user_config_reset()
+void user_config_hold()
 {
+  LOG_WARN("reset config");
+
   reset_config();
   system_restart();
 }
 
-void user_test_trigger()
+void user_config_release()
 {
+
+}
+
+/* test */
+static bool user_test_held = false;
+
+void user_test_press()
+{
+  user_test_held = false;
+
+  LOG_WARN("trigger test mode");
+
   trigger_leds_test();
 }
 
 void user_test_hold()
 {
-  auto_leds_test();
+  if (!user_test_held) {
+    LOG_WARN("auto test mode");
+
+    auto_leds_test();
+  }
+
+  user_test_held = true;
 }
 
-void user_test_cancel()
+void user_test_release()
 {
-  reset_leds_test();
+  if (user_test_held) {
+    LOG_WARN("reset test mode");
+
+    reset_leds_test();
+  }
+
+  user_test_held = false;
 }

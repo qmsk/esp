@@ -283,7 +283,11 @@ int http_response_error (struct http_response *response, enum http_status status
     err = http_response_vprintf(response, fmt, args);
     va_end(args);
 
-    return err;
+    if (err) {
+        return err;
+    }
+
+    return status;
 }
 
 int http_response_close (struct http_response *response)

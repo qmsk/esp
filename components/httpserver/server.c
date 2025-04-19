@@ -33,7 +33,7 @@ int http_server_create (struct http_server **serverp, int listen_backlog, size_t
 
 int http_server_request (struct http_server *server, struct http_request *request, struct http_response *response, http_handler_func handler, void *ctx)
 {
-    enum http_status status = 0, response_status;
+    enum http_status status = 0;
     int err;
 
     LOG_DEBUG("server=%p request=%p response=%p handler=%p ctx=%p", server, request, response, handler, ctx);
@@ -69,20 +69,22 @@ response:
       return -1;
     }
 
-    if (!status && !http_response_get_status(response)) {
-        LOG_WARN("no response status sent or returned, assuming default HTTP 200 OK");
+    unsigned response_status = http_response_get_status(response);
+
+    if (!status && !response_status) {
+        LOG_DEBUG("no response status sent or returned, assuming default HTTP 200 OK");
         status = 200;
     }
 
-    LOG_DEBUG("response status=%d", status);
+    LOG_DEBUG("return status=%d vs response status=%d", status, response_status);
 
-    if (!status) {
-
-    } else if ((response_status = http_response_get_status(response))) {
-        LOG_WARN("ignoring response status=%d as response already has status=%d set", status, response_status);
+    if (response_status == status) {
+        LOG_DEBUG("keep response status=%d", status);
+    } else if (response_status && status != response_status) {
+        LOG_WARN("ignoring return status=%d as response already has status=%d set", status, response_status);
     } else if ((err = http_response_start(response, status, NULL))) {
-        LOG_WARN("http_response_start");
-        return -1;
+        LOG_ERROR("http_response_start");
+        return err;
     } else {
         LOG_DEBUG("sent response status=%d", status);
     }

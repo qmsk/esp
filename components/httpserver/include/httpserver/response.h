@@ -69,6 +69,8 @@ int http_response_redirect (struct http_response *response, const char *host, co
 
 /*
  * Send a complete (very basic) text-formatted HTTP error status response.
+ *
+ * Returns status > 0, can be used to terminate handler.
  */
 int http_response_error (struct http_response *response, enum http_status status, const char *reason, const char *fmt, ...)
     __attribute((format (printf, 4, 5)));

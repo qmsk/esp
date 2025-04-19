@@ -78,8 +78,10 @@ response:
 
     LOG_DEBUG("return status=%d vs response status=%d", status, response_status);
 
-    if (response_status == status) {
-        LOG_DEBUG("keep response status=%d", status);
+    if (!status && response_status) {
+        LOG_DEBUG("keep response status=%d", response_status);
+    } else if (status == response_status) {
+        LOG_DEBUG("match response status=%d", status);
     } else if (response_status && status != response_status) {
         LOG_WARN("ignoring return status=%d as response already has status=%d set", status, response_status);
     } else if ((err = http_response_start(response, status, NULL))) {

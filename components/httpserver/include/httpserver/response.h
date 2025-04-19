@@ -41,7 +41,15 @@ int http_response_sendfile (struct http_response *response, int fd, size_t conte
  *
  * The response is sent without a Content-Length, and closed.
  */
-int http_response_print (struct http_response *response, const char *fmt, ...)
+int http_response_vprintf (struct http_response *response, const char *fmt, va_list args)
+__attribute((format (printf, 2, 0)));
+
+/*
+ * Send formatted data as part of the response.
+ *
+ * The response is sent without a Content-Length, and closed.
+ */
+int http_response_printf (struct http_response *response, const char *fmt, ...)
     __attribute((format (printf, 2, 3)));
 
 /*
@@ -56,12 +64,14 @@ int http_response_open (struct http_response *response, FILE **filep);
  *
  * The path should not include a leading /
  */
-int http_response_redirect (struct http_response *response, const char *host, const char *fmt, ...);
+int http_response_redirect (struct http_response *response, const char *host, const char *fmt, ...)
+    __attribute((format (printf, 3, 4)));
 
 /*
- * Send a complete (very basic) HTML-formatted HTTP error status response.
+ * Send a complete (very basic) text-formatted HTTP error status response.
  */
-int http_response_error (struct http_response *response, enum http_status status, const char *reason, const char *detail);
+int http_response_error (struct http_response *response, enum http_status status, const char *reason, const char *fmt, ...)
+    __attribute((format (printf, 4, 5)));
 
 /*
  * Finish sending any incomplete response.

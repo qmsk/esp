@@ -156,9 +156,6 @@ export default {
         await this.$store.dispatch('postConfig', formdata);
         await this.$store.dispatch('restartSystem');
         await this.$store.dispatch('loadConfig');
-      } catch (error) {
-        // XXX: UI?
-        alert(error.name + ": " + error.message);
       } finally {
         this.applying = false;
       }

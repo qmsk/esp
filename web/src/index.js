@@ -17,6 +17,17 @@ import intervalFilter from "./filters/interval.filter";
 import percentageFilter from "./filters/percentage.filter"
 import timestampFilter from "./filters/timestamp.filter"
 
+// global error handlers
+Vue.config.errorHandler = (error, vm, info) => {
+  alert(error.name + ": " + error.message);
+};
+
+window.addEventListener("unhandledrejection", (event) => {
+  let error = event.reason;
+
+  alert(error.name + ": " + error.message);
+});
+
 Vue.use(VueRouter);
 
 Vue.filter('fileSize', fileSizeFilter);

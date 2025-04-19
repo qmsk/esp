@@ -28,7 +28,6 @@ export default new Vuex.Store({
     artnet_inputs: null,
     artnet_outputs: null,
     config: null,
-    configErrors: null,
     leds: null,
     status_timestamp: 0,
     status: null,
@@ -86,17 +85,7 @@ export default new Vuex.Store({
       commit('loadConfig', config);
     },
     async postConfig({ state, commit }, formdata) {
-      try {
-        await configService.post(state.config, formdata);
-
-        commit('clearConfigErrors');
-      } catch (error) {
-        if (error.name == "APIError" && error.data) {
-          commit('setConfigErrors', error.data);
-        }
-
-        throw error;
-      }
+      await configService.post(state.config, formdata);
     },
     async uploadConfig({ commit }, file) {
       await configService.upload(file);
@@ -203,37 +192,6 @@ export default new Vuex.Store({
 
     loadConfig (state, config) {
       state.config = config;
-    },
-    setConfigErrors (state, errors) {
-      let configErrors = {
-        unknown: [],
-        fields: {},
-      };
-
-      if (errors.set_errors) {
-        for (const e of errors.set_errors) {
-          if (e.module && e.name) {
-            let field = '[' + e.module + ']' + e.name;
-
-            configErrors.fields[field] = e.error;
-          } else {
-            configErrors.unknown.push(e.key + ': ' + e.error);
-          }
-        }
-      }
-
-      if (errors.validation_errors) {
-        for (const e of errors.validation_errors) {
-          let field = '[' + e.module + (e.index ? e.index : '') + ']' + e.name
-
-          configErrors.fields[field] = e.error;
-        }
-      }
-
-      state.configErrors = configErrors;
-    },
-    clearConfigErrors (state) {
-      state.configErrors = {};
     },
     updateSystem(state, system) {
       state.system = system;

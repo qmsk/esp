@@ -103,6 +103,7 @@ export default {
   data: () => ({
     loading: true,
     configValues: null,
+    configErrors: null,
 
     // 
     applying: false,
@@ -118,9 +119,6 @@ export default {
   computed: {
     config() {
       return this.$store.state.config;
-    },
-    configErrors() {
-      return this.$store.state.configErrors;
     },
   },
   methods: {
@@ -195,9 +193,8 @@ export default {
       return this.configValues[field];
     },
     fieldErrors(mod, tab) {
-      let configErrors = this.configErrors;
       let name = this.fieldName(mod, tab);
-      let error = configErrors && configErrors.fields && configErrors.fields[name];
+      let error = this.configErrors ? this.configErrors[name] : null
 
       if (error) {
         return [error];
@@ -209,6 +206,8 @@ export default {
     },
 
     submitErrors(form, errors) {
+      let configErrors = {}
+
       if (errors.set_errors) {
         for (const e of errors.set_errors) {
           if (e.module && e.name) {
@@ -218,6 +217,8 @@ export default {
             if (input) {
               input.setCustomValidity(e.error);
             }
+
+            configErrors[field] = e.error;
           }
         }
       }
@@ -230,8 +231,12 @@ export default {
           if (input) {
             input.setCustomValidity(e.error);
           }
+
+          configErrors[field] = e.error;
         }
       }
+
+      this.configErrors = configErrors;
 
       form.reportValidity();
     },

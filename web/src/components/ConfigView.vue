@@ -150,7 +150,7 @@ export default {
 
       // TODO: null vs ""?
       // TODO: 0 vs "0"?
-      this.configValues[name][index] = value;
+      this.$set(this.configValues[name], index, value);
       
       // required to allow re-submit after validation errors
       event.target.setCustomValidity("");

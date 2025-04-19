@@ -20,47 +20,41 @@ static int config_api_parse_name (char *key, const char **modulep, const char **
   }
 
   if (!*modulep) {
-    LOG_WARN("no [module]... given");
-    return HTTP_UNPROCESSABLE_ENTITY;
+    return -1;
   }
 
   if (!*namep) {
-    LOG_WARN("no [...]name given");
-    return HTTP_UNPROCESSABLE_ENTITY;
+    return -1;
   }
 
   return 0;
 }
 
-static int config_api_set (struct config *config, char *key, char *value)
+static int config_api_set (struct config *config, char *key, char *value, struct http_response *response)
 {
   const char *module, *name;
   struct config_path path;
   int err;
 
   if ((err = config_api_parse_name(key, &module, &name))) {
-    LOG_WARN("config_api_parse_name: %s", key);
-    return err;
+    return http_response_error(response, HTTP_UNPROCESSABLE_ENTITY, NULL, "Invalid config key: %s\n", key);
   }
 
   if ((err = config_lookup(config, module, name, &path))) {
-    LOG_WARN("config_lookup: module=%s name=%s", module, name);
-    return HTTP_UNPROCESSABLE_ENTITY;
+    return http_response_error(response, HTTP_UNPROCESSABLE_ENTITY, NULL, "No matching config found: [%s]%s\n", module, name);
   }
 
   if (value && *value) {
     LOG_INFO("module=%s index=%u name=%s: set value=%s", path.mod->name, path.index, path.tab->name, value);
 
     if ((err = config_set(path, value))) {
-      LOG_WARN("config_set: module=%s index=%u name=%s: value=%s", path.mod->name, path.index, path.tab->name, value);
-      return HTTP_UNPROCESSABLE_ENTITY;
+      return http_response_error(response, HTTP_UNPROCESSABLE_ENTITY, NULL, "Invalid config value: [%s]%s = %s\n", module, name, value);
     }
   } else {
     LOG_INFO("module=%s index=%u name=%s: clear", path.mod->name, path.index, path.tab->name);
 
     if ((err = config_clear(path))) {
-      LOG_WARN("config_clear: module=%s index=%u name=%s", path.mod->name, path.index, path.tab->name);
-      return HTTP_UNPROCESSABLE_ENTITY;
+      return http_response_error(response, HTTP_UNPROCESSABLE_ENTITY, NULL, "Invalid config clear: [%s]%s\n", module, name);
     }
   }
 
@@ -74,7 +68,7 @@ int config_api_post_form(struct http_request *request, struct http_response *res
     int err;
 
     while (!(err = http_request_form(request, &key, &value))) {
-      if ((err = config_api_set(&config, key, value))) {
+      if ((err = config_api_set(&config, key, value, response))) {
         LOG_WARN("config_api_set %s", key);
         return err;
       }
@@ -101,7 +95,7 @@ int config_api_post(struct http_request *request, struct http_response *response
   int err;
 
   if ((err = http_request_headers(request, &headers))) {
-    LOG_WARN("http_request_headers");
+    LOG_ERROR("http_request_headers");
     return err;
   }
 
@@ -110,8 +104,6 @@ int config_api_post(struct http_request *request, struct http_response *response
       return config_api_post_form(request, response, ctx);
 
     default:
-      LOG_WARN("Unkonwn Content-Type");
-
-      return HTTP_UNSUPPORTED_MEDIA_TYPE;
+      return http_response_error(response, HTTP_UNSUPPORTED_MEDIA_TYPE, NULL, "Unsupported Content-Type\n");
   }
 }

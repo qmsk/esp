@@ -86,9 +86,16 @@ export default new Vuex.Store({
       commit('loadConfig', config);
     },
     async postConfig({ state, commit }, formdata) {
-      const configState = await configService.post(state.config, formdata);
+      try {
+        const configState = await configService.post(state.config, formdata);
 
-      commit('postConfig', configState);
+        commit('updateConfigState', configState);
+      } catch (error) {
+        if (error.name == "APIError" && error.data) {
+          commit('updateConfigState', error.data);
+        }
+        throw error;
+      }
     },
     async uploadConfig({ commit }, file) {
       const configState = await configService.upload(file);
@@ -197,7 +204,7 @@ export default new Vuex.Store({
       state.config = config;
       state.configState = config;
     },
-    postConfig (state, configState) {
+    updateConfigState (state, configState) {
       state.configState = configState;
     },
     updateSystem(state, system) {

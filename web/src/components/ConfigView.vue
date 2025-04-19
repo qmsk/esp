@@ -31,6 +31,11 @@
     color: #111;
   }
 
+  div.config-state-invalid {
+    background-color: #aaaa2288;
+    color: #111;
+  }
+
   div.config-state-save {
     background-color: #44bb4488;
     color: #111;
@@ -163,7 +168,7 @@
     <div class="controls">
       <h2>State</h2>
       <progress v-if="loading">Loading...</progress>
-      
+
       <div :class="['config-state', configStateClass]" v-if="configState">
           <span class="state">{{ configState.state }}</span>
         @ <span class="interval">{{ configState.tick_ms | interval('ms', 's')  }}</span>

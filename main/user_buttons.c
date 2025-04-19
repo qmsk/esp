@@ -39,7 +39,7 @@ void user_config_hold()
   user_state(USER_STATE_RESET);
   revert_user_led(USER_LED);
 
-  reset_config();
+  // with config button held, config boot is disabled
   system_restart();
 }
 

@@ -162,6 +162,8 @@
     </div>
     <div class="controls">
       <h2>State</h2>
+      <progress v-if="loading">Loading...</progress>
+      
       <div :class="['config-state', configStateClass]" v-if="configState">
           <span class="state">{{ configState.state }}</span>
         @ <span class="interval">{{ configState.tick_ms | interval('ms', 's')  }}</span>

@@ -286,7 +286,7 @@ static int config_api_write_config(struct json_writer *w, void *ctx)
   TickType_t tick = xTaskGetTickCount();
 
   return JSON_WRITE_OBJECT(w,
-        JSON_WRITE_MEMBER_STRING(w, "filename", CONFIG_BOOT_FILE)
+        JSON_WRITE_MEMBER_STRING(w, "filename", config->filename)
     ||  JSON_WRITE_MEMBER_STRING(w, "state", config_state_str(config->state))
     ||  JSON_WRITE_MEMBER_UINT(w, "tick", config->tick)
     ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, config->tick))

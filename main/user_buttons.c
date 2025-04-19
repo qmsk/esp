@@ -1,4 +1,5 @@
 #include "user.h"
+#include "user_leds_output.h"
 
 #include "config.h"
 #include "console.h"
@@ -20,6 +21,8 @@ void user_config_press()
 {
   LOG_INFO("start config mode");
 
+  override_user_led(USER_LED, USER_LEDS_PULSE);
+
   if (start_console() < 0) {
     user_alert(USER_ALERT_ERROR_START);
   }
@@ -33,13 +36,16 @@ void user_config_hold()
 {
   LOG_WARN("reset config");
 
+  user_state(USER_STATE_RESET);
+  revert_user_led(USER_LED);
+
   reset_config();
   system_restart();
 }
 
 void user_config_release()
 {
-
+  revert_user_led(USER_LED);
 }
 
 /* test */

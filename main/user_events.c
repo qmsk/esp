@@ -2,7 +2,6 @@
 #include "user_leds.h"
 #include "user_leds_config.h"
 #include "user_leds_input.h"
-#include "user_leds_output.h"
 
 #include "tasks.h"
 
@@ -29,17 +28,17 @@ void init_user_config_input(enum user_led led)
   }
 }
 
-void on_user_config_input(struct user_leds_input input, enum user_led led)
+void on_user_config_input(struct user_leds_input input)
 {
   static bool pressed = false;
 
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
-      // enter config mode
       LOG_INFO("press");
+
       pressed = true;
-      override_user_led(led, USER_LEDS_PULSE); // feedback
       user_config_press();
+
       break;
 
     case USER_LEDS_INPUT_HOLD:
@@ -50,10 +49,9 @@ void on_user_config_input(struct user_leds_input input, enum user_led led)
         LOG_INFO("wait");
       } else {
         LOG_INFO("hold");
-        user_state(USER_STATE_RESET);
-        revert_user_led(led);
         user_config_hold();
       }
+
       break;
 
     case USER_LEDS_INPUT_RELEASE:
@@ -67,8 +65,8 @@ void on_user_config_input(struct user_leds_input input, enum user_led led)
       }
 
       pressed = false;
-      revert_user_led(led);
       user_config_release();
+
       break;
   }
 }
@@ -116,7 +114,7 @@ void on_user_input(struct user_leds_input input)
 
   #if CONFIG_STATUS_LEDS_FLASH_MODE_ACTIVITY_CONFIG || CONFIG_STATUS_LEDS_FLASH_MODE_ALERT_CONFIG
     case FLASH_LED:
-      on_user_config_input(input, ALERT_LED);
+      on_user_config_input(input,);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_ALERT_MODE_TEST
@@ -126,7 +124,7 @@ void on_user_input(struct user_leds_input input)
   #endif
   #if CONFIG_STATUS_LEDS_CONFIG_MODE
     case CONFIG_BUTTON:
-      on_user_config_input(input, ALERT_LED);
+      on_user_config_input(input);
       break;
   #endif
   #if CONFIG_STATUS_LEDS_TEST_MODE

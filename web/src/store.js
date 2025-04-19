@@ -213,7 +213,9 @@ export default new Vuex.Store({
       if (errors.set_errors) {
         for (const e of errors.set_errors) {
           if (e.module && e.name) {
-            configErrors.fields['[' + e.module + ']' + e.name] = e.error;
+            let field = '[' + e.module + ']' + e.name;
+
+            configErrors.fields[field] = e.error;
           } else {
             configErrors.unknown.push(e.key + ': ' + e.error);
           }
@@ -222,7 +224,9 @@ export default new Vuex.Store({
 
       if (errors.validation_errors) {
         for (const e of errors.validation_errors) {
-          configErrors.fields['[' + e.module + (e.index ? e.index : '') + ']' + e.name] = e.error;
+          let field = '[' + e.module + (e.index ? e.index : '') + ']' + e.name
+
+          configErrors.fields[field] = e.error;
         }
       }
 

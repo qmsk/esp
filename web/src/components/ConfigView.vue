@@ -22,31 +22,37 @@
                   <input v-if="tab.type == 'uint16'" type="number"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
+                    @input="clearErrors"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && !tab.secret" type="text"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="value"
+                    @input="clearErrors"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'string' && tab.secret" type="password"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="value"
+                    @input="clearErrors"
                     :readonly="tab.readonly">
 
                   <input v-if="tab.type == 'bool'" type="checkbox"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
                     :value="true" :checked=value
+                    @input="clearErrors"
                     :readonly="tab.readonly">
 
                   <select v-if="tab.type == 'enum'"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    @input="clearErrors"
                     :disabled="tab.readonly">
                     <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
 
                   <select v-if="tab.type == 'file'"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :title="tab.description"
+                    @input="clearErrors"
                     :disabled="tab.readonly">
                     <option value="" :selected="!value"></option>
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
@@ -165,16 +171,45 @@ export default {
         return null;
       }
     },
-    restoreInvalid(event) {
-      const input = event.target;
 
-      this.restoreError = input.validity ? null : input.validationMessage;
+    submitErrors(form, errors) {
+      if (errors.set_errors) {
+        for (const e of errors.set_errors) {
+          if (e.module && e.name) {
+            let field = '[' + e.module + ']' + e.name;
+            let input = form.elements[field];
+
+            if (input) {
+              input.setCustomValidity(e.error);
+            }
+          }
+        }
+      }
+
+      if (errors.validation_errors) {
+        for (const e of errors.validation_errors) {
+          let field = '[' + e.module + (e.index ? e.index : '') + ']' + e.name
+          let input = form.elements[field];
+
+          if (input) {
+            input.setCustomValidity(e.error);
+          }
+        }
+      }
+
+      form.reportValidity();
+    },
+    clearErrors(event) {
+      let input = event.target;
+
+      input.setCustomValidity("");
     },
     async submit(event) {
       const form = event.target;
       const formdata = new FormData(form);
 
       this.applying = true;
+      this.applyError = null;
 
       try {
         await this.$store.dispatch('postConfig', formdata);
@@ -183,12 +218,19 @@ export default {
       } catch (error) {
         if (error.name == "APIError" && error.data) {
           this.applyError = error.message;
+          this.submitErrors(form, error.data);
         } else {
           throw error;
         }
       } finally {
         this.applying = false;
       }
+    },
+
+    restoreInvalid(event) {
+      const input = event.target;
+
+      this.restoreError = input.validity ? null : input.validationMessage;
     },
     async restoreSubmit(event) {
       const form = event.target;

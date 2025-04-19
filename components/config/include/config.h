@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include <freertos/FreeRTOS.h>
+
 #define CONFIG_FILE_EXT "ini"
 #define CONFIG_BOOT_FILE "boot.ini"
 
@@ -13,6 +15,16 @@
 #define CONFIG_NAME_SIZE 64
 #define CONFIG_VALUE_SIZE 256
 
+enum config_state {
+  CONFIG_STATE_INIT,
+  CONFIG_STATE_LOAD,
+  CONFIG_STATE_BOOT,
+  CONFIG_STATE_DIRTY, // TODO
+  CONFIG_STATE_SAVE,
+  CONFIG_STATE_RESET,
+};
+
+const char *config_state_str(enum config_state state);
 
 enum config_type {
   CONFIG_TYPE_NULL,
@@ -126,6 +138,9 @@ struct config {
   const char *path;
 
   const struct configmod *modules;
+
+  enum config_state state;
+  TickType_t tick;
 };
 
 int config_enum_lookup(const struct config_enum *e, const char *name, const struct config_enum **enump);
@@ -214,6 +229,11 @@ int config_walk(struct config *config, int (func)(const char *filename, void *ct
  * Load config from file.
  */
 int config_load(struct config *config, const char *filename);
+
+/*
+ * Mark config as booted.
+ */
+void config_boot(struct config *config);
 
 /*
  * Save config to file.

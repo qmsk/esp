@@ -25,6 +25,8 @@ static bool match_fileext(const char *filename, const char *ext)
 
 int config_init(struct config *config)
 {
+  config_state(config, CONFIG_STATE_INIT);
+
   return config_reset(config);
 }
 
@@ -96,10 +98,21 @@ int config_load(struct config *config, const char *filename)
     goto error;
   }
 
+  LOG_INFO("state load");
+
+  config_state(config, CONFIG_STATE_LOAD);
+
 error:
   fclose(file);
 
   return err;
+}
+
+void config_boot(struct config *config)
+{
+  LOG_INFO("state boot");
+
+  config_state(config, CONFIG_STATE_BOOT);
 }
 
 int config_save(struct config *config, const char *filename)
@@ -148,6 +161,10 @@ int config_save(struct config *config, const char *filename)
     LOG_ERROR("rename %s -> %s: %s", newfile, path, strerror(errno));
     return -1;
   }
+
+  LOG_INFO("state save");
+
+  config_state(config, CONFIG_STATE_SAVE);
 
   return err;
 }

@@ -162,8 +162,10 @@ static int config_api_write_configtab_members_file(struct json_writer *w, const 
   );
 }
 
-static int config_api_write_configtab_members(struct json_writer *w, const struct configtab *tab)
+static int config_api_write_configtab_members(struct json_writer *w, const struct config_path *path)
 {
+  const struct configtab *tab = path->tab;
+
   switch (tab->type) {
     case CONFIG_TYPE_UINT16:
       return config_api_write_configtab_members_uint16(w, tab);
@@ -180,8 +182,38 @@ static int config_api_write_configtab_members(struct json_writer *w, const struc
   }
 }
 
-static int config_api_write_configtab(struct json_writer *w, const struct configtab *tab)
+static void config_api_write_configtab_invalid(const struct config_path path, void *ctx, const char *fmt, ...)
 {
+  struct json_writer *w = ctx;
+  char buf[128];
+  int ret;
+  va_list va;
+
+  va_start(va, fmt);
+  ret = vsnprintf(buf, sizeof(buf), fmt, va);
+  va_end(va);
+
+  if (ret  >= sizeof(buf)) {
+    // truncated
+    buf[sizeof(buf) - 1] = '.';
+    buf[sizeof(buf) - 2] = '.';
+    buf[sizeof(buf) - 3] = '.';
+  }
+
+  json_write_nstring(w, buf, sizeof(buf));
+}
+
+static int config_api_write_configtab_valid(struct json_writer *w, const struct config_path *path)
+{
+  return JSON_WRITE_MEMBER_ARRAY(w, "validation_errors",
+    (configtab_valid(*path, config_api_write_configtab_invalid, w) < 0)
+  );
+}
+
+static int config_api_write_configtab(struct json_writer *w, const struct config_path *path)
+{
+  const struct configtab *tab = path->tab;
+  
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_STRING(w, "name", tab->name)
     ||  (tab->description ? JSON_WRITE_MEMBER_STRING(w, "description", tab->description) : 0)
@@ -190,16 +222,19 @@ static int config_api_write_configtab(struct json_writer *w, const struct config
     ||  JSON_WRITE_MEMBER_BOOL(w, "migrated", tab->migrated)
     ||  (tab->count ? JSON_WRITE_MEMBER_UINT(w, "count", *tab->count) : 0)
     ||  (tab->size ? JSON_WRITE_MEMBER_UINT(w, "size", tab->size) : 0)
-    ||  config_api_write_configtab_members(w, tab)
+    ||  config_api_write_configtab_members(w, path)
+    ||  config_api_write_configtab_valid(w, path)
   );
 }
 
-static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod, const struct configtab *table)
+static int config_api_write_configmod_table(struct json_writer *w, const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   int err = 0;
 
   for (const struct configtab *tab = table; tab->type && tab->name; tab++) {
-    if ((err = config_api_write_configtab(w, tab))) {
+    struct config_path path = { mod, index, tab };
+
+    if ((err = config_api_write_configtab(w, &path))) {
       LOG_ERROR("config_api_write_configtab: mod=%s tab=%s", mod->name, tab->name);
       return err;
     }
@@ -208,13 +243,13 @@ static int config_api_write_configmod_table(struct json_writer *w, const struct 
   return err;
 }
 
-static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod, int index, const struct configtab *table)
+static int config_api_write_configmod(struct json_writer *w, const struct configmod *mod, unsigned index, const struct configtab *table)
 {
   return JSON_WRITE_OBJECT(w,
     JSON_WRITE_MEMBER_STRING(w, "name", mod->name) ||
     (mod->description ? JSON_WRITE_MEMBER_STRING(w, "description", mod->description) : 0) ||
     (index ? JSON_WRITE_MEMBER_INT(w, "index", index) : 0) ||
-    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod, table)) // assume all are the same
+    JSON_WRITE_MEMBER_ARRAY(w, "table", config_api_write_configmod_table(w, mod, index, table)) // assume all are the same
   );
 }
 
@@ -224,7 +259,7 @@ static int config_api_write_config_modules(struct json_writer *w, const struct c
 
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
-      for (int i = 0; i < mod->tables_count; i++) {
+      for (unsigned i = 0; i < mod->tables_count; i++) {
         if ((err = config_api_write_configmod(w, mod, i + 1, mod->tables[i]))) {
           LOG_ERROR("config_api_write_configmod: mod=%s", mod->name);
           return err;

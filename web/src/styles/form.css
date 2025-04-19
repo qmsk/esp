@@ -16,7 +16,6 @@
   fieldset div.description {
     grid-column: 2 / 3;
   }
-  
 }
 
 @media (orientation: portrait) {
@@ -32,10 +31,14 @@
 
   fieldset div.errors {
     grid-column: 1 / 3;
+
+    margin-left: 1em; /* to match legend */
   }
 
   fieldset div.description {
     grid-column: 1 / 3;
+
+    margin-left: 1em; /* to match legend */
   }
 }
 

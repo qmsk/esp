@@ -45,7 +45,8 @@ fieldset {
 
   border: 1px solid #bbb;
 
-  grid-gap: 1em;
+  column-gap: 1em;
+  row-gap: 0;
 }
 
 fieldset.collapse.close {
@@ -104,7 +105,7 @@ fieldset label {
 fieldset div.module-description {
   grid-column: 1 / 3;
 
-  margin: 0em 1em;
+  margin-bottom: 2em;
 }
 
 fieldset div.inputs {
@@ -115,24 +116,9 @@ fieldset div.actions {
   grid-column: 3;
 }
 
-
-/* animations */
-fieldset div.collapse {
-  transition: max-height 0.5s ease-in allow-discrete;
-
-  display: none;
-  max-height: 0px;
-  overflow: hidden;
-}
-
-fieldset div.collapse.open {
-  display: block;
-  max-height: 100px;
-}
-
 /* general styles */
 fieldset p {
-  margin: 0em 0.5em;
+  margin: 1em 0.5em;
 
   font-style: italic;
   font-size: small;
@@ -148,17 +134,23 @@ fieldset label {
   color: #ccc;
 }
 
-fieldset input, form fieldset select {
+fieldset input,
+fieldset select {
   width: 100%;
-  height: 1.8em;
+  height: 2.2em;
+
+  box-sizing: border-box;
+  border: 1px solid #444;
+  padding: 0em 0.25em;
 }
 
-fieldset input:invalid {
+fieldset input:invalid,
+fieldset input.invalid {
   box-shadow: 0 0 5px 1px red;
 }
 
 fieldset input[type="checkbox"] {
-  width: 2em;
+  width: 2.2em;
 }
 
 fieldset input[type="file"] {
@@ -188,12 +180,29 @@ fieldset div.errors {
   padding: 0.5em;
   
   background-color: #ff000080;
-  box-shadow: 0 0 5px 1px red;
 }
 
 fieldset div.description {
+  padding: 0em;
   margin-bottom: 1em;
+
+  background-color: #bbb;
 }
+
+/* animations */
+fieldset div.collapse {
+  transition: max-height 0.5s ease-in allow-discrete;
+
+  display: none;
+  max-height: 0px;
+  overflow: hidden;
+}
+
+fieldset div.collapse.open {
+  display: block;
+  max-height: 100px;
+}
+
 
 /* Controls styling */
 fieldset.actions {

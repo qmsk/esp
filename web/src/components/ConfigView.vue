@@ -31,40 +31,52 @@
               <div class="inputs">
                 <template v-for="(value, index) in fieldValues(mod, tab)">
                   <input v-if="tab.type == 'uint16'" type="number"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     :value="value" min="0" :max="tab.uint16_max ? tab.uint16_max : 65536"
                     @input="syncInput"
-                    :readonly="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :readonly="tab.readonly"
+                  >
 
                   <input v-if="tab.type == 'string' && !tab.secret" type="text"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     :value="value"
                     @input="syncInput"
-                    :readonly="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :readonly="tab.readonly"
+                  >
 
                   <input v-if="tab.type == 'string' && tab.secret" type="password"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     :value="value"
                     @input="syncInput"
-                    :readonly="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :readonly="tab.readonly"
+                  >
 
                   <input v-if="tab.type == 'bool'" type="checkbox"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     :value="true" :checked=value
                     @input="syncInput"
-                    :readonly="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :readonly="tab.readonly"
+                  >
 
                   <select v-if="tab.type == 'enum'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     @input="syncInput"
-                    :disabled="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :disabled="tab.readonly"
+                  >
                     <option v-for="v in tab.enum_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
 
                   <select v-if="tab.type == 'file'"
-                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index" :title="tab.description"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     @input="syncInput"
-                    :disabled="tab.readonly">
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :disabled="tab.readonly"
+                  >
                     <option value="" :selected="!value"></option>
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
@@ -72,15 +84,15 @@
               </div>
 
               <div class="actions">
-                <button type="button" v-show="tab.description" @click="toggleDescription(mod, tab)" :class="{ active: showDescription(mod, tab) }">?</button>
-              </div>
 
-              <div class="description" v-if="tab.description" :class="{ collapse: true, open: showDescription(mod, tab) }">
-                <p v-for="line in splitlines(tab.description)">{{ line }}</p>
               </div>
 
               <div class="errors" v-for="error in fieldErrors(mod, tab)">
                 {{ error }}
+              </div>
+
+              <div class="description">
+                <p v-for="line in splitlines(tab.description)">{{ line }}</p>
               </div>
             </template>
           </fieldset>
@@ -126,7 +138,6 @@ export default {
 
     // 
     showModules: {},
-    showDescriptions: {},
 
     // 
     applying: false,
@@ -190,6 +201,10 @@ export default {
       this.updateConfigValues(this.$store.state.config);
     },
     splitlines(description) {
+      if (!description) {
+        return [];
+      }
+
       return description.split('\n');
     },
     modName(mod) {
@@ -221,7 +236,7 @@ export default {
 
       if (error) {
         return [error];
-      } else if (tab.validation_errors) {
+      } else if (tab.validation_errors && tab.validation_errors.length > 0) {
         return tab.validation_errors;
       } else {
         return null;
@@ -237,24 +252,10 @@ export default {
         this.$set(this.showModules, name, true);
       }
     },
-    toggleDescription(mod, tab) {
-      let name = this.fieldName(mod, tab);
-
-      if (this.showDescriptions[name]) {
-        this.$set(this.showDescriptions, name, false);
-      } else {
-        this.$set(this.showDescriptions, name, true);
-      }
-    },
     showModule(mod) {
       let name = this.modName(mod);
 
       return this.showModules[name];
-    },
-    showDescription(mod, tab) {
-      let name = this.fieldName(mod, tab);
-
-      return this.showDescriptions[name];
     },
 
     submitErrors(form, errors) {

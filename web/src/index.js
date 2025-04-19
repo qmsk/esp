@@ -19,11 +19,15 @@ import timestampFilter from "./filters/timestamp.filter"
 
 // global error handlers
 Vue.config.errorHandler = (error, vm, info) => {
+  console.error(error);
+
   alert(error.name + ": " + error.message);
 };
 
 window.addEventListener("unhandledrejection", (event) => {
   let error = event.reason;
+
+  console.error(error);
 
   alert(error.name + ": " + error.message);
 });

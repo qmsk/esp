@@ -7,6 +7,21 @@
 #include <errno.h>
 #include <stdlib.h>
 
+static void dmx_input_stats_init(struct dmx_input_stats *stats)
+{
+  stats_timer_init(&stats->uart_open);
+  stats_timer_init(&stats->uart_rx);
+
+  stats_counter_init(&stats->rx_overflow);
+  stats_counter_init(&stats->rx_error);
+  stats_counter_init(&stats->rx_break);
+  stats_counter_init(&stats->rx_desync);
+  stats_counter_init(&stats->cmd_dimmer);
+  stats_counter_init(&stats->cmd_unknown);
+
+  stats_gauge_init(&stats->data_len);
+}
+
 int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 {
   LOG_DEBUG("data=%p size=%u",
@@ -16,17 +31,7 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 
   in->options = options;
 
-  stats_timer_init(&in->stats.uart_open);
-  stats_timer_init(&in->stats.uart_rx);
-
-  stats_counter_init(&in->stats.rx_overflow);
-  stats_counter_init(&in->stats.rx_error);
-  stats_counter_init(&in->stats.rx_break);
-  stats_counter_init(&in->stats.rx_desync);
-  stats_counter_init(&in->stats.cmd_dimmer);
-  stats_counter_init(&in->stats.cmd_unknown);
-
-  stats_gauge_init(&in->stats.data_len);
+  dmx_input_stats_init(&in->stats);
 
   return 0;
 }
@@ -56,7 +61,7 @@ error:
   return err;
 }
 
-void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
+void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats, bool reset)
 {
   stats->uart_open = stats_timer_copy(&in->stats.uart_open);
   stats->uart_rx = stats_timer_copy(&in->stats.uart_rx);
@@ -69,6 +74,10 @@ void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
   stats->cmd_unknown = stats_counter_copy(&in->stats.cmd_unknown);
 
   stats->data_len = stats_gauge_copy(&in->stats.data_len);
+
+  if (reset) {
+    dmx_input_stats_init(&in->stats);
+  }
 }
 
 int dmx_input_open (struct dmx_input *in, struct uart *uart)

@@ -4,7 +4,7 @@
 #include <stats.h>
 
 struct dmx_input_stats {
-  
+
   struct stats_timer uart_open;
 
   /*
@@ -23,4 +23,4 @@ struct dmx_input_stats {
 /*
 * Get stats for input
  */
-void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats);
+void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats, bool reset);

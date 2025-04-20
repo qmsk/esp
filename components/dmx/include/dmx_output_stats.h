@@ -16,4 +16,4 @@ struct dmx_output_stats {
 /*
 * Get stats for output.
  */
-void dmx_output_stats(struct dmx_output *out, struct dmx_output_stats *stats);
+void dmx_output_stats(struct dmx_output *out, struct dmx_output_stats *stats, bool reset);

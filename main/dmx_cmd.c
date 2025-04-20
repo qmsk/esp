@@ -9,6 +9,7 @@
 #include <stats_print.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 int dmx_cmd_info(int argc, char **argv, void *ctx)
 {
@@ -231,11 +232,16 @@ error:
 int dmx_cmd_stats(int argc, char **argv, void *ctx)
 {
   struct dmx_input *dmx_input = dmx_input_state.dmx_input;
-  
+  bool reset = false;
+
+  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
+    reset = true;
+  } 
+
   if (dmx_input) {
     struct dmx_input_stats stats;
 
-    dmx_input_stats(dmx_input, &stats);
+    dmx_input_stats(dmx_input, &stats, reset);
 
     printf("Input:\n");
 
@@ -262,7 +268,7 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
       continue;
     }
 
-    dmx_output_stats(dmx_output, &stats);
+    dmx_output_stats(dmx_output, &stats, reset);
 
     printf("Output %d:\n", i + 1);
 
@@ -275,7 +281,6 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
     printf("\t\n");
     print_stats_gauge(  "Data",   "len",      &stats.data_len);
     printf("\n");
-
   }
 
   return 0;
@@ -287,7 +292,7 @@ const struct cmd dmx_commands[] = {
   { "all",    dmx_cmd_all,        .usage = "COUNT VALUE",     .describe = "Output COUNT channels at VALUE on all outputs" },
   { "out",    dmx_cmd_out,        .usage = "OUTPUT VALUE...", .describe = "Output given VALUEs as channels on output" },
   { "count",  dmx_cmd_count,      .usage = "OUTPUT COUNT",    .describe = "Output COUNT channels with 0..COUNT as value" },
-  { "stats",  dmx_cmd_stats,                                 .describe = "Show input/output stats" },
+  { "stats",  dmx_cmd_stats,      .usage = "[reset]",         .describe = "Show input/output stats" },
   { }
 };
 

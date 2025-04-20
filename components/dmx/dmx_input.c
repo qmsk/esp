@@ -16,6 +16,7 @@ int dmx_input_init (struct dmx_input *in, struct dmx_input_options options)
 
   in->options = options;
 
+  stats_timer_init(&in->stats.uart_open);
   stats_timer_init(&in->stats.uart_rx);
 
   stats_counter_init(&in->stats.rx_overflow);
@@ -57,6 +58,7 @@ error:
 
 void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats)
 {
+  stats->uart_open = stats_timer_copy(&in->stats.uart_open);
   stats->uart_rx = stats_timer_copy(&in->stats.uart_rx);
 
   stats->rx_overflow = stats_counter_copy(&in->stats.rx_overflow);
@@ -75,9 +77,11 @@ int dmx_input_open (struct dmx_input *in, struct uart *uart)
 
   LOG_DEBUG("dmx_input=%p uart=%p", in, uart);
 
-  if ((err = uart_open_rx(uart))) {
-    LOG_ERROR("uart_open_rx");
-    return err;
+  WITH_STATS_TIMER(&in->stats.uart_open) {
+    if ((err = uart_open_rx(uart))) {
+      LOG_ERROR("uart_open_rx");
+      return err;
+    }
   }
 
   in->uart = uart;

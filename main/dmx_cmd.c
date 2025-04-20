@@ -229,13 +229,16 @@ error:
 
 int dmx_cmd_stats(int argc, char **argv, void *ctx)
 {
-  if (dmx_input_state.dmx_input) {
+  struct dmx_input *dmx_input = dmx_input_state.dmx_input;
+  
+  if (dmx_input) {
     struct dmx_input_stats stats;
 
-    dmx_input_stats(dmx_input_state.dmx_input, &stats);
+    dmx_input_stats(dmx_input, &stats);
 
     printf("Input:\n");
 
+    print_stats_timer  ("UART",   "Open",     &stats.uart_open);
     print_stats_timer  ("UART",   "RX",       &stats.uart_rx);
     printf("\t\n");
     print_stats_counter("RX",     "overflow", &stats.rx_overflow);

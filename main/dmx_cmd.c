@@ -4,6 +4,7 @@
 
 #include <artnet.h>
 #include <dmx_input_stats.h>
+#include <dmx_output_stats.h>
 #include <logging.h>
 #include <stats_print.h>
 
@@ -251,6 +252,30 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
     printf("\t\n");
     print_stats_gauge(  "Data",   "len",      &stats.data_len);
     printf("\n");
+  }
+
+  for (unsigned i = 0; i < DMX_OUTPUT_COUNT; i++) {
+    struct dmx_output *dmx_output = dmx_output_states[i].dmx_output;
+    struct dmx_output_stats stats;
+
+    if (!dmx_output) {
+      continue;
+    }
+
+    dmx_output_stats(dmx_output, &stats);
+
+    printf("Output %d:\n", i + 1);
+
+    print_stats_timer  ("UART",   "Open",     &stats.uart_open);
+    print_stats_timer  ("UART",   "TX",       &stats.uart_tx);
+    printf("\t\n");
+    print_stats_counter("TX",     "error",    &stats.tx_error);
+    printf("\t\n");
+    print_stats_counter("DMX",    "dimmer",   &stats.cmd_dimmer);
+    printf("\t\n");
+    print_stats_gauge(  "Data",   "len",      &stats.data_len);
+    printf("\n");
+
   }
 
   return 0;

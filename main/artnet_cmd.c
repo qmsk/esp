@@ -103,15 +103,15 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
 
 int artnet_cmd_stats(int argc, char **argv, void *ctx)
 {
+  bool reset = false;
+
+  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
+    reset = true;
+  }
+
   if (!artnet) {
     LOG_WARN("artnet disabled");
     return 1;
-  }
-
-  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
-    LOG_INFO("reset artnet stats");
-
-    artnet_reset_stats(artnet);
   }
 
   // network stats
@@ -175,6 +175,12 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);
 
     printf("\n");
+  }
+
+  if (reset) {
+    LOG_INFO("reset artnet stats");
+
+    artnet_reset_stats(artnet);
   }
 
   return 0;

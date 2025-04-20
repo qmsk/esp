@@ -11,8 +11,9 @@ struct stats_gauge {
 static inline void stats_gauge_init(struct stats_gauge *gauge)
 {
   gauge->reset = esp_timer_get_time();
+  gauge->update = 0;
   gauge->value = 0;
-  gauge->min = -1;
+  gauge->min = (unsigned) -1;
   gauge->max = 0;
 }
 

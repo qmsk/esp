@@ -236,7 +236,7 @@ static void print_config(const struct config *config)
   for (const struct configmod *mod = config->modules; mod->name; mod++) {
     if (mod->tables_count) {
       for (unsigned i = 0; i < mod->tables_count; i++) {
-        print_configmod(mod, i, mod->tables[i]);
+        print_configmod(mod, i + 1, mod->tables[i]);
       }
     } else {
       print_configmod(mod, 0, mod->table);

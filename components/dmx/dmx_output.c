@@ -1,4 +1,5 @@
 #include <dmx_output.h>
+#include <dmx_output_stats.h>
 #include "dmx_output.h"
 
 #include <logging.h>
@@ -8,9 +9,23 @@
 #define DMX_BREAK_BITS 23 // 4us per bit, 92us min break
 #define DMX_MARK_AFTER_BREAK_BITS 3 // 4us per bit, 12us MAB
 
+void dmx_output_stats_reset (struct dmx_output_stats *stats)
+{
+  stats_timer_init(&stats->uart_open);
+  stats_timer_init(&stats->uart_tx);
+
+  stats_counter_init(&stats->tx_error);
+
+  stats_counter_init(&stats->cmd_dimmer);
+
+  stats_gauge_init(&stats->data_len);
+}
+
 int dmx_output_init (struct dmx_output *out, struct dmx_output_options options)
 {
   out->options = options;
+  
+  dmx_output_stats_reset(&out->stats);
 
   return 0;
 }
@@ -40,6 +55,21 @@ error:
   return err;
 }
 
+void dmx_output_stats(struct dmx_output *out, struct dmx_output_stats *stats, bool reset)
+{
+  stats->uart_open = stats_timer_copy(&out->stats.uart_open);
+  stats->uart_tx = stats_timer_copy(&out->stats.uart_tx);
+
+  stats->tx_error = stats_counter_copy(&out->stats.tx_error);
+  stats->cmd_dimmer = stats_counter_copy(&out->stats.cmd_dimmer);
+
+  stats->data_len = stats_gauge_copy(&out->stats.data_len);
+
+  if (reset) {
+    dmx_output_stats_reset(&out->stats);
+  }
+}
+
 int dmx_output_open (struct dmx_output *out, struct uart *uart)
 {
   int err;
@@ -49,16 +79,18 @@ int dmx_output_open (struct dmx_output *out, struct uart *uart)
     return -1;
   }
 
-  if ((err = uart_open_tx(uart)) < 0) {
-    LOG_ERROR("uart_open_tx");
-    return err;
-  } else if (err) {
-    LOG_DEBUG("uart_open_tx: not setup");
-    return err;
-  } else {
-    LOG_DEBUG("uart=%p", uart);
+  WITH_STATS_TIMER(&out->stats.uart_open) {
+    if ((err = uart_open_tx(uart)) < 0) {
+      LOG_ERROR("uart_open_tx");
+      return err;
+    } else if (err) {
+      LOG_DEBUG("uart_open_tx: not setup");
+      return err;
+    } else {
+      LOG_DEBUG("uart=%p", uart);
 
-    out->uart = uart;
+      out->uart = uart;
+    }
   }
 
   // enable output
@@ -78,35 +110,46 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
     return 1;
   }
 
-  // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
-  if ((err = uart_break(out->uart, DMX_BREAK_BITS, DMX_MARK_AFTER_BREAK_BITS))) {
-    LOG_ERROR("uart1_break");
-    return err;
-  }
+  stats_counter_increment(&out->stats.cmd_dimmer);
+  stats_gauge_sample(&out->stats.data_len, len);
 
-  if ((err = uart_putc(out->uart, cmd)) < 0) {
-    LOG_ERROR("uart_putc");
-    return err;
-  }
-
-  for (uint8_t *ptr = data; len > 0; ) {
-    ssize_t write;
-
-    if ((write = uart_write(out->uart, ptr, len)) < 0) {
-      LOG_ERROR("uart_write");
-      return write;
+  WITH_STATS_TIMER(&out->stats.uart_tx) {
+    // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
+    if ((err = uart_break(out->uart, DMX_BREAK_BITS, DMX_MARK_AFTER_BREAK_BITS))) {
+      LOG_ERROR("uart1_break");
+      goto error;
     }
 
-    ptr += write;
-    len -= write;
-  }
+    if ((err = uart_putc(out->uart, cmd)) < 0) {
+      LOG_ERROR("uart_putc");
+      goto error;
+    }
 
-  if ((err = uart_flush_write(out->uart))) {
-    LOG_ERROR("uart_flush_write");
-    return err;
+    for (uint8_t *ptr = data; len > 0; ) {
+      ssize_t write;
+
+      if ((write = uart_write(out->uart, ptr, len)) < 0) {
+        LOG_ERROR("uart_write");
+        err = write;
+        goto error;
+      }
+
+      ptr += write;
+      len -= write;
+    }
+
+    if ((err = uart_flush_write(out->uart))) {
+      LOG_ERROR("uart_flush_write");
+      goto error;
+    }
   }
 
   return 0;
+
+error:
+  stats_counter_increment(&out->stats.tx_error);
+
+  return err;
 }
 
 int dmx_output_close (struct dmx_output *out)

@@ -4,6 +4,9 @@
 #include <stats.h>
 
 struct dmx_input_stats {
+
+  struct stats_timer uart_open;
+
   /*
    * Time spent in UART RX.
    * The higher this is, the better - the less overhead there is in the DMX processing.
@@ -20,4 +23,4 @@ struct dmx_input_stats {
 /*
 * Get stats for input
  */
-void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats);
+void dmx_input_stats(struct dmx_input *in, struct dmx_input_stats *stats, bool reset);

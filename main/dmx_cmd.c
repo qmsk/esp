@@ -4,10 +4,12 @@
 
 #include <artnet.h>
 #include <dmx_input_stats.h>
+#include <dmx_output_stats.h>
 #include <logging.h>
 #include <stats_print.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 int dmx_cmd_info(int argc, char **argv, void *ctx)
 {
@@ -229,13 +231,21 @@ error:
 
 int dmx_cmd_stats(int argc, char **argv, void *ctx)
 {
-  if (dmx_input_state.dmx_input) {
+  struct dmx_input *dmx_input = dmx_input_state.dmx_input;
+  bool reset = false;
+
+  if (argc > 1 && strcmp(argv[1], "reset") == 0) {
+    reset = true;
+  } 
+
+  if (dmx_input) {
     struct dmx_input_stats stats;
 
-    dmx_input_stats(dmx_input_state.dmx_input, &stats);
+    dmx_input_stats(dmx_input, &stats, reset);
 
     printf("Input:\n");
 
+    print_stats_timer  ("UART",   "Open",     &stats.uart_open);
     print_stats_timer  ("UART",   "RX",       &stats.uart_rx);
     printf("\t\n");
     print_stats_counter("RX",     "overflow", &stats.rx_overflow);
@@ -250,6 +260,29 @@ int dmx_cmd_stats(int argc, char **argv, void *ctx)
     printf("\n");
   }
 
+  for (unsigned i = 0; i < DMX_OUTPUT_COUNT; i++) {
+    struct dmx_output *dmx_output = dmx_output_states[i].dmx_output;
+    struct dmx_output_stats stats;
+
+    if (!dmx_output) {
+      continue;
+    }
+
+    dmx_output_stats(dmx_output, &stats, reset);
+
+    printf("Output %d:\n", i + 1);
+
+    print_stats_timer  ("UART",   "Open",     &stats.uart_open);
+    print_stats_timer  ("UART",   "TX",       &stats.uart_tx);
+    printf("\t\n");
+    print_stats_counter("TX",     "error",    &stats.tx_error);
+    printf("\t\n");
+    print_stats_counter("DMX",    "dimmer",   &stats.cmd_dimmer);
+    printf("\t\n");
+    print_stats_gauge(  "Data",   "len",      &stats.data_len);
+    printf("\n");
+  }
+
   return 0;
 }
 
@@ -259,7 +292,7 @@ const struct cmd dmx_commands[] = {
   { "all",    dmx_cmd_all,        .usage = "COUNT VALUE",     .describe = "Output COUNT channels at VALUE on all outputs" },
   { "out",    dmx_cmd_out,        .usage = "OUTPUT VALUE...", .describe = "Output given VALUEs as channels on output" },
   { "count",  dmx_cmd_count,      .usage = "OUTPUT COUNT",    .describe = "Output COUNT channels with 0..COUNT as value" },
-  { "stats",  dmx_cmd_stats,                                 .describe = "Show input/output stats" },
+  { "stats",  dmx_cmd_stats,      .usage = "[reset]",         .describe = "Show input/output stats" },
   { }
 };
 

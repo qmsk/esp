@@ -108,7 +108,7 @@ static void dmx_input_process_error (struct dmx_input *in, int err)
       break;
 
     case EBADMSG:
-      if (stats_counter_zero(&in->stats.rx_overflow)) {
+      if (stats_counter_zero(&in->stats.rx_error)) {
         LOG_WARN("UART RX error");
       }
 
@@ -117,7 +117,7 @@ static void dmx_input_process_error (struct dmx_input *in, int err)
       break;
 
     case ESPIPE:
-      if (stats_counter_zero(&in->stats.rx_overflow)) {
+      if (stats_counter_zero(&in->stats.rx_desync)) {
         LOG_WARN("UART RX break desynchronized");
       }
 

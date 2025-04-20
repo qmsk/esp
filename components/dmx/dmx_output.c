@@ -102,6 +102,7 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
   }
 
   stats_counter_increment(&out->stats.cmd_dimmer);
+  stats_gauge_sample(&out->stats.data_len, len);
 
   WITH_STATS_TIMER(&out->stats.uart_tx) {
     // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums

@@ -1,5 +1,11 @@
 <style>
+  td.mac {
+    font-family: monospace;
+  }
 
+  td.ipv4 {
+    font-family: monospace;
+  }
 </style>
 <template>
   <main id="wifi-view">
@@ -44,12 +50,13 @@
               <th>MAC</th>
               <th>IP</th>
               <th>Mode</th>
+              <th>RSSI</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="sta in wifi.ap.sta" :key="sta.bssid">
-              <td>{{ sta.mac }}</td>
-              <td>{{ sta.ipv4 }}</td>
+              <td class="mac">{{ sta.mac }}</td>
+              <td class="ipv4">{{ sta.ipv4 }}</td>
               <td>
                 <span v-if="sta.phy_11b">b</span>
                 <span v-if="sta.phy_11g">g</span>
@@ -57,6 +64,7 @@
                 <span v-if="sta.phy_lr">LR</span>
                 <span v-if="sta.wps">WPS</span>
               </td>
+              <td>{{ sta.rssi }} dBm</td>
             </tr>
           </tbody>
         </table>

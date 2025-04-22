@@ -97,6 +97,7 @@ static int wifi_api_write_ap_sta_object(struct json_writer *w, const wifi_sta_in
 {
   return (
     JSON_WRITE_MEMBER_BSSID(w, "mac", wifi_sta->mac) ||
+    JSON_WRITE_MEMBER_INT(w, "rssi", wifi_sta->rssi) ||
     JSON_WRITE_MEMBER_BOOL(w, "phy_11b", wifi_sta->phy_11b) ||
     JSON_WRITE_MEMBER_BOOL(w, "phy_11g", wifi_sta->phy_11g) ||
     JSON_WRITE_MEMBER_BOOL(w, "phy_11n", wifi_sta->phy_11n) ||

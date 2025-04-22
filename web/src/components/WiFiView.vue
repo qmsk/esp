@@ -44,6 +44,7 @@
               <th>MAC</th>
               <th>IP</th>
               <th>Mode</th>
+              <th>RSSI</th>
             </tr>
           </thead>
           <tbody>
@@ -57,6 +58,7 @@
                 <span v-if="sta.phy_lr">LR</span>
                 <span v-if="sta.wps">WPS</span>
               </td>
+              <td>{{ sta.rssi }} dBm</td>
             </tr>
           </tbody>
         </table>

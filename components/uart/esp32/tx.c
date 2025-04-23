@@ -75,37 +75,35 @@ int uart_tx_one(struct uart *uart, uint8_t byte)
   return ret;
 }
 
-static size_t uart_tx_raw(struct uart *uart, const uint8_t *buf, size_t size)
-{
-  size_t len = uart_ll_get_txfifo_len(uart->dev);
-
-  if (len > size) {
-    len = size;
-  }
-
-  // assume no crtical section required, as uart is locked and ISR should not be running
-  uart_ll_write_txfifo(uart->dev, buf, len);
-
-  return len;
-}
-
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
 {
   size_t write = 0;
 
-  // assume no crtical section required, as uart is locked and ISR should not be running
-  if (!uart->tx_buffer || xStreamBufferIsEmpty(uart->tx_buffer)) {
+  taskENTER_CRITICAL(&uart->mux);
+
+  if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
+    // TX buffer in use
+  } else if ((write = uart_ll_get_txfifo_len(uart->dev))) {
     // fastpath via HW FIFO
-    write = uart_tx_raw(uart, buf, len);
+    if (write > len) {
+      write = len;
+    }
 
     LOG_ISR_DEBUG("raw len=%u: write=%u", len, write);
+
+    uart_ll_write_txfifo(uart->dev, buf, write);
+    
+  } else {
+    // FIFO full
   }
+
+  taskEXIT_CRITICAL(&uart->mux);
 
   if (!write && uart->tx_buffer) {
     // write as many bytes as possible, ensure tx buffer is not empty
     write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
 
-    LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
+    LOG_DEBUG("buf len=%u: write=%u", len, write);
 
     // enable ISR to consume stream buffer
     uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);

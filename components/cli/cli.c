@@ -2,9 +2,12 @@
 #include <cli.h>
 #include <logging.h>
 
-#if CONFIG_NEWLIB_VFS_STDIO
-#define HAVE_STDIO_FCNTL 1
-#include <stdio_fcntl.h>
+#if CONFIG_IDF_TARGET_ESP8266 && CONFIG_NEWLIB_VFS_STDIO
+  #define HAVE_STDIO_FCNTL 1
+  #include <stdio_fcntl.h>
+#elif !CONFIG_IDF_TARGET_ESP8266 && CONFIG_VFS_USE_STDIO
+  #define HAVE_STDIO_FCNTL 1
+  #include <stdio_fcntl.h>
 #endif
 
 #include <errno.h>
@@ -93,18 +96,21 @@ static int cli_open(struct cli *cli, TickType_t timeout)
 #if HAVE_STDIO_FCNTL
   if (fcntl(STDIN_FILENO, F_SET_READ_TIMEOUT, timeout) < 0) {
     LOG_WARN("fcntl stdin: %s", strerror(errno));
+  } else {
+    LOG_INFO("fcntl stdin F_SET_READ_TIMEOUT %d", timeout);
   }
 #endif
 
   printf("! Use [ENTER] to open console\n");
 
   while ((c = fgetc(stdin)) != EOF) {
-    if (c == '\r') {
-      continue;
-    } else if (c == '\n') {
-      break;
-    } else {
-      printf("! Use [ENTER] to open console, ignoring <%02x>\n", c);
+    switch (c) {
+      case '\r':
+      case '\n':
+        return 0;
+      
+      default:
+       printf("! Use [ENTER] to open console, ignoring <%02x>\n", c);
     }
   }
 

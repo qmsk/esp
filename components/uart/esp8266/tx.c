@@ -137,9 +137,11 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_
   return write;
 }
 
-int uart_tx_flush(struct uart *uart)
+int uart_tx_flush(struct uart *uart, TickType_t timeout)
 {
   TaskHandle_t task = xTaskGetCurrentTaskHandle();
+
+  xTaskNotifyStateClear(task);
 
   taskENTER_CRITICAL();
 
@@ -159,7 +161,9 @@ int uart_tx_flush(struct uart *uart)
   taskEXIT_CRITICAL();
 
   // wait for tx to complete and break to start
-  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+  if (!xTaskNotifyWait(0, 0, NULL, timeout)) {
+    uart->tx_done_notify_task = NULL;
+
     LOG_WARN("timeout");
     return -1;
   }

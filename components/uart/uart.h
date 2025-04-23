@@ -83,7 +83,7 @@ int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout);
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len);
 size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout);
 
-int uart_tx_flush(struct uart *uart);
+int uart_tx_flush(struct uart *uart, TickType_t timeout);
 
 int uart_tx_break(struct uart *uart, unsigned bits);
 int uart_tx_mark(struct uart *uart, unsigned bits);

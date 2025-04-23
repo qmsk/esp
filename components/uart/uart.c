@@ -416,7 +416,7 @@ int uart_flush_write(struct uart *uart)
     return err;
   }
 
-  err = uart_tx_flush(uart);
+  err = uart_tx_flush(uart, portMAX_DELAY);
 
   uart_release_tx(uart);
 

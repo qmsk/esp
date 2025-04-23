@@ -15,7 +15,7 @@ int uart_rx_init(struct uart *uart, size_t rx_buffer_size)
   if (rx_buffer_size == 0) {
     uart->rx_buffer = NULL;
 
-  } else if (!(uart->rx_buffer = xStreamBufferCreate(rx_buffer_size, 1))) {
+  } else if (!(uart->rx_buffer = xStreamBufferCreate(rx_buffer_size, 0))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }

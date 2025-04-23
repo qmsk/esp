@@ -11,7 +11,8 @@ int uart_tx_init(struct uart *uart, size_t tx_buffer_size)
   if (!tx_buffer_size) {
     uart->tx_buffer = NULL;
 
-  } else if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {
+    // TODO: use xTriggerLevelBytes=0
+  } else if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 0))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }

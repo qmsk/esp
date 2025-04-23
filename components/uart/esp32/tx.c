@@ -115,29 +115,6 @@ size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
-{
-  size_t write;
-
-  if (!uart->tx_buffer) {
-    LOG_DEBUG("TX buffer disabled");
-    return 0;
-  }
-
-  // write as many bytes as possible, ensure tx buffer is not empty
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
-
-  LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
-
-  if (write == 0) {
-    // TX buffer full, enable ISR
-    uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);
-    uart_ll_ena_intr_mask(uart->dev, UART_TX_WRITE_INTR_MASK);
-  }
-
-  return write;
-}
-
 size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
 {
   size_t write;

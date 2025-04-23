@@ -460,45 +460,6 @@ ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len)
   return 0;
 }
 
-ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len)
-{
-  size_t write;
-  int err;
-
-  if ((err = uart_acquire_tx(uart))) {
-    return err;
-  }
-
-  while (len > 0) {
-    // fastpath via TX buffer, without interrupts
-    write = uart_tx_buffered(uart, buf, len);
-
-    LOG_DEBUG("tx buf len=%u: write=%u", len, write);
-
-    buf += write;
-    len -= write;
-
-    if (len > 0) {
-      // blocking slowpath via buffer + ISR
-      write = uart_tx_slow(uart, buf, len);
-
-      LOG_DEBUG("tx slow len=%u: write=%u", len, write);
-
-      buf += write;
-      len -= write;
-    }
-
-    if (!len) {
-      LOG_WARN("tx stuck, tx_buffer=%p", uart->tx_buffer);
-      return -1;
-    }
-  }
-
-  uart_release_tx(uart);
-
-  return 0;
-}
-
 int uart_flush_write(struct uart *uart)
 {
   int err;

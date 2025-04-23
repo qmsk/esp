@@ -207,15 +207,6 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len);
 int uart_write_all(struct uart *uart, const void *buf, size_t len);
 
 /**
- * Write len bytes from buf into the TX buffer.
- *
- * TX is only started once the TX buffer is full, or uart_flush() is called.
- *
- * Returns 0, or <0 on error.
- */
-ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len);
-
-/**
  * Wait for TX buffer + FIFO to empty.
  */
 int uart_flush_write(struct uart *uart);

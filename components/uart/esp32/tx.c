@@ -195,7 +195,7 @@ int uart_tx_flush(struct uart *uart, TickType_t timeout)
       uart->tx_done_notify_task = NULL;
 
       LOG_WARN("timeout");
-      
+
       return -1;
     }
 
@@ -222,17 +222,17 @@ static void uart_tx_wait(struct uart *uart, unsigned bits)
   ets_delay_us(us);
 }
 
-// ESP-32 txd_brk is tied to TX_DONE, and does nothing if TX idle
+// ESP-32 txd_brk is tied to TX_DONE, and does nothing if TX idle?
 // called after uart_tx_flush() with tx mutex held
 int uart_tx_break(struct uart *uart, unsigned bits)
 {
   LOG_DEBUG("bits=%u", bits);
-
-  uart->dev->conf0.txd_inv = 1;
+  
+  uart_tx_inv(uart, 1);
 
   uart_tx_wait(uart, bits);
 
-  uart->dev->conf0.txd_inv = 0;
+  uart_tx_inv(uart, 0);
 
   LOG_DEBUG("done");
 

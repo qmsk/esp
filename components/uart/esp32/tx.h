@@ -15,3 +15,8 @@ static inline void uart_tx_fifo_putc(struct uart *uart, uint8_t byte)
 {
   WRITE_PERI_REG(UART_FIFO_AHB_REG(uart->port & UART_PORT_MASK), byte);
 }
+
+static inline void uart_tx_inv(struct uart *uart, bool inv)
+{
+  uart->dev->conf0.txd_inv = inv;
+}

@@ -382,7 +382,7 @@ int uart_putc(struct uart *uart, int ch)
 
   LOG_DEBUG("ch=%#02x", ch);
 
-  if ((ret = uart_tx_one(uart, ch))) {
+  if ((ret = uart_tx_one(uart, ch, portMAX_DELAY))) {
     goto error;
   } else {
     ret = ch;

@@ -42,37 +42,50 @@ int uart_tx_setup(struct uart *uart, struct uart_options options)
   return 0;
 }
 
-int uart_tx_one(struct uart *uart, uint8_t byte)
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout)
 {
-  int ret;
+  size_t write = 0;
 
   taskENTER_CRITICAL(&uart->mux);
 
-  if (uart_ll_get_txfifo_len(uart->dev) > 0) {
-    uart_tx_write_txfifo_byte(uart, byte);
+  if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
+    // TX buffer in use
+  } else if ((write = uart_ll_get_txfifo_len(uart->dev))) {
+    // fastpath via HW FIFO
+    uart_tx_fifo_putc(uart, byte);
 
     LOG_ISR_DEBUG("tx fifo");
 
-    ret = 0;
+    write = 1;
+  } else {
+    // must buffer
+  }
 
-  } else if (uart->tx_buffer && xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+  taskEXIT_CRITICAL(&uart->mux);
+
+  if (write) {
+    return 0;
+  }
+  
+  if (!uart->tx_buffer) {
+    LOG_ISR_DEBUG("TX fifo full");
+    return -1;
+    
+    // assume that TX ISR will be enabled, unless the TX buffer is empty, in which case this will not block 
+  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, timeout) > 0) {
     LOG_ISR_DEBUG("tx buffer");
 
     // byte was written
     uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);
     uart_ll_ena_intr_mask(uart->dev, UART_TX_WRITE_INTR_MASK);
 
-    ret = 0;
+    return 0;
 
   } else {
-    LOG_ISR_DEBUG("failed");
+    LOG_ISR_DEBUG("TX buffer full");
 
-    ret = -1;
+    return -1;
   }
-
-  taskEXIT_CRITICAL(&uart->mux);
-
-  return ret;
 }
 
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
@@ -126,7 +139,7 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_
 
   // does not use a critical section, inter enable racing with stream send / ISR is harmless
 
-  // assume that the TX interrupt will be enabled, unless this is empty, in which case it will not block 
+  // assume that TX ISR will be enabled, unless the TX buffer is empty, in which case this will not block 
   write = xStreamBufferSend(uart->tx_buffer, buf, len, timeout);
 
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);

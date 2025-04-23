@@ -80,7 +80,7 @@ void uart_rx_abort(struct uart *uart);
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);
 int uart_tx_setup(struct uart *uart, struct uart_options options);
 
-int uart_tx_one(struct uart *uart, uint8_t byte);
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout);
 
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len);
 size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout);

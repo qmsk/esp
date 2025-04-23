@@ -34,7 +34,7 @@ int uart_tx_setup(struct uart *uart, struct uart_options options)
   return 0;
 }
 
-int uart_tx_one(struct uart *uart, uint8_t byte)
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout)
 {
   int ret;
 
@@ -47,7 +47,7 @@ int uart_tx_one(struct uart *uart, uint8_t byte)
 
     ret = 0;
 
-  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, timeout) > 0) {
     LOG_ISR_DEBUG("tx buffer");
 
     // byte was written

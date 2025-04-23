@@ -10,6 +10,7 @@
 #include <cli.h>
 #include <stdio_uart.h>
 #include <uart.h>
+#include <sys/unistd.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -147,6 +148,12 @@ int start_console_stdio()
 void stop_console_uart()
 {
   LOG_INFO("closing console, use short CONFIG button press to re-start");
+
+  fflush(stdout);
+  fflush(stderr);
+
+  fsync(fileno(stdout));
+  fsync(fileno(stderr));
 
   stdio_detach_uart();
 

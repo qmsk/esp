@@ -134,7 +134,9 @@ int stdio_vfs_fcntl_stdin(int cmd, int arg)
 
     case F_SET_READ_TIMEOUT:
       stdin_read_timeout = arg ? arg : portMAX_DELAY;
-      
+
+      LOG_DEBUG("stdin_read_timeout = %d", stdin_read_timeout);
+
       return 0;
 
     default:

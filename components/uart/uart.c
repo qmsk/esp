@@ -354,7 +354,7 @@ static void uart_release_tx(struct uart *uart)
   xSemaphoreGiveRecursive(uart->tx_mutex);
 }
 
-int uart_putc(struct uart *uart, int ch)
+int uart_putc(struct uart *uart, int ch, TickType_t timeout)
 {
   int ret;
 
@@ -364,7 +364,7 @@ int uart_putc(struct uart *uart, int ch)
 
   LOG_DEBUG("ch=%#02x", ch);
 
-  if ((ret = uart_tx_one(uart, ch, portMAX_DELAY))) {
+  if ((ret = uart_tx_one(uart, ch, timeout))) {
     goto error;
   } else {
     ret = ch;
@@ -376,7 +376,7 @@ error:
   return ret;
 }
 
-ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
+ssize_t uart_write(struct uart *uart, const void *buf, size_t len, TickType_t timeout)
 {
   size_t write = 0;
   int err;
@@ -393,9 +393,9 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
   buf += write;
   len -= write;
 
-  if (!write) {
+  if (!write && timeout) {
     // blocking slowpath via buffer + ISR
-    write = uart_tx_slow(uart, buf, len, portMAX_DELAY);
+    write = uart_tx_slow(uart, buf, len, timeout);
 
     LOG_DEBUG("tx slow len=%u: write=%u", len, write);
 
@@ -408,7 +408,7 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
   return write;
 }
 
-int uart_flush_write(struct uart *uart)
+int uart_flush_write(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -416,7 +416,7 @@ int uart_flush_write(struct uart *uart)
     return err;
   }
 
-  err = uart_tx_flush(uart, portMAX_DELAY);
+  err = uart_tx_flush(uart, timeout);
 
   uart_release_tx(uart);
 

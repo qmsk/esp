@@ -180,19 +180,19 @@ int uart_open_tx(struct uart *uart);
  *
  * Returns ch on success, <0 on error.
  */
-int uart_putc(struct uart *uart, int ch);
+int uart_putc(struct uart *uart, int ch, TickType_t timeout);
 
 /**
  * Write up to len bytes from buf. Blocks if TX buffer is full.
  *
  * Returns number of bytes written, or <0 on error.
  */
-ssize_t uart_write(struct uart *uart, const void *buf, size_t len);
+ssize_t uart_write(struct uart *uart, const void *buf, size_t len, TickType_t timeout);
 
 /**
  * Wait for TX buffer + FIFO to empty.
  */
-int uart_flush_write(struct uart *uart);
+int uart_flush_write(struct uart *uart, TickType_t timeout);
 
 /**
  * Flush -> idle, hold line low for >= `break_bits` bauds to signal break, and return line high (idle) for >= `mark_bits`.

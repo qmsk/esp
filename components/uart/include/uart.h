@@ -200,13 +200,6 @@ int uart_putc(struct uart *uart, int ch);
 ssize_t uart_write(struct uart *uart, const void *buf, size_t len);
 
 /**
- * Write len bytes from buf. Blocks if TX buffer is full.
- *
- * Returns 0, or <0 on error.
- */
-int uart_write_all(struct uart *uart, const void *buf, size_t len);
-
-/**
  * Wait for TX buffer + FIFO to empty.
  */
 int uart_flush_write(struct uart *uart);

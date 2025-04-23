@@ -99,9 +99,6 @@ struct uart_options {
   // invert TX signals
   uint32_t tx_inverted : 1;
 
-  // optional read() timeout, 0 -> portMAX_DELAY
-  TickType_t read_timeout;
-
   // Acquire mutex before setting dev interrupts
   SemaphoreHandle_t dev_mutex;
 
@@ -145,13 +142,6 @@ int uart_open(struct uart *uart, struct uart_options options);
 int uart_open_rx(struct uart *uart);
 
 /**
- * Set timeout for read().
- *
- * @param timeout or portMAX_DELAY to disable
- */
-int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
-
-/**
  * Read data from UART, copying up to size bytes into buf.
  *
  * @return <0 on error, 0 on timeout or break, otherwise number of bytes copied into buf.
@@ -161,7 +151,7 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
  * @return -EINTR interrupted using uart_abort_read()
  * @return -EINVAL RX disabled (rx_buffer_size=0)
  */
-int uart_read(struct uart *uart, void *buf, size_t size);
+int uart_read(struct uart *uart, void *buf, size_t size, TickType_t timeout);
 
 /**
  * Cause the following uart_read() call, or any currently pending call, to return an error.

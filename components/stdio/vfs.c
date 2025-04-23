@@ -16,6 +16,8 @@
 #define STDIO_VFS_FD_START 0
 #define STDIO_VFS_FD_COUNT 3
 
+static TickType_t stdin_read_timeout = portMAX_DELAY;
+
 ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
 {
   ssize_t ret;
@@ -104,7 +106,7 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
     switch(fd) {
       case STDIN_FILENO:
         if (stdio_uart) {
-          return uart_read(stdio_uart, data, size);
+          return uart_read(stdio_uart, data, size, stdin_read_timeout);
         } else {
           errno = ENODEV;
           return -1;
@@ -131,14 +133,8 @@ int stdio_vfs_fcntl_stdin(int cmd, int arg)
       return O_RDONLY;
 
     case F_SET_READ_TIMEOUT:
-      if (!stdio_uart) {
-        errno = ENODEV;
-        return -1;
-      } else if (uart_set_read_timeout(stdio_uart, arg ? arg : portMAX_DELAY)) {
-        errno = EIO;
-        return -1;
-      }
-
+      stdin_read_timeout = arg ? arg : portMAX_DELAY;
+      
       return 0;
 
     default:

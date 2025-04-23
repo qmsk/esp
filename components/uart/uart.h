@@ -32,8 +32,6 @@ struct uart {
   StreamBufferHandle_t rx_buffer;
   bool rx_overflow, rx_break, rx_error, rx_abort;
 
-  TickType_t read_timeout;
-
   /* TX */
   SemaphoreHandle_t tx_mutex;
   StreamBufferHandle_t tx_buffer;

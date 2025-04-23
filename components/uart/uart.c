@@ -116,8 +116,6 @@ int uart_setup(struct uart *uart, struct uart_options options)
     goto error;
   }
 
-  uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
-
   xSemaphoreGiveRecursive(uart->tx_mutex);
   xSemaphoreGiveRecursive(uart->rx_mutex);
 
@@ -191,22 +189,6 @@ error:
   return 1;
 }
 
-int uart_set_read_timeout(struct uart *uart, TickType_t timeout)
-{
-  int ret = 0;
-
-  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
-  }
-
-  uart->read_timeout = timeout;
-
-  xSemaphoreGiveRecursive(uart->rx_mutex);
-
-  return ret;
-}
-
 static int uart_acquire_rx(struct uart *uart)
 {
   if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
@@ -232,7 +214,7 @@ static void uart_release_rx(struct uart *uart)
   xSemaphoreGiveRecursive(uart->rx_mutex);
 }
 
-int uart_read(struct uart *uart, void *buf, size_t size)
+int uart_read(struct uart *uart, void *buf, size_t size, TickType_t timeout)
 {
   int ret = 0;
   bool read = false;
@@ -294,7 +276,7 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         goto ret;
     }
 
-    ret = uart_rx_read(uart, buf, size, uart->read_timeout);
+    ret = uart_rx_read(uart, buf, size, timeout);
     read = true;
   }
 

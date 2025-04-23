@@ -18,6 +18,8 @@
 
 ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
 {
+  ssize_t ret;
+
   switch(fd) {
     case STDOUT_FILENO:
       if (stdio_uart) {
@@ -28,15 +30,19 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
       }
 
     case STDERR_FILENO:
-      if (stderr_log) {
-        size = stdio_log_write(stderr_log, data, size);
-      }
-
       if (!stdio_uart) {
         os_write(data, size);
-      } else if (uart_write_all(stdio_uart, data, size)) {
-        errno = EIO;
-        return -1;
+      } else {
+        if ((ret = uart_write(stdio_uart, data, size)) < 0) {
+          errno = EIO;
+          return -1;
+        } else {
+          size = ret;
+        }
+      }
+
+      if (stderr_log) {
+        stdio_log_write(stderr_log, data, size);
       }
 
       return size;

@@ -20,9 +20,9 @@ struct stdio_log {
 extern struct stdio_log *stderr_log;
 
 /*
- * Return number of bytes copied.
+ * Guaranteed to succeeed and write all data.
  */
-size_t stdio_log_write(struct stdio_log *log, const void *data, size_t len);
+void stdio_log_write(struct stdio_log *log, const uint8_t *data, size_t len);
 
 /*
  * Return number of bytes copied.

@@ -143,6 +143,8 @@ int uart_tx_flush(struct uart *uart)
 
   LOG_DEBUG("");
 
+  xTaskNotifyStateClear(task);
+
   taskENTER_CRITICAL(&uart->mux);
 
   if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
@@ -174,7 +176,7 @@ int uart_tx_flush(struct uart *uart)
     LOG_DEBUG("wait done=%d...", done);
 
     // wait for tx to complete and break to start
-    if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+    if (!xTaskNotifyWait(0, 0, NULL, portMAX_DELAY)) {
       LOG_WARN("timeout");
       return -1;
     }

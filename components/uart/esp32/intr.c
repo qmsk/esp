@@ -162,7 +162,7 @@ void IRAM_ATTR uart_intr_tx_done_handler(struct uart *uart, BaseType_t *task_wok
     LOG_ISR_DEBUG("notify tx_done_notify_task=%p", uart->tx_done_notify_task);
 
     // FIFO is empty, notify task
-    vTaskNotifyGiveFromISR(uart->tx_done_notify_task, task_woken);
+    xTaskNotifyFromISR(uart->tx_done_notify_task, 0, eNoAction, task_woken);
 
     // only once
     uart->tx_done_notify_task = NULL;

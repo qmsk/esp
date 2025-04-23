@@ -62,23 +62,40 @@ int leds_interface_uart_init(struct leds_interface_uart *interface, const struct
   return 0;
 }
 
+static int leds_interface_uart_write(struct leds_interface_uart *interface, void *buf, size_t len)
+{
+  const uint8_t *ptr = buf;
+  int write;
+
+  while (len) {
+    if ((write = uart_write(interface->uart, ptr, len)) < 0) {
+      return write;
+    }
+
+    ptr += write;
+    len -= write;
+  }
+
+  return 0;
+}
+
 int leds_interface_uart_tx_pixel(struct leds_interface_uart *interface, const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
 {
   switch (interface->mode) {
     case LEDS_INTERFACE_UART_MODE_24B3I7_0U4_80U:
       interface->func.uart_mode_24B3I7(interface->buf.uart_mode_24B3I7, pixels, index, limit);
 
-      return uart_write_all(interface->uart, interface->buf.uart_mode_24B3I7, sizeof(interface->buf.uart_mode_24B3I7));
+      return leds_interface_uart_write(interface, interface->buf.uart_mode_24B3I7, sizeof(interface->buf.uart_mode_24B3I7));
 
     case LEDS_INTERFACE_UART_MODE_24B2I8_0U25_50U:
       interface->func.uart_mode_24B2I8(interface->buf.uart_mode_24B2I8, pixels, index, limit);
 
-      return uart_write_all(interface->uart, interface->buf.uart_mode_24B2I8, sizeof(interface->buf.uart_mode_24B2I8));
+      return leds_interface_uart_write(interface, interface->buf.uart_mode_24B2I8, sizeof(interface->buf.uart_mode_24B2I8));
 
     case LEDS_INTERFACE_UART_MODE_32B2I6_0U3_80U:
       interface->func.uart_mode_32B2I6(interface->buf.uart_mode_32B2I6, pixels, index, limit);
 
-      return uart_write_all(interface->uart, interface->buf.uart_mode_32B2I6, sizeof(interface->buf.uart_mode_32B2I6));
+      return leds_interface_uart_write(interface, interface->buf.uart_mode_32B2I6, sizeof(interface->buf.uart_mode_32B2I6));
 
     default:
       LOG_FATAL("invalid mode=%d", interface->mode);

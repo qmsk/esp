@@ -162,7 +162,7 @@ int uart_tx_flush(struct uart *uart, TickType_t timeout)
 
   // wait for tx to complete and break to start
   if (!xTaskNotifyWait(0, 0, NULL, timeout)) {
-    uart->tx_done_notify_task = NULL;
+    uart->txfifo_empty_notify_task = NULL;
 
     LOG_WARN("timeout");
     return -1;

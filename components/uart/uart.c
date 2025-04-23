@@ -413,7 +413,7 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
 
   if (!write) {
     // blocking slowpath via buffer + ISR
-    write = uart_tx_slow(uart, buf, len);
+    write = uart_tx_slow(uart, buf, len, portMAX_DELAY);
 
     LOG_DEBUG("tx slow len=%u: write=%u", len, write);
 

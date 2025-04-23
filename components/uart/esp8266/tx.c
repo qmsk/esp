@@ -122,12 +122,12 @@ size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
+size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout)
 {
   size_t write;
 
   // does not use a critical section, inter enable racing with stream send / ISR is harmless
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
+  write = xStreamBufferSend(uart->tx_buffer, buf, len, timeout);
 
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 

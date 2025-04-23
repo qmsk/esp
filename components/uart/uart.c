@@ -100,7 +100,7 @@ int uart_setup(struct uart *uart, struct uart_options options)
   }
 
   // wait TX idle
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, portMAX_DELAY))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -423,7 +423,7 @@ int uart_flush_write(struct uart *uart, TickType_t timeout)
   return err;
 }
 
-int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits)
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits, TickType_t timeout)
 {
   int err;
 
@@ -433,7 +433,7 @@ int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits)
 
   LOG_DEBUG("break_bits=%u mark_bits=%u", break_bits, mark_bits);
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -464,7 +464,7 @@ error:
   return err;
 }
 
-int uart_mark(struct uart *uart, unsigned mark_bits)
+int uart_mark(struct uart *uart, unsigned mark_bits, TickType_t timeout)
 {
   int err;
 
@@ -474,7 +474,7 @@ int uart_mark(struct uart *uart, unsigned mark_bits)
 
   LOG_DEBUG("mark_bits=%u", mark_bits);
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -492,7 +492,7 @@ error:
   return err;
 }
 
-int uart_close_tx(struct uart *uart)
+int uart_close_tx(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -500,7 +500,7 @@ int uart_close_tx(struct uart *uart)
     return err;
   }
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -516,7 +516,7 @@ error:
 }
 
 /* setup/open */
-int uart_close(struct uart *uart)
+int uart_close(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -524,7 +524,7 @@ int uart_close(struct uart *uart)
     return err;
   }
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }

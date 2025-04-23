@@ -202,7 +202,7 @@ int uart_flush_write(struct uart *uart, TickType_t timeout);
  *
  * Return <0 on error.
  */
-int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits);
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits, TickType_t timeout);
 
 /**
  * Flush, and hold mark for >= `mark_bits` bauds once TX is complete.
@@ -211,19 +211,19 @@ int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits);
  *
  * Return <0 on error.
  */
-int uart_mark(struct uart *uart, unsigned mark_bits);
+int uart_mark(struct uart *uart, unsigned mark_bits, TickType_t timeout);
 
 /**
  * Flush TX and release TX mutex acquire dusing `uart_open_tx()`.
  */
-int uart_close_tx(struct uart *uart);
+int uart_close_tx(struct uart *uart, TickType_t timeout);
 
 /**
  * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.
  *
  * WARNING: This does not release any intr, dev or pin state acquired by `uart_open()` -> `uart_setup()`! Use `uart_teardown()`!
  */
-int uart_close(struct uart *uart);
+int uart_close(struct uart *uart, TickType_t timeout);
 
 /*
  * Stop UART interrupts and disassocate from UART device.

@@ -25,7 +25,7 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
   switch(fd) {
     case STDOUT_FILENO:
       if (stdio_uart) {
-        return uart_write(stdio_uart, data, size);
+        return uart_write(stdio_uart, data, size, portMAX_DELAY);
       } else {
         os_write(data, size);
         return size;
@@ -35,7 +35,7 @@ ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
       if (!stdio_uart) {
         os_write(data, size);
       } else {
-        if ((ret = uart_write(stdio_uart, data, size)) < 0) {
+        if ((ret = uart_write(stdio_uart, data, size, portMAX_DELAY)) < 0) {
           errno = EIO;
           return -1;
         } else {
@@ -193,7 +193,7 @@ int stdio_vfs_fsync(int fd)
     case STDOUT_FILENO:
     case STDERR_FILENO:
       if (stdio_uart) {
-        return uart_flush_write(stdio_uart);
+        return uart_flush_write(stdio_uart, portMAX_DELAY);
       } else {
         errno = ENODEV;
         return -1;

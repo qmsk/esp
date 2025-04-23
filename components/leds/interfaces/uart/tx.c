@@ -68,7 +68,7 @@ static int leds_interface_uart_write(struct leds_interface_uart *interface, void
   int write;
 
   while (len) {
-    if ((write = uart_write(interface->uart, ptr, len)) < 0) {
+    if ((write = uart_write(interface->uart, ptr, len, portMAX_DELAY)) < 0) {
       return write;
     }
 
@@ -106,13 +106,13 @@ int leds_interface_uart_tx_reset(struct leds_interface_uart *interface)
 {
   switch (interface->mode) {
     case LEDS_INTERFACE_UART_MODE_24B3I7_0U4_80U:
-      return uart_mark(interface->uart, 80);
+      return uart_mark(interface->uart, 80, portMAX_DELAY);
 
     case LEDS_INTERFACE_UART_MODE_24B2I8_0U25_50U:
-      return uart_mark(interface->uart, 50);
+      return uart_mark(interface->uart, 50, portMAX_DELAY);
 
     case LEDS_INTERFACE_UART_MODE_32B2I6_0U3_80U:
-      return uart_mark(interface->uart, 80);
+      return uart_mark(interface->uart, 80, portMAX_DELAY);
 
     default:
       LOG_FATAL("invalid mode=%d", interface->mode);
@@ -161,7 +161,7 @@ error:
   leds_gpio_close(&interface->gpio);
 #endif
 
-  if ((err = uart_close(interface->uart))) {
+  if ((err = uart_close(interface->uart, portMAX_DELAY))) {
     LOG_ERROR("uart_close");
     return err;
   }

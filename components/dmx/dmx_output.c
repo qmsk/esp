@@ -115,12 +115,12 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
 
   WITH_STATS_TIMER(&out->stats.uart_tx) {
     // send break/mark per spec minimums for transmit; actual timings will vary, these are minimums
-    if ((err = uart_break(out->uart, DMX_BREAK_BITS, DMX_MARK_AFTER_BREAK_BITS))) {
+    if ((err = uart_break(out->uart, DMX_BREAK_BITS, DMX_MARK_AFTER_BREAK_BITS, portMAX_DELAY))) {
       LOG_ERROR("uart1_break");
       goto error;
     }
 
-    if ((err = uart_putc(out->uart, cmd)) < 0) {
+    if ((err = uart_putc(out->uart, cmd, portMAX_DELAY)) < 0) {
       LOG_ERROR("uart_putc");
       goto error;
     }
@@ -128,7 +128,7 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
     for (uint8_t *ptr = data; len > 0; ) {
       ssize_t write;
 
-      if ((write = uart_write(out->uart, ptr, len)) < 0) {
+      if ((write = uart_write(out->uart, ptr, len, portMAX_DELAY)) < 0) {
         LOG_ERROR("uart_write");
         err = write;
         goto error;
@@ -138,7 +138,7 @@ int dmx_output_write (struct dmx_output *out, enum dmx_cmd cmd, void *data, size
       len -= write;
     }
 
-    if ((err = uart_flush_write(out->uart))) {
+    if ((err = uart_flush_write(out->uart, portMAX_DELAY))) {
       LOG_ERROR("uart_flush_write");
       goto error;
     }
@@ -164,7 +164,7 @@ int dmx_output_close (struct dmx_output *out)
     gpio_out_clear(out->options.gpio_options);
   }
 
-  if (uart_close_tx(out->uart)) {
+  if (uart_close_tx(out->uart, portMAX_DELAY)) {
     LOG_WARN("uart_close_tx");
   }
 

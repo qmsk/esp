@@ -99,9 +99,6 @@ struct uart_options {
   // invert TX signals
   uint32_t tx_inverted : 1;
 
-  // optional read() timeout, 0 -> portMAX_DELAY
-  TickType_t read_timeout;
-
   // Acquire mutex before setting dev interrupts
   SemaphoreHandle_t dev_mutex;
 
@@ -145,13 +142,6 @@ int uart_open(struct uart *uart, struct uart_options options);
 int uart_open_rx(struct uart *uart);
 
 /**
- * Set timeout for read().
- *
- * @param timeout or portMAX_DELAY to disable
- */
-int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
-
-/**
  * Read data from UART, copying up to size bytes into buf.
  *
  * @return <0 on error, 0 on timeout or break, otherwise number of bytes copied into buf.
@@ -161,7 +151,7 @@ int uart_set_read_timeout(struct uart *uart, TickType_t timeout);
  * @return -EINTR interrupted using uart_abort_read()
  * @return -EINVAL RX disabled (rx_buffer_size=0)
  */
-int uart_read(struct uart *uart, void *buf, size_t size);
+int uart_read(struct uart *uart, void *buf, size_t size, TickType_t timeout);
 
 /**
  * Cause the following uart_read() call, or any currently pending call, to return an error.
@@ -190,35 +180,19 @@ int uart_open_tx(struct uart *uart);
  *
  * Returns ch on success, <0 on error.
  */
-int uart_putc(struct uart *uart, int ch);
+int uart_putc(struct uart *uart, int ch, TickType_t timeout);
 
 /**
  * Write up to len bytes from buf. Blocks if TX buffer is full.
  *
  * Returns number of bytes written, or <0 on error.
  */
-ssize_t uart_write(struct uart *uart, const void *buf, size_t len);
-
-/**
- * Write len bytes from buf. Blocks if TX buffer is full.
- *
- * Returns 0, or <0 on error.
- */
-int uart_write_all(struct uart *uart, const void *buf, size_t len);
-
-/**
- * Write len bytes from buf into the TX buffer.
- *
- * TX is only started once the TX buffer is full, or uart_flush() is called.
- *
- * Returns 0, or <0 on error.
- */
-ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len);
+ssize_t uart_write(struct uart *uart, const void *buf, size_t len, TickType_t timeout);
 
 /**
  * Wait for TX buffer + FIFO to empty.
  */
-int uart_flush_write(struct uart *uart);
+int uart_flush_write(struct uart *uart, TickType_t timeout);
 
 /**
  * Flush -> idle, hold line low for >= `break_bits` bauds to signal break, and return line high (idle) for >= `mark_bits`.
@@ -228,7 +202,7 @@ int uart_flush_write(struct uart *uart);
  *
  * Return <0 on error.
  */
-int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits);
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits, TickType_t timeout);
 
 /**
  * Flush, and hold mark for >= `mark_bits` bauds once TX is complete.
@@ -237,19 +211,19 @@ int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits);
  *
  * Return <0 on error.
  */
-int uart_mark(struct uart *uart, unsigned mark_bits);
+int uart_mark(struct uart *uart, unsigned mark_bits, TickType_t timeout);
 
 /**
  * Flush TX and release TX mutex acquire dusing `uart_open_tx()`.
  */
-int uart_close_tx(struct uart *uart);
+int uart_close_tx(struct uart *uart, TickType_t timeout);
 
 /**
  * Flush TX/RX and release rx/tx mutex acquired using `uart_open()`.
  *
  * WARNING: This does not release any intr, dev or pin state acquired by `uart_open()` -> `uart_setup()`! Use `uart_teardown()`!
  */
-int uart_close(struct uart *uart);
+int uart_close(struct uart *uart, TickType_t timeout);
 
 /*
  * Stop UART interrupts and disassocate from UART device.

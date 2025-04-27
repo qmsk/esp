@@ -32,8 +32,6 @@ struct uart {
   StreamBufferHandle_t rx_buffer;
   bool rx_overflow, rx_break, rx_error, rx_abort;
 
-  TickType_t read_timeout;
-
   /* TX */
   SemaphoreHandle_t tx_mutex;
   StreamBufferHandle_t tx_buffer;
@@ -80,13 +78,12 @@ void uart_rx_abort(struct uart *uart);
 int uart_tx_init(struct uart *uart, size_t tx_buffer_size);
 int uart_tx_setup(struct uart *uart, struct uart_options options);
 
-int uart_tx_one(struct uart *uart, uint8_t byte);
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout);
 
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len);
-size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len);
-size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len);
+size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout);
 
-int uart_tx_flush(struct uart *uart);
+int uart_tx_flush(struct uart *uart, TickType_t timeout);
 
 int uart_tx_break(struct uart *uart, unsigned bits);
 int uart_tx_mark(struct uart *uart, unsigned bits);

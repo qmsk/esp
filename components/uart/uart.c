@@ -100,7 +100,7 @@ int uart_setup(struct uart *uart, struct uart_options options)
   }
 
   // wait TX idle
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, portMAX_DELAY))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -115,8 +115,6 @@ int uart_setup(struct uart *uart, struct uart_options options)
     LOG_ERROR("uart_rx_setup");
     goto error;
   }
-
-  uart->read_timeout = options.read_timeout ? options.read_timeout : portMAX_DELAY;
 
   xSemaphoreGiveRecursive(uart->tx_mutex);
   xSemaphoreGiveRecursive(uart->rx_mutex);
@@ -191,22 +189,6 @@ error:
   return 1;
 }
 
-int uart_set_read_timeout(struct uart *uart, TickType_t timeout)
-{
-  int ret = 0;
-
-  if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
-  }
-
-  uart->read_timeout = timeout;
-
-  xSemaphoreGiveRecursive(uart->rx_mutex);
-
-  return ret;
-}
-
 static int uart_acquire_rx(struct uart *uart)
 {
   if (!xSemaphoreTakeRecursive(uart->rx_mutex, portMAX_DELAY)) {
@@ -232,7 +214,7 @@ static void uart_release_rx(struct uart *uart)
   xSemaphoreGiveRecursive(uart->rx_mutex);
 }
 
-int uart_read(struct uart *uart, void *buf, size_t size)
+int uart_read(struct uart *uart, void *buf, size_t size, TickType_t timeout)
 {
   int ret = 0;
   bool read = false;
@@ -294,7 +276,7 @@ int uart_read(struct uart *uart, void *buf, size_t size)
         goto ret;
     }
 
-    ret = uart_rx_read(uart, buf, size, uart->read_timeout);
+    ret = uart_rx_read(uart, buf, size, timeout);
     read = true;
   }
 
@@ -372,7 +354,7 @@ static void uart_release_tx(struct uart *uart)
   xSemaphoreGiveRecursive(uart->tx_mutex);
 }
 
-int uart_putc(struct uart *uart, int ch)
+int uart_putc(struct uart *uart, int ch, TickType_t timeout)
 {
   int ret;
 
@@ -382,7 +364,7 @@ int uart_putc(struct uart *uart, int ch)
 
   LOG_DEBUG("ch=%#02x", ch);
 
-  if ((ret = uart_tx_one(uart, ch))) {
+  if ((ret = uart_tx_one(uart, ch, timeout))) {
     goto error;
   } else {
     ret = ch;
@@ -394,7 +376,7 @@ error:
   return ret;
 }
 
-ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
+ssize_t uart_write(struct uart *uart, const void *buf, size_t len, TickType_t timeout)
 {
   size_t write = 0;
   int err;
@@ -411,9 +393,9 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
   buf += write;
   len -= write;
 
-  if (!write) {
+  if (!write && timeout) {
     // blocking slowpath via buffer + ISR
-    write = uart_tx_slow(uart, buf, len);
+    write = uart_tx_slow(uart, buf, len, timeout);
 
     LOG_DEBUG("tx slow len=%u: write=%u", len, write);
 
@@ -426,80 +408,7 @@ ssize_t uart_write(struct uart *uart, const void *buf, size_t len)
   return write;
 }
 
-ssize_t uart_write_all(struct uart *uart, const void *buf, size_t len)
-{
-  size_t write;
-  int err;
-
-  if ((err = uart_acquire_tx(uart))) {
-    return err;
-  }
-
-  while (len > 0) {
-    // fastpath via FIFO queue or TX buffer
-    write = uart_tx_fast(uart, buf, len);
-
-    LOG_DEBUG("tx fast len=%u: write=%u", len, write);
-
-    buf += write;
-    len -= write;
-
-    if (len > 0) {
-      // blocking slowpath via buffer + ISR
-      write = uart_tx_slow(uart, buf, len);
-
-      LOG_DEBUG("tx slow len=%u: write=%u", len, write);
-
-      buf += write;
-      len -= write;
-    }
-  }
-
-  uart_release_tx(uart);
-
-  return 0;
-}
-
-ssize_t uart_write_buffered(struct uart *uart, const void *buf, size_t len)
-{
-  size_t write;
-  int err;
-
-  if ((err = uart_acquire_tx(uart))) {
-    return err;
-  }
-
-  while (len > 0) {
-    // fastpath via TX buffer, without interrupts
-    write = uart_tx_buffered(uart, buf, len);
-
-    LOG_DEBUG("tx buf len=%u: write=%u", len, write);
-
-    buf += write;
-    len -= write;
-
-    if (len > 0) {
-      // blocking slowpath via buffer + ISR
-      write = uart_tx_slow(uart, buf, len);
-
-      LOG_DEBUG("tx slow len=%u: write=%u", len, write);
-
-      buf += write;
-      len -= write;
-    }
-
-    if (!len) {
-      LOG_WARN("tx stuck, tx_buffer=%p", uart->tx_buffer);
-      return -1;
-    }
-  }
-
-  uart_release_tx(uart);
-
-  return 0;
-}
-
-int uart_flush_write(struct uart *uart)
+int uart_flush_write(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -507,14 +416,14 @@ int uart_flush_write(struct uart *uart)
     return err;
   }
 
-  err = uart_tx_flush(uart);
+  err = uart_tx_flush(uart, timeout);
 
   uart_release_tx(uart);
 
   return err;
 }
 
-int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits)
+int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits, TickType_t timeout)
 {
   int err;
 
@@ -524,7 +433,7 @@ int uart_break(struct uart *uart, unsigned break_bits, unsigned mark_bits)
 
   LOG_DEBUG("break_bits=%u mark_bits=%u", break_bits, mark_bits);
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -555,7 +464,7 @@ error:
   return err;
 }
 
-int uart_mark(struct uart *uart, unsigned mark_bits)
+int uart_mark(struct uart *uart, unsigned mark_bits, TickType_t timeout)
 {
   int err;
 
@@ -565,7 +474,7 @@ int uart_mark(struct uart *uart, unsigned mark_bits)
 
   LOG_DEBUG("mark_bits=%u", mark_bits);
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -583,7 +492,7 @@ error:
   return err;
 }
 
-int uart_close_tx(struct uart *uart)
+int uart_close_tx(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -591,7 +500,7 @@ int uart_close_tx(struct uart *uart)
     return err;
   }
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }
@@ -607,7 +516,7 @@ error:
 }
 
 /* setup/open */
-int uart_close(struct uart *uart)
+int uart_close(struct uart *uart, TickType_t timeout)
 {
   int err;
 
@@ -615,7 +524,7 @@ int uart_close(struct uart *uart)
     return err;
   }
 
-  if ((err = uart_tx_flush(uart))) {
+  if ((err = uart_tx_flush(uart, timeout))) {
     LOG_ERROR("uart_tx_flush");
     goto error;
   }

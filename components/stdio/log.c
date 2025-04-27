@@ -89,27 +89,30 @@ error:
   return err;
 }
 
-size_t stdio_log_write(struct stdio_log *log, const void *data, size_t len)
+void stdio_log_write(struct stdio_log *log, const uint8_t *data, size_t len)
 {
   if (!xSemaphoreTakeRecursive(log->mutex, portMAX_DELAY)) {
-    return 0;
+    return;
   }
 
-  size_t size = stdio_log_write_size(log);
+  while (len) {
+    size_t size = stdio_log_write_size(log);
 
-  if (len > size) {
-    len = size;
+    if (size > len) {
+      size = len;
+    }
+
+    LOG_BOOT_DEBUG("write=%p count=%u size=%u len=%u", log->write, log->write_count, size, len);
+
+    memcpy(log->write, data, size);
+
+    stdio_log_write_len(log, size);
+
+    data += size;
+    len -= size;
   }
-
-  LOG_BOOT_DEBUG("write=%p count=%u size=%u len=%u", log->write, log->write_count, size, len);
-
-  memcpy(log->write, data, len);
-
-  stdio_log_write_len(log, len);
 
   xSemaphoreGiveRecursive(log->mutex);
-
-  return len;
 }
 
 static size_t stdio_log_read_size(struct stdio_log *log)

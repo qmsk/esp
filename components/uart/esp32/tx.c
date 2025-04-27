@@ -11,7 +11,8 @@ int uart_tx_init(struct uart *uart, size_t tx_buffer_size)
   if (!tx_buffer_size) {
     uart->tx_buffer = NULL;
 
-  } else if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 1))) {
+    // TODO: use xTriggerLevelBytes=0
+  } else if (!(uart->tx_buffer = xStreamBufferCreate(tx_buffer_size, 0))) {
     LOG_ERROR("xStreamBufferCreate");
     return -1;
   }
@@ -41,70 +42,83 @@ int uart_tx_setup(struct uart *uart, struct uart_options options)
   return 0;
 }
 
-int uart_tx_one(struct uart *uart, uint8_t byte)
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout)
 {
-  int ret;
+  size_t write = 0;
 
   taskENTER_CRITICAL(&uart->mux);
 
-  if (uart_ll_get_txfifo_len(uart->dev) > 0) {
-    uart_tx_write_txfifo_byte(uart, byte);
+  if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
+    // TX buffer in use
+  } else if ((write = uart_ll_get_txfifo_len(uart->dev))) {
+    // fastpath via HW FIFO
+    uart_tx_fifo_putc(uart, byte);
 
     LOG_ISR_DEBUG("tx fifo");
 
-    ret = 0;
+    write = 1;
+  } else {
+    // must buffer
+  }
 
-  } else if (uart->tx_buffer && xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+  taskEXIT_CRITICAL(&uart->mux);
+
+  if (write) {
+    return 0;
+  }
+  
+  if (!uart->tx_buffer) {
+    LOG_ISR_DEBUG("TX fifo full");
+    return -1;
+    
+    // assume that TX ISR will be enabled, unless the TX buffer is empty, in which case this will not block 
+  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, timeout) > 0) {
     LOG_ISR_DEBUG("tx buffer");
 
     // byte was written
     uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);
     uart_ll_ena_intr_mask(uart->dev, UART_TX_WRITE_INTR_MASK);
 
-    ret = 0;
+    return 0;
 
   } else {
-    LOG_ISR_DEBUG("failed");
+    LOG_ISR_DEBUG("TX buffer full");
 
-    ret = -1;
+    return -1;
   }
-
-  taskEXIT_CRITICAL(&uart->mux);
-
-  return ret;
-}
-
-static size_t uart_tx_raw(struct uart *uart, const uint8_t *buf, size_t size)
-{
-  size_t len = uart_ll_get_txfifo_len(uart->dev);
-
-  if (len > size) {
-    len = size;
-  }
-
-  // assume no crtical section required, as uart is locked and ISR should not be running
-  uart_ll_write_txfifo(uart->dev, buf, len);
-
-  return len;
 }
 
 size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
 {
   size_t write = 0;
 
-  // assume no crtical section required, as uart is locked and ISR should not be running
-  if (!uart->tx_buffer || xStreamBufferIsEmpty(uart->tx_buffer)) {
+  taskENTER_CRITICAL(&uart->mux);
+
+  if (uart->tx_buffer && !xStreamBufferIsEmpty(uart->tx_buffer)) {
+    // TX buffer in use
+  } else if ((write = uart_ll_get_txfifo_len(uart->dev))) {
     // fastpath via HW FIFO
-    write = uart_tx_raw(uart, buf, len);
+    if (write > len) {
+      write = len;
+    }
 
     LOG_ISR_DEBUG("raw len=%u: write=%u", len, write);
+
+    uart_ll_write_txfifo(uart->dev, buf, write);
+    
+  } else {
+    // FIFO full
   }
 
+  taskEXIT_CRITICAL(&uart->mux);
+
   if (!write && uart->tx_buffer) {
+    // does not use a critical section, inter enable racing with stream send / ISR is harmless
+
     // write as many bytes as possible, ensure tx buffer is not empty
     write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
 
-    LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
+    LOG_DEBUG("buf len=%u: write=%u", len, write);
 
     // enable ISR to consume stream buffer
     uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);
@@ -114,30 +128,7 @@ size_t uart_tx_fast(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
-{
-  size_t write;
-
-  if (!uart->tx_buffer) {
-    LOG_DEBUG("TX buffer disabled");
-    return 0;
-  }
-
-  // write as many bytes as possible, ensure tx buffer is not empty
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, 0);
-
-  LOG_ISR_DEBUG("buf len=%u: write=%u", len, write);
-
-  if (write == 0) {
-    // TX buffer full, enable ISR
-    uart_ll_set_txfifo_empty_thr(uart->dev, UART_TX_EMPTY_THRD_DEFAULT);
-    uart_ll_ena_intr_mask(uart->dev, UART_TX_WRITE_INTR_MASK);
-  }
-
-  return write;
-}
-
-size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
+size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout)
 {
   size_t write;
 
@@ -147,7 +138,9 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
   }
 
   // does not use a critical section, inter enable racing with stream send / ISR is harmless
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
+
+  // assume that TX ISR will be enabled, unless the TX buffer is empty, in which case this will not block 
+  write = xStreamBufferSend(uart->tx_buffer, buf, len, timeout);
 
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 
@@ -158,12 +151,14 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-int uart_tx_flush(struct uart *uart)
+int uart_tx_flush(struct uart *uart, TickType_t timeout)
 {
   TaskHandle_t task = xTaskGetCurrentTaskHandle();
   bool idle = false, done = false;
 
   LOG_DEBUG("");
+
+  xTaskNotifyStateClear(task);
 
   taskENTER_CRITICAL(&uart->mux);
 
@@ -196,8 +191,11 @@ int uart_tx_flush(struct uart *uart)
     LOG_DEBUG("wait done=%d...", done);
 
     // wait for tx to complete and break to start
-    if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+    if (!xTaskNotifyWait(0, 0, NULL, timeout)) {
+      uart->tx_done_notify_task = NULL;
+
       LOG_WARN("timeout");
+
       return -1;
     }
 
@@ -224,17 +222,17 @@ static void uart_tx_wait(struct uart *uart, unsigned bits)
   ets_delay_us(us);
 }
 
-// ESP-32 txd_brk is tied to TX_DONE, and does nothing if TX idle
+// ESP-32 txd_brk is tied to TX_DONE, and does nothing if TX idle?
 // called after uart_tx_flush() with tx mutex held
 int uart_tx_break(struct uart *uart, unsigned bits)
 {
   LOG_DEBUG("bits=%u", bits);
-
-  uart->dev->conf0.txd_inv = 1;
+  
+  uart_tx_inv(uart, 1);
 
   uart_tx_wait(uart, bits);
 
-  uart->dev->conf0.txd_inv = 0;
+  uart_tx_inv(uart, 0);
 
   LOG_DEBUG("done");
 

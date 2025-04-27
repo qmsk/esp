@@ -34,7 +34,7 @@ int uart_tx_setup(struct uart *uart, struct uart_options options)
   return 0;
 }
 
-int uart_tx_one(struct uart *uart, uint8_t byte)
+int uart_tx_one(struct uart *uart, uint8_t byte, TickType_t timeout)
 {
   int ret;
 
@@ -47,7 +47,7 @@ int uart_tx_one(struct uart *uart, uint8_t byte)
 
     ret = 0;
 
-  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, portMAX_DELAY) > 0) {
+  } else if (xStreamBufferSend(uart->tx_buffer, &byte, 1, timeout) > 0) {
     LOG_ISR_DEBUG("tx buffer");
 
     // byte was written
@@ -122,12 +122,12 @@ size_t uart_tx_buffered(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
+size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len, TickType_t timeout)
 {
   size_t write;
 
   // does not use a critical section, inter enable racing with stream send / ISR is harmless
-  write = xStreamBufferSend(uart->tx_buffer, buf, len, portMAX_DELAY);
+  write = xStreamBufferSend(uart->tx_buffer, buf, len, timeout);
 
   LOG_ISR_DEBUG("xStreamBufferSend len=%u: write=%u", len, write);
 
@@ -137,9 +137,11 @@ size_t uart_tx_slow(struct uart *uart, const uint8_t *buf, size_t len)
   return write;
 }
 
-int uart_tx_flush(struct uart *uart)
+int uart_tx_flush(struct uart *uart, TickType_t timeout)
 {
   TaskHandle_t task = xTaskGetCurrentTaskHandle();
+
+  xTaskNotifyStateClear(task);
 
   taskENTER_CRITICAL();
 
@@ -159,7 +161,9 @@ int uart_tx_flush(struct uart *uart)
   taskEXIT_CRITICAL();
 
   // wait for tx to complete and break to start
-  if (!ulTaskNotifyTake(true, portMAX_DELAY)) {
+  if (!xTaskNotifyWait(0, 0, NULL, timeout)) {
+    uart->txfifo_empty_notify_task = NULL;
+
     LOG_WARN("timeout");
     return -1;
   }

@@ -82,10 +82,10 @@ int start_dmx_uart()
   }
 
   if (input_enabled && dmx_input_config.mtbp_min) {
-    LOG_INFO("use uart mtbp_min=%u for dmx-input", dmx_input_config.mtbp_min);
-
     options.mtbp_min = dmx_input_config.mtbp_min;
   }
+
+  LOG_INFO("uart mtbp_min=%uus for dmx-input", options.mtbp_min);
 
 #if DMX_UART_IO_PINS_SUPPORTED
   if (input_enabled) {

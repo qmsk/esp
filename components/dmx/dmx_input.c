@@ -242,7 +242,8 @@ int dmx_input_read (struct dmx_input *in)
   // read until data -> break
   while (!in->state_len || read) {
     WITH_STATS_TIMER(&in->stats.uart_rx) {
-      if ((read = uart_read(in->uart, buf, sizeof(buf))) < 0) {
+      // TODO: 1s timeout for most protocol states?
+      if ((read = uart_read(in->uart, buf, sizeof(buf), portMAX_DELAY)) < 0) {
         dmx_input_process_error(in, -read);
         return read;
       }

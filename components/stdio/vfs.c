@@ -16,27 +16,35 @@
 #define STDIO_VFS_FD_START 0
 #define STDIO_VFS_FD_COUNT 3
 
+static TickType_t stdin_read_timeout = portMAX_DELAY;
+
 ssize_t stdio_vfs_write(int fd, const void *data, size_t size)
 {
+  ssize_t ret;
+
   switch(fd) {
     case STDOUT_FILENO:
       if (stdio_uart) {
-        return uart_write(stdio_uart, data, size);
+        return uart_write(stdio_uart, data, size, portMAX_DELAY);
       } else {
         os_write(data, size);
         return size;
       }
 
     case STDERR_FILENO:
-      if (stderr_log) {
-        size = stdio_log_write(stderr_log, data, size);
-      }
-
       if (!stdio_uart) {
         os_write(data, size);
-      } else if (uart_write_all(stdio_uart, data, size)) {
-        errno = EIO;
-        return -1;
+      } else {
+        if ((ret = uart_write(stdio_uart, data, size, portMAX_DELAY)) < 0) {
+          errno = EIO;
+          return -1;
+        } else {
+          size = ret;
+        }
+      }
+
+      if (stderr_log) {
+        stdio_log_write(stderr_log, data, size);
       }
 
       return size;
@@ -98,7 +106,7 @@ ssize_t stdio_vfs_read(int fd, void *data, size_t size)
     switch(fd) {
       case STDIN_FILENO:
         if (stdio_uart) {
-          return uart_read(stdio_uart, data, size);
+          return uart_read(stdio_uart, data, size, stdin_read_timeout);
         } else {
           errno = ENODEV;
           return -1;
@@ -125,13 +133,9 @@ int stdio_vfs_fcntl_stdin(int cmd, int arg)
       return O_RDONLY;
 
     case F_SET_READ_TIMEOUT:
-      if (!stdio_uart) {
-        errno = ENODEV;
-        return -1;
-      } else if (uart_set_read_timeout(stdio_uart, arg ? arg : portMAX_DELAY)) {
-        errno = EIO;
-        return -1;
-      }
+      stdin_read_timeout = arg ? arg : portMAX_DELAY;
+
+      LOG_DEBUG("stdin_read_timeout = %d", stdin_read_timeout);
 
       return 0;
 
@@ -191,7 +195,7 @@ int stdio_vfs_fsync(int fd)
     case STDOUT_FILENO:
     case STDERR_FILENO:
       if (stdio_uart) {
-        return uart_flush_write(stdio_uart);
+        return uart_flush_write(stdio_uart, portMAX_DELAY);
       } else {
         errno = ENODEV;
         return -1;

@@ -13,9 +13,11 @@ const struct leds_protocol_type *leds_protocol_types[LEDS_PROTOCOLS_COUNT] = {
   [LEDS_PROTOCOL_APA102]      = &leds_protocol_apa102,
   [LEDS_PROTOCOL_P9813]       = &leds_protocol_p9813,
 
-  [LEDS_PROTOCOL_WS2812B]     = &leds_protocol_ws2812b,
+  [LEDS_PROTOCOL_WS2812B_GRB] = &leds_protocol_ws2812b_grb,
+  [LEDS_PROTOCOL_WS2812B_RGB] = &leds_protocol_ws2812b_rgb,
   [LEDS_PROTOCOL_SK6812_GRBW] = &leds_protocol_sk6812grbw,
-  [LEDS_PROTOCOL_WS2811]      = &leds_protocol_ws2811,
+  [LEDS_PROTOCOL_WS2811_RGB]  = &leds_protocol_ws2811_rgb,
+  [LEDS_PROTOCOL_WS2811_GRB]  = &leds_protocol_ws2811_grb,
   [LEDS_PROTOCOL_SK9822]      = &leds_protocol_sk9822,
   [LEDS_PROTOCOL_SM16703]     = &leds_protocol_sm16703,
 };

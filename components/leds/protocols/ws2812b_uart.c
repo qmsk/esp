@@ -115,7 +115,7 @@
     [0b111111] = WS2812B_LUT(0b111111),
   };
 
-  void leds_protocol_ws2812b_uart_out(uint16_t buf[4], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
+  void leds_protocol_ws2812b_uart_grb_out(uint16_t buf[4], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
     union leds_pixel_grb pixel = leds_pixel_grb(pixels[index], index, limit);
 

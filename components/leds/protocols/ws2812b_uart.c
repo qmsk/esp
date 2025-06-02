@@ -1,5 +1,6 @@
 #include "ws2812b.h"
 #include "../leds.h"
+#include "../pixel.h"
 #include "../interfaces/uart.h"
 
 #include <logging.h>
@@ -116,7 +117,7 @@
 
   void leds_protocol_ws2812b_uart_out(uint16_t buf[4], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
-    union ws2812b_pixel pixel = ws2812b_pixel(pixels[index], index, limit);
+    union leds_pixel_grb pixel = leds_pixel_grb(pixels[index], index, limit);
 
     // 16-bit little-endian
     buf[0] = ws2812b_lut[(pixel._grb >> 18) & 0x3f];

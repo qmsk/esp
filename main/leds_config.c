@@ -101,6 +101,8 @@ const struct config_enum leds_format_enum[] = {
   { "RGBA",   .value = LEDS_FORMAT_RGBA    },
   { "RGBW",   .value = LEDS_FORMAT_RGBW    },
   { "RGBxI",  .value = LEDS_FORMAT_RGBXI   },
+  { "BGRxI",  .value = LEDS_FORMAT_BGRXI   },
+  { "GRBxI",  .value = LEDS_FORMAT_GRBXI   },
   { "RGBWxI", .value = LEDS_FORMAT_RGBWXI  },
   {}
 };

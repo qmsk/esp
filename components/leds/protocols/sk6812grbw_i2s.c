@@ -1,5 +1,6 @@
 #include "sk6812grbw.h"
 #include "../leds.h"
+#include "../pixel.h"
 #include "../interfaces/i2s.h"
 
 #include <logging.h>
@@ -40,7 +41,7 @@
 
   void leds_protocol_sk6812grbw_i2s_out(uint16_t buf[8], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
-    union sk6812grbw_pixel pixel = sk6812grbw_pixel(pixels[index], index, limit);
+    union leds_pixel_grbw pixel = leds_pixel_grbw(pixels[index], index, limit);
 
     // 16-bit little-endian
     buf[0] = sk6812_i2s_lut[(pixel.grbw >> 28) & 0xf];

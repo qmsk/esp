@@ -38,3 +38,22 @@ static inline union leds_pixel_grb leds_pixel_grb(struct leds_color color, unsig
         .g  = leds_limit_uint8(limit, index, color.g),
     };
 }
+
+union leds_pixel_grbw {
+    struct {
+      uint8_t w, b, r, g;
+    };
+  
+    // aligned with 0xGGRRBBWW on little-endian architectures
+    uint32_t grbw;
+};
+
+static inline union leds_pixel_grbw leds_pixel_grbw(struct leds_color color, unsigned index, const struct leds_limit *limit)
+{
+    return (union leds_pixel_grbw) {
+        .w  = leds_limit_uint8(limit, index, color.white),
+        .b  = leds_limit_uint8(limit, index, color.b),
+        .r  = leds_limit_uint8(limit, index, color.r),
+        .g  = leds_limit_uint8(limit, index, color.g),
+    };
+}

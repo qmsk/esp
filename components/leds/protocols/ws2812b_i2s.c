@@ -1,5 +1,6 @@
 #include "ws2812b.h"
 #include "../leds.h"
+#include "../pixel.h"
 #include "../interfaces/i2s.h"
 
 #include <logging.h>
@@ -36,9 +37,9 @@
     [0b1111] = WS2812B_LUT(0b1111),
   };
 
-  void leds_protocol_ws2812b_i2s_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
+  void leds_protocol_ws2812b_i2s_grb_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
-    union ws2812b_pixel pixel = ws2812b_pixel(pixels[index], index, limit);
+    union leds_pixel_grb pixel = leds_pixel_grb(pixels[index], index, limit);
 
     // 16-bit little-endian
     buf[0] = ws2812b_lut[(pixel._grb >> 20) & 0xf];
@@ -47,5 +48,18 @@
     buf[3] = ws2812b_lut[(pixel._grb >>  8) & 0xf];
     buf[4] = ws2812b_lut[(pixel._grb >>  4) & 0xf];
     buf[5] = ws2812b_lut[(pixel._grb >>  0) & 0xf];
+  }
+
+  void leds_protocol_ws2812b_i2s_rgb_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
+  {
+    union leds_pixel_rgb pixel = leds_pixel_rgb(pixels[index], index, limit);
+
+    // 16-bit little-endian
+    buf[0] = ws2812b_lut[(pixel._rgb >> 20) & 0xf];
+    buf[1] = ws2812b_lut[(pixel._rgb >> 16) & 0xf];
+    buf[2] = ws2812b_lut[(pixel._rgb >> 12) & 0xf];
+    buf[3] = ws2812b_lut[(pixel._rgb >>  8) & 0xf];
+    buf[4] = ws2812b_lut[(pixel._rgb >>  4) & 0xf];
+    buf[5] = ws2812b_lut[(pixel._rgb >>  0) & 0xf];
   }
 #endif

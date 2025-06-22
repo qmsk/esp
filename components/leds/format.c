@@ -19,6 +19,8 @@ unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
       return len / (4 * group) * group;
 
     case LEDS_FORMAT_RGBXI:
+    case LEDS_FORMAT_BGRXI:
+    case LEDS_FORMAT_GRBXI:
       return len / (3 + group) * group;
 
     case LEDS_FORMAT_RGBWXI:
@@ -156,6 +158,66 @@ void leds_set_format_rgbxi(struct leds *leds, const uint8_t *data, size_t len, s
   }
 }
 
+void leds_set_format_bgrxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
+
+  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+
+  size_t off = 0;
+
+  for (unsigned g = 0; g * params.group < params.count && len >= off + 3 + params.group; g++) {
+    struct leds_color group_color = {};
+
+    group_color.b = data[off++];
+    group_color.g = data[off++];
+    group_color.r = data[off++];
+    group_color.parameter = parameter_default;
+
+    LOG_DEBUG("\tg=%u off=%u rgb=%02x%02x%02x", g, off, group_color.r, group_color.g, group_color.b);
+
+    for (unsigned i = 0; i < params.group && g * params.group + i < params.count; i++) {
+      uint8_t intensity = data[off++];
+      struct leds_color pixel_color = leds_color_intensity(group_color, parameter_type, intensity);
+
+      for (unsigned j = 0; j < params.segment; j++) {
+        leds->pixels[params.offset + (g * params.group + i) * params.segment + j] = pixel_color;
+      }
+    }
+  }
+}
+
+void leds_set_format_grbxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
+
+  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+
+  size_t off = 0;
+
+  for (unsigned g = 0; g * params.group < params.count && len >= off + 3 + params.group; g++) {
+    struct leds_color group_color = {};
+
+    group_color.g = data[off++];
+    group_color.r = data[off++];
+    group_color.b = data[off++];
+    group_color.parameter = parameter_default;
+
+    LOG_DEBUG("\tg=%u off=%u rgb=%02x%02x%02x", g, off, group_color.r, group_color.g, group_color.b);
+
+    for (unsigned i = 0; i < params.group && g * params.group + i < params.count; i++) {
+      uint8_t intensity = data[off++];
+      struct leds_color pixel_color = leds_color_intensity(group_color, parameter_type, intensity);
+
+      for (unsigned j = 0; j < params.segment; j++) {
+        leds->pixels[params.offset + (g * params.group + i) * params.segment + j] = pixel_color;
+      }
+    }
+  }
+}
+
 void leds_set_format_rgbwxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
 {
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
@@ -232,6 +294,14 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
 
     case LEDS_FORMAT_RGBXI:
       leds_set_format_rgbxi(leds, data, len, params);
+      return 0;
+
+    case LEDS_FORMAT_BGRXI:
+      leds_set_format_bgrxi(leds, data, len, params);
+      return 0;
+
+    case LEDS_FORMAT_GRBXI:
+      leds_set_format_grbxi(leds, data, len, params);
       return 0;
 
     case LEDS_FORMAT_RGBWXI:

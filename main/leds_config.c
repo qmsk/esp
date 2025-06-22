@@ -33,9 +33,11 @@ const struct config_enum leds_protocol_enum[] = {
   { "NONE",         .value = LEDS_PROTOCOL_NONE        },
   { "APA102",       .value = LEDS_PROTOCOL_APA102      },
   { "P9813",        .value = LEDS_PROTOCOL_P9813       },
-  { "WS2812B",      .value = LEDS_PROTOCOL_WS2812B     },
+  { "WS2812B_GRB",  .value = LEDS_PROTOCOL_WS2812B_GRB,   .alias = "WS2812B"  },
+  { "WS2812B_RGB",  .value = LEDS_PROTOCOL_WS2812B_RGB },
   { "SK6812_GRBW",  .value = LEDS_PROTOCOL_SK6812_GRBW },
-  { "WS2811",       .value = LEDS_PROTOCOL_WS2811      },
+  { "WS2811_RGB",   .value = LEDS_PROTOCOL_WS2811_RGB,    .alias = "WS2811"   },
+  { "WS2811_GRB",   .value = LEDS_PROTOCOL_WS2811_GRB  },
   { "SK9822",       .value = LEDS_PROTOCOL_SK9822      },
   { "SM16703",      .value = LEDS_PROTOCOL_SM16703     },
   {}
@@ -101,6 +103,8 @@ const struct config_enum leds_format_enum[] = {
   { "RGBA",   .value = LEDS_FORMAT_RGBA    },
   { "RGBW",   .value = LEDS_FORMAT_RGBW    },
   { "RGBxI",  .value = LEDS_FORMAT_RGBXI   },
+  { "BGRxI",  .value = LEDS_FORMAT_BGRXI   },
+  { "GRBxI",  .value = LEDS_FORMAT_GRBXI   },
   { "RGBWxI", .value = LEDS_FORMAT_RGBWXI  },
   {}
 };

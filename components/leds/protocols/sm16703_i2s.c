@@ -1,5 +1,6 @@
 #include "sm16703.h"
 #include "../leds.h"
+#include "../pixel.h"
 #include "../interfaces/i2s.h"
 
 #include <logging.h>
@@ -38,7 +39,7 @@
 
   void leds_protocol_sm16703_i2s_out(uint16_t buf[6], const struct leds_color *pixels, unsigned index, const struct leds_limit *limit)
   {
-    union sm16703_pixel pixel = sm16703_pixel(pixels[index], index, limit);
+    union leds_pixel_rgb pixel = leds_pixel_rgb(pixels[index], index, limit);
 
     // 16-bit little-endian
     buf[0] = sm16703_lut[(pixel._rgb >> 20) & 0xf];

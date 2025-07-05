@@ -107,6 +107,8 @@ static bool leds_artnet_sync_check(struct leds_state *state)
 
   if (!config->artnet_sync_timeout && state->artnet->sync_bits) {
     // any output set, free-running
+    stats_counter_increment(&stats->sync_none);
+
     return true;
   }
 

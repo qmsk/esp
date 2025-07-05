@@ -300,7 +300,8 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     state->artnet->sync_missed = 0;
   }
 
-  if (data_bits) {
+  // wait until either artnet-sync or (non-sync) dmx to not trigger soft-sync on partial data in artnet sync mode
+  if (dmx || sync || miss) {
     // set output from artnet universe
     for (unsigned index = 0; index < state->artnet->universe_count; index++) {
       if (!(data_bits & (1 << index))) {

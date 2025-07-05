@@ -55,7 +55,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   }
 
   printf("\n");
-  printf("Inputs: count=%u\n", input_count);
+  printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);
 
   for (int i = 0; i < inputs_size && i < ARTNET_INPUTS_MAX; i++) {
     struct artnet_input_options *options = &artnet_input_options[i];
@@ -76,7 +76,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   }
 
   printf("\n");
-  printf("Outputs: count=%u\n", output_count);
+  printf("Outputs: count=%u / max=%d\n", output_count, ARTNET_OUTPUTS_MAX);
 
   for (int i = 0; i < outputs_size && i < ARTNET_OUTPUTS_MAX; i++) {
     struct artnet_output_options *options = &artnet_output_options[i];

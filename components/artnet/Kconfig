@@ -3,6 +3,8 @@ menu "qmsk-artnet"
       int "Maximum Art-NET output universes"
 
       range 0 24
-      default 16
+      default 4
+      help
+          Must be less than CONFIG_LWIP_UDP_RECVMBOX_SIZE and CONFIG_LWIP_TCPIP_RECVMBOX_SIZE to avoid dropped packets.
 
 endmenu

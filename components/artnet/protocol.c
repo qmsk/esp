@@ -151,16 +151,6 @@ int artnet_sendrecv_poll(struct artnet *artnet, struct artnet_sendrecv *sendrecv
   return artnet_send_poll_reply(artnet, sendrecv);
 }
 
-// node in synchronous DMX mode?
-static bool artnet_sync_state (struct artnet *artnet)
-{
-  if (artnet->sync_tick) {
-    return xTaskGetTickCount() - artnet->sync_tick < ARTNET_SYNC_TICKS;
-  } else {
-    return false;
-  }
-}
-
 int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 {
   struct artnet_packet_dmx *dmx = &recv->packet->dmx;
@@ -198,7 +188,6 @@ int artnet_recv_dmx(struct artnet *artnet, const struct artnet_sendrecv *recv)
 #endif
 
   // copy
-  artnet->dmx.sync_mode = artnet_sync_state(artnet);
   artnet->dmx.seq = seq;
   artnet->dmx.len = len;
 

@@ -160,3 +160,13 @@ void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)
   stats->errors = stats_counter_copy(&artnet->stats.errors);
   stats->dmx_discard = stats_counter_copy(&artnet->stats.dmx_discard);
 }
+
+// node in synchronous DMX mode?
+bool artnet_sync_state (struct artnet *artnet)
+{
+  if (artnet->sync_tick) {
+    return xTaskGetTickCount() - artnet->sync_tick < ARTNET_SYNC_TICKS;
+  } else {
+    return false;
+  }
+}

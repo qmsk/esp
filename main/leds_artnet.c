@@ -14,7 +14,7 @@
 #define SYNC_BIT(index) (1 << (index))
 #define SYNC_BITS_MASK(count) ((1 << (count)) - 1)
 
-static unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
+unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
 {
   unsigned universe_leds_count = config->artnet_dmx_leds;
 
@@ -25,7 +25,7 @@ static unsigned config_leds_artnet_universe_leds_count(const struct leds_config 
   return universe_leds_count;
 }
 
-static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
+unsigned config_leds_artnet_universe_count(const struct leds_config *config)
 {
   unsigned universe_leds_count = config_leds_artnet_universe_leds_count(config);
   unsigned universe_count = config->artnet_universe_count;

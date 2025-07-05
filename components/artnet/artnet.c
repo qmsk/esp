@@ -52,6 +52,11 @@ int artnet_init(struct artnet *artnet, struct artnet_options options)
       LOG_ERROR("calloc(input_dmx)");
       return -1;
     }
+
+    if (!(artnet->input_events = xEventGroupCreate())) {
+      LOG_ERROR("xEventGroupCreate");
+      return -1;
+    }
   }
 
   if (options.outputs) {

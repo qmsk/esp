@@ -32,7 +32,7 @@
 
 // limited by ARTNET_INPUT_TASK_INDEX_BITS
 #define ARTNET_INPUTS_MAX 16
-#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
+#define ARTNET_INPUT_EVENT_BITS 0x00ffffff
 
 struct artnet;
 struct artnet_input;

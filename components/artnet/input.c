@@ -64,27 +64,23 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx)
     xQueueOverwrite(input->queue, dmx);
   }
 
-  if (input->artnet->input_task) {
-    xTaskNotify(input->artnet->input_task, (1 << input->index) & ARTNET_INPUT_TASK_INDEX_BITS, eSetBits);
+  if (input->artnet->input_events) {
+    xEventGroupSetBits(input->artnet->input_events, (1 << input->index) & ARTNET_INPUT_EVENT_BITS);
   }
 }
 
 int artnet_inputs_main(struct artnet *artnet)
 {
-  uint32_t notify_bits;
-
-  artnet->input_task = xTaskGetCurrentTaskHandle();
-
   for (;;) {
-    if (!xTaskNotifyWait(0, ARTNET_INPUT_TASK_INDEX_BITS, &notify_bits, portMAX_DELAY)) {
-      LOG_ERROR("xTaskNotifyWait");
-      continue;
-    }
+    BaseType_t xClearOnExit = true;
+    BaseType_t xWaitForAllBits = false;
+
+    EventBits_t event_bits = xEventGroupWaitBits(artnet->input_events, ARTNET_INPUT_EVENT_BITS, xClearOnExit, xWaitForAllBits, portMAX_DELAY);
 
     for (unsigned index = 0; index < artnet->input_count; index++) {
       struct artnet_input *input = &artnet->input_ports[index];
 
-      if (!(notify_bits & (1 << index))) {
+      if (!(event_bits & (1 << index))) {
         continue;
       }
 

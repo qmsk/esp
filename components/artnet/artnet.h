@@ -79,7 +79,7 @@ struct artnet {
   struct artnet_dmx dmx;
 
   /* inputs */
-  xTaskHandle input_task;
+  EventGroupHandle_t input_events;
   struct artnet_dmx *input_dmx;
 
   // last sync received at

@@ -145,8 +145,47 @@ static int validate_artnet_leds_group (config_invalid_handler_t *handler, const 
 
   if (universe_leds_count == 0) {
     handler(path, ctx, "LEDs group does not fit into one Art-NET universe with format %s",
-      config_enum_to_string(leds_format_enum, config->artnet_leds_format),
-      config->artnet_leds_group
+      config_enum_to_string(leds_format_enum, config->artnet_leds_format)
+    );
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static int validate_artnet_dmx_leds (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
+{
+  struct leds_config *config = path.tab->ctx;
+
+  // maximum number of pixels that fit into one Art-Net universe
+  unsigned universe_leds_count = leds_format_count(ARTNET_DMX_SIZE, config->artnet_leds_format, config->artnet_leds_group);
+
+  if (!config->artnet_dmx_leds) {
+    // auto, per artnet_leds_group
+    return 0;
+
+  } else if (config->artnet_dmx_leds > universe_leds_count) {
+    handler(path, ctx, "LEDs do not fit into one Art-NET universe with format %s",
+      config_enum_to_string(leds_format_enum, config->artnet_leds_format)
+    );
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static int validate_artnet_universe_count (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
+{
+  struct leds_config *config = path.tab->ctx;
+
+  unsigned artnet_universe_count = config_leds_artnet_universe_count(config);
+
+  if (artnet_universe_count > ARTNET_OUTPUTS_MAX) {
+    handler(path, ctx, "Art-Net universe count %d exceeds maximum of %d",
+      artnet_universe_count,
+      ARTNET_OUTPUTS_MAX
     );
 
     return 1;

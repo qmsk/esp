@@ -22,16 +22,16 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
     return -1;
   }
 
-  if (!options.event_group) {
-    LOG_DEBUG("event_bits unused");
-  } else if (!options.event_bits) {
-    LOG_ERROR("event_bits=%08x empty", options.event_bits);
+  if (!options.output_events) {
+    LOG_DEBUG("output_events unused");
+  } else if (!options.output_event_bit) {
+    LOG_ERROR("output_event_bit=%08x empty", options.output_event_bit);
     return -1;
-  } else if ((options.event_bits & ~ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
-    LOG_ERROR("event_bits=%08x overflow", options.event_bits);
+  } else if ((options.output_event_bit & ~ARTNET_OUTPUT_EVENT_BITS)) {
+    LOG_ERROR("output_event_bit=%08x overflow", options.output_event_bit);
     return -1;
   } else {
-    LOG_DEBUG("event_bits=%08x", options.event_bits);
+    LOG_DEBUG("output_event_bit=%08x", options.output_event_bit);
   }
 
   LOG_DEBUG("output=%d address=%04x", artnet->output_count, options.address);
@@ -43,6 +43,7 @@ int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, str
 
   struct artnet_output *output = &artnet->output_ports[artnet->output_count++];
 
+  output->artnet = artnet;
   output->type = ARTNET_PORT_TYPE_DMX;
   output->options = options;
   output->queue = queue;
@@ -208,10 +209,6 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 
   output->state.tick = tick;
 
-  if (dmx->sync_mode) {
-      stats_counter_increment(&output->stats.dmx_sync);
-  }
-
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
     stats_counter_increment(&output->stats.queue_overwrite);
@@ -219,8 +216,16 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
     xQueueOverwrite(output->queue, dmx);
   }
 
-  if (output->options.event_group) {
-    xEventGroupSetBits(output->options.event_group, output->options.event_bits);
+  if (output->options.output_events) {
+    xEventGroupSetBits(output->options.output_events, output->options.output_event_bit);
+  }
+
+  if (artnet_sync_state(output->artnet)) {
+    // wait for hard sync
+    stats_counter_increment(&output->stats.dmx_sync);
+  } else if (output->options.event_group && output->options.dmx_event_bit) {
+    // sync each update
+    xEventGroupSetBits(output->options.event_group, output->options.dmx_event_bit);
   }
 }
 
@@ -262,7 +267,7 @@ int artnet_sync_outputs(struct artnet *artnet)
     stats_counter_increment(&output->stats.sync_recv);
 
     if (output->options.event_group != event_group) {
-      xEventGroupSetBits(output->options.event_group, (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT));
+      xEventGroupSetBits(output->options.event_group, output->options.sync_event_bit);
 
       // only notify each event_group once
       event_group = output->options.event_group;

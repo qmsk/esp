@@ -190,6 +190,9 @@ extern const struct config_file_path leds_sequence_paths[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
 
+unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config);
+unsigned config_leds_artnet_universe_count(const struct leds_config *config);
+
 #if CONFIG_LEDS_GPIO_ENABLED
   int config_leds_gpio(struct leds_state *state, const struct leds_config *config, enum leds_interface interface, struct leds_interface_options_gpio *options);
 #endif

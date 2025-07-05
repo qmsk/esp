@@ -85,12 +85,13 @@ static EventBits_t leds_task_wait(struct leds_state *state)
 
   const bool clear_on_exit = true;
   const bool wait_for_all_bits = false;
-  EventBits_t event_bits = xEventGroupWaitBits(state->event_group, ARTNET_OUTPUT_EVENT_INDEX_BITS | ARTNET_OUTPUT_EVENT_FLAG_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
+  EventBits_t event_bits = xEventGroupWaitBits(state->event_group, LEDS_EVENT_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 
-  LOG_DEBUG("leds%d: artnet=%04x artnet_sync=%d test=%d", state->index + 1,
-    (event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS),
-    !!(event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)),
-    !!(event_bits & (1 << LEDS_EVENT_TEST_BIT))
+  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d", state->index + 1,
+    !!(event_bits & (1 << LEDS_EVENT_TEST_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT))
   );
 
   return event_bits;

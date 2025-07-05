@@ -19,20 +19,16 @@
 #define ARTNET_INPUT_NAME_MAX 16
 #define ARTNET_OUTPUT_NAME_MAX 16
 
-// limited to 20 by the available FreeRTOS event group bits
+// hard-limited to 24 by the available FreeRTOS event group bits
 #define ARTNET_OUTPUTS_MAX (CONFIG_ARTNET_OUTPUTS_MAX)
 
-// up to 20 task notification bits for indexed outputs
-// NOTE: FreeRTOS event groups only support 24 bits...
-#define ARTNET_OUTPUT_EVENT_INDEX_BITS 0x000fffff
-#define ARTNET_OUTPUT_EVENT_FLAG_BITS  0x00f00000
-
-// flag bit to force output sync
-#define ARTNET_OUTPUT_EVENT_SYNC_BIT 20
+// up to 24 task notification bits for indexed outputs
+// NOTE: FreeRTOS event groups only support 24 bits
+#define ARTNET_OUTPUT_EVENT_BITS 0x00ffffff
 
 // limited by ARTNET_INPUT_TASK_INDEX_BITS
 #define ARTNET_INPUTS_MAX 16
-#define ARTNET_INPUT_TASK_INDEX_BITS 0xffff
+#define ARTNET_INPUT_EVENT_BITS 0x00ffffff
 
 struct artnet;
 struct artnet_input;
@@ -59,9 +55,6 @@ struct artnet_options {
 };
 
 struct artnet_dmx {
-  // flags
-  uint8_t sync_mode : 1; // receiver is in sync mode, wait for sync event before refreshing output
-
   // received sequence number
   uint8_t seq : 8;
 
@@ -90,8 +83,17 @@ struct artnet_output_options {
   /* Set event group bits on DMX updates */
   EventGroupHandle_t event_group;
 
-  /* Only bits matching ARTNET_OUTPUT_EVENT_INDEX_BITS are supported */
-  EventBits_t event_bits;
+  /* Only bits matching ARTNET_OUTPUTS_EVENT_BITS are supported */
+  EventBits_t dmx_event_bit;
+
+  /* Only bits matching ARTNET_OUTPUTS_EVENT_BITS are supported */
+  EventBits_t sync_event_bit;
+
+  /* Set event group bits on DMX sync/update */
+  EventGroupHandle_t output_events;
+
+  /* Only bits matching ARTNET_OUTPUTS_EVENT_BITS are supported */
+  EventBits_t output_event_bit;
 };
 
 struct artnet_input_state {

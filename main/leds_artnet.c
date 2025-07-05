@@ -3,6 +3,7 @@
 #include "leds_config.h"
 #include "leds_state.h"
 #include "leds_stats.h"
+#include "leds_task.h"
 #include "leds_test.h"
 #include "artnet_state.h"
 
@@ -13,7 +14,7 @@
 #define SYNC_BIT(index) (1 << (index))
 #define SYNC_BITS_MASK(count) ((1 << (count)) - 1)
 
-static unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
+unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config)
 {
   unsigned universe_leds_count = config->artnet_dmx_leds;
 
@@ -24,7 +25,7 @@ static unsigned config_leds_artnet_universe_leds_count(const struct leds_config 
   return universe_leds_count;
 }
 
-static unsigned config_leds_artnet_universe_count(const struct leds_config *config)
+unsigned config_leds_artnet_universe_count(const struct leds_config *config)
 {
   unsigned universe_leds_count = config_leds_artnet_universe_leds_count(config);
   unsigned universe_count = config->artnet_universe_count;
@@ -107,6 +108,8 @@ static bool leds_artnet_sync_check(struct leds_state *state)
 
   if (!config->artnet_sync_timeout && state->artnet->sync_bits) {
     // any output set, free-running
+    stats_counter_increment(&stats->sync_none);
+
     return true;
   }
 
@@ -240,11 +243,11 @@ static int leds_artnet_timeout(struct leds_state *state)
 
 bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
 {
-  if ((event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS)) {
+  if (event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT)) {
     return true;
   }
 
-  if (event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT)) {
+  if (event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT)) {
     return true;
   }
 
@@ -271,47 +274,51 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 {
   struct leds_stats *stats = &leds_stats[state->index];
 
-  bool data = event_bits & ARTNET_OUTPUT_EVENT_INDEX_BITS;
-  bool sync = event_bits & (1 << ARTNET_OUTPUT_EVENT_SYNC_BIT);
+  EventBits_t data_bits = xEventGroupClearBits(state->artnet->event_group, ARTNET_OUTPUT_EVENT_BITS);
+
+  bool dmx = event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT);
+  bool sync = event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT);
   bool miss = false;
 
-  bool sync_mode = false;
   bool update = false;
   bool timeout = false;
 
   if (state->test) {
-    if (data || sync) {
+    if (dmx || sync) {
       // clear any test mode output
       leds_test_clear(state);
     }
   }
 
   if (state->artnet->sync_missed) {
-    miss = true;
-
     LOG_DEBUG("event_bits=%08x + sync_missed=%08x", event_bits, state->artnet->sync_missed);
 
     // handle updates with missed sync
-    event_bits |= state->artnet->sync_missed;
+    data_bits |= state->artnet->sync_missed;
+    miss = true;
 
     state->artnet->sync_missed = 0;
   }
 
-  if (data || miss) {
+  // wait until either artnet-sync or (non-sync) dmx to not trigger soft-sync on partial data in artnet sync mode
+  if (dmx || sync || miss) {
     // set output from artnet universe
     for (unsigned index = 0; index < state->artnet->universe_count; index++) {
-      if (!(event_bits & (1 << index))) {
+      if (!(data_bits & (1 << index))) {
         continue;
       }
 
-      if (leds_artnet_sync_set(state, index)) {
-        // normal update
+      if (sync) {
+        // skip soft-sync
+      } else if (leds_artnet_sync_set(state, index)) {
+        // normal soft-sync update
       } else if (miss) {
+        // catch up to missed soft-sync update 
         LOG_DEBUG("hit index=%u", index);
       } else {
         LOG_DEBUG("skip index=%u", index);
 
-        // skip for update of previous missed sync
+        // update with previous value for missed sync, will be read for next update
         continue;
       }
 
@@ -325,28 +332,21 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         LOG_WARN("leds%d: leds_artnet_set", state->index + 1);
         continue;
       }
-
-      if (state->artnet->dmx.sync_mode) {
-        sync_mode = true;
-      }
     }
   }
 
   if (sync) {
-    // hard sync
+    // hard art-net sync
     stats_counter_increment(&stats->artnet_sync);
 
     update = true;
-  } else if (sync_mode) {
-    // wait for hard sync
-    update = false;
   } else if (leds_artnet_sync_check(state)) {
     // soft sync
     update = true;
   }
 
   // timeouts
-  if (data || sync) {
+  if (dmx || sync) {
     state->artnet->dmx_tick = xTaskGetTickCount();
     leds_artnet_timeout_reset(state);
   } else if (state->artnet->timeout_tick) {
@@ -410,6 +410,11 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
+  if (!(state->artnet->event_group = xEventGroupCreate())) {
+    LOG_ERROR("xEventGroupCreate");
+    return -1;
+  }
+
   leds_artnet_timeout_reset(state);
 
   return 0;
@@ -427,8 +432,15 @@ int start_leds_artnet(struct leds_state *state, const struct leds_config *config
 
     struct artnet_output_options options = {
       .address = artnet_address(config->artnet_net, config->artnet_subnet, artnet_universe),
+
+      // wake up task on each art-net sync/update
       .event_group = state->event_group,
-      .event_bits = (1 << i),
+      .dmx_event_bit = (1 << LEDS_EVENT_ARTNET_DMX_BIT),
+      .sync_event_bit = (1 << LEDS_EVENT_ARTNET_SYNC_BIT),
+
+      // mark updated outputs via a separate event group
+      .output_events = state->artnet->event_group,
+      .output_event_bit = (1 << i),
     };
 
     snprintf(options.name, sizeof(options.name), "leds%u", state->index + 1);

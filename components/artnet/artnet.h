@@ -46,6 +46,8 @@ void artnet_reset_inputs_stats(struct artnet *artnet);
 
 /* output.c */
 struct artnet_output {
+  struct artnet *artnet;
+
   enum artnet_port_type type;
   struct artnet_output_options options;
   struct artnet_output_state state;
@@ -79,7 +81,7 @@ struct artnet {
   struct artnet_dmx dmx;
 
   /* inputs */
-  xTaskHandle input_task;
+  EventGroupHandle_t input_events;
   struct artnet_dmx *input_dmx;
 
   // last sync received at
@@ -87,3 +89,5 @@ struct artnet {
 
   struct artnet_stats stats;
 };
+
+bool artnet_sync_state (struct artnet *artnet);

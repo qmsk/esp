@@ -24,6 +24,7 @@ void init_leds_stats()
 
     stats_counter_init(&stats->artnet_timeout);
     stats_counter_init(&stats->artnet_sync);
+    stats_counter_init(&stats->sync_none);
     stats_counter_init(&stats->sync_timeout);
     stats_counter_init(&stats->sync_missed);
     stats_counter_init(&stats->sync_full);

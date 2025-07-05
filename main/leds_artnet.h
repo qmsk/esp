@@ -15,6 +15,7 @@ struct leds_artnet_state {
   TickType_t dmx_tick; // last dmx frame
   struct artnet_dmx dmx;
   struct artnet_output **outputs;
+  EventGroupHandle_t event_group;
 
   unsigned sync_bits; // bitmask of outputs waiting for sync
   unsigned sync_missed; // bitmask of outputs with missed sync

@@ -69,7 +69,11 @@ struct dma_desc *commit_dma_desc(struct dma_desc *desc)
 {
   desc->owner = 1;
 
-  return desc->next;
+  if (desc->next) {
+    return desc->next;
+  } else {
+    return desc;
+  }
 }
 
 void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
@@ -107,7 +111,7 @@ void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *nex
   }
 }
 
-int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
+int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigned repeat)
 {
   size_t buf_size = 0;
   unsigned desc_count = 0;
@@ -129,7 +133,7 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
     }
   }
 
-  LOG_DEBUG("size=%u align=%u -> desc_count=%u buf_size=%u", size, align, desc_count, buf_size);
+  LOG_DEBUG("size=%u align=%u repeat=%u -> desc_count=%u buf_size=%u", size, align, repeat, desc_count, buf_size);
 
   // allocate single word-aligned buffer
   if (!(i2s_out->dma_rx_buf = dma_malloc(buf_size))) {
@@ -150,16 +154,24 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
     LOG_ERROR("dma_calloc(dma_rx_desc)");
     return -1;
   }
+  if (repeat && !(i2s_out->dma_repeat_desc = dma_calloc(desc_count * repeat, sizeof(*i2s_out->dma_rx_desc)))) {
+    LOG_ERROR("dma_calloc(dma_repeat_desc)");
+    return -1;
+  }
   if (!(i2s_out->dma_eof_desc = dma_calloc(1, sizeof(*i2s_out->dma_eof_desc)))) {
     LOG_ERROR("dma_calloc(dma_eof_desc)");
     return -1;
   }
 
   // initialize linked list of DMA descriptors
-  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, i2s_out->dma_eof_desc);
-  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+  for (unsigned i = 0; i < repeat; i++) {
+    init_dma_desc(i2s_out->dma_repeat_desc + i * desc_count, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+  }
+  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), NULL);
 
   i2s_out->dma_rx_count = desc_count;
+  i2s_out->dma_rx_repeat = repeat;
 
   return 0;
 }
@@ -177,7 +189,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   init_dma_eof_desc(i2s_out->dma_eof_desc, options->eof_value, options->eof_count);
 
   // init RX desc
-  reinit_dma_desc(i2s_out->dma_rx_desc, i2s_out->dma_rx_count, i2s_out->dma_eof_desc);
+  reinit_dma_desc(i2s_out->dma_rx_desc, i2s_out->dma_rx_count, NULL);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -255,7 +267,7 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
     if (desc->len + size > desc->size) {
       LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
 
-      // commit, try with the next buffer
+      // commit, try with the next desc, if available
       i2s_out->dma_write_desc = commit_dma_desc(desc);
 
       continue;
@@ -304,6 +316,39 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
   return len;
 }
 
+void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
+{
+  struct dma_desc **nextp = &i2s_out->dma_write_desc->next;
+
+  // commit
+  i2s_out->dma_write_desc->owner = 1;
+
+  for (unsigned i = 0; i < count; i++) {
+    for (unsigned j = 0; j < i2s_out->dma_rx_count; j++) {
+      struct dma_desc *s = &i2s_out->dma_rx_desc[j];
+      struct dma_desc *d = &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j];
+
+      if (!s->owner) {
+        break;
+      }
+
+      if (nextp) {
+        *nextp = d;
+      }
+
+      d->len = s->len;
+      d->owner = s->owner;
+
+      nextp = &d->next;
+    }
+  }
+
+  if (nextp) {
+    // eof
+    *nextp = i2s_out->dma_eof_desc;
+  }
+}
+
 int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
   if (i2s_out->dma_start) {
@@ -321,21 +366,43 @@ int i2s_out_dma_pending(struct i2s_out *i2s_out)
 
 void i2s_out_dma_start(struct i2s_out *i2s_out)
 {
-  i2s_out->dma_write_desc->owner = 1;
-  i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
+  // commit if not repeat()
+  if (!i2s_out->dma_write_desc->owner) {
+    i2s_out->dma_write_desc->owner = 1;
+  }
+
+  if (!i2s_out->dma_write_desc->next) {
+    i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
+  }
 
   i2s_out->dma_eof_desc->owner = 1;
   i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
 
-  LOG_DEBUG("dma_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
-    i2s_out->dma_write_desc,
-    i2s_out->dma_write_desc->owner,
-    i2s_out->dma_write_desc->eof,
-    i2s_out->dma_write_desc->len,
-    i2s_out->dma_write_desc->size,
-    i2s_out->dma_write_desc->buf,
-    i2s_out->dma_write_desc->next
-  );
+  for (unsigned i = 0; i < i2s_out->dma_rx_count; i++) {
+    LOG_DEBUG("dma_rx_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,
+      &i2s_out->dma_rx_desc[i],
+      i2s_out->dma_rx_desc[i].owner,
+      i2s_out->dma_rx_desc[i].eof,
+      i2s_out->dma_rx_desc[i].len,
+      i2s_out->dma_rx_desc[i].size,
+      i2s_out->dma_rx_desc[i].buf,
+      i2s_out->dma_rx_desc[i].next
+    );
+  }
+  
+  for (unsigned i = 0; i < i2s_out->dma_rx_repeat; i++) {
+    for (unsigned j = 0; j < i2s_out->dma_rx_count; j++) {
+      LOG_DEBUG("dma_repeat_desc[%u][%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i, j,
+        &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j],
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].owner,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].eof,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].len,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].size,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].buf,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].next
+      );
+    }
+  }
 
   LOG_DEBUG("dma_eof_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
     i2s_out->dma_eof_desc,

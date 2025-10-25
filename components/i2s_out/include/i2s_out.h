@@ -136,7 +136,7 @@ struct i2s_out_options {
  * The `buffer_align` MUST be a power of two.
  * The 32-bit hardware FIFO dictates a minimum 4-byte alignment, and `buffer_align` will be adjusted if necessary.
  */
-int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, size_t buffer_align);
+int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, size_t buffer_align, unsigned repeat_data_count);
 
 /**
  * Setup the I2S output.
@@ -218,6 +218,13 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
    */
    int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width);
 #endif
+
+/**
+ * Setup DMA to repeat all written buffers given count of times. Completes any writes.
+ *
+ * Returns <0 on error, 0 on success.
+ */
+int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count);
 
 /**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.

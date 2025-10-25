@@ -70,6 +70,7 @@
   {
     const struct leds_i2s_config *i2s_config = &leds_i2s_config;
     size_t buffer_size = 0, buffer_align = 0;
+    unsigned data_repeat = 0;
     bool enabled = false;
     int err;
 
@@ -127,6 +128,9 @@
       if (align > buffer_align) {
         buffer_align = align;
       }
+      if (config->i2s_data_copies > data_repeat + 1) {
+        data_repeat = config->i2s_data_copies - 1;
+      }
     }
 
     if (!enabled) {
@@ -134,11 +138,11 @@
       return 0;
     }
 
-    LOG_INFO("leds: i2s port=%d -> buffer_size=%u buffer_align=%u", i2s_config->port,
-      buffer_size, buffer_align
+    LOG_INFO("leds: i2s port=%d -> buffer_size=%u buffer_align=%u repeat_data_count=%u", i2s_config->port,
+      buffer_size, buffer_align, data_repeat
     );
 
-    if ((err = i2s_out_new(&leds_i2s_out, i2s_config->port, buffer_size, buffer_align))) {
+    if ((err = i2s_out_new(&leds_i2s_out, i2s_config->port, buffer_size, buffer_align, data_repeat))) {
       LOG_ERROR("i2s_out_new(port=%d)", i2s_config->port);
       return err;
     }
@@ -200,7 +204,14 @@
       options->parallel = 0;
     }
   #endif
-    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u", state->index + 1,
+
+    if (config->i2s_data_copies > 1) {
+      LOG_INFO("leds%d: repeat copies=%u", state->index + 1, config->i2s_data_copies);
+
+      options->repeat = config->i2s_data_copies - 1;
+    }
+
+    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u repeat=%u", state->index + 1,
       i2s_config->port,
       options->pin_mutex,
       options->clock_rate,
@@ -210,10 +221,11 @@
       0,
     #endif
     #if LEDS_I2S_PARALLEL_ENABLED
-      options->parallel
+      options->parallel,
     #else
-      0
+      0,
     #endif
+      options->repeat
     );
 
     return 0;

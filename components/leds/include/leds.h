@@ -12,6 +12,7 @@
 # define LEDS_I2S_GPIO_PINS_SIZE I2S_OUT_GPIO_PINS_MAX
 # define LEDS_I2S_PARALLEL_ENABLED I2S_OUT_PARALLEL_SUPPORTED
 # define LEDS_I2S_PARALLEL_MAX I2S_OUT_PARALLEL_DATA_BITS_MAX
+# define LEDS_I2S_REPEAT_MAX 64
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
@@ -238,6 +239,9 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     // default 0 -> serial output with a single data signal
     unsigned parallel;
   #endif
+
+    // repeat data on each output
+    unsigned repeat; // LEDS_I2S_REPEAT_MAX
   };
 
   /*

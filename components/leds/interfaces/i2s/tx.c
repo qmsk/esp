@@ -182,8 +182,8 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
   interface->mode = mode;
   interface->func = func;
 
-#if LEDS_I2S_DATA_PINS_ENABLED
-  interface->parallel = options->data_pins_count;
+#if LEDS_I2S_PARALLEL_ENABLED
+  interface->parallel = options->parallel;
 #else
   interface->parallel = 0;
 #endif
@@ -198,17 +198,12 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
     // shared IO pins
     .pin_mutex    = options->pin_mutex,
     .pin_timeout  = options->pin_timeout,
-#if LEDS_I2S_GPIO_PINS_ENABLED
-    .bck_gpio       = GPIO_NUM_NC,
-    .data_gpio      = options->data_pin,
-    .inv_data_gpio  = options->inv_data_pin,
-#endif
   };
 
   switch(mode) {
     case LEDS_INTERFACE_I2S_MODE_32BIT_BCK:
-    #if LEDS_I2S_DATA_PINS_ENABLED
-      if (interface->parallel) {
+    #if LEDS_I2S_PARALLEL_ENABLED
+      if (options->parallel) {
         interface->i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
       } else {
         interface->i2s_out_options.mode = I2S_OUT_MODE_32BIT_SERIAL;
@@ -222,8 +217,8 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U200_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_24BIT_1U250_4X4_80UL:
     case LEDS_INTERFACE_I2S_MODE_32BIT_1U250_4X4_80UL:
-    #if LEDS_I2S_DATA_PINS_ENABLED
-      if (interface->parallel) {
+    #if LEDS_I2S_PARALLEL_ENABLED
+      if (options->parallel) {
         interface->i2s_out_options.mode = I2S_OUT_MODE_8BIT_PARALLEL;
       } else {
         // using 4x4bit -> 16-bit samples
@@ -264,29 +259,23 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
       LOG_FATAL("unknown mode=%d", mode);
   }
 
-#if LEDS_I2S_DATA_PINS_ENABLED
-  if (interface->parallel) {
-    for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
-      interface->i2s_out_options.bck_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->clock_pins[i] : GPIO_NUM_NC;
-      interface->i2s_out_options.data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->data_pins[i] : GPIO_NUM_NC;
-      interface->i2s_out_options.inv_data_gpios[i] = (i < options->data_pins_count && i < LEDS_I2S_DATA_PINS_SIZE) ? options->inv_data_pins[i] : GPIO_NUM_NC;
-    }
+#if LEDS_I2S_GPIO_PINS_ENABLED
+  for (int i = 0; i < LEDS_I2S_GPIO_PINS_SIZE; i++) {
+    interface->i2s_out_options.bck_gpios[i] = (i < options->gpio_pins_count) ? options->clock_pins[i] : GPIO_NUM_NC;
+    interface->i2s_out_options.data_gpios[i] = (i < options->gpio_pins_count) ? options->data_pins[i] : GPIO_NUM_NC;
+    interface->i2s_out_options.inv_data_gpios[i] = (i < options->gpio_pins_count) ? options->inv_data_pins[i] : GPIO_NUM_NC;
+  }
+#endif
 
+#if LEDS_I2S_PARALLEL_ENABLED
+  if (options->parallel) {
     // I2S LCD mode requires the BCK/WS signal to be inverted when routed through the GPIO matrix
     // invert BCK to idle high, transition on falling edge, and sample data on rising edge
     interface->i2s_out_options.bck_inv = true;
   } else {
-    interface->i2s_out_options.bck_gpio = options->clock_pin;
-    interface->i2s_out_options.data_gpio = options->data_pin;
-    interface->i2s_out_options.inv_data_gpio = options->inv_data_pin;
-
     // BCK is idle low, transition on falling edge, and sample data on rising edge
     interface->i2s_out_options.bck_inv = false;
   }
-#elif LEDS_I2S_GPIO_PINS_ENABLED
-  interface->i2s_out_options.bck_gpio = options->clock_pin;
-  interface->i2s_out_options.data_gpio = options->data_pin;
-  interface->i2s_out_options.inv_data_gpio = options->inv_data_pin;
 #endif
 
   interface->gpio = options->gpio;

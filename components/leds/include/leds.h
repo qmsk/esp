@@ -9,8 +9,9 @@
 #if CONFIG_LEDS_I2S_ENABLED
 # include <i2s_out.h>
 # define LEDS_I2S_GPIO_PINS_ENABLED I2S_OUT_GPIO_PINS_SUPPORTED
-# define LEDS_I2S_DATA_PINS_ENABLED I2S_OUT_PARALLEL_SUPPORTED
-# define LEDS_I2S_DATA_PINS_SIZE I2S_OUT_PARALLEL_SIZE
+# define LEDS_I2S_GPIO_PINS_SIZE I2S_OUT_GPIO_PINS_MAX
+# define LEDS_I2S_PARALLEL_ENABLED I2S_OUT_PARALLEL_SUPPORTED
+# define LEDS_I2S_PARALLEL_MAX I2S_OUT_PARALLEL_DATA_BITS_MAX
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
@@ -219,39 +220,23 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
     TickType_t pin_timeout;
 
-  #if LEDS_I2S_GPIO_PINS_ENABLED
-  # if LEDS_I2S_DATA_PINS_ENABLED
-    unsigned data_pins_count; // default 0 -> serial output with a single data_pin
-  # endif
-
-    // use GPIO_NUM_NC < 0 to disable
-    union {
-      gpio_num_t data_pin; // for pin_count == 0 -> serial output
-    #if LEDS_I2S_DATA_PINS_ENABLED
-      gpio_num_t data_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
-    #endif
-    };
-
-    // use GPIO_NUM_NC < 0 to disable
-    union {
-      gpio_num_t inv_data_pin; // for pin_count == 0 -> serial output
-    #if LEDS_I2S_DATA_PINS_ENABLED
-      gpio_num_t inv_data_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
-    #endif
-    };
-  #endif
-
     // only used for protocols with separate clock/data lines
     int clock_rate;
 
   #if LEDS_I2S_GPIO_PINS_ENABLED
-    // use GPIO_NUM_NC < 0 to disable
-    union {
-      gpio_num_t clock_pin;
-    #if LEDS_I2S_DATA_PINS_ENABLED
-      gpio_num_t clock_pins[LEDS_I2S_DATA_PINS_SIZE]; // for pin_count >= 1 -> parallel output
-    #endif
-    };
+    unsigned gpio_pins_count; // up to LEDS_I2S_GPIO_PINS_SIZE
+
+    // in serial mode, each pin outputs a copy of the same data signal
+    // in parallel mode, the first `parallel` pins each output their own data signal, and any remaining pins loop over to repeat the earlier data signals
+    gpio_num_t clock_pins[LEDS_I2S_GPIO_PINS_SIZE]; // use GPIO_NUM_NC <= 0 to disable
+    gpio_num_t data_pins[LEDS_I2S_GPIO_PINS_SIZE]; // use GPIO_NUM_NC <= 0 to disable
+    gpio_num_t inv_data_pins[LEDS_I2S_GPIO_PINS_SIZE]; // use GPIO_NUM_NC <= 0 to disable
+  #endif
+
+  #if LEDS_I2S_PARALLEL_ENABLED
+    // enable parallel mode with up to LEDS_I2S_PARALLEL_MAX separate outputs 
+    // default 0 -> serial output with a single data signal
+    unsigned parallel;
   #endif
   };
 
@@ -263,14 +248,14 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
   size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count);
   size_t leds_i2s_serial_buffer_align(enum leds_protocol protocol);
 
-  #if LEDS_I2S_DATA_PINS_ENABLED
+  #if LEDS_I2S_PARALLEL_ENABLED
     /*
-     * Returns total TX buffer size/align required for protocol with `led_count` LEDs across `pin_count` parallel pins.
+     * Returns total TX buffer size/align required for protocol with `led_count` LEDs across `parallel` pins.
      *
      * @return 0 if not supported for protocol
      */
-    size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned pin_count);
-    size_t leds_i2s_parallel_buffer_align(enum leds_protocol protocol, unsigned pin_count);
+    size_t leds_i2s_parallel_buffer_size(enum leds_protocol protocol, unsigned led_count, unsigned parallel);
+    size_t leds_i2s_parallel_buffer_align(enum leds_protocol protocol, unsigned parallel);
   #endif
 #endif
 

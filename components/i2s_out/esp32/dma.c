@@ -166,7 +166,7 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigne
   // initialize linked list of DMA descriptors
   init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
   for (unsigned i = 0; i < repeat; i++) {
-    init_dma_desc(i2s_out->dma_repeat_desc + i * repeat, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+    init_dma_desc(i2s_out->dma_repeat_desc + i * desc_count, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
   }
   init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), NULL);
 
@@ -324,9 +324,9 @@ void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
   i2s_out->dma_write_desc->owner = 1;
 
   for (unsigned i = 0; i < count; i++) {
-    for (unsigned j = 0; j < i2s_out->dma_rx_count; i++) {
-      struct dma_desc *s = &i2s_out->dma_write_desc[j];
-      struct dma_desc *d = &i2s_out->dma_repeat_desc[i * count + j];
+    for (unsigned j = 0; j < i2s_out->dma_rx_count; j++) {
+      struct dma_desc *s = &i2s_out->dma_rx_desc[j];
+      struct dma_desc *d = &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j];
 
       if (!s->owner) {
         break;
@@ -376,27 +376,27 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
 
   for (unsigned i = 0; i < i2s_out->dma_rx_count; i++) {
-    LOG_DEBUG("dma_write_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,
-      &i2s_out->dma_write_desc[i],
-      i2s_out->dma_write_desc[i].owner,
-      i2s_out->dma_write_desc[i].eof,
-      i2s_out->dma_write_desc[i].len,
-      i2s_out->dma_write_desc[i].size,
-      i2s_out->dma_write_desc[i].buf,
-      i2s_out->dma_write_desc[i].next
+    LOG_DEBUG("dma_rx_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,
+      &i2s_out->dma_rx_desc[i],
+      i2s_out->dma_rx_desc[i].owner,
+      i2s_out->dma_rx_desc[i].eof,
+      i2s_out->dma_rx_desc[i].len,
+      i2s_out->dma_rx_desc[i].size,
+      i2s_out->dma_rx_desc[i].buf,
+      i2s_out->dma_rx_desc[i].next
     );
   }
   
   for (unsigned i = 0; i < i2s_out->dma_rx_repeat; i++) {
-    for (unsigned j = 0; i < i2s_out->dma_rx_count; i++) {
+    for (unsigned j = 0; j < i2s_out->dma_rx_count; j++) {
       LOG_DEBUG("dma_repeat_desc[%u][%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i, j,
-        &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j],
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].owner,
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].eof,
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].len,
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].size,
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].buf,
-        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].next
+        &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j],
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].owner,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].eof,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].len,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].size,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].buf,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_count + j].next
       );
     }
   }

@@ -53,9 +53,11 @@ int init_leds()
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
-  if ((err = init_leds_i2s())) {
-    LOG_ERROR("init_leds_i2s");
-    return 0;
+  for (unsigned i = 0; i < LEDS_I2S_INTERFACE_COUNT; i++) {
+    if ((err = init_leds_i2s(i))) {
+      LOG_ERROR("init_leds_i2s%u", i);
+      return 0;
+    }
   }
 #endif
 
@@ -155,8 +157,10 @@ int check_leds_interface(struct leds_state *state)
   }
 
   switch (leds_interface(state->leds)) {
-    case LEDS_INTERFACE_I2S:
+  #if CONFIG_IDF_TARGET_ESP8266
+    case LEDS_INTERFACE_I2S0:
       return check_leds_i2s(state);
+  #endif
 
     default:
       return 0;

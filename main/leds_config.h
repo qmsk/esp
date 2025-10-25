@@ -97,13 +97,6 @@ struct leds_state *state;
 
   #define I2S_CLOCK_DEFAULT (I2S_CLOCK_1MHZ)
 
-  struct leds_i2s_config {
-    int port;
-  };
-
-  extern struct leds_i2s_config leds_i2s_config;
-
-  extern const struct config_enum leds_i2s_port_enum[];
   extern const struct config_enum leds_i2s_clock_enum[];
 #endif
 
@@ -210,5 +203,6 @@ unsigned config_leds_artnet_universe_count(const struct leds_config *config);
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
+  unsigned config_leds_i2s_data_width(const struct leds_config *config);
   int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_interface_i2s_options *options);
 #endif

@@ -1,8 +1,17 @@
 #pragma once
 
+#include <leds.h>
 #include <stats.h>
 
 #include <sdkconfig.h>
+
+#if CONFIG_LEDS_I2S_ENABLED
+struct leds_interface_i2s_stats {
+  struct stats_timer open;
+  struct stats_timer write;
+  struct stats_timer flush;
+};
+#endif
 
 struct leds_interface_stats {
 #if CONFIG_LEDS_SPI_ENABLED
@@ -17,12 +26,11 @@ struct leds_interface_stats {
     struct stats_timer tx;
   } uart;
 #endif
-#if CONFIG_LEDS_I2S_ENABLED
-  struct leds_interface_i2s_stats {
-    struct stats_timer open;
-    struct stats_timer write;
-    struct stats_timer flush;
-  } i2s;
+#if LEDS_I2S_INTERFACE_COUNT > 0
+   struct leds_interface_i2s_stats i2s0;
+#endif
+#if LEDS_I2S_INTERFACE_COUNT > 1
+   struct leds_interface_i2s_stats i2s1;
 #endif
 };
 

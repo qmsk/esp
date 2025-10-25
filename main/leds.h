@@ -8,7 +8,6 @@
 extern const struct configtab leds_gpio_configtab[];
 extern const struct configtab leds_spi_configtab[];
 extern const struct configtab leds_uart_configtab[];
-extern const struct configtab leds_i2s_configtab[];
 extern const struct configtab leds_sequence_configtab[];
 extern const struct configtab *leds_configtabs[LEDS_COUNT];
 extern const struct cmdtab leds_cmdtab;

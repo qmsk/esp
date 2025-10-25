@@ -62,12 +62,13 @@ struct leds_interface_i2s {
   struct i2s_out_options i2s_out_options;
   
   struct leds_interface_options_gpio gpio;
+  struct leds_interface_i2s_stats *stats;
 };
 
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);
 size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsigned pin_count);
 
-int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func);
+int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func, struct leds_interface_i2s_stats *stats);
 int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit);
 
 #endif

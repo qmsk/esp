@@ -18,13 +18,18 @@ struct leds_config leds_configs[LEDS_COUNT] = {};
 const struct config_enum leds_interface_enum[] = {
   { "DEFAULT",  .value = LEDS_INTERFACE_NONE   },
 #if CONFIG_LEDS_SPI_ENABLED
-  { "SPI",      .value = LEDS_INTERFACE_SPI    },
+  { "SPI",      .value = LEDS_INTERFACE_SPI   },
 #endif
 #if CONFIG_LEDS_UART_ENABLED
   { "UART",     .value = LEDS_INTERFACE_UART   },
 #endif
 #if CONFIG_LEDS_I2S_ENABLED
-  { "I2S",      .value = LEDS_INTERFACE_I2S    },
+# if LEDS_I2S_INTERFACE_COUNT > 1
+  { "I2S0",     .value = LEDS_INTERFACE_I2S0   },
+  { "I2S1",     .value = LEDS_INTERFACE_I2S1,   .alias = "I2S"  },
+# elif LEDS_I2S_INTERFACE_COUNT > 0
+  { "I2S0",     .value = LEDS_INTERFACE_I2S0,   .alias = "I2S"  },
+# endif
 #endif
   {}
 };
@@ -135,6 +140,32 @@ const struct config_enum leds_parameter_enum[] = {
   { "WHITE",    .value = LEDS_PARAMETER_WHITE  },
   {}
 };
+
+#if LEDS_I2S_PARALLEL_ENABLED
+  static int validate_leds_i2s_parallel (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
+  {
+    struct leds_config *config = path.tab->ctx;
+    unsigned data_width = config_leds_i2s_data_width(config);
+
+    if (config->enabled && data_width > 1) {
+      switch (config->interface) {
+      #if CONFIG_IDF_TARGET_ESP32
+        case LEDS_INTERFACE_I2S1:
+          break; // ok
+      #endif
+        
+        default:
+          handler(path, ctx, "LEDs interface %s does not support parallel output",
+            config_enum_to_string(leds_interface_enum, config->interface)
+          );
+
+          return 1;
+      }
+    }
+
+    return 0;
+  }
+#endif
 
 static int validate_artnet_leds_group (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
 {
@@ -287,13 +318,18 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
-    case LEDS_INTERFACE_I2S:
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
       if ((err = config_leds_i2s(state, config, &options.i2s))) {
         LOG_ERROR("leds%d: config_leds_i2s", state->index + 1);
         return err;
       }
 
-      if ((err = config_leds_gpio(state, config, LEDS_INTERFACE_I2S, &options.i2s.gpio))) {
+      if ((err = config_leds_gpio(state, config, options.interface, &options.i2s.gpio))) {
         LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
         return err;
       }

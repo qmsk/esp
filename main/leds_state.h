@@ -44,8 +44,11 @@ extern struct leds_state leds_states[LEDS_COUNT];
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
-  int init_leds_i2s();
+  int init_leds_i2s(unsigned port);
+
+# if CONFIG_IDF_TARGET_ESP8266
   int check_leds_i2s(struct leds_state *state);
+# endif
 #endif
 
 /*

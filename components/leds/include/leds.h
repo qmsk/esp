@@ -8,11 +8,14 @@
 
 #if CONFIG_LEDS_I2S_ENABLED
 # include <i2s_out.h>
+# define LEDS_I2S_INTERFACE_COUNT I2S_PORT_MAX
 # define LEDS_I2S_GPIO_PINS_ENABLED I2S_OUT_GPIO_PINS_SUPPORTED
 # define LEDS_I2S_GPIO_PINS_SIZE I2S_OUT_GPIO_PINS_MAX
 # define LEDS_I2S_PARALLEL_ENABLED I2S_OUT_PARALLEL_SUPPORTED
 # define LEDS_I2S_PARALLEL_MAX I2S_OUT_PARALLEL_DATA_BITS_MAX
 # define LEDS_I2S_REPEAT_MAX 64
+
+# define LEDS_INTERFACE_I2S(i) (LEDS_INTERFACE_I2S0 + (i))
 #endif
 
 #if CONFIG_LEDS_SPI_ENABLED && CONFIG_IDF_TARGET_ESP8266
@@ -47,7 +50,7 @@ enum leds_interface {
    *  - LEDS_PROTOCOL_APA102
    *  - LEDS_PROTOCOL_P9813
    */
-  LEDS_INTERFACE_SPI            = 1,
+  LEDS_INTERFACE_SPI,
 #endif
 
 #if CONFIG_LEDS_UART_ENABLED
@@ -56,7 +59,7 @@ enum leds_interface {
    *  - LEDS_PROTOCOL_SK6812_GRBW
    *  - LEDS_PROTOCOL_WS2811
    */
-  LEDS_INTERFACE_UART           = 2,
+  LEDS_INTERFACE_UART,
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
@@ -66,7 +69,12 @@ enum leds_interface {
    *  - LEDS_PROTOCOL_SK6812_GRBW
    *  - LEDS_PROTOCOL_SK9822
    */
-  LEDS_INTERFACE_I2S           = 3,
+#if LEDS_I2S_INTERFACE_COUNT > 0
+  LEDS_INTERFACE_I2S0,
+#endif
+#if LEDS_I2S_INTERFACE_COUNT > 1
+  LEDS_INTERFACE_I2S1,
+#endif
 #endif
 
   LEDS_INTERFACE_COUNT
@@ -243,6 +251,11 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
     // repeat data on each output
     unsigned repeat; // LEDS_I2S_REPEAT_MAX
   };
+
+  /*
+   * Return port for interface
+   */
+  i2s_port_t leds_interface_i2s_port(enum leds_interface interface);
 
   /*
    * Returns total TX buffer size, align required for protocol with `led_count` LEDs on one serial pin.

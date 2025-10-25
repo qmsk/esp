@@ -97,13 +97,6 @@ struct leds_state *state;
 
   #define I2S_CLOCK_DEFAULT (I2S_CLOCK_1MHZ)
 
-  struct leds_i2s_config {
-    int port;
-  };
-
-  extern struct leds_i2s_config leds_i2s_config;
-
-  extern const struct config_enum leds_i2s_port_enum[];
   extern const struct config_enum leds_i2s_clock_enum[];
 #endif
 

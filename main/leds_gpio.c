@@ -18,7 +18,12 @@
     [LEDS_INTERFACE_UART] = { },
   #endif
   #if CONFIG_LEDS_I2S_ENABLED
-    [LEDS_INTERFACE_I2S] = { },
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    [LEDS_INTERFACE_I2S0] = { },
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    [LEDS_INTERFACE_I2S1] = { },
+  # endif
   #endif
   };
 

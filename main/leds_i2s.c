@@ -10,39 +10,6 @@
 #define LEDS_I2S_PIN_TIMEOUT portMAX_DELAY
 
 #if CONFIG_LEDS_I2S_ENABLED
-
-  // config
-  struct leds_i2s_config leds_i2s_config = {
-
-  };
-
-  const struct config_enum leds_i2s_port_enum[] = {
-    { "",             .value = -1           },
-  #if defined(I2S_PORT_0)
-    { "I2S0",         .value = I2S_PORT_0    },
-  #endif
-  #if defined(I2S_PORT_1)
-    { "I2S1",         .value = I2S_PORT_1    },
-  #endif
-    {},
-  };
-
-  #if defined(I2S_PORT_1)
-    #define LEDS_I2S_PORT_DEFAULT_VALUE I2S_PORT_1
-  #elif defined(I2S_PORT_0)
-    #define LEDS_I2S_PORT_DEFAULT_VALUE I2S_PORT_0
-  #else
-    #define LEDS_I2S_PORT_DEFAULT_VALUE -1
-  #endif
-
-  const struct configtab leds_i2s_configtab[] = {
-    { CONFIG_TYPE_ENUM, "port",
-      .description = "Select host peripherial for I2S interface.",
-      .enum_type = { .value = &leds_i2s_config.port, .values = leds_i2s_port_enum, .default_value = LEDS_I2S_PORT_DEFAULT_VALUE },
-    },
-    {},
-  };
-
   #if LEDS_I2S_PARALLEL_ENABLED
     unsigned config_leds_i2s_data_width(const struct leds_config *config)
     {
@@ -64,20 +31,14 @@
   #endif
 
   // state
-  struct i2s_out *leds_i2s_out;
+  struct i2s_out *leds_i2s_out[LEDS_I2S_INTERFACE_COUNT];
 
-  int init_leds_i2s()
+  int init_leds_i2s(unsigned port)
   {
-    const struct leds_i2s_config *i2s_config = &leds_i2s_config;
     size_t buffer_size = 0, buffer_align = 0;
     unsigned data_repeat = 0;
     bool enabled = false;
     int err;
-
-    if (i2s_config->port < 0) {
-      LOG_INFO("leds: i2s disabled");
-      return 0;
-    }
 
     for (int i = 0; i < LEDS_COUNT; i++)
     {
@@ -87,7 +48,7 @@
         continue;
       }
 
-      if (config->interface != LEDS_INTERFACE_I2S) {
+      if (config->interface != LEDS_INTERFACE_I2S(port)) {
         continue;
       }
 
@@ -103,23 +64,23 @@
         size = leds_i2s_parallel_buffer_size(config->protocol, config->count, data_width);
         align = leds_i2s_parallel_buffer_align(config->protocol, data_width);
 
-        LOG_INFO("leds%d: i2s%d configured for %u parallel leds on %u pins, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, data_width, size, align);
+        LOG_INFO("leds%d: i2s%u configured for %u parallel leds on %u pins, data buffer size=%u align=%u", i + 1, port, config->count, data_width, size, align);
       } else if (data_width) {
         size = leds_i2s_serial_buffer_size(config->protocol, config->count);
         align = leds_i2s_serial_buffer_align(config->protocol);
 
-        LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, size, align);
+        LOG_INFO("leds%d: i2s%u configured for %u serial leds, data buffer size=%u align=%u", i + 1, port, config->count, size, align);
       } else {
         size = 0;
         align = 0;
 
-        LOG_WARN("leds%d: i2s%d configured for %u leds without data outputs", i + 1, i2s_config->port, config->count);
+        LOG_WARN("leds%d: i2s%u configured for %u leds without data outputs", i + 1, port, config->count);
       }
     #else
       size = leds_i2s_serial_buffer_size(config->protocol, config->count);
       align = leds_i2s_serial_buffer_align(config->protocol);
 
-      LOG_INFO("leds%d: i2s%d configured for %u serial leds, data buffer size=%u align=%u", i + 1, i2s_config->port, config->count, size, align);
+      LOG_INFO("leds%d: i2s%u configured for %u serial leds, data buffer size=%u align=%u", i + 1, port, config->count, size, align);
     #endif
 
       if (size > buffer_size) {
@@ -134,16 +95,16 @@
     }
 
     if (!enabled) {
-      LOG_INFO("leds: i2s%d not configured", i2s_config->port);
+      LOG_INFO("leds: i2s%u not configured", port);
       return 0;
     }
 
-    LOG_INFO("leds: i2s port=%d -> buffer_size=%u buffer_align=%u repeat_data_count=%u", i2s_config->port,
+    LOG_INFO("leds: i2s%u -> buffer_size=%u buffer_align=%u repeat_data_count=%u", port,
       buffer_size, buffer_align, data_repeat
     );
 
-    if ((err = i2s_out_new(&leds_i2s_out, i2s_config->port, buffer_size, buffer_align, data_repeat))) {
-      LOG_ERROR("i2s_out_new(port=%d)", i2s_config->port);
+    if ((err = i2s_out_new(&leds_i2s_out[port], port, buffer_size, buffer_align, data_repeat))) {
+      LOG_ERROR("i2s_out_new(port=%d)", port);
       return err;
     }
 
@@ -152,14 +113,14 @@
 
   int config_leds_i2s(struct leds_state *state, const struct leds_config *config, struct leds_interface_i2s_options *options)
   {
-    const struct leds_i2s_config *i2s_config = &leds_i2s_config;
+    unsigned port = leds_interface_i2s_port(config->interface);
 
-    if (!leds_i2s_out) {
+    if (!leds_i2s_out[port]) {
       LOG_ERROR("leds%d: i2s out not initialized", state->index + 1);
       return -1;
     }
 
-    options->i2s_out = leds_i2s_out;
+    options->i2s_out = leds_i2s_out[port];
   #if CONFIG_IDF_TARGET_ESP8266
   // TODO: use i2s_pin_mutex for arbitrary gpio pins with LEDS_I2S_GPIO_PINS_ENABLED?
     options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0
@@ -211,8 +172,7 @@
       options->repeat = config->i2s_data_copies - 1;
     }
 
-    LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u repeat=%u", state->index + 1,
-      i2s_config->port,
+    LOG_INFO("leds%d: i2s%d pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u repeat=%u", state->index + 1, port,
       options->pin_mutex,
       options->clock_rate,
     #if LEDS_I2S_GPIO_PINS_ENABLED

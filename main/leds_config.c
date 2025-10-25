@@ -18,13 +18,18 @@ struct leds_config leds_configs[LEDS_COUNT] = {};
 const struct config_enum leds_interface_enum[] = {
   { "DEFAULT",  .value = LEDS_INTERFACE_NONE   },
 #if CONFIG_LEDS_SPI_ENABLED
-  { "SPI",      .value = LEDS_INTERFACE_SPI    },
+  { "SPI",      .value = LEDS_INTERFACE_SPI   },
 #endif
 #if CONFIG_LEDS_UART_ENABLED
   { "UART",     .value = LEDS_INTERFACE_UART   },
 #endif
 #if CONFIG_LEDS_I2S_ENABLED
-  { "I2S",      .value = LEDS_INTERFACE_I2S    },
+# if LEDS_I2S_INTERFACE_COUNT > 1
+  { "I2S0",     .value = LEDS_INTERFACE_I2S0   },
+  { "I2S1",     .value = LEDS_INTERFACE_I2S1,   .alias = "I2S"  },
+# elif LEDS_I2S_INTERFACE_COUNT > 0
+  { "I2S0",     .value = LEDS_INTERFACE_I2S0,   .alias = "I2S"  },
+# endif
 #endif
   {}
 };
@@ -287,13 +292,18 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
-    case LEDS_INTERFACE_I2S:
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
       if ((err = config_leds_i2s(state, config, &options.i2s))) {
         LOG_ERROR("leds%d: config_leds_i2s", state->index + 1);
         return err;
       }
 
-      if ((err = config_leds_gpio(state, config, LEDS_INTERFACE_I2S, &options.i2s.gpio))) {
+      if ((err = config_leds_gpio(state, config, options.interface, &options.i2s.gpio))) {
         LOG_ERROR("leds%d: config_leds_gpio", state->index + 1);
         return err;
       }

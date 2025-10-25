@@ -4,6 +4,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .bool_type = { .value = &LEDS_CONFIG.enabled },
   },
   { CONFIG_TYPE_ENUM, "interface",
+    .description = (
+      "Select phyiscal interface driver to use for output.\n"
+      "Multiple led instances can share the same interface with different gpio output enables, but this will limit performance.\n"
+    ),
     .enum_type = { .value = &LEDS_CONFIG.interface, .values = leds_interface_enum },
   },
   { CONFIG_TYPE_ENUM, "protocol",

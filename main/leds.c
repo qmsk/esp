@@ -53,9 +53,11 @@ int init_leds()
 #endif
 
 #if CONFIG_LEDS_I2S_ENABLED
-  if ((err = init_leds_i2s())) {
-    LOG_ERROR("init_leds_i2s");
-    return 0;
+  for (unsigned i = 0; i < LEDS_I2S_INTERFACE_COUNT; i++) {
+    if ((err = init_leds_i2s(i))) {
+      LOG_ERROR("init_leds_i2s%u", i);
+      return 0;
+    }
   }
 #endif
 

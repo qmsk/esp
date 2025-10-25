@@ -37,8 +37,9 @@ typedef int i2s_port_t;
   #define I2S_PORT_MAX    2
 
   #define I2S_OUT_GPIO_PINS_SUPPORTED 1
+  #define I2S_OUT_GPIO_PINS_MAX 8
   #define I2S_OUT_PARALLEL_SUPPORTED 1
-  #define I2S_OUT_PARALLEL_SIZE 8
+  #define I2S_OUT_PARALLEL_DATA_BITS_MAX 8
 
   #define I2S_OUT_BASE_CLOCK (2 * APB_CLK_FREQ)
 
@@ -105,30 +106,25 @@ struct i2s_out_options {
   TickType_t pin_timeout;
 
 #if I2S_OUT_GPIO_PINS_SUPPORTED
-  // Use GPIO pin for bit clock out signal, -1 to disable
-  union {
-    gpio_num_t bck_gpio; // -1 to disable
-# if I2S_OUT_PARALLEL_SUPPORTED
-    gpio_num_t bck_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
-# endif
-  };
-  bool bck_inv; // invert bck signal
+  // Use GPIO pin > 0 for bit clock out signal
+  // Each gpio is a copy of the same clock out signal
+  gpio_num_t bck_gpios[I2S_OUT_GPIO_PINS_MAX];
 
-  // Use GPIO pin for data out signal, -1 to disable
-  union {
-    gpio_num_t data_gpio; // serial
-# if I2S_OUT_PARALLEL_SUPPORTED
-    gpio_num_t data_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
-# endif
-  };
+  // Invert bck signal
+  bool bck_inv;
 
-  // Use GPIO pin for inverted data out signal, -1 to disable
-  union {
-    gpio_num_t inv_data_gpio; // serial
-# if I2S_OUT_PARALLEL_SUPPORTED
-    gpio_num_t inv_data_gpios[I2S_OUT_PARALLEL_SIZE]; // parallel
-# endif
-  };
+  // Use GPIO pin > 0 for data out signal
+  // In serial mode, each gpio > 0 is a copy of the data bit
+  // In parallel mode, each gpio > 0 is a separate data bit up to parallel_data_bits, remaining ones repeat 
+  gpio_num_t data_gpios[I2S_OUT_GPIO_PINS_MAX];
+
+  // Use GPIO pin > 0 for inverted data out signal
+  gpio_num_t inv_data_gpios[I2S_OUT_GPIO_PINS_MAX];
+#endif
+
+#if I2S_OUT_PARALLEL_SUPPORTED
+  // number of parallel data bits in use
+  unsigned parallel_data_bits;
 #endif
 };
 

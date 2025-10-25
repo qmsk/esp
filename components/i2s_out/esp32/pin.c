@@ -56,7 +56,7 @@ static void clear_gpio_pin(gpio_num_t gpio)
 int i2s_out_pin_init(struct i2s_out *i2s_out)
 {
 
-  for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+  for (int i = 0; i < I2S_OUT_GPIO_PINS_MAX; i++) {
     i2s_out->bck_gpios[i] = -1;
     i2s_out->data_gpios[i] = -1;
     i2s_out->inv_data_gpios[i] = -1;
@@ -78,20 +78,12 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 
   switch (options->mode) {
     case I2S_OUT_MODE_16BIT_SERIAL:
-      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_16BIT_SERIAL bck_gpio=%d serial_data_gpio=%d inv_data_gpio=%d", i2s_out->port,
-        options->bck_gpio,
-        options->data_gpio,
-        options->inv_data_gpio
-      );
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_16BIT_SERIAL ", i2s_out->port);
 
       break;
 
     case I2S_OUT_MODE_32BIT_SERIAL:
-      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_32BIT_SERIAL bck_gpio=%d serial_data_gpio=%d inv_data_gpio=%d", i2s_out->port,
-        options->bck_gpio,
-        options->data_gpio,
-        options->inv_data_gpio
-      );
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_32BIT_SERIAL", i2s_out->port);
 
       break;
 
@@ -101,17 +93,7 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
         return -1;
       }
 
-      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_8BIT_PARALLEL bck_gpio=%d parallel_data_gpio=[%d, %d, %d, %d, %d, %d, %d, %d]", i2s_out->port,
-        options->bck_gpio,
-        options->data_gpios[0],
-        options->data_gpios[1],
-        options->data_gpios[2],
-        options->data_gpios[3],
-        options->data_gpios[4],
-        options->data_gpios[5],
-        options->data_gpios[6],
-        options->data_gpios[7]
-      );
+      LOG_DEBUG("port=%d: mode=I2S_OUT_MODE_8BIT_PARALLEL", i2s_out->port);
 
       break;
 
@@ -120,74 +102,91 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
       return -1;
   }
 
+  LOG_DEBUG("port=%d: bck_inv=%d bck_gpios=[%d, %d, %d, %d, %d, %d, %d, %d]", i2s_out->port,
+    options->bck_inv,
+    options->bck_gpios[0],
+    options->bck_gpios[1],
+    options->bck_gpios[2],
+    options->bck_gpios[3],
+    options->bck_gpios[4],
+    options->bck_gpios[5],
+    options->bck_gpios[6],
+    options->bck_gpios[7]
+  );
+  LOG_DEBUG("port=%d: data_gpios=[%d, %d, %d, %d, %d, %d, %d, %d]", i2s_out->port,
+    options->data_gpios[0],
+    options->data_gpios[1],
+    options->data_gpios[2],
+    options->data_gpios[3],
+    options->data_gpios[4],
+    options->data_gpios[5],
+    options->data_gpios[6],
+    options->data_gpios[7]
+  );
+  LOG_DEBUG("port=%d: inv_data_gpios=[%d, %d, %d, %d, %d, %d, %d, %d]", i2s_out->port,
+    options->inv_data_gpios[0],
+    options->inv_data_gpios[1],
+    options->inv_data_gpios[2],
+    options->inv_data_gpios[3],
+    options->inv_data_gpios[4],
+    options->inv_data_gpios[5],
+    options->inv_data_gpios[6],
+    options->inv_data_gpios[7]
+  );
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  switch (options->mode) {
-    case I2S_OUT_MODE_16BIT_SERIAL:
-    case I2S_OUT_MODE_32BIT_SERIAL:
-      if (options->bck_gpio > 0) {
-        i2s_out->bck_gpio_inv = options->bck_inv;
-        i2s_out->bck_gpios[0] = options->bck_gpio;
+  for (int i = 0; i < I2S_OUT_GPIO_PINS_MAX; i++) {
+    unsigned data_out_sig;
+    
+    switch (options->mode) {
+      case I2S_OUT_MODE_16BIT_SERIAL:
+      case I2S_OUT_MODE_32BIT_SERIAL:
+        // each gpio is a copy of the same serial data signal
+        data_out_sig = i2s_serial_data_out_sig[i2s_out->port];
 
-        setup_gpio_pin(options->bck_gpio);
-        setup_rtc_pin(options->bck_gpio);
+        break;
 
-        esp_rom_gpio_connect_out_signal(options->bck_gpio, i2s_bck_out_sig[i2s_out->port], options->bck_inv, false);
-      }
+      case I2S_OUT_MODE_8BIT_PARALLEL:
+        // loop over the used parallel data signals, repeating as necessary
+        // data[0] is mapped to the most significant bit, which is OUT7
+        // data[7] -> OUT0
+        data_out_sig = i2s_parallel8_data_out_sig[i2s_out->port] + 8 - (i % options->parallel_data_bits) - 1;
 
-      if (options->data_gpio > 0) {
-        i2s_out->data_gpios[0] = options->data_gpio;
+        break;
+      
+      default:
+        LOG_FATAL("mode=%d", options->mode);
+    }
 
-        setup_gpio_pin(options->data_gpio);
-        setup_rtc_pin(options->data_gpio);
+    if (options->bck_gpios[i] > 0) {
+      i2s_out->bck_gpio_inv = options->bck_inv;
+      i2s_out->bck_gpios[i] = options->bck_gpios[i];
 
-        esp_rom_gpio_connect_out_signal(options->data_gpio, i2s_serial_data_out_sig[i2s_out->port], false, false);
-      }
+      setup_gpio_pin(options->bck_gpios[i]);
+      setup_rtc_pin(options->bck_gpios[i]);
 
-      if (options->inv_data_gpio > 0) {
-        i2s_out->inv_data_gpios[0] = options->inv_data_gpio;
+      esp_rom_gpio_connect_out_signal(options->bck_gpios[i], i2s_bck_out_sig[i2s_out->port], options->bck_inv, false);
+    }
 
-        setup_gpio_pin(options->inv_data_gpio);
-        setup_rtc_pin(options->inv_data_gpio);
+    if (options->data_gpios[i] > 0) {
+      i2s_out->data_gpios[i] = options->data_gpios[i];
 
-        // invert gpio output pin
-        esp_rom_gpio_connect_out_signal(options->inv_data_gpio, i2s_serial_data_out_sig[i2s_out->port], true, false);
-      }
+      setup_gpio_pin(options->data_gpios[i]);
+      setup_rtc_pin(options->data_gpios[i]);
 
-      break;
+      esp_rom_gpio_connect_out_signal(options->data_gpios[i], data_out_sig, false, false);
+    }
 
-    case I2S_OUT_MODE_8BIT_PARALLEL:
-      for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
-        if (options->bck_gpios[i] > 0) {
-          i2s_out->bck_gpio_inv = options->bck_inv;
-          i2s_out->bck_gpios[i] = options->bck_gpios[i];
+    if (options->inv_data_gpios[i] > 0) {
+      i2s_out->inv_data_gpios[i] = options->inv_data_gpios[i];
 
-          setup_gpio_pin(options->bck_gpios[i]);
-          setup_rtc_pin(options->bck_gpios[i]);
+      setup_gpio_pin(options->inv_data_gpios[i]);
+      setup_rtc_pin(options->inv_data_gpios[i]);
 
-          esp_rom_gpio_connect_out_signal(options->bck_gpios[i], i2s_bck_out_sig[i2s_out->port], options->bck_inv, false);
-        }
-
-        if (options->data_gpios[i] > 0) {
-          i2s_out->data_gpios[i] = options->data_gpios[i];
-
-          setup_gpio_pin(options->data_gpios[i]);
-          setup_rtc_pin(options->data_gpios[i]);
-
-          // data[0] is mapped to the most significant bit, which is OUT7
-          esp_rom_gpio_connect_out_signal(options->data_gpios[i], i2s_parallel8_data_out_sig[i2s_out->port] + 8 - i - 1, false, false);
-        }
-
-        if (options->inv_data_gpios[i] > 0) {
-          i2s_out->inv_data_gpios[i] = options->inv_data_gpios[i];
-
-          setup_gpio_pin(options->inv_data_gpios[i]);
-          setup_rtc_pin(options->inv_data_gpios[i]);
-
-          // data[0] is mapped to the most significant bit, which is OUT7
-          esp_rom_gpio_connect_out_signal(options->inv_data_gpios[i], i2s_parallel8_data_out_sig[i2s_out->port] + 8 - i - 1, true, false);
-        }
-      }
+      // invert gpio output pin
+      esp_rom_gpio_connect_out_signal(options->inv_data_gpios[i], data_out_sig, true, false);
+    }
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);
@@ -203,7 +202,7 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out)
 
   // place output into a safe state
 
-  for (int i = 0; i < I2S_OUT_PARALLEL_SIZE; i++) {
+  for (int i = 0; i < I2S_OUT_GPIO_PINS_MAX; i++) {
     if (i2s_out->bck_gpios[i] >= 0) {
       clear_gpio_pin(i2s_out->bck_gpios[i]);
 

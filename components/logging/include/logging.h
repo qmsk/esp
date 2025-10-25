@@ -46,7 +46,7 @@
 
 // XXX: CONFIG_LOG_DEFAULT_LEVEL defaults to skip ESP_LOG_DEBUG, and raising will include ALL debug output by default - not possible to override this per-call
 #if DEBUG
-  #define LOG_DEBUG_BUFFER(buf, len)      IF_DEBUG({ ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO); })
+  #define LOG_DEBUG_BUFFER(buf, len)      do { if (DEBUG) ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO); } while(0)
 #else
   #define LOG_DEBUG_BUFFER(buf, len)
 #endif

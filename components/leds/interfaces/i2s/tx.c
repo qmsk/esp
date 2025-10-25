@@ -187,6 +187,7 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 #else
   interface->parallel = 0;
 #endif
+  interface->repeat = options->repeat;
 
   if (!(interface->buf = calloc(1, leds_interface_i2s_buf_size(interface->mode, interface->parallel)))) {
     LOG_ERROR("calloc");
@@ -329,6 +330,13 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
 
   WITH_STATS_TIMER(&stats->write) {
     if ((err = leds_interface_i2s_tx_write(interface, pixels, count, limit))) {
+      goto error;
+    }
+  }
+
+  if (interface->repeat) {
+    if ((err = i2s_out_repeat(interface->i2s_out, interface->repeat))) {
+      LOG_ERROR("i2s_out_repeat");
       goto error;
     }
   }

@@ -56,6 +56,7 @@ struct leds_interface_i2s {
   union leds_interface_i2s_buf *buf;
 
   unsigned parallel;
+  unsigned repeat;
 
   struct i2s_out *i2s_out;
   struct i2s_out_options i2s_out_options;

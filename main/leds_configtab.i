@@ -66,6 +66,15 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S bit rate. Only used for protocols with a separate clock/data.",
     .enum_type = { .value = &LEDS_CONFIG.i2s_clock, .values = leds_i2s_clock_enum, .default_value = I2S_CLOCK_DEFAULT },
   },
+  { CONFIG_TYPE_UINT16, "i2s_data_repeat",
+    .description = (
+      "Split LEDs across parallel I2S data signals to different GPIOs.\n"
+      "\t0 (default, compat) -> automatically determine based on number of configured data pins.\n"
+      "\t1 -> serial mode with a single data signal, optionally multiple copies of the same leds on each gpio pin.\n"
+      "\tN -> parallel mode with multiple data signals, separate leds on each gpio pin.\n"
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_repeat, .max = LEDS_I2S_REPEAT_MAX },
+  },
 # if LEDS_I2S_PARALLEL_ENABLED
   { CONFIG_TYPE_UINT16, "i2s_data_width",
     .description = (

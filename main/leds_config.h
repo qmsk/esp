@@ -137,6 +137,7 @@ struct leds_config {
 # if LEDS_I2S_PARALLEL_ENABLED
   uint16_t i2s_data_width;
 # endif
+  uint16_t i2s_data_repeat;
 # if LEDS_I2S_GPIO_PINS_ENABLED
   unsigned i2s_data_pin_count, i2s_data_inv_pin_count, i2s_clock_pin_count;
   uint16_t i2s_clock_pins[LEDS_I2S_GPIO_PINS_SIZE];

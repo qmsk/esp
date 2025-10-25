@@ -331,15 +331,17 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   i2s_out->dma_eof_desc->owner = 1;
   i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
 
-  LOG_DEBUG("dma_write_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
-    i2s_out->dma_write_desc,
-    i2s_out->dma_write_desc->owner,
-    i2s_out->dma_write_desc->eof,
-    i2s_out->dma_write_desc->len,
-    i2s_out->dma_write_desc->size,
-    i2s_out->dma_write_desc->buf,
-    i2s_out->dma_write_desc->next
-  );
+  for (unsigned i = 0; i < i2s_out->dma_rx_count; i++) {
+    LOG_DEBUG("dma_write_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,
+      &i2s_out->dma_write_desc[i],
+      i2s_out->dma_write_desc[i].owner,
+      i2s_out->dma_write_desc[i].eof,
+      i2s_out->dma_write_desc[i].len,
+      i2s_out->dma_write_desc[i].size,
+      i2s_out->dma_write_desc[i].buf,
+      i2s_out->dma_write_desc[i].next
+    );
+  }
 
   LOG_DEBUG("dma_eof_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",
     i2s_out->dma_eof_desc,

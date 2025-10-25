@@ -231,9 +231,9 @@
     return 0;
   }
 
+# if CONFIG_IDF_TARGET_ESP8266
   int check_leds_i2s(struct leds_state *state)
   {
-  #if CONFIG_IDF_TARGET_ESP8266
     const struct leds_options *options = leds_options(state->leds);
 
     if (is_console_running()) {
@@ -242,8 +242,8 @@
         return 1;
       }
     }
-  #endif
-
+    
     return 0;
   }
+# endif
 #endif

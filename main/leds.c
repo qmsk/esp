@@ -155,8 +155,10 @@ int check_leds_interface(struct leds_state *state)
   }
 
   switch (leds_interface(state->leds)) {
-    case LEDS_INTERFACE_I2S:
+  #if CONFIG_IDF_TARGET_ESP8266
+    case LEDS_INTERFACE_I2S0:
       return check_leds_i2s(state);
+  #endif
 
     default:
       return 0;

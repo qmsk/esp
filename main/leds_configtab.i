@@ -66,21 +66,38 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S bit rate. Only used for protocols with a separate clock/data.",
     .enum_type = { .value = &LEDS_CONFIG.i2s_clock, .values = leds_i2s_clock_enum, .default_value = I2S_CLOCK_DEFAULT },
   },
+# if LEDS_I2S_PARALLEL_ENABLED
+  { CONFIG_TYPE_UINT16, "i2s_data_width",
+    .description = (
+      "Split LEDs across parallel I2S data signals to different GPIOs.\n"
+      "\t0 (default, compat) -> automatically determine based on number of configured data pins.\n"
+      "\t1 -> serial mode with a single data signal, optionally multiple copies of the same leds on each gpio pin.\n"
+      "\tN -> parallel mode with multiple data signals, separate leds on each gpio pin.\n"
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_width, .max = LEDS_I2S_PARALLEL_MAX },
+  },
+# endif
 # if LEDS_I2S_GPIO_PINS_ENABLED
   { CONFIG_TYPE_UINT16, "i2s_clock_pin",
     .description = "Output I2S bit clock to GPIO pin. Only used for protocols with a separate clock/data.",
-    .count  = &LEDS_CONFIG.i2s_clock_pin_count, .size = LEDS_I2S_DATA_PINS_SIZE,
+    .count  = &LEDS_CONFIG.i2s_clock_pin_count, .size = LEDS_I2S_GPIO_PINS_SIZE,
     .uint16_type = { .value = LEDS_CONFIG.i2s_clock_pins, .max = (GPIO_NUM_MAX - 1) },
   },
   { CONFIG_TYPE_UINT16, "i2s_data_pin",
     .alias = "i2s_gpio_pin",
-    .description = "Output I2S data to GPIO pin.",
-    .count  = &LEDS_CONFIG.i2s_data_pin_count, .size = LEDS_I2S_DATA_PINS_SIZE,
+    .description = (
+      "Output serial/parallel I2S data to GPIO pin. 0 -> skip this pin.\n"
+      "\tIf there are more gpio pins than i2s_data_width, the remaining gpio pins loop over to output copies of the first N signals.\n"
+    ),
+    .count  = &LEDS_CONFIG.i2s_data_pin_count, .size = LEDS_I2S_GPIO_PINS_SIZE,
     .uint16_type = { .value = LEDS_CONFIG.i2s_data_pins, .max = (GPIO_NUM_MAX - 1) },
   },
   { CONFIG_TYPE_UINT16, "i2s_data_inv_pin",
-    .description = "Output inverted I2S data to GPIO pin.",
-    .count  = &LEDS_CONFIG.i2s_data_inv_pin_count, .size = LEDS_I2S_DATA_PINS_SIZE,
+    .description = (
+      "Output inverted copy of I2S data to GPIO pin. 0 -> skip this pin.\n"
+      "\tIf there are more gpio pins than i2s_data_width, the remaining gpio pins loop over to output copies of the first N signals.\n"
+    ),
+    .count  = &LEDS_CONFIG.i2s_data_inv_pin_count, .size = LEDS_I2S_GPIO_PINS_SIZE,
     .uint16_type = { .value = LEDS_CONFIG.i2s_data_inv_pins, .max = (GPIO_NUM_MAX - 1) },
   },
 # endif

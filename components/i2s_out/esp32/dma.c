@@ -369,6 +369,9 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   // commit if not repeat()
   if (!i2s_out->dma_write_desc->owner) {
     i2s_out->dma_write_desc->owner = 1;
+  }
+
+  if (!i2s_out->dma_write_desc->next) {
     i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
   }
 

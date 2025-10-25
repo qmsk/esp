@@ -134,11 +134,14 @@ struct leds_config {
 
 #if CONFIG_LEDS_I2S_ENABLED
   int i2s_clock;
+# if LEDS_I2S_PARALLEL_ENABLED
+  uint16_t i2s_data_width;
+# endif
 # if LEDS_I2S_GPIO_PINS_ENABLED
   unsigned i2s_data_pin_count, i2s_data_inv_pin_count, i2s_clock_pin_count;
-  uint16_t i2s_clock_pins[LEDS_I2S_DATA_PINS_SIZE];
-  uint16_t i2s_data_pins[LEDS_I2S_DATA_PINS_SIZE];
-  uint16_t i2s_data_inv_pins[LEDS_I2S_DATA_PINS_SIZE];
+  uint16_t i2s_clock_pins[LEDS_I2S_GPIO_PINS_SIZE];
+  uint16_t i2s_data_pins[LEDS_I2S_GPIO_PINS_SIZE];
+  uint16_t i2s_data_inv_pins[LEDS_I2S_GPIO_PINS_SIZE];
 # endif
 #endif
 

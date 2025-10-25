@@ -151,7 +151,11 @@ int i2s_out_pin_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
         // loop over the used parallel data signals, repeating as necessary
         // data[0] is mapped to the most significant bit, which is OUT7
         // data[7] -> OUT0
-        data_out_sig = i2s_parallel8_data_out_sig[i2s_out->port] + 8 - (i % options->parallel_data_bits) - 1;
+        if (options->parallel_data_bits) {
+          data_out_sig = i2s_parallel8_data_out_sig[i2s_out->port] + 8 - (i % options->parallel_data_bits) - 1;
+        } else {
+          data_out_sig = i2s_parallel8_data_out_sig[i2s_out->port] + 8 - i - 1;
+        }
 
         break;
       

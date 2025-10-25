@@ -123,7 +123,7 @@ struct i2s_out_options {
 #endif
 
 #if I2S_OUT_PARALLEL_SUPPORTED
-  // number of parallel data bits in use
+  // number of parallel data bits in use, 0 -> all
   unsigned parallel_data_bits;
 #endif
 };

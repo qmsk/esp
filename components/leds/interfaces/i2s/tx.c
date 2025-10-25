@@ -268,6 +268,9 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 #endif
 
 #if LEDS_I2S_PARALLEL_ENABLED
+  // allow multiple copies of parallel data bits on different GPIOs
+  interface->i2s_out_options.parallel_data_bits = options->parallel;
+
   if (options->parallel) {
     // I2S LCD mode requires the BCK/WS signal to be inverted when routed through the GPIO matrix
     // invert BCK to idle high, transition on falling edge, and sample data on rising edge

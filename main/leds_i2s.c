@@ -205,10 +205,10 @@
     }
   #endif
 
-    if (config->i2s_data_repeat) {
+    if (config->i2s_data_repeat > 1) {
       LOG_INFO("leds%d: repeat count=%u", state->index + 1, config->i2s_data_repeat);
 
-      options->repeat = config->i2s_data_repeat;
+      options->repeat = config->i2s_data_repeat - 1;
     }
 
     LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u repeat=%u", state->index + 1,

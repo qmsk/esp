@@ -68,10 +68,8 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
   { CONFIG_TYPE_UINT16, "i2s_data_repeat",
     .description = (
-      "Split LEDs across parallel I2S data signals to different GPIOs.\n"
-      "\t0 (default, compat) -> automatically determine based on number of configured data pins.\n"
-      "\t1 -> serial mode with a single data signal, optionally multiple copies of the same leds on each gpio pin.\n"
-      "\tN -> parallel mode with multiple data signals, separate leds on each gpio pin.\n"
+      "Repeat the data multiple times on each I2S data output.\n"
+      "\tFor example, use count = 600, i2s_data_width = 4, i2s_data_repeat = 4 to control 4 sets of 150 LEDs on each output, with different signals on each output, but each set of 150 LEDs on one output using the same signal.\n"
     ),
     .uint16_type = { .value = &LEDS_CONFIG.i2s_data_repeat, .max = LEDS_I2S_REPEAT_MAX },
   },

@@ -128,8 +128,8 @@
       if (align > buffer_align) {
         buffer_align = align;
       }
-      if (config->i2s_data_repeat > data_repeat) {
-        data_repeat = config->i2s_data_repeat;
+      if (config->i2s_data_copies > data_repeat + 1) {
+        data_repeat = config->i2s_data_copies - 1;
       }
     }
 
@@ -205,10 +205,10 @@
     }
   #endif
 
-    if (config->i2s_data_repeat > 1) {
-      LOG_INFO("leds%d: repeat count=%u", state->index + 1, config->i2s_data_repeat);
+    if (config->i2s_data_copies > 1) {
+      LOG_INFO("leds%d: repeat copies=%u", state->index + 1, config->i2s_data_copies);
 
-      options->repeat = config->i2s_data_repeat - 1;
+      options->repeat = config->i2s_data_copies - 1;
     }
 
     LOG_INFO("leds%d: i2s port=%d: pin_mutex=%p clock_rate=%d gpio_pins_count=%u parallel=%u repeat=%u", state->index + 1,

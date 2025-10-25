@@ -66,12 +66,14 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S bit rate. Only used for protocols with a separate clock/data.",
     .enum_type = { .value = &LEDS_CONFIG.i2s_clock, .values = leds_i2s_clock_enum, .default_value = I2S_CLOCK_DEFAULT },
   },
-  { CONFIG_TYPE_UINT16, "i2s_data_repeat",
+  { CONFIG_TYPE_UINT16, "i2s_data_copies",
     .description = (
-      "Repeat the data multiple times on each I2S data output.\n"
-      "\tFor example, use count = 600, i2s_data_width = 4, i2s_data_repeat = 4 to control 4 sets of 150 LEDs on each output, with different signals on each output, but each set of 150 LEDs on one output using the same signal.\n"
+      "Output multiple copies of the data on each I2S output, to control a series of identical LEDs.\n"
+      "\tFor example, use count = 600, i2s_data_width = 4, i2s_data_copies = 4 to control 4 sets of 150 LEDs on each of four outputs."
+      "Each output will be independently controllable, but each set of 150 LEDs per output will behave identically.\n"
+      "\t0 -> disabled, 1 -> no effect, N -> repeat data for a total of N copies per output."
     ),
-    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_repeat, .max = LEDS_I2S_REPEAT_MAX },
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_copies, .max = LEDS_I2S_REPEAT_MAX },
   },
 # if LEDS_I2S_PARALLEL_ENABLED
   { CONFIG_TYPE_UINT16, "i2s_data_width",

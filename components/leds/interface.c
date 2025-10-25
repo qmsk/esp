@@ -1,6 +1,7 @@
 #include <leds.h>
 #include "leds.h"
 #include "interface.h"
+#include "stats.h"
 
 #include <logging.h>
 
@@ -52,7 +53,7 @@ int leds_interface_init(union leds_interface_state *interface, const struct leds
         LOG_ERROR("unsupported interface=I2S for protocol=%d", options->protocol);
         return -1;
 
-      } else if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, protocol_type->i2s_interface_mode, protocol_type->i2s_interface_func))) {
+      } else if ((err = leds_interface_i2s_init(&interface->i2s, &options->i2s, protocol_type->i2s_interface_mode, protocol_type->i2s_interface_func, leds_interface_i2s_stats(options->interface)))) {
         LOG_ERROR("leds_interface_i2s_init");
         return err;
       }

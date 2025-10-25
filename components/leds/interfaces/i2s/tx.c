@@ -177,7 +177,7 @@ static int leds_interface_i2s_tx_write(struct leds_interface_i2s *interface, con
   }
 }
 
-int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func)
+int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func, struct leds_interface_i2s_stats *stats)
 {
   interface->mode = mode;
   interface->func = func;
@@ -283,13 +283,13 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 #endif
 
   interface->gpio = options->gpio;
+  interface->stats = stats;
 
   return 0;
 }
 
 int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit)
 {
-  struct leds_interface_i2s_stats *stats = &leds_interface_stats.i2s;
   int err;
 
   switch (interface->mode) {
@@ -317,7 +317,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
       LOG_FATAL("unknown mode=%d", interface->mode);
   }
 
-  WITH_STATS_TIMER(&stats->open) {
+  WITH_STATS_TIMER(&interface->stats->open) {
     if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options))) {
       LOG_ERROR("i2s_out_open");
       return err;
@@ -328,7 +328,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
   leds_gpio_setup(&interface->gpio);
 #endif
 
-  WITH_STATS_TIMER(&stats->write) {
+  WITH_STATS_TIMER(&interface->stats->write) {
     if ((err = leds_interface_i2s_tx_write(interface, pixels, count, limit))) {
       goto error;
     }
@@ -341,7 +341,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
     }
   }
 
-  WITH_STATS_TIMER(&stats->flush) {
+  WITH_STATS_TIMER(&interface->stats->flush) {
     if ((err = i2s_out_flush(interface->i2s_out))) {
       LOG_ERROR("i2s_out_flush");
       goto error;

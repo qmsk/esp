@@ -2,6 +2,8 @@
 #include "leds.h"
 #include "leds_stats.h"
 
+#include <logging.h>
+
 struct leds_interface_stats leds_interface_stats;
 
 void leds_reset_interface_stats()
@@ -14,14 +16,35 @@ void leds_reset_interface_stats()
   stats_timer_init(&leds_interface_stats.uart.open);
   stats_timer_init(&leds_interface_stats.uart.tx);
 #endif
-#if CONFIG_LEDS_I2S_ENABLED
-  stats_timer_init(&leds_interface_stats.i2s.open);
-  stats_timer_init(&leds_interface_stats.i2s.write);
-  stats_timer_init(&leds_interface_stats.i2s.flush);
+#if LEDS_I2S_INTERFACE_COUNT > 0
+  stats_timer_init(&leds_interface_stats.i2s0.open);
+  stats_timer_init(&leds_interface_stats.i2s0.write);
+  stats_timer_init(&leds_interface_stats.i2s0.flush);
+#endif
+#if LEDS_I2S_INTERFACE_COUNT > 1
+  stats_timer_init(&leds_interface_stats.i2s1.open);
+  stats_timer_init(&leds_interface_stats.i2s1.write);
+  stats_timer_init(&leds_interface_stats.i2s1.flush);
 #endif
 }
 
 void leds_get_interface_stats(struct leds_interface_stats *stats)
 {
   *stats = leds_interface_stats;
+}
+
+struct leds_interface_i2s_stats *leds_interface_i2s_stats(enum leds_interface interface)
+{
+  switch(interface) {
+  #if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+      return &leds_interface_stats.i2s0;
+  #endif
+  #if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+      return &leds_interface_stats.i2s1;
+  #endif
+    default:
+      LOG_FATAL("%u", interface);
+  }
 }

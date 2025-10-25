@@ -111,7 +111,7 @@ void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *nex
   }
 }
 
-int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
+int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigned repeat)
 {
   size_t buf_size = 0;
   unsigned desc_count = 0;
@@ -133,7 +133,7 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
     }
   }
 
-  LOG_DEBUG("size=%u align=%u -> desc_count=%u buf_size=%u", size, align, desc_count, buf_size);
+  LOG_DEBUG("size=%u align=%u repeat=%u -> desc_count=%u buf_size=%u", size, align, repeat, desc_count, buf_size);
 
   // allocate single word-aligned buffer
   if (!(i2s_out->dma_rx_buf = dma_malloc(buf_size))) {
@@ -154,6 +154,10 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
     LOG_ERROR("dma_calloc(dma_rx_desc)");
     return -1;
   }
+  if (repeat && !(i2s_out->dma_repeat_desc = dma_calloc(desc_count * repeat, sizeof(*i2s_out->dma_rx_desc)))) {
+    LOG_ERROR("dma_calloc(dma_repeat_desc)");
+    return -1;
+  }
   if (!(i2s_out->dma_eof_desc = dma_calloc(1, sizeof(*i2s_out->dma_eof_desc)))) {
     LOG_ERROR("dma_calloc(dma_eof_desc)");
     return -1;
@@ -161,9 +165,13 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
 
   // initialize linked list of DMA descriptors
   init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+  for (unsigned i = 0; i < repeat; i++) {
+    init_dma_desc(i2s_out->dma_repeat_desc + i * repeat, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+  }
   init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), NULL);
 
   i2s_out->dma_rx_count = desc_count;
+  i2s_out->dma_rx_repeat = repeat;
 
   return 0;
 }
@@ -308,6 +316,39 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
   return len;
 }
 
+void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
+{
+  struct dma_desc **nextp = &i2s_out->dma_write_desc->next;
+
+  // commit
+  i2s_out->dma_write_desc->owner = 1;
+
+  for (unsigned i = 0; i < count; i++) {
+    for (unsigned j = 0; j < i2s_out->dma_rx_count; i++) {
+      struct dma_desc *s = &i2s_out->dma_write_desc[j];
+      struct dma_desc *d = &i2s_out->dma_repeat_desc[i * count + j];
+
+      if (!s->owner) {
+        break;
+      }
+
+      if (nextp) {
+        *nextp = d;
+      }
+
+      d->len = s->len;
+      d->owner = s->owner;
+
+      nextp = &d->next;
+    }
+  }
+
+  if (nextp) {
+    // eof
+    *nextp = i2s_out->dma_eof_desc;
+  }
+}
+
 int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
   if (i2s_out->dma_start) {
@@ -325,8 +366,11 @@ int i2s_out_dma_pending(struct i2s_out *i2s_out)
 
 void i2s_out_dma_start(struct i2s_out *i2s_out)
 {
-  i2s_out->dma_write_desc->owner = 1;
-  i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
+  // commit if not repeat()
+  if (!i2s_out->dma_write_desc->owner) {
+    i2s_out->dma_write_desc->owner = 1;
+    i2s_out->dma_write_desc->next = i2s_out->dma_eof_desc;
+  }
 
   i2s_out->dma_eof_desc->owner = 1;
   i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
@@ -341,6 +385,20 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
       i2s_out->dma_write_desc[i].buf,
       i2s_out->dma_write_desc[i].next
     );
+  }
+  
+  for (unsigned i = 0; i < i2s_out->dma_rx_repeat; i++) {
+    for (unsigned j = 0; i < i2s_out->dma_rx_count; i++) {
+      LOG_DEBUG("dma_repeat_desc[%u][%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i, j,
+        &i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j],
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].owner,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].eof,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].len,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].size,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].buf,
+        i2s_out->dma_repeat_desc[i * i2s_out->dma_rx_repeat + j].next
+      );
+    }
   }
 
   LOG_DEBUG("dma_eof_desc=%p: owner=%d eof=%d len=%u size=%u -> buf=%p next=%p",

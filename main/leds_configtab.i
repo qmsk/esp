@@ -7,6 +7,9 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = (
       "Select phyiscal interface driver to use for output.\n"
       "Multiple led instances can share the same interface with different gpio output enables, but this will limit performance.\n"
+    #if CONFIG_IDF_TARGET_ESP32
+      "\tNOTE: Only I2S1 supports parallel outputs.\n"
+    #endif
     ),
     .enum_type = { .value = &LEDS_CONFIG.interface, .values = leds_interface_enum },
   },
@@ -88,6 +91,8 @@ const struct configtab LEDS_CONFIGTAB[] = {
       "\tN -> parallel mode with multiple data signals, separate leds on each gpio pin.\n"
     ),
     .uint16_type = { .value = &LEDS_CONFIG.i2s_data_width, .max = LEDS_I2S_PARALLEL_MAX },
+    .validate_func = validate_leds_i2s_parallel,
+    .ctx = &LEDS_CONFIG,
   },
 # endif
 # if LEDS_I2S_GPIO_PINS_ENABLED

@@ -141,6 +141,32 @@ const struct config_enum leds_parameter_enum[] = {
   {}
 };
 
+#if CONFIG_LEDS_I2S_ENABLED
+  static int validate_leds_i2s_parallel (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
+  {
+    struct leds_config *config = path.tab->ctx;
+    unsigned data_width = config_leds_i2s_data_width(config);
+
+    if (config->enabled && data_width > 1) {
+      switch (config->interface) {
+      #if CONFIG_IDF_TARGET_ESP32
+        case LEDS_INTERFACE_I2S1:
+          break; // ok
+      #endif
+        
+        default:
+          handler(path, ctx, "LEDs interface %s does not support parallel output",
+            config_enum_to_string(leds_interface_enum, config->interface)
+          );
+
+          return 1;
+      }
+    }
+
+    return 0;
+  }
+#endif
+
 static int validate_artnet_leds_group (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
 {
   struct leds_config *config = path.tab->ctx;

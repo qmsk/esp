@@ -141,7 +141,7 @@ const struct config_enum leds_parameter_enum[] = {
   {}
 };
 
-#if CONFIG_LEDS_I2S_ENABLED
+#if LEDS_I2S_PARALLEL_ENABLED
   static int validate_leds_i2s_parallel (config_invalid_handler_t *handler, const struct config_path path, void *ctx)
   {
     struct leds_config *config = path.tab->ctx;

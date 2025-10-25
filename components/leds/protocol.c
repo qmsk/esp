@@ -37,7 +37,13 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol)
 
 #if CONFIG_LEDS_I2S_ENABLED
   if (protocol_type->i2s_interface_mode) {
-    return LEDS_INTERFACE_I2S;
+# if LEDS_I2S_INTERFACE_COUNT > 1
+    return LEDS_INTERFACE_I2S1;
+# elif LEDS_I2S_INTERFACE_COUNT > 0
+    return LEDS_INTERFACE_I2S0;
+# else    
+    return LEDS_INTERFACE_NONE;
+# endif
   }
 #endif
 

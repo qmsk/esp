@@ -178,8 +178,13 @@ int leds_tx(struct leds *leds)
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
-    case LEDS_INTERFACE_I2S:
-      return leds_interface_i2s_tx(&leds->interface.i2s, leds->pixels, leds->options.count, &leds->limit);
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
+    return leds_interface_i2s_tx(&leds->interface.i2s, leds->pixels, leds->options.count, &leds->limit);
   #endif
 
     default:

@@ -4,6 +4,24 @@
 #include <logging.h>
 
 #if CONFIG_LEDS_I2S_ENABLED
+  i2s_port_t leds_interface_i2s_port(enum leds_interface interface)
+  {
+    switch(interface) {
+    #if LEDS_I2S_INTERFACE_COUNT > 0
+      case LEDS_INTERFACE_I2S0:
+        return I2S_PORT_0;
+    #endif
+
+    #if LEDS_I2S_INTERFACE_COUNT > 1
+      case LEDS_INTERFACE_I2S1:
+        return I2S_PORT_1;
+    #endif
+
+      default:
+        LOG_FATAL("%u", interface);
+    }
+  }
+
   size_t leds_i2s_serial_buffer_size(enum leds_protocol protocol, unsigned led_count)
   {
     const struct leds_protocol_type *protocol_type = leds_protocol_type(protocol);

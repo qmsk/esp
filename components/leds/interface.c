@@ -42,7 +42,12 @@ int leds_interface_init(union leds_interface_state *interface, const struct leds
   #endif
 
   #if CONFIG_LEDS_I2S_ENABLED
-    case LEDS_INTERFACE_I2S:
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
       if (!protocol_type->i2s_interface_mode) {
         LOG_ERROR("unsupported interface=I2S for protocol=%d", options->protocol);
         return -1;

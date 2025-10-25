@@ -69,7 +69,11 @@ struct dma_desc *commit_dma_desc(struct dma_desc *desc)
 {
   desc->owner = 1;
 
-  return desc->next;
+  if (desc->next) {
+    return desc->next;
+  } else {
+    return desc;
+  }
 }
 
 void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
@@ -156,8 +160,8 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align)
   }
 
   // initialize linked list of DMA descriptors
-  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, i2s_out->dma_eof_desc);
-  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), i2s_out->dma_eof_desc);
+  init_dma_desc(i2s_out->dma_rx_desc, desc_count, i2s_out->dma_rx_buf, buf_size, align, NULL);
+  init_dma_desc(i2s_out->dma_eof_desc, 1, i2s_out->dma_eof_buf, DMA_EOF_BUF_SIZE, sizeof(uint32_t), NULL);
 
   i2s_out->dma_rx_count = desc_count;
 
@@ -177,7 +181,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   init_dma_eof_desc(i2s_out->dma_eof_desc, options->eof_value, options->eof_count);
 
   // init RX desc
-  reinit_dma_desc(i2s_out->dma_rx_desc, i2s_out->dma_rx_count, i2s_out->dma_eof_desc);
+  reinit_dma_desc(i2s_out->dma_rx_desc, i2s_out->dma_rx_count, NULL);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -255,7 +259,7 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
     if (desc->len + size > desc->size) {
       LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
 
-      // commit, try with the next buffer
+      // commit, try with the next desc, if available
       i2s_out->dma_write_desc = commit_dma_desc(desc);
 
       continue;

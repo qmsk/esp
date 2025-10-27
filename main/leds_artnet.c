@@ -212,6 +212,7 @@ static int leds_artnet_set(struct leds_state *state, unsigned index, struct artn
     .index  = index * count * segment,
     .segment = segment,
     .group   = config->artnet_leds_group,
+    .offset  = config->artnet_leds_offset,
   };
 
   if ((err = leds_set_format(state->leds, config->artnet_leds_format, data, len, params))) {

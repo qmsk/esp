@@ -141,7 +141,7 @@ struct leds_format_params {
   /* Set color for group of LEDs */
   unsigned group;
 
-  /* Starting offset within group */
+  /* Starting offset within group, starting at 1 */
   unsigned offset;
 };
 

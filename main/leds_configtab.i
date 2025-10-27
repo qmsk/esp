@@ -220,7 +220,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .ctx = &LEDS_CONFIG,
   },
   { CONFIG_TYPE_UINT16, "artnet_leds_offset",
-    .description = "Offset to first LED inside Art-Net Group data.",
+    .description = "Offset to first LED inside Art-Net Group data. Default 0 -> all, starting at 1",
     .uint16_type = { .value = &LEDS_CONFIG.artnet_leds_offset },
   },
 

@@ -279,6 +279,10 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
     params.group = 1;
   }
 
+  if (params.offset > 0) {
+    params.offset -= 1;
+  }
+
   if (params.index > leds->options.count) {
     LOG_DEBUG("index=%u is over options.count=%u", params.index, leds->options.count);
     params.count = 0;

@@ -37,7 +37,7 @@ unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
 static inline void set_leds_pixels(struct leds *leds, unsigned i, struct leds_format_params params, struct leds_color color)
 {
   for (unsigned j = 0; j < params.segment; j++) {
-    leds->pixels[params.offset + i * params.segment + j] = color;
+    leds->pixels[params.index + i * params.segment + j] = color;
   }
 }
 
@@ -45,7 +45,7 @@ void leds_set_format_rgb(struct leds *leds, const uint8_t *data, size_t len, str
 {
   uint8_t parameter = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u", len, params.index, params.count, params.segment);
 
   for (unsigned i = 0; i < params.count && len >= (i + 1) * 3; i++) {
     set_leds_pixels(leds, i, params, (struct leds_color) {
@@ -62,7 +62,7 @@ void leds_set_format_bgr(struct leds *leds, const uint8_t *data, size_t len, str
 {
   uint8_t parameter = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u", len, params.index, params.count, params.segment);
 
   for (unsigned i = 0; i < params.count && len >= (i + 1) * 3; i++) {
     set_leds_pixels(leds, i, params, (struct leds_color) {
@@ -79,7 +79,7 @@ void leds_set_format_grb(struct leds *leds, const uint8_t *data, size_t len, str
 {
   uint8_t parameter = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u", len, params.index, params.count, params.segment);
 
   for (unsigned i = 0; i < params.count && len >= (i + 1) * 3; i++) {
     set_leds_pixels(leds, i, params, (struct leds_color) {
@@ -97,7 +97,7 @@ void leds_set_format_rgba(struct leds *leds, const uint8_t *data, size_t len, st
   enum leds_parameter_type parameter = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u", len, params.index, params.count, params.segment);
 
   for (unsigned i = 0; i < params.count && len >= (i + 1) * 4; i++) {
     set_leds_pixels(leds, i, params, (struct leds_color) {
@@ -115,7 +115,7 @@ void leds_set_format_rgbw(struct leds *leds, const uint8_t *data, size_t len, st
   enum leds_parameter_type parameter = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u", len, params.offset, params.count, params.segment);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u", len, params.index, params.count, params.segment);
 
   for (unsigned i = 0; i < params.count && len >= (i + 1) * 4; i++) {
     set_leds_pixels(leds, i, params, (struct leds_color) {
@@ -133,7 +133,7 @@ void leds_set_format_rgbxi(struct leds *leds, const uint8_t *data, size_t len, s
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
 
   size_t off = 0;
 
@@ -161,7 +161,7 @@ void leds_set_format_bgrxi(struct leds *leds, const uint8_t *data, size_t len, s
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
 
   size_t off = 0;
 
@@ -189,7 +189,7 @@ void leds_set_format_grbxi(struct leds *leds, const uint8_t *data, size_t len, s
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
 
   size_t off = 0;
 
@@ -216,7 +216,7 @@ void leds_set_format_rgbwxi(struct leds *leds, const uint8_t *data, size_t len, 
 {
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
 
   size_t off = 0;
 
@@ -244,7 +244,7 @@ void leds_set_format_rgbxxi(struct leds *leds, const uint8_t *data, size_t len, 
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
 
   for (unsigned i = 0; i * params.group < params.count && 3 * params.group + i < len; i++) {
     uint8_t intensity = data[3 * params.group + i];
@@ -279,12 +279,12 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
     params.group = 1;
   }
 
-  if (params.offset > leds->options.count) {
-    LOG_DEBUG("offset=%u is over options.count=%u", params.offset, leds->options.count);
+  if (params.index > leds->options.count) {
+    LOG_DEBUG("index=%u is over options.count=%u", params.index, leds->options.count);
     params.count = 0;
-  } else if (params.offset + (params.count * params.segment) > leds->options.count) {
-    LOG_DEBUG("offset=%u + count=%u * segment=%u is over options.count=%u", params.offset, params.count, params.segment, leds->options.count);
-    params.count = (leds->options.count - params.offset) / params.segment;
+  } else if (params.index + (params.count * params.segment) > leds->options.count) {
+    LOG_DEBUG("index=%u + count=%u * segment=%u is over options.count=%u", params.index, params.count, params.segment, leds->options.count);
+    params.count = (leds->options.count - params.index) / params.segment;
   }
 
   leds->pixels_limit_dirty = true;

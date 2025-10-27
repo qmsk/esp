@@ -129,11 +129,11 @@ enum leds_format {
 unsigned leds_format_count(size_t len, enum leds_format format, unsigned group);
 
 struct leds_format_params {
-  /* Limit number of LED (segments) to read */
-  unsigned count;
-
   /* Set LEDs starting at offset */
-  unsigned offset;
+  unsigned index;
+
+  /* Limit number of LED (segments) to set */
+  unsigned count;
 
   /* Set segments of multiple consecutive LEDs per channel */
   unsigned segment;

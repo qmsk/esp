@@ -249,7 +249,7 @@ void leds_set_format_rgbxxi(struct leds *leds, const uint8_t *data, size_t len, 
   for (unsigned i = 0; i * params.group < params.count && 3 * params.group + i < len; i++) {
     uint8_t intensity = data[3 * params.group + i];
 
-    for (unsigned j = 0; j < params.group; j++) {
+    for (unsigned j = 0; j < params.group && i * params.group + j < params.count; j++) {
       struct leds_color pixel_color = {
         .r = data[j * 3 + 0],
         .g = data[j * 3 + 1],

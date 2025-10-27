@@ -244,10 +244,10 @@ void leds_set_format_rgbxxi(struct leds *leds, const uint8_t *data, size_t len, 
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
   uint8_t parameter_default = leds_parameter_default(leds);
 
-  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u offset=%u", len, params.index, params.count, params.segment, params.group, params.offset);
 
-  for (unsigned i = 0; i * params.group < params.count && 3 * params.group + i < len; i++) {
-    uint8_t intensity = data[3 * params.group + i];
+  for (unsigned i = 0; i * params.group < params.count && 3 * params.group + params.offset + i < len; i++) {
+    uint8_t intensity = data[3 * params.group + params.offset + i];
 
     for (unsigned j = 0; j < params.group && i * params.group + j < params.count; j++) {
       struct leds_color pixel_color = {

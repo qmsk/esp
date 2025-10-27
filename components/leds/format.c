@@ -26,6 +26,9 @@ unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
     case LEDS_FORMAT_RGBWXI:
       return len / (4 + group) * group;
 
+    case LEDS_FORMAT_RGBXXI:
+      return (len - 3 * group) * group;
+
     default:
       LOG_FATAL("invalid format=%d", format);
   }
@@ -236,6 +239,32 @@ void leds_set_format_rgbwxi(struct leds *leds, const uint8_t *data, size_t len, 
   }
 }
 
+void leds_set_format_rgbxxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
+
+  LOG_DEBUG("len=%u offset=%u count=%u segment=%u group=%u", len, params.offset, params.count, params.segment, params.group);
+
+  for (unsigned i = 0; i * params.group < params.count && 3 * params.group + i < len; i++) {
+    uint8_t intensity = data[3 * params.group + i];
+
+    for (unsigned j = 0; j < params.group; j++) {
+      struct leds_color pixel_color = {
+        .r = data[j * 3 + 0],
+        .g = data[j * 3 + 1],
+        .b = data[j * 3 + 2],
+
+        .parameter = parameter_default,
+      };
+
+      pixel_color = leds_color_intensity(pixel_color, parameter_type, intensity);
+
+      set_leds_pixels(leds, i * params.group + j, params, pixel_color);
+    }
+  }
+}
+
 int leds_set_format(struct leds *leds, enum leds_format format, const void *data, size_t len, struct leds_format_params params)
 {
   if (params.count == 0) {
@@ -295,6 +324,10 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
 
     case LEDS_FORMAT_RGBWXI:
       leds_set_format_rgbwxi(leds, data, len, params);
+      return 0;
+
+    case LEDS_FORMAT_RGBXXI:
+      leds_set_format_rgbxxi(leds, data, len, params);
       return 0;
 
     default:

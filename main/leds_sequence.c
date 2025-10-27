@@ -220,8 +220,9 @@ static int set_leds_sequence(struct leds_state *state, const struct fseq_frame *
   const struct leds_config *config = state->config;
   struct leds_format_params params = {
     .count = config->sequence_leds_count,
-    .offset = config->sequence_leds_offset,
     .segment = config->sequence_leds_segment,
+    .group = config->sequence_leds_group,
+    .offset = config->sequence_leds_offset,
   };
   const uint8_t *ptr = frame->buf;
   size_t len = frame->size;

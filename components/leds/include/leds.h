@@ -113,10 +113,12 @@ enum leds_format {
   LEDS_FORMAT_RGBA,
   LEDS_FORMAT_RGBW,
 
-  LEDS_FORMAT_RGBXI, // grouped RGB + intensity
-  LEDS_FORMAT_BGRXI, // grouped BGR + intensity
-  LEDS_FORMAT_GRBXI, // grouped GRB + intensity
-  LEDS_FORMAT_RGBWXI, // grouped RGBW + intensity
+  LEDS_FORMAT_RGBXI, // (<RGB> + GROUP * <I>)...
+  LEDS_FORMAT_BGRXI, // (<BGR> + GROUP * <I>)...
+  LEDS_FORMAT_GRBXI, // (<GRB> + GROUP * <I>)...
+  LEDS_FORMAT_RGBWXI, // (<RGBW> + GROUP * <I>)...
+
+  LEDS_FORMAT_RGBXXI, // GROUP * <RGB> + <I>[OFFSET]...
 };
 
 /*
@@ -127,17 +129,20 @@ enum leds_format {
 unsigned leds_format_count(size_t len, enum leds_format format, unsigned group);
 
 struct leds_format_params {
-  /* Limit number of LED (segments) to read */
-  unsigned count;
-
   /* Set LEDs starting at offset */
-  unsigned offset;
+  unsigned index;
+
+  /* Limit number of LED (segments) to set */
+  unsigned count;
 
   /* Set segments of multiple consecutive LEDs per channel */
   unsigned segment;
 
   /* Set color for group of LEDs */
   unsigned group;
+
+  /* Starting offset within group, starting at 1 */
+  unsigned offset;
 };
 
 /*

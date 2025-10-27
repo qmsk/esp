@@ -165,14 +165,16 @@ struct leds_config {
   int artnet_leds_format;
   uint16_t artnet_leds_segment;
   uint16_t artnet_leds_group;
+  uint16_t artnet_leds_offset;
 
   bool sequence_enabled;
   int sequence_format;
   uint16_t sequence_channel_start;
   uint16_t sequence_channel_count;
   uint16_t sequence_leds_count;
-  uint16_t sequence_leds_offset;
+  uint16_t sequence_leds_group;
   uint16_t sequence_leds_segment;
+  uint16_t sequence_leds_offset;
 };
 
 extern struct leds_config leds_configs[LEDS_COUNT];

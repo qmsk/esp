@@ -23,6 +23,7 @@ struct i2s_out {
   portMUX_TYPE mux;
 #endif
   EventGroupHandle_t event_group;
+  bool setup;
 
   /* dev */
   SemaphoreHandle_t dev_mutex;

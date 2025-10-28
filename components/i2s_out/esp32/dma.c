@@ -392,9 +392,6 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   i2s_out->dma_end_desc->owner = 1;
   i2s_out->dma_end_desc->next = NULL;
 
-#undef DEBUG
-#define DEBUG 1
-
   for (unsigned i = 0; i < i2s_out->dma_out_count; i++) {
     LOG_DEBUG("dma_out_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,
       &i2s_out->dma_out_desc[i],

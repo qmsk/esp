@@ -178,5 +178,4 @@ int leds_interface_i2s_close(struct leds_interface_i2s *interface)
   }
 
   return err;
-
 }

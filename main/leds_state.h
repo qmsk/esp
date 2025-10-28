@@ -56,6 +56,11 @@ extern struct leds_state leds_states[LEDS_COUNT];
  */
 int setup_leds(struct leds_state *state);
 
+/* 
+ * Reset leds interface setup if necessary.
+ */
+int reset_leds(struct leds_state *state);
+
 /*
  * Update LEDs output with given USER_ACTIVITY_LEDS_* source.
  */

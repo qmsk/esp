@@ -165,7 +165,8 @@ static void leds_main(void *ctx)
       WITH_STATS_TIMER(&stats->update) {
         if (update_leds(state, update_activity)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);
-          continue;
+          user_alert(USER_ALERT_ERROR_LEDS);
+          reset_leds(state);
         }
       }
     }

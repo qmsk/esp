@@ -74,5 +74,6 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 int leds_interface_i2s_setup(struct leds_interface_i2s *interface);
 int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit);
 int leds_interface_i2s_close(struct leds_interface_i2s *interface);
+int leds_interface_i2s_reset(struct leds_interface_i2s *interface);
 
 #endif

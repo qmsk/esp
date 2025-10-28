@@ -19,7 +19,11 @@ static const int i2s_irq[I2S_PORT_MAX] = {
 
 void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
-  LOG_ISR_WARN("");
+  uint32_t dscr_addr;
+
+  i2s_dma_tx_get_des_addr(i2s_out->dev, &dscr_addr);
+
+  LOG_ISR_WARN("desc=%p", dscr_addr);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
 }

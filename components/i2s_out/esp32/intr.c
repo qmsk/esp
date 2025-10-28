@@ -26,7 +26,7 @@ void IRAM_ATTR i2s_intr_out_total_eof_handler(struct i2s_out *i2s_out, BaseType_
   LOG_ISR_DEBUG("desc=%p", eof_addr);
 
   // unblock flush() tasks
-  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
+  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR);
 }

@@ -17,6 +17,24 @@ static const int i2s_irq[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = ETS_I2S1_INTR_SOURCE,
 };
 
+void IRAM_ATTR i2s_intr_out_total_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
+{
+  uint32_t eof_addr;
+
+  i2s_ll_tx_get_eof_des_addr(i2s_out->dev, &eof_addr);
+
+  LOG_ISR_DEBUG("desc=%p", eof_addr);
+
+  // NOTE: this is unlikely to stop DMA before this repeats at least once
+  i2s_ll_tx_stop_link(i2s_out->dev);
+  i2s_ll_rx_stop_link(i2s_out->dev);
+
+  // unblock flush() task
+  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
+
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR);
+}
+
 void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
   uint32_t dscr_addr;
@@ -37,13 +55,6 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
   struct dma_desc *eof_desc = (struct dma_desc *) eof_addr;
 
   LOG_ISR_DEBUG("desc=%p", eof_desc);
-
-  // NOTE: this is unlikely to stop DMA before this repeats at least once
-  i2s_ll_tx_stop_link(i2s_out->dev);
-  i2s_ll_rx_stop_link(i2s_out->dev);
-
-  // unblock flush() task
-  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
 }
@@ -72,6 +83,9 @@ void IRAM_ATTR i2s_intr_handler(void *arg)
 
   taskENTER_CRITICAL_ISR(&i2s_out->mux);
 
+  if (int_st & I2S_OUT_TOTAL_EOF_INT_ST) {
+    i2s_intr_out_total_eof_handler(i2s_out, &task_woken);
+  }
   if (int_st & I2S_OUT_DSCR_ERR_INT_ST) {
     i2s_intr_out_dscr_err_handler(i2s_out, &task_woken);
   }

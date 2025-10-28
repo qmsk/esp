@@ -99,6 +99,14 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
     // unblock get() task
     xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
 
+    // XXX: e.g. flash writes seem to drop I2S_OUT_TOTAL_EOF_INT_ST?
+    if (!(xEventGroupGetBitsFromISR(i2s_out->event_group) & (I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF))) {
+      LOG_ISR_WARN("end -> total_eof, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
+
+      // unblock flush() tasks
+      xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
+    }
+
   } else {
     LOG_ISR_DEBUG("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
   }

@@ -40,10 +40,10 @@ struct i2s_out {
 #endif
 
   /* dma */
-  uint8_t *dma_out_buf, *dma_eof_buf;
+  uint8_t *dma_out_buf, *dma_end_buf;
   struct dma_desc *dma_out_desc;
   struct dma_desc *dma_repeat_desc;
-  struct dma_desc *dma_eof_desc;
+  struct dma_desc *dma_end_desc;
 
   unsigned dma_out_count, dma_repeat_count;
 

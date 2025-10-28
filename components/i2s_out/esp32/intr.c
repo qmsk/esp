@@ -154,21 +154,22 @@ int i2s_out_intr_setup(struct i2s_out *i2s_out, const struct i2s_out_options *op
 {
   esp_err_t err = 0;
 
-  LOG_DEBUG("intr=%p", i2s_out->intr);
+  if (i2s_out->intr) {
+    return 0;
+  }
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_intr_disable_all(i2s_out->dev);
-
-  if (!i2s_out->intr) {
-    err = esp_intr_alloc(i2s_irq[i2s_out->port], I2S_INTR_ALLOC_FLAGS, i2s_intr_handler, i2s_out, &i2s_out->intr);
-  }
+  err = esp_intr_alloc(i2s_irq[i2s_out->port], I2S_INTR_ALLOC_FLAGS, i2s_intr_handler, i2s_out, &i2s_out->intr);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   if (err) {
     LOG_ERROR("esp_intr_alloc: %s", esp_err_to_name(err));
     return -1;
+  } else {
+    LOG_DEBUG("intr=%p", i2s_out->intr);
   }
 
   return 0;

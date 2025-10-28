@@ -51,21 +51,20 @@ union leds_interface_i2s_func {
 #define LEDS_INTERFACE_I2S_FUNC(type, func) ((union leds_interface_i2s_func) { .type = func })
 
 struct leds_interface_i2s {
-  bool setup; // persistent setup()
+  const struct leds_interface_i2s_options *options;
 
   enum leds_interface_i2s_mode mode;
   union leds_interface_i2s_func func;
   union leds_interface_i2s_buf *buf;
 
   unsigned parallel;
-  unsigned repeat;
 
   struct i2s_out *i2s_out;
   struct i2s_out_options i2s_out_options;
+  bool i2s_out_setup;
   
   struct leds_interface_options_gpio gpio;
   struct leds_interface_i2s_stats *stats;
-  TickType_t timeout;
 };
 
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);

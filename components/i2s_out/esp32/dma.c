@@ -374,7 +374,7 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
   }
 
   i2s_out->dma_eof_desc->owner = 1;
-  i2s_out->dma_eof_desc->next = i2s_out->dma_eof_desc;
+  i2s_out->dma_eof_desc->next = NULL;
 
   for (unsigned i = 0; i < i2s_out->dma_rx_count; i++) {
     LOG_DEBUG("dma_rx_desc[%u]=%p: owner=%d eof=%d len=%u size=%u buf=%p next=%p", i,

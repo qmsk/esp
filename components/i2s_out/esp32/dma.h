@@ -19,3 +19,8 @@ struct dma_desc {
   // linked list
   struct dma_desc *next;
 };
+
+static inline void i2s_dma_tx_get_des_addr(i2s_dev_t *hw, uint32_t *dscr_addr)
+{
+    *dscr_addr = hw->out_link_dscr;
+}

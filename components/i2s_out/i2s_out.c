@@ -108,6 +108,8 @@ int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options,
     goto error;
   }
 
+  i2s_out->setup = true;
+
   return 0;
 
 error:
@@ -122,6 +124,11 @@ static int i2s_out_write(struct i2s_out *i2s_out, const void *data, size_t size,
 
   if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
     return -1;
   }
 
@@ -158,6 +165,11 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
 
   if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
     return -1;
   }
 
@@ -205,6 +217,11 @@ error:
       return -1;
     }
 
+    if (!i2s_out->setup) {
+      LOG_ERROR("setup");
+      return -1;
+    }
+
     uint32_t (*buf)[2];
     unsigned index = 0;
 
@@ -248,6 +265,11 @@ error:
       return -1;
     }
 
+    if (!i2s_out->setup) {
+      LOG_ERROR("setup");
+      return -1;
+    }
+
     uint32_t (*buf)[4];
     unsigned index = 0;
 
@@ -288,6 +310,11 @@ error:
 
     if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
       LOG_ERROR("xSemaphoreTakeRecursive");
+      return -1;
+    }
+
+    if (!i2s_out->setup) {
+      LOG_ERROR("setup");
       return -1;
     }
 
@@ -335,6 +362,11 @@ int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count)
     return -1;
   }
 
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
+    return -1;
+  }
+
   if ((err = i2s_out_dma_repeat(i2s_out, count))) {
     LOG_ERROR("i2s_out_dma_repeat");
     goto error;
@@ -354,6 +386,11 @@ int i2s_out_wait(struct i2s_out *i2s_out, TickType_t timeout)
 
   if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
     return -1;
   }
 
@@ -391,6 +428,11 @@ int i2s_out_start(struct i2s_out *i2s_out, TickType_t timeout)
     return -1;
   }
 
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
+    return -1;
+  }
+
   // wait for previous start() to complete?
   if ((err = i2s_out_wait(i2s_out, timeout))) {
     goto error;
@@ -423,6 +465,11 @@ int i2s_out_flush(struct i2s_out *i2s_out, TickType_t timeout)
     return -1;
   }
 
+  if (!i2s_out->setup) {
+    LOG_ERROR("setup");
+    return -1;
+  }
+
   if ((err = i2s_out_start(i2s_out, timeout))) {
     goto error;
   }
@@ -441,12 +488,33 @@ error:
 
 int i2s_out_close(struct i2s_out *i2s_out, TickType_t timeout)
 {
-  int err = i2s_out_flush(i2s_out, timeout);
+  int err = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!i2s_out->setup) {
+    LOG_WARN("setup");
+    err = 1;
+    goto error;
+  }
+
+  err = i2s_out_flush(i2s_out, timeout);
 
   i2s_out_dma_stop(i2s_out);
   i2s_out_i2s_stop(i2s_out);
   i2s_out_pin_teardown(i2s_out);
 
+  i2s_out->setup = false;
+
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+error:
+  // from open()
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");
   }
@@ -456,17 +524,26 @@ int i2s_out_close(struct i2s_out *i2s_out, TickType_t timeout)
 
 int i2s_out_teardown(struct i2s_out *i2s_out)
 {
+  int err = 0;
+
   if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
 
+  if (i2s_out->setup) {
+    LOG_WARN("setup");
+    err = 1;
+    goto error;
+  }
+
   i2s_out_intr_teardown(i2s_out);
   i2s_out_dev_teardown(i2s_out);
 
+error:
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");
   }
 
-  return 0;
+  return err;
 }

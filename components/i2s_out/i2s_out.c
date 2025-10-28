@@ -337,13 +337,14 @@ int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count)
 
   if ((err = i2s_out_dma_repeat(i2s_out, count))) {
     LOG_ERROR("i2s_out_dma_repeat");
-    return err;
+    goto error;
   }
 
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");
   }
 
+error:
   return err;
 }
 
@@ -399,7 +400,7 @@ int i2s_out_start(struct i2s_out *i2s_out)
   if (i2s_out_dma_pending(i2s_out)) {
     if ((err = i2s_out_dma_start(i2s_out))) {
       LOG_ERROR("i2s_out_dma_start");
-      return err;
+      goto error;
     }
 
     i2s_out_i2s_start(i2s_out);

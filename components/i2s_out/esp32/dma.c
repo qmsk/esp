@@ -207,13 +207,18 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 /*
  * Return pointer to current uncommitted dma_write_desc.
  */
-struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out)
+struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
 {
   if (i2s_out->dma_start) {
     while (!i2s_out->dma_eof_desc || i2s_out->dma_write_desc > i2s_out->dma_eof_desc) {
       LOG_DEBUG("wait for dma_write_desc=%p > dma_eof_desc=%p", i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
 
-      xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, portMAX_DELAY);
+      EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, timeout);
+
+      if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_EOF)) {
+        LOG_WARN("timeout -> bits=%08x", bits);
+        return NULL;
+      }
     }
   } else {
     if (i2s_out->dma_write_desc->owner) {
@@ -228,7 +233,7 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out)
 /*
  * Commit current dma_write_desc and return next.
  */
-struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out)
+struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out, TickType_t timeout)
 {
   if (!i2s_out->dma_write_desc->owner) {
     // prepare for DMA
@@ -243,7 +248,7 @@ struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out)
     return NULL;
   }
 
-  return i2s_out_dma_wait(i2s_out);
+  return i2s_out_dma_wait(i2s_out, timeout);
 }
 
 /*
@@ -251,15 +256,15 @@ struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out)
  *
  * @return size of usable buffer in units of size, up to count. 0 if full
  */
-size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size)
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size, TickType_t timeout)
 {
   struct dma_desc *desc;
 
   // stop if last desc already committed
-  if (!(desc = i2s_out_dma_wait(i2s_out))) {
-    LOG_WARN("owned desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
+  if (!(desc = i2s_out_dma_wait(i2s_out, timeout))) {
+    LOG_WARN("i2s_out_dma_wait");
 
-    // unable to find a usable DMA buffer, TX buffers full
+    // unable to find a usable DMA buffer, timeout or TX buffers full?
     *ptr = NULL;
 
     return 0;
@@ -270,13 +275,13 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
     LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
 
     // commit, try with the next desc, if available
-    desc = i2s_out_dma_next(i2s_out);
+    desc = i2s_out_dma_next(i2s_out, timeout);
   }
 
   if (!desc) {
-    LOG_WARN("last desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size);
+    LOG_WARN("i2s_out_dma_next");
 
-    // unable to find a usable DMA buffer, TX buffers full
+    // unable to find a usable DMA buffer, timeout or TX buffers full?
     *ptr = NULL;
 
     return 0;
@@ -314,10 +319,10 @@ void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size)
   desc->len += count * size;
 }
 
-int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
+int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size, TickType_t timeout)
 {
   void *ptr;
-  int len = i2s_out_dma_buffer(i2s_out, &ptr, size, 1); // single unaligned bytes
+  int len = i2s_out_dma_buffer(i2s_out, &ptr, size, 1, timeout); // single unaligned bytes
 
   if (len) {
     // copy data to desc buf
@@ -502,13 +507,18 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
   return 0;
 }
 
-int i2s_out_dma_flush(struct i2s_out *i2s_out)
+int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
-  LOG_DEBUG("wait event_group bits=%08x...", I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+  LOG_DEBUG("...");
 
-  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, false, false, portMAX_DELAY);
+  EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, false, false, timeout);
 
-  LOG_DEBUG("wait done");
+  if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF)) {
+    LOG_ERROR("timeout -> bits=%08x", bits);
+    return -1;
+  } else {
+    LOG_DEBUG("wait -> bits=%08x", bits);
+  }
 
   return 0;
 }

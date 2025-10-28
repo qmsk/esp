@@ -138,6 +138,7 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 
   interface->gpio = options->gpio;
   interface->stats = stats;
+  interface->timeout = options->timeout;
 
   return 0;
 }
@@ -147,7 +148,7 @@ int leds_interface_i2s_setup(struct leds_interface_i2s *interface)
   int err = 0;
 
   WITH_STATS_TIMER(&interface->stats->open) {
-    if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options))) {
+    if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options, interface->timeout))) {
       LOG_ERROR("i2s_out_open");
       return err;
     }
@@ -172,7 +173,7 @@ int leds_interface_i2s_close(struct leds_interface_i2s *interface)
   leds_gpio_close(&interface->gpio);
 #endif
 
-  if ((err = i2s_out_close(interface->i2s_out))) {
+  if ((err = i2s_out_close(interface->i2s_out, interface->timeout))) {
     LOG_ERROR("i2s_out_close");
     return err;
   }

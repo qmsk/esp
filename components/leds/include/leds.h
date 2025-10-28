@@ -225,6 +225,9 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
     struct i2s_out *i2s_out;
 
+    // General timeout for all i2s_out_*() operations
+    TickType_t timeout;
+
     SemaphoreHandle_t pin_mutex;
 
     TickType_t pin_timeout;

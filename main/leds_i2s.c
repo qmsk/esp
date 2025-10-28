@@ -7,7 +7,7 @@
 #include <logging.h>
 
 // generic timeout
-#define LEDS_I2S_TIMEOUT (1000 / portTICK_RATE_MS)
+#define LEDS_I2S_TIMEOUT (5000 / portTICK_RATE_MS)
 
 // do not block if pin in use, timeout immediately
 #define LEDS_I2S_PIN_TIMEOUT portMAX_DELAY

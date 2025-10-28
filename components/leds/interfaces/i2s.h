@@ -51,6 +51,8 @@ union leds_interface_i2s_func {
 #define LEDS_INTERFACE_I2S_FUNC(type, func) ((union leds_interface_i2s_func) { .type = func })
 
 struct leds_interface_i2s {
+  bool setup; // persistent setup()
+
   enum leds_interface_i2s_mode mode;
   union leds_interface_i2s_func func;
   union leds_interface_i2s_buf *buf;
@@ -68,7 +70,9 @@ struct leds_interface_i2s {
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);
 size_t leds_interface_i2s_buffer_align(enum leds_interface_i2s_mode mode, unsigned pin_count);
 
-int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func, struct leds_interface_i2s_stats *stats);
+int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func, unsigned count, struct leds_interface_i2s_stats *stats);
+int leds_interface_i2s_setup(struct leds_interface_i2s *interface);
 int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct leds_color *pixels, unsigned count, const struct leds_limit *limit);
+int leds_interface_i2s_close(struct leds_interface_i2s *interface);
 
 #endif

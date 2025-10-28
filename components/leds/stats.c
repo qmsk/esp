@@ -24,6 +24,7 @@ void leds_reset_interface_stats()
 #if LEDS_I2S_INTERFACE_COUNT > 1
   stats_timer_init(&leds_interface_stats.i2s1.open);
   stats_timer_init(&leds_interface_stats.i2s1.write);
+  stats_timer_init(&leds_interface_stats.i2s1.start);
   stats_timer_init(&leds_interface_stats.i2s1.flush);
 #endif
 }

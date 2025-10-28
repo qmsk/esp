@@ -54,7 +54,7 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
 
   struct dma_desc *eof_desc = (struct dma_desc *) eof_addr;
 
-  LOG_ISR_DEBUG("desc=%p", eof_desc);
+  LOG_ISR_DEBUG("desc=%p owner=%u", eof_desc, eof_desc->owner);
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
 }

@@ -67,7 +67,8 @@ const char *user_alert_str(enum user_alert alert)
     case USER_ALERT_ERROR_WIFI:       return "ERROR_WIFI";
     case USER_ALERT_ERROR_START:      return "ERROR_START";
     case USER_ALERT_ERROR_DMX:        return "ERROR_DMX";
-    
+
+    case USER_ALERT_ERROR_LEDS:                 return "ERROR_LEDS";
     case USER_ALERT_ERROR_LEDS_SEQUENCE:        return "ERROR_LEDS_SEQUENCE";
     case USER_ALERT_ERROR_LEDS_SEQUENCE_READ:   return "ERROR_LEDS_SEQUENCE_READ";
     case USER_ALERT_ERROR_ATX_PSU_TIMEOUT:      return "ERROR_ATX_PSU_TIMEOUT";

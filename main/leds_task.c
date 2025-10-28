@@ -172,7 +172,10 @@ static void leds_main(void *ctx)
   }
 
 error:
-  return;
+  user_alert(USER_ALERT_ERROR_LEDS);
+  LOG_ERROR("task=%p stopped", state->task);
+  state->task = NULL;
+  vTaskDelete(NULL);
 }
 
 int init_leds_task(struct leds_state *state, const struct leds_config *config)

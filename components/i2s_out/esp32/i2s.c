@@ -140,7 +140,7 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   taskEXIT_CRITICAL(&i2s_out->mux);
 }
 
-int i2s_out_i2s_flush(struct i2s_out *i2s_out)
+int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
   EventBits_t bits;
 
@@ -155,9 +155,16 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 
     taskEXIT_CRITICAL(&i2s_out->mux);
 
-    LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+    LOG_DEBUG("...");
 
-    xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
+    bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, timeout);
+
+    if (!(bits & I2S_OUT_EVENT_GROUP_BIT_I2S_EOF)) {
+      LOG_ERROR("timeout -> bits=%08x", bits);
+      return -1;
+    } else {
+      LOG_DEBUG("wait -> bits=%08x", bits);
+    }
   }
 
   return 0;

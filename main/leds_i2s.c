@@ -6,6 +6,9 @@
 
 #include <logging.h>
 
+// generic timeout
+#define LEDS_I2S_TIMEOUT (1000 / portTICK_RATE_MS)
+
 // do not block if pin in use, timeout immediately
 #define LEDS_I2S_PIN_TIMEOUT portMAX_DELAY
 
@@ -121,6 +124,7 @@
     }
 
     options->i2s_out = leds_i2s_out[port];
+    options->timeout = LEDS_I2S_TIMEOUT;
   #if CONFIG_IDF_TARGET_ESP8266
   // TODO: use i2s_pin_mutex for arbitrary gpio pins with LEDS_I2S_GPIO_PINS_ENABLED?
     options->pin_mutex = pin_mutex[PIN_MUTEX_I2S0_DATA]; // shared with console uart0

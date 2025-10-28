@@ -11,7 +11,7 @@ static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *i
   // start frame
   uint32_t start_frame = leds_interface_i2s_mode_start_frame(interface->mode);
 
-  if ((err = i2s_out_write_serial32(interface->i2s_out, &start_frame, 1))) {
+  if ((err = i2s_out_write_serial32(interface->i2s_out, &start_frame, 1, interface->timeout))) {
     LOG_ERROR("i2s_out_write_serial32");
     return err;
   }
@@ -21,7 +21,7 @@ static int leds_interface_i2s_tx_32bit_bck_serial32(struct leds_interface_i2s *i
     // 32-bit pixel data
     interface->func.i2s_mode_32bit(interface->buf->i2s_mode_32bit, pixels, i, limit);
 
-    if ((err = i2s_out_write_serial32(interface->i2s_out, interface->buf->i2s_mode_32bit, 1))) {
+    if ((err = i2s_out_write_serial32(interface->i2s_out, interface->buf->i2s_mode_32bit, 1, interface->timeout))) {
       LOG_ERROR("i2s_out_write_serial32");
       return err;
     }
@@ -38,7 +38,7 @@ static int leds_interface_i2s_tx_24bit_4x4_serial16(struct leds_interface_i2s *i
     // 6x16-bit pixel data
     interface->func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4, pixels, i, limit);
 
-    if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_24bit_4x4, 6))) {
+    if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_24bit_4x4, 6, interface->timeout))) {
       LOG_ERROR("i2s_out_write_serial16");
       return err;
     }
@@ -55,7 +55,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
     // 8x16-bit pixel data
     interface->func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4, pixels, i, limit);
 
-    if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_32bit_4x4, 8))) {
+    if ((err = i2s_out_write_serial16(interface->i2s_out, interface->buf->i2s_mode_32bit_4x4, 8, interface->timeout))) {
       LOG_ERROR("i2s_out_write_serial16");
       return err;
     }
@@ -73,7 +73,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
     // start frame
     uint32_t start_frame[8] = { [0 ... 7] = leds_interface_i2s_mode_start_frame(interface->mode) };
 
-    if ((err = i2s_out_write_parallel8x32(interface->i2s_out, start_frame, 1))) {
+    if ((err = i2s_out_write_parallel8x32(interface->i2s_out, start_frame, 1, interface->timeout))) {
       LOG_ERROR("i2s_out_write_parallel8x32");
       return err;
     }
@@ -84,7 +84,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
         interface->func.i2s_mode_32bit(interface->buf->i2s_mode_32bit_parallel8[j], pixels, j * length + i, limit);
       }
 
-      if ((err = i2s_out_write_parallel8x32(interface->i2s_out, (uint32_t *) interface->buf->i2s_mode_32bit_parallel8, 1))) {
+      if ((err = i2s_out_write_parallel8x32(interface->i2s_out, (uint32_t *) interface->buf->i2s_mode_32bit_parallel8, 1, interface->timeout))) {
         LOG_ERROR("i2s_out_write_parallel8x32");
         return err;
       }
@@ -104,7 +104,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
         interface->func.i2s_mode_24bit_4x4(interface->buf->i2s_mode_24bit_4x4_parallel8[j], pixels, j * length + i, limit);
       }
 
-      if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_24bit_4x4_parallel8, 6))) {
+      if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_24bit_4x4_parallel8, 6, interface->timeout))) {
         LOG_ERROR("i2s_out_write_parallel8x16");
         return err;
       }
@@ -124,7 +124,7 @@ static int leds_interface_i2s_tx_32bit_4x4_serial16(struct leds_interface_i2s *i
         interface->func.i2s_mode_32bit_4x4(interface->buf->i2s_mode_32bit_4x4_parallel8[j], pixels, j * length + i, limit);
       }
 
-      if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_32bit_4x4_parallel8, 8))) {
+      if ((err = i2s_out_write_parallel8x16(interface->i2s_out, (uint16_t *) interface->buf->i2s_mode_32bit_4x4_parallel8, 8, interface->timeout))) {
         LOG_ERROR("i2s_out_write_parallel8x16");
         return err;
       }
@@ -205,7 +205,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
   if (setup) {
     // sync, wait for done before close
     WITH_STATS_TIMER(&interface->stats->flush) {
-      if ((err = i2s_out_flush(interface->i2s_out))) {
+      if ((err = i2s_out_flush(interface->i2s_out, interface->timeout))) {
         LOG_ERROR("i2s_out_flush");
         goto error;
       }
@@ -213,7 +213,7 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
   } else {
     // async, do not wait for done
     WITH_STATS_TIMER(&interface->stats->start) {
-      if ((err = i2s_out_start(interface->i2s_out))) {
+      if ((err = i2s_out_start(interface->i2s_out, interface->timeout))) {
         LOG_ERROR("i2s_out_start");
         goto error;
       }

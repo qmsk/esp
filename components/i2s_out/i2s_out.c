@@ -74,11 +74,11 @@ error:
   return err;
 }
 
-int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options)
+int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options, TickType_t timeout)
 {
   int err = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
@@ -116,17 +116,17 @@ error:
   return err;
 }
 
-static int i2s_out_write(struct i2s_out *i2s_out, const void *data, size_t size)
+static int i2s_out_write(struct i2s_out *i2s_out, const void *data, size_t size, TickType_t timeout)
 {
   int ret = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
 
   while (size) {
-    if ((ret = i2s_out_dma_write(i2s_out, data, size)) < 0) {
+    if ((ret = i2s_out_dma_write(i2s_out, data, size, timeout)) < 0) {
       LOG_ERROR("i2s_out_dma_write");
       break;
     } else if (!ret) {
@@ -147,16 +147,16 @@ static int i2s_out_write(struct i2s_out *i2s_out, const void *data, size_t size)
   return ret;
 }
 
-int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count)
+int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count, TickType_t timeout)
 {
-  return i2s_out_write(i2s_out, data, count * sizeof(*data));
+  return i2s_out_write(i2s_out, data, count * sizeof(*data), timeout);
 }
 
-int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count)
+int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count, TickType_t timeout)
 {
   int ret = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
@@ -169,7 +169,7 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
     void *ptr;
     size_t len;
 
-    if (!(len = i2s_out_dma_buffer(i2s_out, &ptr, count - index, sizeof(*buf)))) {
+    if (!(len = i2s_out_dma_buffer(i2s_out, &ptr, count - index, sizeof(*buf), timeout))) {
       LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
       ret = 1;
       goto error;
@@ -196,11 +196,11 @@ error:
 }
 
 #if I2S_OUT_PARALLEL_SUPPORTED
-  int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t *data, unsigned width)
+  int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t *data, unsigned width, TickType_t timeout)
   {
     int ret = 0;
 
-    if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
       LOG_ERROR("xSemaphoreTakeRecursive");
       return -1;
     }
@@ -213,7 +213,7 @@ error:
       void *ptr;
       size_t count;
 
-      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf)))) {
+      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf), timeout))) {
         LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
         ret = 1;
         goto error;
@@ -239,11 +239,11 @@ error:
     return ret;
   }
 
-  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width)
+  int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width, TickType_t timeout)
   {
     int ret = 0;
 
-    if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
       LOG_ERROR("xSemaphoreTakeRecursive");
       return -1;
     }
@@ -256,7 +256,7 @@ error:
       void *ptr;
       size_t count;
 
-      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf)))) {
+      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf), timeout))) {
         LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
         ret = 1;
         goto error;
@@ -282,11 +282,11 @@ error:
     return ret;
   }
 
-  int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width)
+  int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width, TickType_t timeout)
   {
     int ret = 0;
 
-    if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
       LOG_ERROR("xSemaphoreTakeRecursive");
       return -1;
     }
@@ -299,7 +299,7 @@ error:
       void *ptr;
       size_t count;
 
-      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf)))) {
+      if (!(count = i2s_out_dma_buffer(i2s_out, &ptr, width - index, sizeof(*buf), timeout))) {
         LOG_WARN("i2s_out_dma_buffer: DMA buffer full");
         ret = 1;
         goto error;
@@ -348,23 +348,23 @@ error:
   return err;
 }
 
-int i2s_out_wait(struct i2s_out *i2s_out)
+int i2s_out_wait(struct i2s_out *i2s_out, TickType_t timeout)
 {
   int err = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
 
   // wait for previous start() to complete?
   if (i2s_out_dma_running(i2s_out)) {
-    if ((err = i2s_out_dma_flush(i2s_out))) {
+    if ((err = i2s_out_dma_flush(i2s_out, timeout))) {
       LOG_ERROR("i2s_out_dma_flush");
       goto error;
     }
 
-    if ((err = i2s_out_i2s_flush(i2s_out))) {
+    if ((err = i2s_out_i2s_flush(i2s_out, timeout))) {
       LOG_ERROR("i2s_out_i2s_flush");
       goto error;
     }
@@ -382,17 +382,17 @@ error:
 
 }
 
-int i2s_out_start(struct i2s_out *i2s_out)
+int i2s_out_start(struct i2s_out *i2s_out, TickType_t timeout)
 {
   int err = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
 
   // wait for previous start() to complete?
-  if ((err = i2s_out_wait(i2s_out))) {
+  if ((err = i2s_out_wait(i2s_out, timeout))) {
     goto error;
   }
 
@@ -414,20 +414,20 @@ error:
   return err;
 }
 
-int i2s_out_flush(struct i2s_out *i2s_out)
+int i2s_out_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
   int err = 0;
 
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, timeout)) {
     LOG_ERROR("xSemaphoreTakeRecursive");
     return -1;
   }
 
-  if ((err = i2s_out_start(i2s_out))) {
+  if ((err = i2s_out_start(i2s_out, timeout))) {
     goto error;
   }
 
-  if ((err = i2s_out_wait(i2s_out))) {
+  if ((err = i2s_out_wait(i2s_out, timeout))) {
     goto error;
   }
 
@@ -439,9 +439,9 @@ error:
   return err;
 }
 
-int i2s_out_close(struct i2s_out *i2s_out)
+int i2s_out_close(struct i2s_out *i2s_out, TickType_t timeout)
 {
-  int err = i2s_out_flush(i2s_out);
+  int err = i2s_out_flush(i2s_out, timeout);
 
   i2s_out_dma_stop(i2s_out);
   i2s_out_i2s_stop(i2s_out);

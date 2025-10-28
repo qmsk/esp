@@ -65,6 +65,7 @@ struct leds_interface_i2s {
   
   struct leds_interface_options_gpio gpio;
   struct leds_interface_i2s_stats *stats;
+  TickType_t timeout;
 };
 
 size_t leds_interface_i2s_buffer_size(enum leds_interface_i2s_mode mode, unsigned led_count, unsigned pin_count);

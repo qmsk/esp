@@ -211,7 +211,7 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out)
 {
   if (i2s_out->dma_start) {
     while (!i2s_out->dma_eof_desc || i2s_out->dma_write_desc > i2s_out->dma_eof_desc) {
-      LOG_WARN("wait for dma_write_desc=%p > dma_eof_desc=%p", i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
+      LOG_DEBUG("wait for dma_write_desc=%p > dma_eof_desc=%p", i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
 
       xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, portMAX_DELAY);
     }

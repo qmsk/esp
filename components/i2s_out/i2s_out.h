@@ -40,12 +40,12 @@ struct i2s_out {
 #endif
 
   /* dma */
-  uint8_t *dma_rx_buf, *dma_eof_buf;
-  struct dma_desc *dma_rx_desc;
+  uint8_t *dma_out_buf, *dma_eof_buf;
+  struct dma_desc *dma_out_desc;
   struct dma_desc *dma_repeat_desc;
   struct dma_desc *dma_eof_desc;
 
-  unsigned dma_rx_count, dma_rx_repeat;
+  unsigned dma_out_count, dma_repeat_count;
 
   // pointer to software-owned dma_rx_desc used for write()
   struct dma_desc *dma_write_desc;
@@ -63,6 +63,7 @@ void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
 void i2s_out_dma_start(struct i2s_out *i2s_out);
 int i2s_out_dma_flush(struct i2s_out *i2s_out);
+void i2s_out_dma_free(struct i2s_out *i2s_out);
 
 /* i2s.c */
 int i2s_out_i2s_init(struct i2s_out *i2s_out);

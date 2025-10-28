@@ -68,10 +68,7 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, 
   return 0;
 
 error:
-  free(i2s_out->dma_eof_buf);
-  free(i2s_out->dma_rx_buf);
-  free(i2s_out->dma_rx_desc);
-  free(i2s_out->dma_eof_desc);
+  i2s_out_dma_free(i2s_out);
   free(i2s_out);
 
   return err;

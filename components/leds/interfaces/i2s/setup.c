@@ -7,6 +7,7 @@
 
 int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct leds_interface_i2s_options *options, enum leds_interface_i2s_mode mode, union leds_interface_i2s_func func, unsigned count, struct leds_interface_i2s_stats *stats)
 {
+  interface->options = options;
   interface->mode = mode;
   interface->func = func;
 
@@ -15,7 +16,6 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 #else
   interface->parallel = 0;
 #endif
-  interface->repeat = options->repeat;
 
   if (!(interface->buf = calloc(1, leds_interface_i2s_buf_size(interface->mode, interface->parallel)))) {
     LOG_ERROR("calloc");
@@ -138,7 +138,6 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
 
   interface->gpio = options->gpio;
   interface->stats = stats;
-  interface->timeout = options->timeout;
 
   return 0;
 }
@@ -148,13 +147,13 @@ int leds_interface_i2s_setup(struct leds_interface_i2s *interface)
   int err = 0;
 
   WITH_STATS_TIMER(&interface->stats->open) {
-    if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options, interface->timeout))) {
+    if ((err = i2s_out_open(interface->i2s_out, &interface->i2s_out_options, interface->options->timeout))) {
       LOG_ERROR("i2s_out_open");
       return err;
     }
   }
 
-  interface->setup = true;
+  interface->i2s_out_setup = true;
 
 #if CONFIG_LEDS_GPIO_ENABLED
   leds_gpio_setup(&interface->gpio);
@@ -167,13 +166,13 @@ int leds_interface_i2s_close(struct leds_interface_i2s *interface)
 {
   int err = 0;
 
-  interface->setup = false;
+  interface->i2s_out_setup = false;
 
 #if CONFIG_LEDS_GPIO_ENABLED
   leds_gpio_close(&interface->gpio);
 #endif
 
-  if ((err = i2s_out_close(interface->i2s_out, interface->timeout))) {
+  if ((err = i2s_out_close(interface->i2s_out, interface->options->timeout))) {
     LOG_ERROR("i2s_out_close");
     return err;
   }

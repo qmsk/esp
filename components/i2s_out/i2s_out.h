@@ -47,7 +47,7 @@ struct i2s_out {
 
   unsigned dma_out_count, dma_repeat_count;
 
-  // pointer to software-owned dma_rx_desc used for write()
+  // pointer to software-owned dma_out_desc used for write()
   struct dma_desc *dma_write_desc;
 
   bool dma_start; // set by i2s_out_dma_start

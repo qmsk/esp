@@ -9,6 +9,7 @@
 struct leds_interface_i2s_stats {
   struct stats_timer open;
   struct stats_timer write;
+  struct stats_timer start;
   struct stats_timer flush;
 };
 #endif

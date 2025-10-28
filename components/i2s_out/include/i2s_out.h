@@ -227,6 +227,13 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
 int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count);
 
 /**
+ * Start I2S output, do not wait for TX.
+ *
+ * Returns <0 on error, 0 on success.
+ */
+int i2s_out_start(struct i2s_out *i2s_out);
+
+/**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.
  *
  * Returns <0 on error, 0 on success.

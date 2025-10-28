@@ -149,6 +149,57 @@ int start_leds()
   return 0;
 }
 
+int setup_leds(struct leds_state *state)
+{
+  int err;
+
+  if (!state->leds) {
+    LOG_ERROR("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
+
+  if (!state->config->interface_setup) {
+    return 0;
+  }
+
+  LOG_INFO("Setup LEDS interface in async mode");
+
+  if ((err = leds_interface_setup(state->leds))) {
+    LOG_ERROR("leds_interface_setup");
+    return err;
+  }
+
+  return 0;
+}
+
+int reset_leds(struct leds_state *state)
+{
+  int err;
+
+  if (!state->leds) {
+    LOG_ERROR("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
+
+  if (!state->config->interface_setup) {
+    return 0;
+  }
+
+  LOG_WARN("Reset LEDS interface");
+
+  if ((err = leds_interface_close(state->leds))) {
+    LOG_WARN("leds_interface_close");
+  }
+
+  if ((err = leds_interface_setup(state->leds))) {
+    // crash and restart
+    LOG_FATAL("leds_interface_setup");
+    return err;
+  }
+
+  return 0;
+}
+
 int check_leds_interface(struct leds_state *state)
 {
   if (!state->leds) {

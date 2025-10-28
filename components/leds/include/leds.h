@@ -230,6 +230,9 @@ enum leds_interface leds_interface_for_protocol(enum leds_protocol protocol);
 
     struct i2s_out *i2s_out;
 
+    // General timeout for all i2s_out_*() operations
+    TickType_t timeout;
+
     SemaphoreHandle_t pin_mutex;
 
     TickType_t pin_timeout;
@@ -449,5 +452,23 @@ unsigned leds_count_total_power(struct leds *leds);
  */
 bool leds_is_active(struct leds *leds);
 
-/* Output frames on interface */
+/*
+ * Setup persistent LEDs interface.
+ *
+ * It is also possible to call leds_tx() in sync mode without setup() / close().
+ * A persistently setup interface cannot be shared across multiple leds instances, but may perform better.
+ */
+int leds_interface_setup(struct leds *leds);
+
+/*
+ * Output frames on interface.
+ *
+ * With a  persistent setup(), this does not wait for TX to complete, and leaves the leds interface open.
+ * Otherwise, this is equivalent to setup() -> tx -> close(), and waits for TX to complete.
+ */
 int leds_tx(struct leds *leds);
+
+/*
+ * Close persistent LEDs interface.
+ */
+int leds_interface_close(struct leds *leds);

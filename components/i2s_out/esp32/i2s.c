@@ -116,7 +116,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     i2s_out->dev->sample_rate_conf.val
   );
 
-  // reset eof state
+  // reset event state
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 
   return 0;
@@ -125,6 +125,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 void i2s_out_i2s_start(struct i2s_out *i2s_out)
 {
   LOG_DEBUG("");
+
+  // reset event state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -137,7 +140,7 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   taskEXIT_CRITICAL(&i2s_out->mux);
 }
 
-int i2s_out_i2s_flush(struct i2s_out *i2s_out)
+int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
   EventBits_t bits;
 
@@ -152,9 +155,16 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out)
 
     taskEXIT_CRITICAL(&i2s_out->mux);
 
-    LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+    LOG_DEBUG("...");
 
-    xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, portMAX_DELAY);
+    bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, timeout);
+
+    if (!(bits & I2S_OUT_EVENT_GROUP_BIT_I2S_EOF)) {
+      LOG_ERROR("timeout -> bits=%08x", bits);
+      return -1;
+    } else {
+      LOG_DEBUG("wait -> bits=%08x", bits);
+    }
   }
 
   return 0;
@@ -169,4 +179,7 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
   i2s_ll_tx_stop(i2s_out->dev);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
+
+  // reset event state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 }

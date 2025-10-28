@@ -110,7 +110,10 @@ struct leds_config {
   bool enabled;
 
   int interface;
+  bool interface_setup;
+  
   int protocol;
+
   uint16_t count;
   uint16_t limit_total, limit_group;
   uint16_t limit_groups;

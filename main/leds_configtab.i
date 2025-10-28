@@ -13,6 +13,10 @@ const struct configtab LEDS_CONFIGTAB[] = {
     ),
     .enum_type = { .value = &LEDS_CONFIG.interface, .values = leds_interface_enum },
   },
+  { CONFIG_TYPE_BOOL, "interface_setup",
+    .description = "Setup dedicated interface, operate in async mode. I2S only.",
+    .bool_type = { .value = &LEDS_CONFIG.interface_setup, .default_value = false },
+  },
   { CONFIG_TYPE_ENUM, "protocol",
     .enum_type = { .value = &LEDS_CONFIG.protocol, .values = leds_protocol_enum },
   },
@@ -73,15 +77,6 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .description = "Output I2S bit rate. Only used for protocols with a separate clock/data.",
     .enum_type = { .value = &LEDS_CONFIG.i2s_clock, .values = leds_i2s_clock_enum, .default_value = I2S_CLOCK_DEFAULT },
   },
-  { CONFIG_TYPE_UINT16, "i2s_data_copies",
-    .description = (
-      "Output multiple copies of the data on each I2S output, to control a series of identical LEDs.\n"
-      "\tFor example, use count = 600, i2s_data_width = 4, i2s_data_copies = 4 to control 4 sets of 150 LEDs on each of four outputs."
-      "Each output will be independently controllable, but each set of 150 LEDs per output will behave identically.\n"
-      "\t0 -> disabled, 1 -> no effect, N -> repeat data for a total of N copies per output."
-    ),
-    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_copies, .max = LEDS_I2S_REPEAT_MAX },
-  },
 # if LEDS_I2S_PARALLEL_ENABLED
   { CONFIG_TYPE_UINT16, "i2s_data_width",
     .description = (
@@ -95,6 +90,15 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .ctx = &LEDS_CONFIG,
   },
 # endif
+  { CONFIG_TYPE_UINT16, "i2s_data_copies",
+    .description = (
+      "Output multiple copies of the data on each I2S output, to control a series of identical LEDs.\n"
+      "\tFor example, use count = 600, i2s_data_width = 4, i2s_data_copies = 4 to control 4 sets of 150 LEDs on each of four outputs."
+      "Each output will be independently controllable, but each set of 150 LEDs per output will behave identically.\n"
+      "\t0 -> disabled, 1 -> no effect, N -> repeat data for a total of N copies per output."
+    ),
+    .uint16_type = { .value = &LEDS_CONFIG.i2s_data_copies, .max = LEDS_I2S_REPEAT_MAX },
+  },
 # if LEDS_I2S_GPIO_PINS_ENABLED
   { CONFIG_TYPE_UINT16, "i2s_clock_pin",
     .description = "Output I2S bit clock to GPIO pin. Only used for protocols with a separate clock/data.",

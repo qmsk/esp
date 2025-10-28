@@ -12,8 +12,9 @@
 
 struct dma_desc;
 
-#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF (1 << 0)
-#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF (1 << 1)
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF (1 << 1)
+#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF       (1 << 2)
 
 struct i2s_out {
   i2s_port_t port;
@@ -22,6 +23,7 @@ struct i2s_out {
   portMUX_TYPE mux;
 #endif
   EventGroupHandle_t event_group;
+  bool setup;
 
   /* dev */
   SemaphoreHandle_t dev_mutex;
@@ -40,35 +42,41 @@ struct i2s_out {
 #endif
 
   /* dma */
-  uint8_t *dma_rx_buf, *dma_eof_buf;
-  struct dma_desc *dma_rx_desc;
+  uint8_t *dma_out_buf, *dma_end_buf;
+  struct dma_desc *dma_out_desc;
   struct dma_desc *dma_repeat_desc;
-  struct dma_desc *dma_eof_desc;
+  struct dma_desc *dma_end_desc;
 
-  unsigned dma_rx_count, dma_rx_repeat;
+  unsigned dma_out_count, dma_repeat_count;
 
-  // pointer to software-owned dma_rx_desc used for write()
+  // pointer to software-owned dma_out_desc used for write()
   struct dma_desc *dma_write_desc;
 
-  bool dma_start; // set by i2s_out_dma_start
+  // pointer to previous hardware-owned dma_out_desc, now available for write() - updated by ISR
+  struct dma_desc *dma_eof_desc;
+
+  bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()
 };
 
 /* dma.c */
 int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigned repeat);
 int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
-size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size);
+size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size, TickType_t timeout);
 void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size);
-int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size);
-void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
+int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size, TickType_t timeout);
+int i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
+int i2s_out_dma_running(struct i2s_out *i2s_out);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
-void i2s_out_dma_start(struct i2s_out *i2s_out);
-int i2s_out_dma_flush(struct i2s_out *i2s_out);
+int i2s_out_dma_start(struct i2s_out *i2s_out);
+int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout);
+void i2s_out_dma_stop(struct i2s_out *i2s_out);
+void i2s_out_dma_free(struct i2s_out *i2s_out);
 
 /* i2s.c */
 int i2s_out_i2s_init(struct i2s_out *i2s_out);
 int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_i2s_start(struct i2s_out *i2s_out);
-int i2s_out_i2s_flush(struct i2s_out *i2s_out);
+int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout);
 void i2s_out_i2s_stop(struct i2s_out *i2s_out);
 
 /* dev.c */

@@ -293,13 +293,13 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
     // limit to available buffer size
     count = (desc->size - desc->len) / size;
 
-    LOG_DEBUG("short desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+    LOG_TRACE("short desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
 
   } else if (desc->len + count * size < desc->size) {
-    LOG_DEBUG("long desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+    LOG_TRACE("long desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
 
   } else {
-    LOG_DEBUG("fill desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+    LOG_TRACE("fill desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
   }
 
   *ptr = desc->buf + desc->len;
@@ -321,8 +321,8 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
 
   if (len) {
     // copy data to desc buf
-    LOG_DEBUG("copy len=%u -> ptr=%p", len, ptr);
-    LOG_DEBUG_BUFFER(data, len);
+    LOG_TRACE("copy len=%u -> ptr=%p", len, ptr);
+    LOG_TRACE_BUFFER(data, len);
 
     memcpy(ptr, data, len);
 

@@ -47,6 +47,7 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
 
     desc->size = (size > TRUNC(DMA_DESC_SIZE_MAX, align)) ? TRUNC(DMA_DESC_SIZE_MAX, align) : size;
     desc->len = 0;
+    desc->eof = 1; // trigger I2S_OUT_EOF_INT on each DMA link
     desc->owner = 0;
     desc->buf = buf;
 
@@ -65,17 +66,6 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
 }
 
 /* Prepare desc for DMA start */
-struct dma_desc *commit_dma_desc(struct dma_desc *desc)
-{
-  desc->owner = 1;
-
-  if (desc->next) {
-    return desc->next;
-  } else {
-    return desc;
-  }
-}
-
 void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
 {
   uint32_t *ptr = (uint32_t *) eof_desc->buf;
@@ -85,7 +75,6 @@ void init_dma_eof_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count
   }
 
   eof_desc->len = count * sizeof(value);
-  eof_desc->eof = 1;
 }
 
 void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
@@ -249,44 +238,54 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
  */
 size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size)
 {
-  for (;;) {
-    struct dma_desc *desc = i2s_out->dma_write_desc;
+  struct dma_desc *desc = i2s_out->dma_write_desc;
 
-    // hit dma_eof_desc?
-    if (desc->owner || desc->eof) {
-      LOG_DEBUG("eof desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> NULL[0]", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
+  // stop if last desc already committed
+  if (desc->owner) {
+    LOG_WARN("owned desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
 
-      // unable to find a usable DMA buffer, TX buffers full
-      *ptr = NULL;
+    // unable to find a usable DMA buffer, TX buffers full
+    *ptr = NULL;
 
-      // TODO: start DMA early and wait for a free buffer?
-      return 0;
-    }
-
-    // can fit minimum size
-    if (desc->len + size > desc->size) {
-      LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
-
-      // commit, try with the next desc, if available
-      i2s_out->dma_write_desc = commit_dma_desc(desc);
-
-      continue;
-    }
-
-    if (desc->len + count * size > desc->size) {
-      LOG_DEBUG("limit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
-
-      // limit to available buffer size
-      count = (desc->size - desc->len) / size;
-
-    } else {
-      LOG_DEBUG("full desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
-    }
-
-    *ptr = desc->buf + desc->len;
-
-    return count;
+    return 0;
   }
+
+  // advance to next desc if full
+  if (desc->len + size > desc->size) {
+    LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
+
+    // commit, try with the next desc, if available
+    desc->owner = 1;
+
+    if (desc->next) {
+      desc = i2s_out->dma_write_desc = desc->next;
+    }
+  }
+
+  if (desc->len + size > desc->size) {
+    LOG_WARN("overflow desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size);
+
+    // unable to find a usable DMA buffer, TX buffers full
+    *ptr = NULL;
+
+    return 0;
+
+  } else if (desc->len + count * size > desc->size) {
+    // limit to available buffer size
+    count = (desc->size - desc->len) / size;
+
+    LOG_DEBUG("short desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+
+  } else if (desc->len + count * size < desc->size) {
+    LOG_DEBUG("long desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+
+  } else {
+    LOG_DEBUG("fill desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+  }
+
+  *ptr = desc->buf + desc->len;
+
+  return count;
 }
 
 void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size)

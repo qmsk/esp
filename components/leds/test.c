@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-#define TEST_FRAME_RATE (25)
+#define TEST_FRAME_RATE (30)
 #define TEST_FRAME_TICKS (1000 / TEST_FRAME_RATE / portTICK_RATE_MS)
 
 #define TEST_MODE_COLOR_FRAMES 25

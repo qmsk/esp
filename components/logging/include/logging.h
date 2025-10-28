@@ -20,14 +20,20 @@
   #define DEBUG 0
 #endif
 
+#ifdef WARN
+  #define ISR_WARN 1
+#else
+  #define ISR_WARN 0
+#endif
+
 #if CONFIG_LOG_COLORS
   #undef  LOG_COLOR_D
   #define LOG_COLOR_D LOG_COLOR(LOG_COLOR_BLUE)
 #endif
 
 /* Bypass stdio buffering/interrupts, blocking write directly to UART */
-#define LOG_ISR_ERROR(fmt, ...)   do { if (DEBUG) esp_rom_printf(LOG_FORMAT(E, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
-#define LOG_ISR_WARN(fmt, ...)    do { if (DEBUG) esp_rom_printf(LOG_FORMAT(W, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
+#define LOG_ISR_ERROR(fmt, ...)   do { if (ISR_WARN) esp_rom_printf(LOG_FORMAT(E, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
+#define LOG_ISR_WARN(fmt, ...)    do { if (ISR_WARN) esp_rom_printf(LOG_FORMAT(W, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 #define LOG_ISR_INFO(fmt, ...)    do { if (DEBUG) esp_rom_printf(LOG_FORMAT(I, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 #define LOG_ISR_DEBUG(fmt, ...)   do { if (DEBUG) esp_rom_printf(LOG_FORMAT(D, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 

@@ -20,6 +20,13 @@ struct dma_desc {
   struct dma_desc *next;
 };
 
+/* Prepare desc for re-use after DMA EOF */
+static inline void i2s_dma_desc_reset(struct dma_desc *eof_desc)
+{
+  eof_desc->len = 0;
+  eof_desc->owner = 0;
+}
+
 static inline void i2s_dma_tx_get_des_addr(i2s_dev_t *hw, uint32_t *dscr_addr)
 {
     *dscr_addr = hw->out_link_dscr;

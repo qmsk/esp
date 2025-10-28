@@ -335,8 +335,77 @@ int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count)
     return -1;
   }
 
-  i2s_out_dma_repeat(i2s_out, count);
+  if ((err = i2s_out_dma_repeat(i2s_out, count))) {
+    LOG_ERROR("i2s_out_dma_repeat");
+    return err;
+  }
 
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+  return err;
+}
+
+int i2s_out_wait(struct i2s_out *i2s_out)
+{
+  int err = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  // wait for previous start() to complete?
+  if (i2s_out_dma_running(i2s_out)) {
+    if ((err = i2s_out_dma_flush(i2s_out))) {
+      LOG_ERROR("i2s_out_dma_flush");
+      goto error;
+    }
+
+    if ((err = i2s_out_i2s_flush(i2s_out))) {
+      LOG_ERROR("i2s_out_i2s_flush");
+      goto error;
+    }
+
+    i2s_out_dma_stop(i2s_out);
+    i2s_out_i2s_stop(i2s_out);
+  }
+
+error:
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+  return err;
+
+}
+
+int i2s_out_start(struct i2s_out *i2s_out)
+{
+  int err = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  // wait for previous start() to complete?
+  if ((err = i2s_out_wait(i2s_out))) {
+    goto error;
+  }
+
+  // have write()?
+  if (i2s_out_dma_pending(i2s_out)) {
+    if ((err = i2s_out_dma_start(i2s_out))) {
+      LOG_ERROR("i2s_out_dma_start");
+      return err;
+    }
+
+    i2s_out_i2s_start(i2s_out);
+  }
+
+error:
   if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
     LOG_WARN("xSemaphoreGiveRecursive");
   }
@@ -353,20 +422,11 @@ int i2s_out_flush(struct i2s_out *i2s_out)
     return -1;
   }
 
-  if (i2s_out_dma_pending(i2s_out)) {
-    i2s_out_dma_start(i2s_out);
-    i2s_out_i2s_start(i2s_out);
-  }
-
-  // wait for TX DMA EOF
-  if ((err = i2s_out_dma_flush(i2s_out))) {
-    LOG_ERROR("i2s_out_dma_flush");
+  if ((err = i2s_out_start(i2s_out))) {
     goto error;
   }
 
-  // wait for I2S TX done
-  if ((err = i2s_out_i2s_flush(i2s_out))) {
-    LOG_ERROR("i2s_out_i2s_flush");
+  if ((err = i2s_out_wait(i2s_out))) {
     goto error;
   }
 
@@ -382,6 +442,7 @@ int i2s_out_close(struct i2s_out *i2s_out)
 {
   int err = i2s_out_flush(i2s_out);
 
+  i2s_out_dma_stop(i2s_out);
   i2s_out_i2s_stop(i2s_out);
   i2s_out_pin_teardown(i2s_out);
 

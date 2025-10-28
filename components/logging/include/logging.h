@@ -13,6 +13,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef TRACE
+  #undef TRACE
+  #define TRACE 1
+#else
+  #define TRACE 0
+#endif
+
 #ifdef DEBUG
   #undef DEBUG
   #define DEBUG 1
@@ -49,11 +56,9 @@
 #define LOG_WARN(fmt, ...)      do { fprintf(stderr, LOG_FORMAT(W, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 #define LOG_INFO(fmt, ...)      do { fprintf(stderr, LOG_FORMAT(I, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 #define LOG_DEBUG(fmt, ...)     do { if (DEBUG) fprintf(stderr, LOG_FORMAT(D, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
+#define LOG_TRACE(fmt, ...)     do { if (TRACE) fprintf(stderr, LOG_FORMAT(D, fmt), esp_log_timestamp(), __func__, ##__VA_ARGS__); } while(0)
 
-// XXX: CONFIG_LOG_DEFAULT_LEVEL defaults to skip ESP_LOG_DEBUG, and raising will include ALL debug output by default - not possible to override this per-call
-#if DEBUG
-  #define LOG_DEBUG_BUFFER(buf, len)      do { if (DEBUG) ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO); } while(0)
-#else
-  #define LOG_DEBUG_BUFFER(buf, len)
-#endif
+// XXX: use ESP_LOG_INFO because CONFIG_LOG_DEFAULT_LEVEL defaults to skip ESP_LOG_DEBUG, and raising will include ALL debug output by default - not possible to override this per-call
 #define LOG_INFO_BUFFER(buf, len)      ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO);
+#define LOG_DEBUG_BUFFER(buf, len)      do { if (DEBUG) ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO); } while(0)
+#define LOG_TRACE_BUFFER(buf, len)      do { if (TRACE) ESP_LOG_BUFFER_HEX_LEVEL(__func__, buf, len, ESP_LOG_INFO); } while(0)

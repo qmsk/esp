@@ -254,7 +254,7 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
 
     // hit dma_eof_desc?
     if (desc->owner || desc->eof) {
-      LOG_DEBUG("eof desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
+      LOG_DEBUG("eof desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> NULL[0]", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
 
       // unable to find a usable DMA buffer, TX buffers full
       *ptr = NULL;
@@ -274,18 +274,16 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
     }
 
     if (desc->len + count * size > desc->size) {
-      LOG_DEBUG("limited desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+      LOG_DEBUG("limit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
 
       // limit to available buffer size
       count = (desc->size - desc->len) / size;
 
     } else {
-      LOG_DEBUG("complete desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) >= count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
+      LOG_DEBUG("full desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) -> count=%u size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, count, size);
     }
 
     *ptr = desc->buf + desc->len;
-
-    LOG_DEBUG("return ptr=%p count=%u size=%u", *ptr, count, size);
 
     return count;
   }

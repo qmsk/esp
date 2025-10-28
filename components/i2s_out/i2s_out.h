@@ -12,8 +12,9 @@
 
 struct dma_desc;
 
-#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF (1 << 0)
-#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF (1 << 1)
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF (1 << 1)
+#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF       (1 << 2)
 
 struct i2s_out {
   i2s_port_t port;
@@ -50,7 +51,10 @@ struct i2s_out {
   // pointer to software-owned dma_out_desc used for write()
   struct dma_desc *dma_write_desc;
 
-  bool dma_start; // set by i2s_out_dma_start
+  // pointer to previous hardware-owned dma_out_desc, now available for write() - updated by ISR
+  struct dma_desc *dma_eof_desc;
+
+  bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()
 };
 
 /* dma.c */
@@ -59,10 +63,12 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size);
 void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size);
 int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size);
-void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
+int i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
+int i2s_out_dma_running(struct i2s_out *i2s_out);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
-void i2s_out_dma_start(struct i2s_out *i2s_out);
+int i2s_out_dma_start(struct i2s_out *i2s_out);
 int i2s_out_dma_flush(struct i2s_out *i2s_out);
+void i2s_out_dma_stop(struct i2s_out *i2s_out);
 void i2s_out_dma_free(struct i2s_out *i2s_out);
 
 /* i2s.c */

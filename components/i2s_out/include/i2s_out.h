@@ -220,7 +220,11 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
 #endif
 
 /**
- * Setup DMA to repeat all written buffers given count of times. Completes any writes.
+ * Setup DMA to repeat all written buffers given count of times. 
+ *
+ * Can only be called between open() -> write() and flush() -> close() in sync mode.
+ * Cannot be called after start(), and cannot call write() after.
+ * Remains in effect until next close() and open().
  *
  * Returns <0 on error, 0 on success.
  */

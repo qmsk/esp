@@ -65,41 +65,6 @@ void init_dma_desc(struct dma_desc *head, unsigned count, uint8_t *buf, size_t s
   }
 }
 
-/* Prepare desc for DMA start */
-void init_dma_end_desc(struct dma_desc *eof_desc, uint32_t value, unsigned count)
-{
-  uint32_t *ptr = (uint32_t *) eof_desc->buf;
-
-  for (unsigned i = 0; i < count; i++) {
-    ptr[i] = value;
-  }
-
-  eof_desc->len = count * sizeof(value);
-}
-
-void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
-{
-  struct dma_desc **nextp = NULL;
-
-  for (unsigned i = 0; i < count; i++) {
-    struct dma_desc *desc = &head[i];
-
-    if (nextp) {
-      *nextp = desc;
-    }
-
-    desc->len = 0;
-    desc->owner = 0;
-
-    nextp = &desc->next;
-  }
-
-  if (nextp) {
-    // loop
-    *nextp = next;
-  }
-}
-
 int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigned repeat)
 {
   size_t buf_size = 0;
@@ -165,6 +130,42 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigne
   return 0;
 }
 
+/* Prepare end desc + buffer */
+void init_dma_end(struct dma_desc *eof_desc, uint32_t value, unsigned count)
+{
+  uint32_t *ptr = (uint32_t *) eof_desc->buf;
+
+  for (unsigned i = 0; i < count; i++) {
+    ptr[i] = value;
+  }
+
+  eof_desc->len = count * sizeof(value);
+  eof_desc->next = NULL;
+}
+
+void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
+{
+  struct dma_desc **nextp = NULL;
+
+  for (unsigned i = 0; i < count; i++) {
+    struct dma_desc *desc = &head[i];
+
+    if (nextp) {
+      *nextp = desc;
+    }
+
+    desc->len = 0;
+    desc->owner = 0;
+
+    nextp = &desc->next;
+  }
+
+  if (nextp) {
+    // loop
+    *nextp = next;
+  }
+}
+
 int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options)
 {
   LOG_DEBUG("...");
@@ -173,12 +174,9 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     LOG_ERROR("eof_count=%u is too large for end buf size=%u", options->eof_count, DMA_END_BUF_SIZE);
     return -1;
   }
-
-  // init EOF buffer
-  init_dma_end_desc(i2s_out->dma_end_desc, options->eof_value, options->eof_count);
-
-  // init RX desc
-  reinit_dma_desc(i2s_out->dma_out_desc, i2s_out->dma_out_count, NULL);
+  // reinit out desc
+  init_dma_end(i2s_out->dma_end_desc, options->eof_value, options->eof_count);
+  reinit_dma_desc(i2s_out->dma_out_desc, i2s_out->dma_out_count, i2s_out->dma_end_desc);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -193,20 +191,15 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   i2s_ll_rx_reset_dma(i2s_out->dev);
   i2s_ll_tx_reset_dma(i2s_out->dev);
 
-  i2s_ll_dma_enable_eof_on_fifo_empty(i2s_out->dev, true);
-  i2s_ll_dma_enable_owner_check(i2s_out->dev, true);
-  i2s_ll_dma_enable_auto_write_back(i2s_out->dev, true);
-
-  i2s_ll_set_out_link_addr(i2s_out->dev, (uint32_t) i2s_out->dma_out_desc);
-
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF);
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
 
   // reset write state
   i2s_out->dma_start = false;
   i2s_out->dma_write_desc = i2s_out->dma_out_desc;
+  i2s_out->dma_eof_desc = NULL;
 
   return 0;
 }
@@ -214,10 +207,19 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 /*
  * Return pointer to current uncommitted dma_write_desc.
  */
-struct dma_desc *i2s_out_dma_desc(struct i2s_out *i2s_out)
+struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out)
 {
-  if (i2s_out->dma_write_desc->owner) {
-    return NULL;
+  if (i2s_out->dma_start) {
+    while (!i2s_out->dma_eof_desc || i2s_out->dma_write_desc > i2s_out->dma_eof_desc) {
+      LOG_WARN("wait for dma_write_desc=%p > dma_eof_desc=%p", i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
+
+      xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, portMAX_DELAY);
+    }
+  } else {
+    if (i2s_out->dma_write_desc->owner) {
+      // last desc was already committed
+      return NULL;
+    }
   }
 
   return i2s_out->dma_write_desc;
@@ -233,15 +235,15 @@ struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out)
     i2s_out->dma_write_desc->owner = 1;
   }
 
-  if (!i2s_out->dma_write_desc->next) {
-    // no more descs left
+  if (i2s_out->dma_write_desc < i2s_out->dma_out_desc + i2s_out->dma_out_count) {
+    // start using next desc
+    i2s_out->dma_write_desc++;
+  } else {
+    // no more descs available
     return NULL;
   }
 
-  // start using next desc
-  i2s_out->dma_write_desc = i2s_out->dma_write_desc->next;
-
-  return i2s_out->dma_write_desc;
+  return i2s_out_dma_wait(i2s_out);
 }
 
 /*
@@ -254,7 +256,7 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
   struct dma_desc *desc;
 
   // stop if last desc already committed
-  if (!(desc = i2s_out_dma_desc(i2s_out))) {
+  if (!(desc = i2s_out_dma_wait(i2s_out))) {
     LOG_WARN("owned desc=%p (owner=%u eof=%u buf=%p len=%u size=%u)", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size);
 
     // unable to find a usable DMA buffer, TX buffers full
@@ -330,12 +332,30 @@ int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size)
   return len;
 }
 
-void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
+int i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
 {
   struct dma_desc **nextp = &i2s_out->dma_write_desc->next;
 
+  if (i2s_out->dma_start) {
+    LOG_ERROR("dma_start=%u", i2s_out->dma_start);
+    return -1;
+  }
   // commit
-  i2s_out->dma_write_desc->owner = 1;
+  if (!i2s_out->dma_write_desc->owner) {
+    LOG_DEBUG("commit desc=%p: owner=%u eof=%u buf=%p len=%u size=%u next=%p",
+      i2s_out->dma_write_desc,
+      i2s_out->dma_write_desc->owner,
+      i2s_out->dma_write_desc->eof,
+      i2s_out->dma_write_desc->buf,
+      i2s_out->dma_write_desc->len,
+      i2s_out->dma_write_desc->size,
+      i2s_out->dma_write_desc->next
+    );
+
+    i2s_out->dma_write_desc->owner = 1;
+  }
+
+  LOG_DEBUG("count=%u", count);
 
   for (unsigned i = 0; i < count; i++) {
     for (unsigned j = 0; j < i2s_out->dma_out_count; j++) {
@@ -361,16 +381,13 @@ void i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
     // eof
     *nextp = i2s_out->dma_end_desc;
   }
+
+  return 0;
 }
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
-  if (i2s_out->dma_start) {
-    // start() already haṕpened
-    return 0;
-  }
-
-  if (i2s_out->dma_write_desc != i2s_out->dma_out_desc || i2s_out->dma_write_desc->len > 0) {
+  if (i2s_out->dma_write_desc > i2s_out->dma_out_desc || i2s_out->dma_write_desc->len > 0) {
     // write() happened
     return 1;
   }
@@ -378,10 +395,35 @@ int i2s_out_dma_pending(struct i2s_out *i2s_out)
   return 0;
 }
 
-void i2s_out_dma_start(struct i2s_out *i2s_out)
+int i2s_out_dma_running(struct i2s_out *i2s_out)
 {
+  if (i2s_out->dma_start) {
+    // start() has been called, flush() has not
+    return 1;
+  }
+
+  return 0;
+}
+
+int i2s_out_dma_start(struct i2s_out *i2s_out)
+{
+  if (i2s_out->dma_start) {
+    LOG_ERROR("dma_start=%u", i2s_out->dma_start);
+    return -1;
+  }
+
   // commit if not repeat()
   if (!i2s_out->dma_write_desc->owner) {
+    LOG_DEBUG("commit desc=%p: owner=%u eof=%u buf=%p len=%u size=%u next=%p",
+      i2s_out->dma_write_desc,
+      i2s_out->dma_write_desc->owner,
+      i2s_out->dma_write_desc->eof,
+      i2s_out->dma_write_desc->buf,
+      i2s_out->dma_write_desc->len,
+      i2s_out->dma_write_desc->size,
+      i2s_out->dma_write_desc->next
+    );
+
     i2s_out->dma_write_desc->owner = 1;
   }
 
@@ -428,11 +470,22 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
     i2s_out->dma_end_desc->next
   );
 
+  // reset eof state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+
+  i2s_out->dma_eof_desc = NULL;
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   i2s_ll_tx_reset_dma(i2s_out->dev);
   i2s_ll_tx_reset_fifo(i2s_out->dev);
   i2s_ll_tx_reset(i2s_out->dev);
+
+  i2s_ll_set_out_link_addr(i2s_out->dev, (uint32_t) i2s_out->dma_out_desc);
+
+  i2s_ll_dma_enable_eof_on_fifo_empty(i2s_out->dev, true);
+  i2s_ll_dma_enable_owner_check(i2s_out->dev, true);
+  i2s_ll_dma_enable_auto_write_back(i2s_out->dev, false); 
 
   i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR | I2S_OUT_DSCR_ERR_INT_CLR | I2S_OUT_EOF_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA | I2S_OUT_EOF_INT_ENA);
@@ -442,18 +495,50 @@ void i2s_out_dma_start(struct i2s_out *i2s_out)
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
+  // reset state for next write()
   i2s_out->dma_start = true;
+  i2s_out->dma_write_desc = i2s_out->dma_out_desc;
+
+  return 0;
 }
 
 int i2s_out_dma_flush(struct i2s_out *i2s_out)
 {
-  LOG_DEBUG("wait event_group bits=%08x", I2S_OUT_EVENT_GROUP_BIT_DMA_EOF);
+  LOG_DEBUG("wait event_group bits=%08x...", I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
 
-  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, false, false, portMAX_DELAY);
+  xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, false, false, portMAX_DELAY);
 
   LOG_DEBUG("wait done");
 
   return 0;
+}
+
+void i2s_out_dma_stop(struct i2s_out *i2s_out)
+{
+  LOG_DEBUG("");
+
+  // reset write state
+  i2s_out->dma_start = false;
+
+  taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_intr_disable(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_ENA | I2S_OUT_DSCR_ERR_INT_ENA | I2S_OUT_EOF_INT_ENA);
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR | I2S_OUT_DSCR_ERR_INT_CLR | I2S_OUT_EOF_INT_CLR);
+
+  i2s_ll_rx_stop_link(i2s_out->dev);
+  i2s_ll_tx_stop_link(i2s_out->dev);
+
+  i2s_ll_enable_dma(i2s_out->dev, false);
+
+  i2s_ll_rx_reset_dma(i2s_out->dev);
+  i2s_ll_tx_reset_dma(i2s_out->dev);
+
+  taskEXIT_CRITICAL(&i2s_out->mux);
+
+  // reset eof state
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+
+  i2s_out->dma_eof_desc = NULL;
 }
 
 void i2s_out_dma_free(struct i2s_out *i2s_out)

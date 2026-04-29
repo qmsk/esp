@@ -3,7 +3,7 @@
 services:
 
   flash:
-    image: qmsk/esp-idf:dev
+    image: qmsk/esp-idf:v4.4.8
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32
@@ -16,7 +16,7 @@ services:
       ESPPORT: "${ESPPORT}"
 
   monitor:
-    image: qmsk/esp-idf:dev
+    image: qmsk/esp-idf:v4.4.8
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32

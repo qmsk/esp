@@ -10,7 +10,7 @@ on:
 
 env:
   NODE_VERSION: 15.x
-  ESP_IDF_VERSION: v4.4.6
+  ESP_IDF_VERSION: v4.4.8
   ESP8266_RTOS_SDK_VERSION: v3.4
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
           context: sdk/esp-idf
           load: true
           push: false
-          tags: qmsk/esp-idf:dev
+          tags: qmsk/esp-idf:${{ env.ESP_IDF_VERSION }}
 
       - name: Build
         run: docker compose -f projects/esp32/docker-compose.yml run --rm build

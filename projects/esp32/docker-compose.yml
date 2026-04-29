@@ -3,18 +3,18 @@
 #   $ docker compose run --rm build
 services:
   sdk:
-    image: qmsk/esp-idf:dev
+    image: qmsk/esp-idf:v4.4.8
     build:
       context: ../../sdk/esp-idf
       args:
         # also update .github/workflows/build.yml `ESP_IDF_VERSION`
-        ESP_IDF_VERSION: v4.4.6
+        ESP_IDF_VERSION: v4.4.8
         BUILD_UID: ${BUILD_UID}
         BUILD_GID: ${BUILD_GID}
     command: idf.py --version
 
   build:
-    image: qmsk/esp-idf:dev
+    image: qmsk/esp-idf:v4.4.8
     volumes:
       - ../..:/build
     working_dir: /build/projects/esp32

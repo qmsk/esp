@@ -38,7 +38,7 @@ void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t
   i2s_intr_clear(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
   i2s_dma_tx_get_des_addr(i2s_out->dev, &dscr_addr);
 
-  LOG_ISR_WARN("desc=%p", dscr_addr);
+  LOG_ISR_ERROR("desc=%p", dscr_addr);
 }
 
 void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
@@ -74,6 +74,9 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
     // unblock get() task
     xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
 
+  } else if (i2s_out->dma_repeat_desc && eof_desc >= i2s_out->dma_repeat_desc && eof_desc < i2s_out->dma_repeat_desc + i2s_out->dma_out_count * i2s_out->dma_repeat_count) {
+    LOG_ISR_DEBUG("ignore repeat desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
+
   } else if (eof_desc == i2s_out->dma_end_desc) {
 
     // speculation: we might miss EOF ISR for an intermediate DMA descriptor, and hit TOTAL_EOF with eof_addr at the end_desc
@@ -103,14 +106,14 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
 
     // XXX: e.g. flash writes seem to drop I2S_OUT_TOTAL_EOF_INT_ST?
     if (!(xEventGroupGetBitsFromISR(i2s_out->event_group) & (I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF))) {
-      LOG_ISR_WARN("end -> total_eof, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
+      LOG_ISR_WARN("end desc=%p owner=%u len=%u -> total_eof, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
 
       // unblock flush() tasks
       xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
     }
 
   } else {
-    LOG_ISR_DEBUG("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
+    LOG_ISR_ERROR("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
   }
 }
 

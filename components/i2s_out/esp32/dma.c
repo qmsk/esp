@@ -210,8 +210,8 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
 {
   if (i2s_out->dma_start) {
-    while (!i2s_out->dma_eof_desc || i2s_out->dma_write_desc > i2s_out->dma_eof_desc) {
-      LOG_DEBUG("wait for dma_write_desc=%p = dma_eof_desc=%p", i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
+    while (i2s_out->dma_write_desc->owner) {
+      LOG_DEBUG("wait for dma_eof_desc=%p vs dma_write_desc=%p, dma_end_desc=%p", i2s_out->dma_eof_desc, i2s_out->dma_write_desc, i2s_out->dma_end_desc);
 
       EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, timeout);
 

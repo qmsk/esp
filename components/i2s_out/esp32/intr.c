@@ -43,7 +43,7 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
   if (eof_desc >= i2s_out->dma_out_desc && eof_desc < i2s_out->dma_out_desc + i2s_out->dma_out_count) {
     LOG_ISR_DEBUG("eof desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
 
-    // speculation: we may miss sone EOF ISRs
+    // we may miss some EOF ISR for intermediate DMA descriptors, unblock i2s_out_dma_wait()
     if (i2s_out->dma_eof_desc) {
       for (struct dma_desc *desc = eof_desc; desc > i2s_out->dma_eof_desc; desc--) {
         if (desc != eof_desc) {
@@ -66,8 +66,7 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
 
   } else if (eof_desc == i2s_out->dma_end_desc) {
 
-    // speculation: we might miss EOF ISR for an intermediate DMA descriptor, and hit TOTAL_EOF with eof_addr at the end_desc
-    // resulting in wait() deadlocking on dma_eof_desc not being updated
+    // we may miss some EOF ISR for intermediate DMA descriptors, unblock i2s_out_dma_wait()
     eof_desc = i2s_out->dma_out_desc + i2s_out->dma_out_count - 1;
 
     if (!i2s_out->dma_eof_desc) {

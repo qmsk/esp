@@ -94,13 +94,22 @@ EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
   }
 }
 
-EventBits_t i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out)
+EventBits_t i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
 {
   LOG_ISR_DEBUG("");
 
   // interrupt will fire until disabled
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+
+  // unblock flush() task
+  i2s_out->i2s_done = true;
+
+  if (i2s_out->i2s_done_task) {
+    xTaskNotifyFromISR(i2s_out->i2s_done_task, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, eSetBits, pxHigherPriorityTaskWoken);
+
+    i2s_out->i2s_done_task = NULL;
+  }
 
   return I2S_OUT_EVENT_GROUP_BIT_I2S_EOF;
 }
@@ -125,7 +134,7 @@ void i2s_intr_handler(void *arg)
     event_bits |= i2s_intr_out_eof_handler(i2s_out, &pxHigherPriorityTaskWoken);
   }
   if (int_st & I2S_TX_REMPTY_INT_ST) {
-    event_bits |= i2s_intr_tx_rempty_handler(i2s_out);
+    event_bits |= i2s_intr_tx_rempty_handler(i2s_out, &pxHigherPriorityTaskWoken);
   }
 
   if (event_bits) {

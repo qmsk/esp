@@ -119,6 +119,9 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   // reset event state
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
 
+  i2s_out->i2s_done = false;
+  i2s_out->i2s_done_task = NULL;
+
   return 0;
 }
 
@@ -128,6 +131,9 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
   // reset event state
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+
+  i2s_out->i2s_done = false;
+  i2s_out->i2s_done_task = NULL;
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -142,32 +148,42 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
 
 int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
-  EventBits_t bits;
+  bool i2s_done = false;
+  uint32_t bits = 0;
 
-  if ((bits = xEventGroupGetBits(i2s_out->event_group)) & I2S_OUT_EVENT_GROUP_BIT_I2S_EOF) {
-    // TX_REMPTY has already occured
-    LOG_DEBUG("skip event_group bits=%08x", bits);
-  } else {
-    taskENTER_CRITICAL(&i2s_out->mux);
+  LOG_DEBUG("...");
+
+  taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_done = i2s_out->i2s_done;
+
+  if (!i2s_done) {
+    i2s_out->i2s_done_task = xTaskGetCurrentTaskHandle();
 
     i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
     i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
-
-    taskEXIT_CRITICAL(&i2s_out->mux);
-
-    LOG_DEBUG("...");
-
-    bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, false, false, timeout);
-
-    if (!(bits & I2S_OUT_EVENT_GROUP_BIT_I2S_EOF)) {
-      LOG_ERROR("timeout -> bits=%08x", bits);
-      return -1;
-    } else {
-      LOG_DEBUG("wait -> bits=%08x", bits);
-    }
   }
 
-  return 0;
+  taskEXIT_CRITICAL(&i2s_out->mux);
+
+  if (i2s_done) {
+    LOG_DEBUG("done");
+
+    return 0;
+  } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, &bits, timeout)) {  
+    LOG_ERROR("timeout -> bits=%08x i2s_done=%d",
+      bits,
+      i2s_out->i2s_done
+    );
+
+    i2s_out->i2s_done_task = NULL;
+
+    return -1;
+  } else {
+    LOG_DEBUG("wait -> done");
+
+    return 0;
+  }
 }
 
 void i2s_out_i2s_stop(struct i2s_out *i2s_out)
@@ -182,4 +198,7 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
 
   // reset event state
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
+  
+  i2s_out->i2s_done = false;
+  i2s_out->i2s_done_task = NULL;
 }

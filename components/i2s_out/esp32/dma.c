@@ -443,6 +443,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
     i2s_out->dma_write_desc->owner = 1;
   }
 
+  i2s_out->dma_end_desc->eof = 1;
   i2s_out->dma_end_desc->owner = 1;
   i2s_out->dma_end_desc->next = NULL;
 

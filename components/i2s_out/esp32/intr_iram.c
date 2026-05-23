@@ -18,7 +18,7 @@ EventBits_t i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
   return 0;
 }
 
-EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out)
+EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
 {
   uint32_t eof_addr;
 
@@ -67,7 +67,13 @@ EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out)
     }
 
     i2s_out->dma_eof_desc = eof_desc;
+
+    // unblock flush()
     i2s_out->dma_done = true;
+
+    if (i2s_out->dma_done_task) {
+        xTaskNotifyFromISR(i2s_out->dma_done_task, I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE, eSetBits, pxHigherPriorityTaskWoken);
+    }
 
     // unblock get(), flush() task
     return I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE;
@@ -95,7 +101,7 @@ void i2s_intr_handler(void *arg)
   struct i2s_out *i2s_out = arg;
   uint32_t int_st = i2s_ll_get_intr_status(i2s_out->dev);
   EventBits_t event_bits = 0;
-  BaseType_t task_woken = pdFALSE;
+  BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
 
   if (!int_st) {
     return;
@@ -107,7 +113,7 @@ void i2s_intr_handler(void *arg)
     event_bits |= i2s_intr_out_dscr_err_handler(i2s_out);
   }
   if (int_st & I2S_OUT_EOF_INT_ST) {
-    event_bits |= i2s_intr_out_eof_handler(i2s_out);
+    event_bits |= i2s_intr_out_eof_handler(i2s_out, &pxHigherPriorityTaskWoken);
   }
   if (int_st & I2S_TX_REMPTY_INT_ST) {
     event_bits |= i2s_intr_tx_rempty_handler(i2s_out);
@@ -115,14 +121,14 @@ void i2s_intr_handler(void *arg)
 
   if (event_bits) {
     // XXX: loops via the timer daemon task, replace with a semaphore?
-    if (xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &task_woken) == pdFALSE) {
+    if (xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &pxHigherPriorityTaskWoken) == pdFALSE) {
       LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
     }
   }
 
   taskEXIT_CRITICAL_ISR(&i2s_out->mux);
 
-  if (task_woken == pdTRUE) {
+  if (pxHigherPriorityTaskWoken == pdTRUE) {
     portYIELD_FROM_ISR();
   }
 }

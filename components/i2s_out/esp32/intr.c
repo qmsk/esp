@@ -126,7 +126,9 @@ void IRAM_ATTR i2s_intr_handler(void *arg)
 
   if (event_bits) {
     // XXX: loops via the timer daemon task, replace with a semaphore?
-    xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &task_woken);
+    if (xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &task_woken) == pdFALSE) {
+      LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
+    }
   }
 
   taskEXIT_CRITICAL_ISR(&i2s_out->mux);

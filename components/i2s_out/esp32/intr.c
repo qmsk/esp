@@ -17,7 +17,7 @@ static const int i2s_irq[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = ETS_I2S1_INTR_SOURCE,
 };
 
-void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
+EventBits_t IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
 {
   uint32_t dscr_addr;
 
@@ -25,9 +25,11 @@ void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t
   i2s_dma_tx_get_des_addr(i2s_out->dev, &dscr_addr);
 
   LOG_ISR_ERROR("desc=%p", dscr_addr);
+
+  return 0;
 }
 
-void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
+EventBits_t IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out)
 {
   uint32_t eof_addr;
 
@@ -58,13 +60,14 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
     i2s_out->dma_eof_desc = eof_desc;
 
     // unblock get() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
+    return I2S_OUT_EVENT_GROUP_BIT_DMA_EOF;
 
   } else if (i2s_out->dma_repeat_desc && eof_desc >= i2s_out->dma_repeat_desc && eof_desc < i2s_out->dma_repeat_desc + i2s_out->dma_out_count * i2s_out->dma_repeat_count) {
     LOG_ISR_DEBUG("ignore repeat desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
 
-  } else if (eof_desc == i2s_out->dma_end_desc) {
+    return 0;
 
+  } else if (eof_desc == i2s_out->dma_end_desc) {
     // we may miss some EOF ISR for intermediate DMA descriptors, unblock i2s_out_dma_wait()
     LOG_ISR_WARN("end desc=%p owner=%u len=%u, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
 
@@ -75,31 +78,34 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
     }
 
     i2s_out->dma_eof_desc = eof_desc;
+    i2s_out->dma_done = true;
 
     // unblock get(), flush() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE, task_wokenp);
+    return I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE;
 
   } else {
     LOG_ISR_ERROR("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
+    
+    return 0;
   }
 }
 
-void IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
+EventBits_t IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out)
 {
   LOG_ISR_DEBUG("");
-
-  // unblock flush() task
-  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, task_wokenp);
 
   // interrupt will fire until disabled
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+
+  return I2S_OUT_EVENT_GROUP_BIT_I2S_EOF;
 }
 
 void IRAM_ATTR i2s_intr_handler(void *arg)
 {
   struct i2s_out *i2s_out = arg;
   uint32_t int_st = i2s_ll_get_intr_status(i2s_out->dev);
+  EventBits_t event_bits = 0;
   BaseType_t task_woken = pdFALSE;
 
   if (!int_st) {
@@ -109,13 +115,18 @@ void IRAM_ATTR i2s_intr_handler(void *arg)
   taskENTER_CRITICAL_ISR(&i2s_out->mux);
 
   if (int_st & I2S_OUT_DSCR_ERR_INT_ST) {
-    i2s_intr_out_dscr_err_handler(i2s_out, &task_woken);
+    event_bits |= i2s_intr_out_dscr_err_handler(i2s_out);
   }
   if (int_st & I2S_OUT_EOF_INT_ST) {
-    i2s_intr_out_eof_handler(i2s_out, &task_woken);
+    event_bits |= i2s_intr_out_eof_handler(i2s_out);
   }
   if (int_st & I2S_TX_REMPTY_INT_ST) {
-    i2s_intr_tx_rempty_handler(i2s_out, &task_woken);
+    event_bits |= i2s_intr_tx_rempty_handler(i2s_out);
+  }
+
+  if (event_bits) {
+    // XXX: loops via the timer daemon task, replace with a semaphore?
+    xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &task_woken);
   }
 
   taskEXIT_CRITICAL_ISR(&i2s_out->mux);

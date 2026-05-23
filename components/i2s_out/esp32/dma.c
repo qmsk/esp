@@ -220,11 +220,11 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
         return NULL;
       }
     }
-  } else {
-    if (i2s_out->dma_write_desc->owner) {
-      // last desc was already committed
-      return NULL;
-    }
+  }
+
+  if (i2s_out->dma_write_desc->owner) {
+    LOG_WARN("dma_write_desc=%p already committed with owner=%d", i2s_out->dma_write_desc, i2s_out->dma_write_desc->owner);
+    return NULL;
   }
 
   return i2s_out->dma_write_desc;
@@ -235,19 +235,32 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
  */
 struct dma_desc *i2s_out_dma_next(struct i2s_out *i2s_out, TickType_t timeout)
 {
-  if (!i2s_out->dma_write_desc->owner) {
-    // prepare for DMA
-    i2s_out->dma_write_desc->owner = 1;
+  if (i2s_out->dma_write_desc->owner) {
+    LOG_WARN("dma_write_desc=%p already committed with owner=%d", i2s_out->dma_write_desc, i2s_out->dma_write_desc->owner);
   }
 
-  if (i2s_out->dma_write_desc < i2s_out->dma_out_desc + i2s_out->dma_out_count) {
-    // start using next desc
-    i2s_out->dma_write_desc++;
-  } else {
-    // no more descs available
+  LOG_DEBUG("commit desc=%p: owner=%u eof=%u buf=%p len=%u size=%u next=%p",
+    i2s_out->dma_write_desc,
+    i2s_out->dma_write_desc->owner,
+    i2s_out->dma_write_desc->eof,
+    i2s_out->dma_write_desc->buf,
+    i2s_out->dma_write_desc->len,
+    i2s_out->dma_write_desc->size,
+    i2s_out->dma_write_desc->next
+  );
+
+  // prepare for DMA
+  i2s_out->dma_write_desc->owner = 1;
+
+  if (i2s_out->dma_write_desc + 1 >= i2s_out->dma_out_desc + i2s_out->dma_out_count) {
+    LOG_WARN("dma_write_desc=%p committed, no more descs available", i2s_out->dma_write_desc);
     return NULL;
   }
 
+  // start using next desc
+  i2s_out->dma_write_desc++;
+
+  // wait for it to be available
   return i2s_out_dma_wait(i2s_out, timeout);
 }
 
@@ -260,7 +273,7 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
 {
   struct dma_desc *desc;
 
-  // stop if last desc already committed
+  // wait for desc to be available
   if (!(desc = i2s_out_dma_wait(i2s_out, timeout))) {
     LOG_WARN("i2s_out_dma_wait");
 
@@ -271,25 +284,22 @@ size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, s
   }
 
   // advance to next desc if full
-  if (desc->len + size > desc->size) {
-    LOG_DEBUG("commit desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u -> next=%p", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size, desc->next);
+  if (desc->len + size <= desc->size) {
+    // fits
 
-    // commit, try with the next desc, if available
-    desc = i2s_out_dma_next(i2s_out, timeout);
-  }
-
-  if (!desc) {
+  } else if (!(desc = i2s_out_dma_next(i2s_out, timeout))) {
     LOG_WARN("i2s_out_dma_next");
 
     // unable to find a usable DMA buffer, timeout or TX buffers full?
     *ptr = NULL;
 
     return 0;
-
-  } else if (desc->len + size > desc->size) {
+  }
+  
+  if (desc->len + size > desc->size) {
     LOG_WARN("overflow desc=%p (owner=%u eof=%u buf=%p len=%u size=%u) < size=%u", desc, desc->owner, desc->eof, desc->buf, desc->len, desc->size, size);
 
-    // unable to find a usable DMA buffer, TX buffers full
+    // unable to find a usable DMA buffer, size too big
     *ptr = NULL;
 
     return 0;

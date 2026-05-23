@@ -402,6 +402,7 @@ int i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count)
 
 int i2s_out_dma_pending(struct i2s_out *i2s_out)
 {
+  // XXX: this will also be true immediately after dma_start()?
   if (i2s_out->dma_write_desc > i2s_out->dma_out_desc || i2s_out->dma_write_desc->len > 0) {
     // write() happened
     return 1;
@@ -442,6 +443,8 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
     i2s_out->dma_write_desc->owner = 1;
   }
 
+  // TODO: this should never be NULL
+  // TODO: if write is shorter than total buf, then the remaining descs will be len=0 and we should just set this unconditionally?
   if (!i2s_out->dma_write_desc->next) {
     i2s_out->dma_write_desc->next = i2s_out->dma_end_desc;
   }
@@ -498,6 +501,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
 
   i2s_ll_set_out_link_addr(i2s_out->dev, (uint32_t) i2s_out->dma_out_desc);
 
+  // TODO: use *_burst_en=1 with out_eof_mode=0?
   i2s_ll_dma_enable_eof_on_fifo_empty(i2s_out->dev, true);
   i2s_ll_dma_enable_owner_check(i2s_out->dev, true);
   i2s_ll_dma_enable_auto_write_back(i2s_out->dev, false); 

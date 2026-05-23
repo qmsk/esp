@@ -13,15 +13,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef TRACE
-  #undef TRACE
-  #define TRACE 1
+#ifdef ERROR
+  #define ISR_ERROR 1
 #else
-  #define TRACE 0
+  #define ISR_ERROR 0
+#endif
+
+#ifdef WARN
+  #undef ISR_ERROR
+
+  #define ISR_WARN 1
+  #define ISR_ERROR 1
+#else
+  #define ISR_WARN 0
 #endif
 
 #ifdef DEBUG
   #undef DEBUG
+  #undef ISR_WARN
+  #undef ISR_ERROR
+
   #define DEBUG 1
   #define ISR_WARN 1
   #define ISR_ERROR 1
@@ -29,17 +40,11 @@
   #define DEBUG 0
 #endif
 
-#ifdef WARN
-  #define ISR_WARN 1
-  #define ISR_ERROR 1
+#ifdef TRACE
+  #undef TRACE
+  #define TRACE 1
 #else
-  #define ISR_WARN 0
-#endif
-
-#ifdef ERROR
-  #define ISR_ERROR 1
-#else
-  #define ISR_WARN 0
+  #define TRACE 0
 #endif
 
 #if CONFIG_LOG_COLORS

@@ -15,7 +15,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
   { CONFIG_TYPE_BOOL, "interface_setup",
     .description = "Setup dedicated interface, operate in async mode. I2S only.",
-    .bool_type = { .value = &LEDS_CONFIG.interface_setup, .default_value = false },
+    .bool_type = { .value = &LEDS_CONFIG.interface_setup, .default_value = true },
   },
   { CONFIG_TYPE_ENUM, "protocol",
     .enum_type = { .value = &LEDS_CONFIG.protocol, .values = leds_protocol_enum },

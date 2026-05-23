@@ -1,3 +1,5 @@
+#define ERROR
+
 #include "../i2s_out.h"
 #include "slc.h"
 #include "slc_isr.h"
@@ -204,7 +206,9 @@ void IRAM_ATTR i2s_out_slc_isr(void *arg)
     slc_stop(&SLC0);
 
     // unblock flush() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, &task_woken);
+    if (!xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, &task_woken)) {
+      LOG_ISR_ERROR("xEventGroupSetBitsFromISR")
+    }
   }
   if (SLC0.int_st.rx_dscr_err) {
     LOG_ISR_WARN("rx_dscr_err");

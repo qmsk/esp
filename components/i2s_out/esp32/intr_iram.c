@@ -1,3 +1,5 @@
+#define ERROR 
+
 #include "../i2s_out.h"
 #include "dma.h"
 #include "intr.h"

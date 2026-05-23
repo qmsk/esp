@@ -22,32 +22,33 @@ void IRAM_ATTR i2s_intr_out_total_eof_handler(struct i2s_out *i2s_out, BaseType_
 {
   uint32_t eof_addr;
 
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR);
   i2s_ll_tx_get_eof_des_addr(i2s_out->dev, &eof_addr);
 
   LOG_ISR_DEBUG("desc=%p", eof_addr);
 
   // unblock flush() tasks
   xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
-
-  i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
   uint32_t dscr_addr;
 
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
   i2s_dma_tx_get_des_addr(i2s_out->dev, &dscr_addr);
 
   LOG_ISR_WARN("desc=%p", dscr_addr);
-
-  i2s_intr_clear(i2s_out->dev, I2S_OUT_DSCR_ERR_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
   uint32_t eof_addr;
 
+  i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
   i2s_ll_tx_get_eof_des_addr(i2s_out->dev, &eof_addr);
+
+  LOG_ISR_DEBUG("desc=%p", eof_addr);
 
   struct dma_desc *eof_desc = (struct dma_desc *) eof_addr;
 
@@ -111,8 +112,6 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
   } else {
     LOG_ISR_DEBUG("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
   }
-
-  i2s_intr_clear(i2s_out->dev, I2S_OUT_EOF_INT_CLR);
 }
 
 void IRAM_ATTR i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)

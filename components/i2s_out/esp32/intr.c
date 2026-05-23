@@ -9,8 +9,8 @@
 #include <soc/soc.h>
 
 
-// use a non-shared intr
-#define I2S_INTR_ALLOC_FLAGS (0)
+// use a non-shared, IRAM-safe intr
+#define I2S_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_IRAM)
 
 static const int i2s_irq[I2S_PORT_MAX] = {
   [I2S_PORT_0]  = ETS_I2S0_INTR_SOURCE,

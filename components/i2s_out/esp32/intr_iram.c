@@ -66,13 +66,22 @@ EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
       i2s_dma_desc_reset(desc);
     }
 
+    // unblock wait()
     i2s_out->dma_eof_desc = eof_desc;
+
+    if (i2s_out->dma_eof_task) {
+        xTaskNotifyFromISR(i2s_out->dma_eof_task, I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF, eSetBits, pxHigherPriorityTaskWoken);
+
+        i2s_out->dma_eof_task = NULL;
+    }
 
     // unblock flush()
     i2s_out->dma_done = true;
 
     if (i2s_out->dma_done_task) {
         xTaskNotifyFromISR(i2s_out->dma_done_task, I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE, eSetBits, pxHigherPriorityTaskWoken);
+
+        i2s_out->dma_done_task = NULL;
     }
 
     // unblock get(), flush() task

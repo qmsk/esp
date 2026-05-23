@@ -200,6 +200,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   i2s_out->dma_start = false;
   i2s_out->dma_write_desc = i2s_out->dma_out_desc;
   i2s_out->dma_eof_desc = NULL;
+  i2s_out->dma_eof_task = NULL;
   i2s_out->dma_done = false;
   i2s_out->dma_done_task = NULL;
 
@@ -212,16 +213,41 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
 {
   if (i2s_out->dma_start) {
-    while (i2s_out->dma_write_desc->owner) {
-      LOG_DEBUG("wait for dma_eof_desc=%p vs dma_write_desc=%p, dma_end_desc=%p", i2s_out->dma_eof_desc, i2s_out->dma_write_desc, i2s_out->dma_end_desc);
+    do {
+      uint32_t bits;
+      bool dma_write_owner;
 
-      EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, true, true, timeout);
+      taskENTER_CRITICAL(&i2s_out->mux);
 
-      if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_EOF)) {
-        LOG_WARN("timeout -> bits=%08x", bits);
-        return NULL;
+      if ((dma_write_owner = i2s_out->dma_write_desc->owner)) {
+        i2s_out->dma_eof_task = xTaskGetCurrentTaskHandle();
       }
-    }
+
+      taskEXIT_CRITICAL(&i2s_out->mux);
+
+      if (!dma_write_owner) {
+        LOG_DEBUG("done");
+
+        break;
+      } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF, &bits, timeout)) {  
+        LOG_ERROR("timeout -> bits=%08x, dma_out_desc=%p...%p dma_write_desc=%p dma_eof_desc=%p dma_end_desc=%p dma_done=%d",
+          bits,
+          i2s_out->dma_out_desc, i2s_out->dma_out_desc + i2s_out->dma_out_count - 1,
+          i2s_out->dma_write_desc,
+          i2s_out->dma_eof_desc,
+          i2s_out->dma_end_desc,
+          i2s_out->dma_done
+        );
+
+        i2s_out->dma_eof_task = NULL;
+
+        return NULL;
+      } else {
+        LOG_DEBUG("wait -> done");
+
+        break;
+      }
+    } while (1);
   }
 
   if (i2s_out->dma_write_desc->owner) {
@@ -489,6 +515,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
 
   i2s_out->dma_eof_desc = NULL;
+  i2s_out->dma_eof_task = NULL;
   i2s_out->dma_done = false;
   i2s_out->dma_done_task = NULL;
 
@@ -587,6 +614,7 @@ void i2s_out_dma_stop(struct i2s_out *i2s_out)
   xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
 
   i2s_out->dma_eof_desc = NULL;
+  i2s_out->dma_eof_task = NULL;
   i2s_out->dma_done = false;
   i2s_out->dma_done_task = NULL;
 }

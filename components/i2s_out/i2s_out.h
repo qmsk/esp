@@ -12,6 +12,7 @@
 
 struct dma_desc;
 
+#define I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF       (1 << 0)
 #define I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE      (1 << 1)
 
 #define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
@@ -60,7 +61,8 @@ struct i2s_out {
   bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()
   bool dma_done;
 
-  TaskHandle_t dma_done_task;
+  TaskHandle_t dma_eof_task; // task waiting for dma_eof_desc to update
+  TaskHandle_t dma_done_task; // task waiting for dma_done to be set
 };
 
 /* dma.c */

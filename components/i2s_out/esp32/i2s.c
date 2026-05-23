@@ -117,8 +117,6 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   );
 
   // reset event state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
-
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
@@ -130,8 +128,6 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   LOG_DEBUG("");
 
   // reset event state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
-
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
@@ -197,8 +193,6 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset event state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF);
-  
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 }

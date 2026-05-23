@@ -193,10 +193,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
-  // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
-
-  // reset write state
+  // reset eof/write state
   i2s_out->dma_start = false;
   i2s_out->dma_write_desc = i2s_out->dma_out_desc;
   i2s_out->dma_eof_desc = NULL;
@@ -511,9 +508,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
     i2s_out->dma_end_desc->next
   );
 
-  // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
-
+  // reset eof/done state
   i2s_out->dma_eof_desc = NULL;
   i2s_out->dma_eof_task = NULL;
   i2s_out->dma_done = false;
@@ -611,8 +606,6 @@ void i2s_out_dma_stop(struct i2s_out *i2s_out)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
-
   i2s_out->dma_eof_desc = NULL;
   i2s_out->dma_eof_task = NULL;
   i2s_out->dma_done = false;

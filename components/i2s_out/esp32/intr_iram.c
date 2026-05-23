@@ -6,7 +6,7 @@
 
 #include <logging.h>
 
-EventBits_t i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
+void i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
 {
   uint32_t dscr_addr;
 
@@ -14,11 +14,9 @@ EventBits_t i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
   i2s_dma_tx_get_des_addr(i2s_out->dev, &dscr_addr);
 
   LOG_ISR_ERROR("desc=%p", dscr_addr);
-
-  return 0;
 }
 
-EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
+void i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
 {
   uint32_t eof_addr;
 
@@ -46,15 +44,17 @@ EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
       i2s_dma_desc_reset(eof_desc);
     }
 
+    // unblock wait()
     i2s_out->dma_eof_desc = eof_desc;
 
-    // unblock get() task
-    return I2S_OUT_EVENT_GROUP_BIT_DMA_EOF;
+    if (i2s_out->dma_eof_task) {
+        xTaskNotifyFromISR(i2s_out->dma_eof_task, I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF, eSetBits, pxHigherPriorityTaskWoken);
+
+        i2s_out->dma_eof_task = NULL;
+    }
 
   } else if (i2s_out->dma_repeat_desc && eof_desc >= i2s_out->dma_repeat_desc && eof_desc < i2s_out->dma_repeat_desc + i2s_out->dma_out_count * i2s_out->dma_repeat_count) {
     LOG_ISR_DEBUG("ignore repeat desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
-
-    return 0;
 
   } else if (eof_desc == i2s_out->dma_end_desc) {
     // we may miss some EOF ISR for intermediate DMA descriptors, unblock i2s_out_dma_wait()
@@ -84,17 +84,12 @@ EventBits_t i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
         i2s_out->dma_done_task = NULL;
     }
 
-    // unblock get(), flush() task
-    return I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE;
-
   } else {
     LOG_ISR_ERROR("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
-    
-    return 0;
   }
 }
 
-EventBits_t i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
+void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
 {
   LOG_ISR_DEBUG("");
 
@@ -110,15 +105,12 @@ EventBits_t i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
 
     i2s_out->i2s_done_task = NULL;
   }
-
-  return I2S_OUT_EVENT_GROUP_BIT_I2S_EOF;
 }
 
 void i2s_intr_handler(void *arg)
 {
   struct i2s_out *i2s_out = arg;
   uint32_t int_st = i2s_ll_get_intr_status(i2s_out->dev);
-  EventBits_t event_bits = 0;
   BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
 
   if (!int_st) {
@@ -128,20 +120,13 @@ void i2s_intr_handler(void *arg)
   taskENTER_CRITICAL_ISR(&i2s_out->mux);
 
   if (int_st & I2S_OUT_DSCR_ERR_INT_ST) {
-    event_bits |= i2s_intr_out_dscr_err_handler(i2s_out);
+    i2s_intr_out_dscr_err_handler(i2s_out);
   }
   if (int_st & I2S_OUT_EOF_INT_ST) {
-    event_bits |= i2s_intr_out_eof_handler(i2s_out, &pxHigherPriorityTaskWoken);
+    i2s_intr_out_eof_handler(i2s_out, &pxHigherPriorityTaskWoken);
   }
   if (int_st & I2S_TX_REMPTY_INT_ST) {
-    event_bits |= i2s_intr_tx_rempty_handler(i2s_out, &pxHigherPriorityTaskWoken);
-  }
-
-  if (event_bits) {
-    // XXX: loops via the timer daemon task, replace with a semaphore?
-    if (xEventGroupSetBitsFromISR(i2s_out->event_group, event_bits, &pxHigherPriorityTaskWoken) == pdFALSE) {
-      LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
-    }
+    i2s_intr_tx_rempty_handler(i2s_out, &pxHigherPriorityTaskWoken);
   }
 
   taskEXIT_CRITICAL_ISR(&i2s_out->mux);

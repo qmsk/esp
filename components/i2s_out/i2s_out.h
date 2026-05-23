@@ -12,13 +12,17 @@
 
 struct dma_desc;
 
-#define I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF       (1 << 0)
-#define I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE      (1 << 1)
-#define I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE      (1 << 2)
+#if CONFIG_IDF_TARGET_ESP32
+  #define I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF       (1 << 0)
+  #define I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE      (1 << 1)
+  #define I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE      (1 << 2)
+#endif
 
-#define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
-#define I2S_OUT_EVENT_GROUP_BIT_DMA_DONE      (1 << 1)
-#define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF       (1 << 2)
+#if CONFIG_IDF_TARGET_ESP8266
+  #define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
+  #define I2S_OUT_EVENT_GROUP_BIT_DMA_DONE      (1 << 1)
+  #define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF       (1 << 2)
+#endif
 
 struct i2s_out {
   i2s_port_t port;
@@ -26,7 +30,9 @@ struct i2s_out {
 #if CONFIG_IDF_TARGET_ESP32
   portMUX_TYPE mux;
 #endif
+#if CONFIG_IDF_TARGET_ESP8266
   EventGroupHandle_t event_group;
+#endif
   bool setup;
 
   /* dev */

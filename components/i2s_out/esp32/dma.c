@@ -528,7 +528,13 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
   EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_DONE, false, false, timeout);
 
   if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_DONE)) {
-    LOG_ERROR("timeout -> bits=%08x", bits);
+    LOG_ERROR("timeout -> bits=%08x, dma_out_desc=%p...%p dma_write_desc=%p dma_end_desc=%p dma_eof_desc=%p",
+      bits,
+      i2s_out->dma_out_desc, i2s_out->dma_out_desc + i2s_out->dma_out_count - 1,
+      i2s_out->dma_write_desc,
+      i2s_out->dma_end_desc,
+      i2s_out->dma_eof_desc
+    );
     return -1;
   } else {
     LOG_DEBUG("wait -> bits=%08x", bits);

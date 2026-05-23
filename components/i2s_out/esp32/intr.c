@@ -18,19 +18,6 @@ static const int i2s_irq[I2S_PORT_MAX] = {
   [I2S_PORT_1]  = ETS_I2S1_INTR_SOURCE,
 };
 
-void IRAM_ATTR i2s_intr_out_total_eof_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
-{
-  uint32_t eof_addr;
-
-  i2s_intr_clear(i2s_out->dev, I2S_OUT_TOTAL_EOF_INT_CLR);
-  i2s_ll_tx_get_eof_des_addr(i2s_out->dev, &eof_addr);
-
-  LOG_ISR_DEBUG("desc=%p", eof_addr);
-
-  // unblock flush() tasks
-  xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
-}
-
 void IRAM_ATTR i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out, BaseType_t *task_wokenp)
 {
   uint32_t dscr_addr;
@@ -101,16 +88,8 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
 
     i2s_out->dma_eof_desc = eof_desc;
 
-    // unblock get() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF, task_wokenp);
-
-    // XXX: e.g. flash writes seem to drop I2S_OUT_TOTAL_EOF_INT_ST?
-    if (!(xEventGroupGetBitsFromISR(i2s_out->event_group) & (I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF))) {
-      LOG_ISR_WARN("end desc=%p owner=%u len=%u -> total_eof, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
-
-      // unblock flush() tasks
-      xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
-    }
+    // unblock get(), flush() task
+    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
 
   } else {
     LOG_ISR_ERROR("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
@@ -141,9 +120,6 @@ void IRAM_ATTR i2s_intr_handler(void *arg)
 
   taskENTER_CRITICAL_ISR(&i2s_out->mux);
 
-  if (int_st & I2S_OUT_TOTAL_EOF_INT_ST) {
-    i2s_intr_out_total_eof_handler(i2s_out, &task_woken);
-  }
   if (int_st & I2S_OUT_DSCR_ERR_INT_ST) {
     i2s_intr_out_dscr_err_handler(i2s_out, &task_woken);
   }

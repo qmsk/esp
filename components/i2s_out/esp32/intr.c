@@ -89,7 +89,7 @@ void IRAM_ATTR i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *tas
     i2s_out->dma_eof_desc = eof_desc;
 
     // unblock get(), flush() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, task_wokenp);
+    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE, task_wokenp);
 
   } else {
     LOG_ISR_ERROR("ignore desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);

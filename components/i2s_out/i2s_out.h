@@ -13,7 +13,7 @@
 struct dma_desc;
 
 #define I2S_OUT_EVENT_GROUP_BIT_DMA_EOF       (1 << 0)
-#define I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF (1 << 1)
+#define I2S_OUT_EVENT_GROUP_BIT_DMA_DONE      (1 << 1)
 #define I2S_OUT_EVENT_GROUP_BIT_I2S_EOF       (1 << 2)
 
 struct i2s_out {

@@ -194,7 +194,7 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
 
   // reset write state
   i2s_out->dma_start = false;
@@ -489,7 +489,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
   );
 
   // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
 
   i2s_out->dma_eof_desc = NULL;
 
@@ -525,9 +525,9 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
 {
   LOG_DEBUG("...");
 
-  EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF, false, false, timeout);
+  EventBits_t bits = xEventGroupWaitBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_DONE, false, false, timeout);
 
-  if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF)) {
+  if (!(bits & I2S_OUT_EVENT_GROUP_BIT_DMA_DONE)) {
     LOG_ERROR("timeout -> bits=%08x", bits);
     return -1;
   } else {
@@ -560,7 +560,7 @@ void i2s_out_dma_stop(struct i2s_out *i2s_out)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset eof state
-  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_TOTAL_EOF);
+  xEventGroupClearBits(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_DMA_EOF | I2S_OUT_EVENT_GROUP_BIT_DMA_DONE);
 
   i2s_out->dma_eof_desc = NULL;
 }

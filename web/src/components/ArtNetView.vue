@@ -30,6 +30,9 @@
 
           <dt>Long Name</dt>
           <dd>{{ artnet.info.long_name }}</dd>
+
+          <dt>Sync Mode</dt>
+          <dd>{{ artnet.state.sync }}</dd>
         </dl>
       </template>
 

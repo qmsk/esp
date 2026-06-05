@@ -23,6 +23,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
   size_t inputs_size = ARTNET_INPUTS_MAX, outputs_size = ARTNET_OUTPUTS_MAX;
+  bool sync_state = artnet_is_sync_state(artnet);
   int err;
 
   printf("Config:\n");
@@ -43,6 +44,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("\tUDP: port=%u\n", options.port);
   printf("\tShort name: %s\n", options.metadata.short_name);
   printf("\tLong name: %s\n", options.metadata.long_name);
+  printf("\n");
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");
@@ -54,7 +56,9 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return err;
   }
 
+  printf("Sync: %s\n", sync_state ? "true" : "false");
   printf("\n");
+
   printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);
 
   for (int i = 0; i < inputs_size && i < ARTNET_INPUTS_MAX; i++) {

@@ -162,7 +162,7 @@ void artnet_get_stats(struct artnet *artnet, struct artnet_stats *stats)
 }
 
 // node in synchronous DMX mode?
-bool artnet_sync_state (struct artnet *artnet)
+bool artnet_is_sync_state (struct artnet *artnet)
 {
   if (artnet->sync_tick) {
     return xTaskGetTickCount() - artnet->sync_tick < ARTNET_SYNC_TICKS;

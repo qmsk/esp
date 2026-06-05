@@ -220,7 +220,7 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
     xEventGroupSetBits(output->options.output_events, output->options.output_event_bit);
   }
 
-  if (artnet_sync_state(output->artnet)) {
+  if (artnet_is_sync_state(output->artnet)) {
     // wait for hard sync
     stats_counter_increment(&output->stats.dmx_sync);
   } else if (output->options.event_group && output->options.dmx_event_bit) {

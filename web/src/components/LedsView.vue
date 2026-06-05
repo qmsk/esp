@@ -84,7 +84,12 @@
       </template>
 
       <template v-if="status">
-        <h2>Status</h2>
+        <h2>
+          Status
+
+          <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
+        </h2>
+
         <dl>
           <dt>Active</dt>
           <dd>{{ status.active }}</dd>

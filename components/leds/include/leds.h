@@ -453,6 +453,11 @@ unsigned leds_count_total_power(struct leds *leds);
 bool leds_is_active(struct leds *leds);
 
 /*
+ * Check for setup() state.
+ */
+bool leds_is_interface_setup(struct leds *leds);
+
+/*
  * Setup persistent LEDs interface.
  *
  * It is also possible to call leds_tx() in sync mode without setup() / close().
@@ -470,5 +475,17 @@ int leds_tx(struct leds *leds);
 
 /*
  * Close persistent LEDs interface.
+ *
+ * Waits for any in-progress tx to complete, leaving the interface in a defined state.
  */
 int leds_interface_close(struct leds *leds);
+
+/*
+ * Reset persistent LEDs interface.
+ *
+ * Used to recover from errors, where the interface is in an undefined state.
+ *
+ * Does not timeout, can only fail if the i2s_out is locked by a different task.
+ */
+int leds_interface_reset(struct leds *leds);
+

@@ -69,6 +69,38 @@ int leds_interface_init(union leds_interface_state *interface, const struct leds
   return 0;
 }
 
+bool leds_is_interface_setup(struct leds *leds)
+{
+    switch (leds->options.interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      return 0;
+  #endif
+
+  #if CONFIG_LEDS_UART_ENABLED
+    case LEDS_INTERFACE_UART:
+      return 0;
+  #endif
+
+  #if CONFIG_LEDS_I2S_ENABLED
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
+      return leds->interface.i2s.i2s_out_setup;
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", leds->options.interface);
+      return -1;
+  }
+}
+
 int leds_interface_setup(struct leds *leds)
 {
     switch (leds->options.interface) {
@@ -157,6 +189,38 @@ int leds_interface_close(struct leds *leds)
     case LEDS_INTERFACE_I2S1:
   # endif
     return leds_interface_i2s_close(&leds->interface.i2s);
+  #endif
+
+    default:
+      LOG_ERROR("unsupported interface=%#x", leds->options.interface);
+      return -1;
+  }
+}
+
+int leds_interface_reset(struct leds *leds)
+{
+    switch (leds->options.interface) {
+    case LEDS_INTERFACE_NONE:
+      return 0;
+
+  #if CONFIG_LEDS_SPI_ENABLED
+    case LEDS_INTERFACE_SPI:
+      return 0;
+  #endif
+
+  #if CONFIG_LEDS_UART_ENABLED
+    case LEDS_INTERFACE_UART:
+      return 0;
+  #endif
+
+  #if CONFIG_LEDS_I2S_ENABLED
+  # if LEDS_I2S_INTERFACE_COUNT > 0
+    case LEDS_INTERFACE_I2S0:
+  # endif
+  # if LEDS_I2S_INTERFACE_COUNT > 1
+    case LEDS_INTERFACE_I2S1:
+  # endif
+    return leds_interface_i2s_reset(&leds->interface.i2s);
   #endif
 
     default:

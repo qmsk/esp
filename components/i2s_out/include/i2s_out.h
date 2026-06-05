@@ -252,6 +252,17 @@ int i2s_out_flush(struct i2s_out *i2s_out, TickType_t timeout);
 int i2s_out_close(struct i2s_out *i2s_out, TickType_t timeout);
 
 /**
+ * Reset I2S output, and release the lock acquired using `i2s_out_open()`.
+ *
+ * Tears down the data_gpio pin.
+ *
+ * Can only fail if the interface is locked by a different task.
+ *
+ * Returns >0 if the i2s_out is not setup(), <0 on errors.
+ */
+int i2s_out_reset(struct i2s_out *i2s_out);
+
+/**
  * Tear down all state setup by i2s_out_open(), including state typically shared across multiple open -> close calls.
  */
 int i2s_out_teardown(struct i2s_out *i2s_out);

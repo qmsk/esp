@@ -524,6 +524,40 @@ error:
   return err;
 }
 
+int i2s_out_reset(struct i2s_out *i2s_out)
+{
+  int err = 0;
+
+  if (!xSemaphoreTakeRecursive(i2s_out->mutex, 0)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  if (!i2s_out->setup) {
+    LOG_WARN("setup");
+    err = 1;
+    goto error;
+  }
+
+  i2s_out_dma_stop(i2s_out);
+  i2s_out_i2s_stop(i2s_out);
+  i2s_out_pin_teardown(i2s_out);
+
+  i2s_out->setup = false;
+
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+error:
+  // from open()
+  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
+    LOG_WARN("xSemaphoreGiveRecursive");
+  }
+
+  return err;
+}
+
 int i2s_out_teardown(struct i2s_out *i2s_out)
 {
   int err = 0;

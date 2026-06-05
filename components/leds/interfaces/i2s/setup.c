@@ -179,3 +179,21 @@ int leds_interface_i2s_close(struct leds_interface_i2s *interface)
 
   return err;
 }
+
+int leds_interface_i2s_reset(struct leds_interface_i2s *interface)
+{
+  int err = 0;
+
+#if CONFIG_LEDS_GPIO_ENABLED
+  leds_gpio_close(&interface->gpio);
+#endif
+
+  if ((err = i2s_out_reset(interface->i2s_out))) {
+    LOG_ERROR("i2s_out_reset");
+    return err;
+  }
+
+  interface->i2s_out_setup = false;
+
+  return err;
+}

@@ -440,6 +440,15 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
   // desc len is reset by out isr, restore from setup()
   i2s_out->dma_end_desc->len = i2s_out->dma_end_len;
 
+  for (unsigned i = 0; i < i2s_out->dma_repeat_count; i++) {
+    for (unsigned j = 0; j < i2s_out->dma_data_count; j++) {
+      struct dma_desc *s = &i2s_out->dma_data_desc[j];
+      struct dma_desc *d = &i2s_out->dma_repeat_desc[i * i2s_out->dma_data_count + j];
+
+      d->len = s->len;
+    }
+  }
+
   // commit all descs, including repeat and end
   for (struct dma_desc *desc = i2s_out->dma_write_desc; desc; desc = desc->next) {
     if (desc->owner) {

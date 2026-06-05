@@ -556,9 +556,7 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  dma_done = i2s_out->dma_done;
-
-  if (!dma_done) {
+  if (!(dma_done = i2s_out->dma_done)) {
     i2s_out->dma_done_task = xTaskGetCurrentTaskHandle();
   }
 

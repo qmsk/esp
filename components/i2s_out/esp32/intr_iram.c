@@ -40,6 +40,18 @@ static void i2s_out_intr_dma_done(struct i2s_out *i2s_out, BaseType_t *pxHigherP
   }
 }
 
+static void i2s_out_intr_i2s_done(struct i2s_out *i2s_out, BaseType_t *pxHigherPriorityTaskWoken)
+{
+  // unblock flush() task
+  i2s_out->i2s_done = true;
+
+  if (i2s_out->i2s_done_task) {
+    xTaskNotifyFromISR(i2s_out->i2s_done_task, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, eSetBits, pxHigherPriorityTaskWoken);
+
+    i2s_out->i2s_done_task = NULL;
+  }
+}
+
 static void i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
 {
   uint32_t dscr_addr;
@@ -76,6 +88,10 @@ static void i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
     i2s_out_intr_dma_out_desc(i2s_out, eof_desc, pxHigherPriorityTaskWoken);
     i2s_out_intr_dma_done(i2s_out, pxHigherPriorityTaskWoken);
 
+    // XXX: ensure tx rempty intr is enabled, in case it fired during DMA and was disabled?
+    i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+    i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
+
   } else {
     LOG_ISR_ERROR("unknown desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
   }
@@ -89,13 +105,14 @@ static void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
-  // unblock flush() task
-  i2s_out->i2s_done = true;
+  if (!i2s_out->dma_done) {
+    // XXX: ignore if fired before dma_done, will be re-enabled
+    // XXX: may indicate a timing glitch in the output data?
+    LOG_ISR_ERROR("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+  } else {
+    LOG_ISR_DEBUG("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
 
-  if (i2s_out->i2s_done_task) {
-    xTaskNotifyFromISR(i2s_out->i2s_done_task, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, eSetBits, pxHigherPriorityTaskWoken);
-
-    i2s_out->i2s_done_task = NULL;
+    i2s_out_intr_i2s_done(i2s_out, pxHigherPriorityTaskWoken);
   }
 }
 

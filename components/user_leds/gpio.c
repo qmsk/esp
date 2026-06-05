@@ -1,3 +1,5 @@
+#define ERROR 
+
 #include <user_leds.h>
 #include "user_leds.h"
 
@@ -28,7 +30,7 @@ static IRAM_ATTR void user_leds_gpio_interrupt(gpio_pins_t pins, void *arg)
     }
 
     if (!xEventGroupSetBitsFromISR(leds->event_group, USER_LEDS_EVENT_BIT(led->index), &xHigherPriorityTaskWoken)) {
-      LOG_ISR_WARN("xEventGroupSetBitsFromISR");
+      LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
     }
   }
 

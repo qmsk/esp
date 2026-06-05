@@ -1,0 +1,4 @@
+[mapping:i2s_out]
+archive: i2s_out.a
+entries:
+    intr_iram (noflash)

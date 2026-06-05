@@ -126,6 +126,9 @@ struct i2s_out_options {
   // number of parallel data bits in use, 0 -> all
   unsigned parallel_data_bits;
 #endif
+
+  // number of times to repeat data, 0 -> off
+  unsigned repeat_data_count;
 };
 
 /**
@@ -145,7 +148,7 @@ int i2s_out_new(struct i2s_out **i2s_outp, i2s_port_t port, size_t buffer_size, 
  *
  * Returns <0 on error, 0 on success.
  */
-int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options);
+int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options, TickType_t timeout);
 
 /**
  * Copy exactly `count` 16-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
@@ -158,7 +161,7 @@ int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options)
  *
  * Returns <0 error, 0 on success, >0 if TX buffer is full.
  */
-int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count);
+int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_t count, TickType_t timeout);
 
 /**
  * Copy exactly `count` 32-bit words from `data` into the internal TX DMA buffer for serial output in little-endian order.
@@ -173,7 +176,7 @@ int i2s_out_write_serial16(struct i2s_out *i2s_out, const uint16_t data[], size_
  *
  * Returns <0 error, 0 on success, >0 if TX buffer is full.
  */
-int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count);
+int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t count, TickType_t timeout);
 
 #if I2S_OUT_PARALLEL_SUPPORTED
   /**
@@ -188,7 +191,7 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
    *
    * Returns <0 error, 0 on success, >0 if TX buffer is full.
    */
-  int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t *data, unsigned width);
+  int i2s_out_write_parallel8x8(struct i2s_out *i2s_out, uint8_t *data, unsigned width, TickType_t timeout);
 
   /**
    * Copy 8 channels of `width` x 16-bit `data` into the internal TX DMA buffer, transposing the buffers for
@@ -202,7 +205,7 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
    *
    * Returns <0 error, 0 on success, >0 if TX buffer is full.
    */
-   int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width);
+   int i2s_out_write_parallel8x16(struct i2s_out *i2s_out, uint16_t *data, unsigned width, TickType_t timeout);
 
   /**
    * Copy 8 channels of `width` x 32-bit `data`  into the internal TX DMA buffer, transposing the buffers for
@@ -216,29 +219,40 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
    *
    * Returns <0 error, 0 on success, >0 if TX buffer is full.
    */
-   int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width);
+   int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width, TickType_t timeout);
 #endif
 
 /**
- * Setup DMA to repeat all written buffers given count of times. Completes any writes.
+ * Start I2S output, do not wait for TX.
  *
  * Returns <0 on error, 0 on success.
  */
-int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count);
+int i2s_out_start(struct i2s_out *i2s_out, TickType_t timeout);
 
 /**
  * Start I2S output, and wait for the complete TX buffer and EOF frame to be written.
  *
  * Returns <0 on error, 0 on success.
  */
-int i2s_out_flush(struct i2s_out *i2s_out);
+int i2s_out_flush(struct i2s_out *i2s_out, TickType_t timeout);
 
 /**
  * Flush I2S output, and release the lock acquired using `i2s_out_open()`.
  *
  * Tears down the data_gpio pin.
  */
-int i2s_out_close(struct i2s_out *i2s_out);
+int i2s_out_close(struct i2s_out *i2s_out, TickType_t timeout);
+
+/**
+ * Reset I2S output, and release the lock acquired using `i2s_out_open()`.
+ *
+ * Tears down the data_gpio pin.
+ *
+ * Can only fail if the interface is locked by a different task.
+ *
+ * Returns >0 if the i2s_out is not setup(), <0 on errors.
+ */
+int i2s_out_reset(struct i2s_out *i2s_out);
 
 /**
  * Tear down all state setup by i2s_out_open(), including state typically shared across multiple open -> close calls.

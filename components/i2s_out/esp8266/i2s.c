@@ -1,3 +1,5 @@
+#define ERROR
+
 #include "../i2s_out.h"
 #include "i2s.h"
 
@@ -24,7 +26,9 @@ static void IRAM_ATTR i2s_isr(void *arg)
 
   if (I2S0.int_st.tx_rempty) {
     // unblock flush() task
-    xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, &task_woken);
+    if (!xEventGroupSetBitsFromISR(i2s_out->event_group, I2S_OUT_EVENT_GROUP_BIT_I2S_EOF, &task_woken)) {
+      LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
+    }
 
     // interrupt will fire until disabled
     I2S0.int_ena.tx_rempty = 0;

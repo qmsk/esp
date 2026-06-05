@@ -23,3 +23,5 @@ union leds_interface_state {
   struct leds_interface_uart uart;
 #endif
 };
+
+int leds_interface_tx(struct leds *leds);

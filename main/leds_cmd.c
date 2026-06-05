@@ -368,12 +368,14 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   #if LEDS_I2S_INTERFACE_COUNT > 0
     print_stats_timer("i2s0", "open",    &stats.i2s0.open);
     print_stats_timer("i2s0", "write",   &stats.i2s0.write);
+    print_stats_timer("i2s0", "start",   &stats.i2s0.start);
     print_stats_timer("i2s0", "flush",   &stats.i2s0.flush);
     printf("\n");
   #endif
   #if LEDS_I2S_INTERFACE_COUNT > 1
     print_stats_timer("i2s1", "open",    &stats.i2s1.open);
     print_stats_timer("i2s1", "write",   &stats.i2s1.write);
+    print_stats_timer("i2s1", "start",   &stats.i2s1.start);
     print_stats_timer("i2s1", "flush",   &stats.i2s1.flush);
     printf("\n");
   #endif

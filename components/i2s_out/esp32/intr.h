@@ -22,3 +22,5 @@ static inline void i2s_intr_disable_all(i2s_dev_t *hw)
 {
     hw->int_ena.val = 0;
 }
+
+void i2s_intr_handler(void *arg);

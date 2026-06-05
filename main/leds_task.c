@@ -102,6 +102,11 @@ static void leds_main(void *ctx)
   struct leds_state *state = ctx;
   struct leds_stats *stats = &leds_stats[state->index];
 
+  if (setup_leds(state)) {
+    LOG_ERROR("setup_leds");
+    goto error;
+  }
+
   for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
     EventBits_t event_bits = leds_task_wait(state);
     enum user_activity update_activity = 0;
@@ -160,11 +165,18 @@ static void leds_main(void *ctx)
       WITH_STATS_TIMER(&stats->update) {
         if (update_leds(state, update_activity)) {
           LOG_WARN("leds%d: update_leds", state->index + 1);
-          continue;
+          user_alert(USER_ALERT_ERROR_LEDS);
+          reset_leds(state);
         }
       }
     }
   }
+
+error:
+  user_alert(USER_ALERT_ERROR_LEDS);
+  LOG_ERROR("task=%p stopped", state->task);
+  state->task = NULL;
+  vTaskDelete(NULL);
 }
 
 int init_leds_task(struct leds_state *state, const struct leds_config *config)

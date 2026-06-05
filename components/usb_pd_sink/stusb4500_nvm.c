@@ -4,8 +4,6 @@
 
 #include <esp_err.h>
 
-#define DEBUG
-
 #include <logging.h>
 
 static int stusb4500_nvm_unlock(struct stusb4500 *stusb4500)

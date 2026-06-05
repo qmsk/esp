@@ -1,3 +1,5 @@
+#define ERROR 
+
 #include <atx_psu.h>
 
 #include <logging.h>
@@ -61,7 +63,7 @@ static IRAM_ATTR void atx_psu_gpio_interrupt(gpio_pins_t pins, void *arg)
   LOG_ISR_DEBUG("pins=" GPIO_PINS_FMT, GPIO_PINS_ARGS(pins));
 
   if (!xEventGroupSetBitsFromISR(atx_psu->events, ATX_PSU_EVENTS_INTR_BIT, &xHigherPriorityTaskWoken)) {
-    LOG_ISR_WARN("xEventGroupSetBitsFromISR");
+    LOG_ISR_ERROR("xEventGroupSetBitsFromISR");
   }
 
 #if CONFIG_IDF_TARGET_ESP8266

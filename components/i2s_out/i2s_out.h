@@ -52,17 +52,17 @@ struct i2s_out {
 #endif
 
   /* dma */
-  uint8_t *dma_out_buf, *dma_end_buf;
-  struct dma_desc *dma_out_desc;
+  uint8_t *dma_data_buf, *dma_end_buf;
+  struct dma_desc *dma_data_desc;
   struct dma_desc *dma_repeat_desc;
   struct dma_desc *dma_end_desc;
 
-  unsigned dma_out_count, dma_repeat_count;
+  unsigned dma_data_count, dma_repeat_count;
 
-  // pointer to software-owned dma_out_desc used for write()
+  // pointer to software-owned dma_data_desc used for write()
   struct dma_desc *dma_write_desc;
 
-  // pointer to previous hardware-owned dma_out_desc, now available for write() - updated by ISR
+  // pointer to previous hardware-owned dma_data_desc, now available for write() - updated by ISR
   struct dma_desc *dma_eof_desc;
 
   bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()

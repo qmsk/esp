@@ -19,7 +19,7 @@ static void i2s_out_intr_dma_eof_desc(struct i2s_out *i2s_out, struct dma_desc *
       i2s_dma_desc_reset(desc);
     }
   } else {
-    for (struct dma_desc *desc = eof_desc; desc >= i2s_out->dma_out_desc; desc--) {
+    for (struct dma_desc *desc = eof_desc; desc >= i2s_out->dma_data_desc; desc--) {
       if (desc != eof_desc) {
         LOG_ISR_WARN("miss desc=%p owner=%u len=%u", desc, desc->owner, desc->len);
       }
@@ -72,19 +72,19 @@ static void i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
   struct dma_desc *eof_desc = (struct dma_desc *) eof_addr;
 
   // only handle normal out_desc, not repeat_desc or end_desc
-  if (eof_desc >= i2s_out->dma_out_desc && eof_desc < i2s_out->dma_out_desc + i2s_out->dma_out_count) {
+  if (eof_desc >= i2s_out->dma_data_desc && eof_desc < i2s_out->dma_data_desc + i2s_out->dma_data_count) {
     LOG_ISR_DEBUG("eof desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
 
     i2s_out_intr_dma_eof_desc(i2s_out, eof_desc, pxHigherPriorityTaskWoken);
 
-  } else if (i2s_out->dma_repeat_desc && eof_desc >= i2s_out->dma_repeat_desc && eof_desc < i2s_out->dma_repeat_desc + i2s_out->dma_out_count * i2s_out->dma_repeat_count) {
+  } else if (i2s_out->dma_repeat_desc && eof_desc >= i2s_out->dma_repeat_desc && eof_desc < i2s_out->dma_repeat_desc + i2s_out->dma_data_count * i2s_out->dma_repeat_count) {
     LOG_ISR_DEBUG("ignore repeat desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);
 
   } else if (eof_desc == i2s_out->dma_end_desc) {
     // we may miss some EOF ISR for intermediate DMA descriptors, unblock i2s_out_dma_wait()
     LOG_ISR_WARN("end desc=%p owner=%u len=%u, dma_write_desc=%p dma_eof_desc=%p", eof_desc, eof_desc->owner, eof_desc->len, i2s_out->dma_write_desc, i2s_out->dma_eof_desc);
 
-    eof_desc = i2s_out->dma_out_desc + i2s_out->dma_out_count - 1;
+    eof_desc = i2s_out->dma_data_desc + i2s_out->dma_data_count - 1;
 
     i2s_out_intr_dma_eof_desc(i2s_out, eof_desc, pxHigherPriorityTaskWoken);
     i2s_out_intr_dma_done(i2s_out, pxHigherPriorityTaskWoken);

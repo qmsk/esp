@@ -10,10 +10,7 @@ struct stats_timer {
   uint64_t total; // us
 };
 
-struct stats_timer_sample {
-  uint64_t start;
-  bool running;
-};
+typedef uint64_t stats_timer_start_t;
 
 static inline void stats_timer_init(struct stats_timer *timer)
 {
@@ -29,28 +26,28 @@ static inline struct stats_timer stats_timer_copy(const struct stats_timer *time
   return *timer;
 }
 
-static inline void stats_timer_update(struct stats_timer *timer, uint32_t count, uint64_t interval)
+// IRAM-safe
+static inline void stats_timer_update(struct stats_timer *timer, stats_timer_start_t start)
 {
-  timer->update = esp_timer_get_time();
-  timer->count += count;
-  timer->total += interval;
-}
-
-static inline struct stats_timer_sample stats_timer_start(struct stats_timer *timer)
-{
-  return (struct stats_timer_sample) {
-    .start    = esp_timer_get_time(),
-    .running  = true,
-  };
-}
-
-static inline void stats_timer_stop(struct stats_timer *timer, struct stats_timer_sample *sample)
-{
+  assert(start);
+  
   uint64_t stop = esp_timer_get_time();
 
-  stats_timer_update(timer, 1, stop - sample->start);
+  timer->update = esp_timer_get_time();
+  timer->count += 1;
+  timer->total += stop - start;
+}
 
-  sample->running = false;
+static inline stats_timer_start_t stats_timer_start(struct stats_timer *timer)
+{
+  return esp_timer_get_time();
+}
+
+static inline void stats_timer_stop(struct stats_timer *timer, stats_timer_start_t *startp)
+{
+  stats_timer_update(timer, *startp);
+
+  *startp = 0;
 }
 
 static inline float stats_timer_seconds_passed(const struct stats_timer *timer)
@@ -100,4 +97,4 @@ static inline float stats_timer_utilization(const struct stats_timer *timer)
 }
 
 #define WITH_STATS_TIMER(timer) \
-  for (struct stats_timer_sample _stats_timer_sample = stats_timer_start(timer); _stats_timer_sample.running; stats_timer_stop(timer, &_stats_timer_sample))
+  for (stats_timer_start_t _stats_timer_start = stats_timer_start(timer); false; stats_timer_update(timer, _stats_timer_start))

@@ -107,12 +107,12 @@ static void leds_main(void *ctx)
     goto error;
   }
 
-  for(struct stats_timer_sample loop_sample;; stats_timer_stop(&stats->loop, &loop_sample)) {
+  for(stats_timer_start_t loop_start;; stats_timer_stop(&stats->loop, &loop_start)) {
     EventBits_t event_bits = leds_task_wait(state);
     enum user_activity update_activity = 0;
     bool update_timeout = false;
 
-    loop_sample = stats_timer_start(&stats->loop);
+    loop_start = stats_timer_start(&stats->loop);
 
     if (state->sequence && leds_sequence_active(state, event_bits)) {
       WITH_STATS_TIMER(&stats->sequence) {

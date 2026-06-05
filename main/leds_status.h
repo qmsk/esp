@@ -18,6 +18,9 @@ struct leds_status {
     struct leds_limit_status limit_total_status;
     struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
     size_t limit_groups_count;
+
+    float task_rate, task_util;
+    float interface_rate, interface_util;
 };
 
 void get_leds_status(struct leds_state *leds, struct leds_status *status);

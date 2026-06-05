@@ -72,6 +72,8 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
 
     printf("\tActive    : %s\n", status.active ? "true" : "false");
     printf("\tUpdate    : %dms\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
+    printf("\tTask      : %6.1f/s @ %5.1f%%\n", status.task_rate, status.task_util * 100.0f);
+    printf("\tInterface : %6.1f/s @ %5.1f%%\n", status.interface_rate, status.interface_util * 100.0f);
     if (status.test) {
       printf("\tTest:\n");
       printf("\t\tMode : %s\n", status.test_mode ? config_enum_to_string(leds_test_mode_enum, status.test_mode) : "");

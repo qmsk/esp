@@ -366,6 +366,9 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
   #endif
 
   #if LEDS_I2S_INTERFACE_COUNT > 0
+    struct i2s_out_stats i2s0_stats = get_leds_i2s_out_stats(0);
+
+    print_stats_timer("i2s0", "out",     &i2s0_stats.out_timer);
     print_stats_timer("i2s0", "open",    &stats.i2s0.open);
     print_stats_timer("i2s0", "write",   &stats.i2s0.write);
     print_stats_timer("i2s0", "start",   &stats.i2s0.start);
@@ -373,6 +376,9 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     printf("\n");
   #endif
   #if LEDS_I2S_INTERFACE_COUNT > 1
+    struct i2s_out_stats i2s1_stats = get_leds_i2s_out_stats(1);
+
+    print_stats_timer("i2s1", "out",     &i2s1_stats.out_timer);
     print_stats_timer("i2s1", "open",    &stats.i2s1.open);
     print_stats_timer("i2s1", "write",   &stats.i2s1.write);
     print_stats_timer("i2s1", "start",   &stats.i2s1.start);
@@ -419,6 +425,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     LOG_INFO("reset leds stats");
 
     init_leds_stats();
+    reset_leds_i2s_out_stats();
     leds_reset_interface_stats();
   }
 

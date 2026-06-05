@@ -1,4 +1,5 @@
 #include "leds_stats.h"
+#include "leds_i2s.h"
 
 struct leds_sequence_stats leds_sequence_stats;
 struct leds_stats leds_stats[LEDS_COUNT];
@@ -29,5 +30,31 @@ void init_leds_stats()
     stats_counter_init(&stats->sync_missed);
     stats_counter_init(&stats->sync_full);
     stats_counter_init(&stats->update_timeout);
+  }
+}
+
+struct i2s_out_stats get_leds_i2s_out_stats(unsigned port)
+{
+  struct i2s_out *i2s_out = NULL;
+  
+  if (port < LEDS_I2S_INTERFACE_COUNT) {
+    i2s_out = leds_i2s_out[port];
+  }
+
+  if (i2s_out) {
+    return i2s_out_stats(i2s_out);
+  } else {
+    return (struct i2s_out_stats) {};
+  }
+}
+
+void reset_leds_i2s_out_stats()
+{
+  struct i2s_out *i2s_out = NULL;
+  
+  for (unsigned port = 0; port < LEDS_I2S_INTERFACE_COUNT; port++) {
+    if ((i2s_out = leds_i2s_out[port])) {
+      i2s_out_reset_stats(i2s_out);
+    }
   }
 }

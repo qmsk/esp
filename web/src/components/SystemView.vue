@@ -14,8 +14,10 @@ table.tasks td.stack-free {
 <template>
   <main id="system-view" class="split">
     <div class="view">
-      <h1>System</h1>
-      <progress v-show="loading">Loading...</progress>
+      <h1>
+        System
+        <progress v-show="loading">Loading...</progress>
+      </h1>
 
       <template v-if="info && status">
         <h2>Hardware</h2>

@@ -7,11 +7,11 @@
 <template>
   <main id="artnet-view">
     <div class="view centered">
-      <div class="header">
-        <h1>Art-Net</h1>
+      <h1>
+        Art-Net
         <progress v-show="loading">Loading...</progress>
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </div>
+      </h1>
 
       <template v-if="artnet && artnet.info">
         <h2>Info</h2>

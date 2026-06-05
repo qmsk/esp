@@ -20,25 +20,33 @@ a {
 h1 {
   background-color: #aaa;
   color: #111;
-
-  margin: 0;
-  padding: 0.25em;
 }
 
 h2 {
   background-color: #888;
   color: #111;
-
-  margin: 0;
-  padding: 0.25em;
 }
 
 h3 {
   background-color: #133337;
   color: #ccc;
+}
 
+progress {
+  display: block;
+  width: 50%;
+}
+
+/* Headers */
+h1, h2, h3 {
   margin: 0;
   padding: 0.25em;
+
+  /* for inline buttons */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 
 h1 span.state,
@@ -46,6 +54,12 @@ h2 span.state,
 h3 span.state {
   font-weight: lighter;
   font-style: italic;
+}
+
+h1 button,
+h2 button,
+h3 button {
+
 }
 
 /* Structure */
@@ -183,20 +197,6 @@ main.tabbed .view.centered {
   background-color: #aaa;
 }
 
-/* View header */
-main .view .header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-main progress {
-  display: block;
-  width: 50%;
-  margin: 1em auto;
-}
-
 /* Controls */
 .controls {
   background-color: #444;
@@ -298,7 +298,7 @@ table td.size {
 }
 
  /* Spinner */
- .spin {
+.spin {
    display: inline-block;
 
    width: 1em;

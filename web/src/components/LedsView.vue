@@ -19,11 +19,11 @@
       </a>
     </nav>
     <div class="view centered">
-      <div class="header">
-        <h1>LEDS ({{ activeID }})</h1>
+      <h1>
+        LEDS ({{ activeID }})
         <progress v-show="loading">Loading...</progress>
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </div>
+      </h1>
 
       <template v-if="options">
         <h2>Options</h2>

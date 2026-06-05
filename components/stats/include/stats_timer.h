@@ -97,4 +97,4 @@ static inline float stats_timer_utilization(const struct stats_timer *timer)
 }
 
 #define WITH_STATS_TIMER(timer) \
-  for (stats_timer_start_t _stats_timer_start = stats_timer_start(timer); false; stats_timer_update(timer, _stats_timer_start))
+  for (stats_timer_start_t _stats_timer_start = stats_timer_start(timer); _stats_timer_start; stats_timer_stop(timer, &_stats_timer_start))

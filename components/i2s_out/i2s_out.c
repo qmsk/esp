@@ -355,33 +355,6 @@ error:
   }
 #endif
 
-int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count)
-{
-  int err = 0;
-
-  if (!xSemaphoreTakeRecursive(i2s_out->mutex, portMAX_DELAY)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
-  }
-
-  if (!i2s_out->setup) {
-    LOG_ERROR("setup");
-    return -1;
-  }
-
-  if ((err = i2s_out_dma_repeat(i2s_out, count))) {
-    LOG_ERROR("i2s_out_dma_repeat");
-    goto error;
-  }
-
-  if (!xSemaphoreGiveRecursive(i2s_out->mutex)) {
-    LOG_WARN("xSemaphoreGiveRecursive");
-  }
-
-error:
-  return err;
-}
-
 int i2s_out_wait(struct i2s_out *i2s_out, TickType_t timeout)
 {
   int err = 0;

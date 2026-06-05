@@ -126,6 +126,9 @@ struct i2s_out_options {
   // number of parallel data bits in use, 0 -> all
   unsigned parallel_data_bits;
 #endif
+
+  // number of times to repeat data, 0 -> off
+  unsigned repeat_data_count;
 };
 
 /**
@@ -218,17 +221,6 @@ int i2s_out_write_serial32(struct i2s_out *i2s_out, const uint32_t *data, size_t
    */
    int i2s_out_write_parallel8x32(struct i2s_out *i2s_out, uint32_t *data, unsigned width, TickType_t timeout);
 #endif
-
-/**
- * Setup DMA to repeat all written buffers given count of times. 
- *
- * Can only be called between open() -> write() and flush() -> close() in sync mode.
- * Cannot be called after start(), and cannot call write() after.
- * Remains in effect until next close() and open().
- *
- * Returns <0 on error, 0 on success.
- */
-int i2s_out_repeat(struct i2s_out *i2s_out, unsigned count);
 
 /**
  * Start I2S output, do not wait for TX.

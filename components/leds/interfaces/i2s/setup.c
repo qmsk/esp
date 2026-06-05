@@ -136,6 +136,10 @@ int leds_interface_i2s_init(struct leds_interface_i2s *interface, const struct l
   }
 #endif
 
+  if (options->repeat) {
+    interface->i2s_out_options.repeat_data_count = options->repeat;
+  }
+
   interface->gpio = options->gpio;
   interface->stats = stats;
 

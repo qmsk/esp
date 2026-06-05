@@ -195,13 +195,6 @@ int leds_interface_i2s_tx(struct leds_interface_i2s *interface, const struct led
     }
   }
 
-  if (interface->options->repeat) {
-    if ((err = i2s_out_repeat(interface->i2s_out, interface->options->repeat))) {
-      LOG_ERROR("i2s_out_repeat");
-      goto error;
-    }
-  }
-
   if (!setup) {
     // sync, wait for done before close
     WITH_STATS_TIMER(&interface->stats->flush) {

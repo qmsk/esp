@@ -81,7 +81,6 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
 size_t i2s_out_dma_buffer(struct i2s_out *i2s_out, void **ptr, unsigned count, size_t size, TickType_t timeout);
 void i2s_out_dma_commit(struct i2s_out *i2s_out, unsigned count, size_t size);
 int i2s_out_dma_write(struct i2s_out *i2s_out, const void *data, size_t size, TickType_t timeout);
-int i2s_out_dma_repeat(struct i2s_out *i2s_out, unsigned count);
 int i2s_out_dma_running(struct i2s_out *i2s_out);
 int i2s_out_dma_pending(struct i2s_out *i2s_out);
 int i2s_out_dma_start(struct i2s_out *i2s_out);

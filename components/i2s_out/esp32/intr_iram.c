@@ -50,6 +50,9 @@ static void i2s_out_intr_i2s_done(struct i2s_out *i2s_out, BaseType_t *pxHigherP
 
     i2s_out->i2s_done_task = NULL;
   }
+
+  // stats
+  stats_timer_stop(&i2s_out->stats.out_timer, &i2s_out->stats_out_timer_start);
 }
 
 static void i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)

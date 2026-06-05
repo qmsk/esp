@@ -1,4 +1,7 @@
 #include <i2s_out.h>
+#include <i2s_out_stats.h>
+
+#include <stats_timer.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
@@ -73,6 +76,10 @@ struct i2s_out {
   TaskHandle_t dma_out_task; // task waiting for dma_out_desc to update
   TaskHandle_t dma_done_task; // task waiting for dma_done to be set
   TaskHandle_t i2s_done_task; // task waiting for i2s_done to be set
+
+  struct i2s_out_stats stats;
+
+  stats_timer_start_t stats_out_timer_start;
 };
 
 /* dma.c */
@@ -107,3 +114,7 @@ void i2s_out_pin_teardown(struct i2s_out *i2s_out);
 /* intr.c */
 int i2s_out_intr_setup(struct i2s_out *i2s_out, const struct i2s_out_options *options);
 void i2s_out_intr_teardown(struct i2s_out *i2s_out);
+
+/* stats.c */
+void i2s_out_stats_reset(struct i2s_out_stats *stats);
+struct i2s_out_stats i2s_out_stats_copy(struct i2s_out_stats *stats);

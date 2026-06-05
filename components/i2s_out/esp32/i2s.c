@@ -131,6 +131,9 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
+  // track active time
+  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   // NOTE: there seems to always be three extra BCK cycles at the start of TX

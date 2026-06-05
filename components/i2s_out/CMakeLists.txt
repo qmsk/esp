@@ -1,7 +1,7 @@
 idf_component_register(
   SRC_DIRS . ${IDF_TARGET}
   INCLUDE_DIRS "include"
-  PRIV_REQUIRES logging
+  PRIV_REQUIRES logging stats
   LDFRAGMENTS ${IDF_TARGET}.lf
 )
 

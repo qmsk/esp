@@ -131,19 +131,22 @@ int i2s_out_dma_init(struct i2s_out *i2s_out, size_t size, size_t align, unsigne
 }
 
 /* Prepare end desc + buffer */
-void init_dma_end(struct dma_desc *eof_desc, uint32_t value, unsigned count)
+size_t init_dma_end(struct dma_desc *end_desc, uint32_t value, unsigned count)
 {
-  uint32_t *ptr = (uint32_t *) eof_desc->buf;
+  uint32_t *ptr = (uint32_t *) end_desc->buf;
+  size_t len = count * sizeof(value);
 
   for (unsigned i = 0; i < count; i++) {
     ptr[i] = value;
   }
 
-  eof_desc->len = count * sizeof(value);
-  eof_desc->next = NULL;
+  end_desc->len = len;
+  end_desc->next = NULL;
+
+  return len;
 }
 
-void reinit_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
+void reset_dma_desc(struct dma_desc *head, unsigned count, struct dma_desc *next)
 {
   struct dma_desc **nextp = NULL;
 
@@ -174,9 +177,10 @@ int i2s_out_dma_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
     LOG_ERROR("eof_count=%u is too large for end buf size=%u", options->eof_count, DMA_END_BUF_SIZE);
     return -1;
   }
+
   // reinit out desc
-  init_dma_end(i2s_out->dma_end_desc, options->eof_value, options->eof_count);
-  reinit_dma_desc(i2s_out->dma_data_desc, i2s_out->dma_data_count, i2s_out->dma_end_desc);
+  reset_dma_desc(i2s_out->dma_data_desc, i2s_out->dma_data_count, i2s_out->dma_end_desc);
+  i2s_out->dma_end_len = init_dma_end(i2s_out->dma_end_desc, options->eof_value, options->eof_count);
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
@@ -473,6 +477,7 @@ int i2s_out_dma_start(struct i2s_out *i2s_out)
     i2s_out->dma_write_desc->owner = 1;
   }
 
+  i2s_out->dma_end_desc->len = i2s_out->dma_end_len;
   i2s_out->dma_end_desc->eof = 1;
   i2s_out->dma_end_desc->owner = 1;
   i2s_out->dma_end_desc->next = NULL;

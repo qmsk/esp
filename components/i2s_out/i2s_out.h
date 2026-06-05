@@ -58,6 +58,7 @@ struct i2s_out {
   struct dma_desc *dma_end_desc;
 
   unsigned dma_data_count, dma_repeat_count;
+  size_t dma_end_len;
 
   // software-owned dma_data_desc used for write()
   struct dma_desc *dma_write_desc;

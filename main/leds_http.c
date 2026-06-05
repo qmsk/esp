@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_status.h"
 #include "leds_artnet.h"
 #include "leds_test.h"
 #include "leds_config.h"
@@ -40,11 +41,11 @@ static int leds_api_write_object_leds_limit_status(struct json_writer *w, const 
   );
 }
 
-static int leds_api_write_object_leds_limit_status_groups(struct json_writer *w, const struct leds_limit_status *groups_status, size_t groups)
+static int leds_api_write_object_leds_limit_status_groups(struct json_writer *w, const struct leds_limit_status *groups_status, size_t count)
 {
   int err;
 
-  for (unsigned i = 0; i < groups; i++) {
+  for (unsigned i = 0; i < count; i++) {
     if ((err = JSON_WRITE_OBJECT(w, leds_api_write_object_leds_limit_status(w, &groups_status[i])))) {
       return err;
     }
@@ -55,23 +56,18 @@ static int leds_api_write_object_leds_limit_status_groups(struct json_writer *w,
 
 static int leds_api_write_object_status(struct json_writer *w, struct leds_state *state)
 {
-  struct leds_limit_status limit_total_status;
-  struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
-  size_t groups = LEDS_LIMIT_GROUPS_MAX;
-  bool active = leds_is_active(state->leds);
-  TickType_t tick = xTaskGetTickCount();
+  struct leds_status status;
 
-  leds_get_limit_total_status(state->leds, &limit_total_status);
-  leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
+  get_leds_status(state, &status);
 
   return (
-        JSON_WRITE_MEMBER_BOOL(w, "active", active)
-    ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", state->update_tick)
-    ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", TICK_MS(tick, state->update_tick))
-    ||  JSON_WRITE_MEMBER_UINT(w, "artnet_dmx_ms", state->artnet ? TICK_MS(tick, state->artnet->dmx_tick) : 0)
-    ||  JSON_WRITE_MEMBER_STRING(w, "test_mode", (state->test && state->test->mode) ? config_enum_to_string(leds_test_mode_enum, state->test->mode) : "")
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &limit_total_status))
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, limit_groups_status, groups))
+        JSON_WRITE_MEMBER_BOOL(w, "active", status.active)
+    ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", status.update_tick)
+    ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", TICK_MS(status.tick, status.update_tick))
+    ||  JSON_WRITE_MEMBER_UINT(w, "artnet_dmx_ms", status.artnet ? TICK_MS(status.tick, status.artnet_dmx_tick) : 0)
+    ||  JSON_WRITE_MEMBER_STRING(w, "test_mode", (status.test && status.test_mode) ? config_enum_to_string(leds_test_mode_enum, status.test_mode) : "")
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &status.limit_total_status))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, status.limit_groups_status, status.limit_groups_count))
   );
 }
 

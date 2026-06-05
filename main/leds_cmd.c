@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_status.h"
 #include "leds_artnet.h"
 #include "leds_test.h"
 #include "leds_config.h"
@@ -56,54 +57,48 @@ int leds_cmd_info(int argc, char **argv, void *ctx)
 
 int leds_cmd_status(int argc, char **argv, void *ctx)
 {
+  struct leds_status status;
+
   for (int i = 0; i < LEDS_COUNT; i++) {
-    const struct leds_config *config = &leds_configs[i];
     struct leds_state *state = &leds_states[i];
 
-    if (!config->enabled || !state->leds) {
+    if (!state->leds) {
       continue;
     }
 
+    get_leds_status(&leds_states[i], &status);
+
     printf("leds%d:\n", i + 1);
 
-    bool active = leds_is_active(state->leds);
-    struct leds_limit_status limit_total_status;
-    struct leds_limit_status limit_groups_status[LEDS_LIMIT_GROUPS_MAX];
-    size_t groups = LEDS_LIMIT_GROUPS_MAX;
-    TickType_t tick = xTaskGetTickCount();
-
-    leds_get_limit_total_status(state->leds, &limit_total_status);
-    leds_get_limit_groups_status(state->leds, limit_groups_status, &groups);
-
-    printf("\tActive    : %s\n", active ? "true" : "false");
-    printf("\tUpdate    : %dms\n", state->update_tick ? (tick - state->update_tick) * portTICK_RATE_MS : 0);
-    if (state->test) {
+    printf("\tActive    : %s\n", status.active ? "true" : "false");
+    printf("\tUpdate    : %dms\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
+    if (status.test) {
       printf("\tTest:\n");
-      printf("\t\tMode : %s\n", state->test->mode ? config_enum_to_string(leds_test_mode_enum, state->test->mode) : "");
+      printf("\t\tMode : %s\n", status.test_mode ? config_enum_to_string(leds_test_mode_enum, status.test_mode) : "");
     }
-    if (state->artnet) {
+    if (status.artnet) {
       printf("\tArt-Net:\n");
-      printf("\t\tUpdate    : %dms\n", state->artnet->dmx_tick ? (tick - state->artnet->dmx_tick) * portTICK_RATE_MS : 0);
+      printf("\t\tUpdate    : %dms\n", status.artnet_dmx_tick ? (status.tick - status.artnet_dmx_tick) * portTICK_RATE_MS : 0);
     }
 
     printf("\tLimit:\n");
     printf("\t\tTotal    : count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n",
-      limit_total_status.count,
-      leds_limit_status_power(&limit_total_status) * 100.0f,
-      leds_limit_status_limit(&limit_total_status) * 100.0f,
-      leds_limit_status_util(&limit_total_status) * 100.0f,
-      leds_limit_status_applied(&limit_total_status) * 100.0f,
-      leds_limit_status_output(&limit_total_status) * 100.0f
+      status.limit_total_status.count,
+      leds_limit_status_power(&status.limit_total_status) * 100.0f,
+      leds_limit_status_limit(&status.limit_total_status) * 100.0f,
+      leds_limit_status_util(&status.limit_total_status) * 100.0f,
+      leds_limit_status_applied(&status.limit_total_status) * 100.0f,
+      leds_limit_status_output(&status.limit_total_status) * 100.0f
     );
 
-    for (unsigned j = 0; j < groups; j++) {
+    for (unsigned j = 0; j < status.limit_groups_count; j++) {
       printf("\t\tGroup[%2d]: count %5d power %5.1f%% limit %5.1f%% util %5.1f%% applied %5.1f%% output %5.1f%%\n", j,
-        limit_groups_status[j].count,
-        leds_limit_status_power(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_limit(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_util(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_applied(&limit_groups_status[j]) * 100.0f,
-        leds_limit_status_output(&limit_groups_status[j]) * 100.0f
+        status.limit_groups_status[j].count,
+        leds_limit_status_power(&status.limit_groups_status[j]) * 100.0f,
+        leds_limit_status_limit(&status.limit_groups_status[j]) * 100.0f,
+        leds_limit_status_util(&status.limit_groups_status[j]) * 100.0f,
+        leds_limit_status_applied(&status.limit_groups_status[j]) * 100.0f,
+        leds_limit_status_output(&status.limit_groups_status[j]) * 100.0f
       );
     }
 

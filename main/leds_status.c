@@ -5,15 +5,14 @@
 #include "leds_artnet.h"
 #include "leds.h"
 
-void get_leds_stats_status(struct leds_state *state, struct leds_status *status)
+static struct stats_timer get_leds_task_timer(struct leds_state *state)
 {
   const struct leds_stats *stats = &leds_stats[state->index];
 
-  status->task_rate = stats_timer_average_rate(&stats->loop);
-  status->task_util = stats_timer_utilization(&stats->loop);
+  return stats->loop;
 }
 
-void get_leds_interface_status(struct leds_state *state, struct leds_status *status)
+static struct stats_timer get_leds_interface_timer(struct leds_state *state)
 {
   enum leds_interface li = leds_interface(state->leds);
   struct i2s_out_stats i2s_out_stats;
@@ -23,19 +22,38 @@ void get_leds_interface_status(struct leds_state *state, struct leds_status *sta
     case LEDS_INTERFACE_I2S1:
       i2s_out_stats = get_leds_i2s_out_stats(leds_interface_i2s_port(li));
 
-      status->interface_rate = stats_timer_average_rate(&i2s_out_stats.out_timer);
-      status->interface_util = stats_timer_utilization(&i2s_out_stats.out_timer);
-
-      break;
+      return i2s_out_stats.out_timer;
     
     default:
-      break;
+      return (struct stats_timer) {};
   }
+}
+
+// basic moving average
+static void update_stats_timer_metrics(struct stats_timer *baseline, const struct stats_timer *timer, struct stats_timer_metrics *avg)
+{
+  struct stats_timer_metrics metrics = stats_timer_diff_metrics(baseline, timer);
+
+  *avg = stats_timer_metrics_average(avg, &metrics);
+
+  *baseline = *timer;
+}
+
+void update_leds_status(struct leds_state *state)
+{
+  struct stats_timer task_timer = get_leds_task_timer(state);
+  struct stats_timer interface_timer = get_leds_interface_timer(state);
+
+  update_stats_timer_metrics(&state->status_timers.task, &task_timer, &state->status_timer_metrics.task);
+  update_stats_timer_metrics(&state->status_timers.interface, &interface_timer, &state->status_timer_metrics.interface);
 }
 
 void get_leds_status(struct leds_state *state, struct leds_status *status)
 {
   *status = (struct leds_status) {};
+
+  // TODO: timer interval?
+  update_leds_status(state);
 
   status->tick = xTaskGetTickCount();
   status->update_tick = state->update_tick;
@@ -55,7 +73,6 @@ void get_leds_status(struct leds_state *state, struct leds_status *status)
   leds_get_limit_total_status(state->leds, &status->limit_total_status);
   leds_get_limit_groups_status(state->leds, status->limit_groups_status, &status->limit_groups_count);
 
-  // stats
-  get_leds_stats_status(state, status);
-  get_leds_interface_status(state, status);
+  // metrics
+  status->metrics = state->status_timer_metrics;
 }

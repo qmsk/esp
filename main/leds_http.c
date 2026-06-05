@@ -54,6 +54,15 @@ static int leds_api_write_object_leds_limit_status_groups(struct json_writer *w,
   return 0;
 }
 
+static int leds_api_write_object_status_timer_metrics(struct json_writer *w, const struct stats_timer_metrics *metrics)
+{
+  return (
+        JSON_WRITE_MEMBER_FLOAT(w, "interval", metrics->interval)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "rate", metrics->rate)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "util", metrics->util)
+  );
+}
+
 static int leds_api_write_object_status(struct json_writer *w, struct leds_state *state)
 {
   struct leds_status status;
@@ -65,10 +74,10 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
     ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", status.update_tick)
     ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", TICK_MS(status.tick, status.update_tick))
     ||  JSON_WRITE_MEMBER_UINT(w, "artnet_dmx_ms", status.artnet ? TICK_MS(status.tick, status.artnet_dmx_tick) : 0)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "task_rate", status.task_rate)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "task_util", status.task_util)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "interface_rate", status.interface_rate)
-    ||  JSON_WRITE_MEMBER_FLOAT(w, "interface_util", status.interface_util)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "metrics",
+              JSON_WRITE_MEMBER_OBJECT(w, "task", leds_api_write_object_status_timer_metrics(w, &status.metrics.task))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "interface", leds_api_write_object_status_timer_metrics(w, &status.metrics.interface))
+        )
     ||  JSON_WRITE_MEMBER_STRING(w, "test_mode", (status.test && status.test_mode) ? config_enum_to_string(leds_test_mode_enum, status.test_mode) : "")
     ||  JSON_WRITE_MEMBER_OBJECT(w, "limit_total", leds_api_write_object_leds_limit_status(w, &status.limit_total_status))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "limit_groups", leds_api_write_object_leds_limit_status_groups(w, status.limit_groups_status, status.limit_groups_count))

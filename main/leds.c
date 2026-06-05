@@ -181,22 +181,24 @@ int reset_leds(struct leds_state *state)
     return -1;
   }
 
-  if (!leds_is_interface_setup(state->leds)) {
-    return 0;
+  if (leds_is_interface_setup(state->leds)) {
+    LOG_WARN("Reset LEDS interface");
+
+    if ((err = leds_interface_reset(state->leds))) {
+      // crash and restart
+      LOG_FATAL("leds_interface_reset");
+      return err;
+    }
   }
 
-  LOG_WARN("Reset LEDS interface");
+  if (state->config->interface_setup) {
+    LOG_WARN("Setup LEDS interface");
 
-  if ((err = leds_interface_reset(state->leds))) {
-    // crash and restart
-    LOG_FATAL("leds_interface_reset");
-    return err;
-  }
-
-  if ((err = leds_interface_setup(state->leds))) {
-    // crash and restart
-    LOG_FATAL("leds_interface_setup");
-    return err;
+    if ((err = leds_interface_setup(state->leds))) {
+      // crash and restart
+      LOG_FATAL("leds_interface_setup");
+      return err;
+    }
   }
 
   return 0;

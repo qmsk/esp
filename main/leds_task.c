@@ -115,6 +115,8 @@ static void leds_main(void *ctx)
     loop_start = stats_timer_start(&stats->loop);
 
     if (state->sequence && leds_sequence_active(state, event_bits)) {
+      LOG_DEBUG("sequence");
+
       WITH_STATS_TIMER(&stats->sequence) {
         if (leds_sequence_update(state, event_bits)) {
           update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
@@ -123,6 +125,8 @@ static void leds_main(void *ctx)
     }
 
     if (state->artnet && leds_artnet_active(state, event_bits)) {
+      LOG_DEBUG("artnet");
+
       WITH_STATS_TIMER(&stats->artnet) {
         switch (leds_artnet_update(state, event_bits)) {
           case 0:
@@ -143,6 +147,8 @@ static void leds_main(void *ctx)
     }
 
     if (state->test && leds_test_active(state, event_bits)) {
+      LOG_DEBUG("test");
+
       WITH_STATS_TIMER(&stats->test) {
         if (leds_test_update(state, event_bits)) {
           update_activity = USER_ACTIVITY_LEDS_TEST;
@@ -151,15 +157,17 @@ static void leds_main(void *ctx)
     }
 
     if (leds_update_active(state)) {
+      LOG_DEBUG("update timeout");
+
       // update without activity
       update_timeout = true;
-
-      LOG_DEBUG("update timeout");
 
       stats_counter_increment(&stats->update_timeout);
     }
 
     if (update_activity || update_timeout) {
+      LOG_DEBUG("update");
+      
       state->update_tick = xTaskGetTickCount();
 
       WITH_STATS_TIMER(&stats->update) {

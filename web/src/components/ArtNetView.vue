@@ -30,9 +30,17 @@
 
           <dt>Long Name</dt>
           <dd>{{ artnet.info.long_name }}</dd>
+        </dl>
+      </template>
 
+      <template v-if="artnet && artnet.status">
+        <h2>Status</h2>
+        <dl>
           <dt>Sync Mode</dt>
           <dd>{{ artnet.status.sync_mode }}</dd>
+
+          <dt>Recv</dt>
+          <dd>{{ artnet.metrics.recv_timer.rate | rate }} @ {{ artnet.metrics.recv_timer.util | percentage }} / {{ artnet.metrics.recv_timer.interval | interval }}</dd>
         </dl>
       </template>
 

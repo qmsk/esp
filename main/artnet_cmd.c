@@ -20,7 +20,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return 1;
   }
 
-  struct artnet_status artnet_status = get_artnet_status(artnet);
+  struct artnet_status status = get_artnet_status(artnet);
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
@@ -58,7 +58,8 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   }
 
   printf("Status:\n");
-  printf("\tSync Mode: %s\n", artnet_status.sync_mode ? "true" : "false");
+  printf("\tRecv      : %6.1f/s @ %5.1f%% (%.0fs)\n", status.metrics.recv_timer.rate, status.metrics.recv_timer.util * 100.0f, status.metrics.recv_timer.interval);
+  printf("\tSync Mode : %s\n", status.sync_mode ? "true" : "false");
   printf("\n");
 
   printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);

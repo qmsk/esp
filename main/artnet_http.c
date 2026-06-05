@@ -13,6 +13,16 @@
 
 #define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
 
+
+static int artnet_api_write_object_status_timer_metrics(struct json_writer *w, const struct stats_timer_metrics *metrics)
+{
+  return (
+        JSON_WRITE_MEMBER_FLOAT(w, "interval", metrics->interval)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "rate", metrics->rate)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "util", metrics->util)
+  );
+}
+
 static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options, const struct artnet_input_state *state)
 {
   TickType_t tick = xTaskGetTickCount();
@@ -116,7 +126,7 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
 {
   struct artnet *artnet = ctx;
   struct artnet_options options = artnet_get_options(artnet);
-  struct artnet_status artnet_status = get_artnet_status(artnet);
+  struct artnet_status status = get_artnet_status(artnet);
 
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_OBJECT(w, "info",
@@ -139,7 +149,10 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
         ||  JSON_WRITE_MEMBER_STRING(w, "long_name", options.metadata.long_name)
         )
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status",
-          JSON_WRITE_MEMBER_BOOL(w, "sync_mode", artnet_status.sync_mode)
+          JSON_WRITE_MEMBER_BOOL(w, "sync_mode", status.sync_mode)
+        )
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "metrics",
+              JSON_WRITE_MEMBER_OBJECT(w, "recv_timer", artnet_api_write_object_status_timer_metrics(w, &status.metrics.recv_timer))
         )
     ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w, artnet))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet))

@@ -223,8 +223,6 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
       taskEXIT_CRITICAL(&i2s_out->mux);
 
       if (!dma_write_owner) {
-        LOG_DEBUG("done");
-
         break;
       } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_DMA_OUT, &bits, timeout)) {  
         LOG_ERROR("timeout bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
@@ -240,7 +238,14 @@ struct dma_desc *i2s_out_dma_wait(struct i2s_out *i2s_out, TickType_t timeout)
 
         return NULL;
       } else {
-        LOG_DEBUG("wait -> done");
+        LOG_DEBUG("wait bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
+          bits,
+          i2s_out->dma_data_desc, i2s_out->dma_data_desc + i2s_out->dma_data_count - 1,
+          i2s_out->dma_write_desc,
+          i2s_out->dma_out_desc,
+          i2s_out->dma_end_desc,
+          i2s_out->dma_done
+        );
 
         break;
       }
@@ -560,11 +565,18 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   if (dma_done) {
-    LOG_DEBUG("done");
+    LOG_DEBUG("done bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
+      bits,
+      i2s_out->dma_data_desc, i2s_out->dma_data_desc + i2s_out->dma_data_count - 1,
+      i2s_out->dma_write_desc,
+      i2s_out->dma_out_desc,
+      i2s_out->dma_end_desc,
+      i2s_out->dma_done
+    );
 
     return 0;
   } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE, &bits, timeout)) {  
-    LOG_ERROR("timeout -> bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
+    LOG_ERROR("timeout bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
       bits,
       i2s_out->dma_data_desc, i2s_out->dma_data_desc + i2s_out->dma_data_count - 1,
       i2s_out->dma_write_desc,
@@ -577,7 +589,14 @@ int i2s_out_dma_flush(struct i2s_out *i2s_out, TickType_t timeout)
 
     return -1;
   } else {
-    LOG_DEBUG("wait -> done");
+    LOG_DEBUG("wait bits=%08x, dma_data_desc=%p...%p dma_write_desc=%p dma_out_desc=%p dma_end_desc=%p dma_done=%d",
+      bits,
+      i2s_out->dma_data_desc, i2s_out->dma_data_desc + i2s_out->dma_data_count - 1,
+      i2s_out->dma_write_desc,
+      i2s_out->dma_out_desc,
+      i2s_out->dma_end_desc,
+      i2s_out->dma_done
+    );
 
     return 0;
   }

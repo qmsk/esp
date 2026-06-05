@@ -4,6 +4,9 @@
 
 #include <stdbool.h>
 
+#define WITH_STATS_TIMER(timer) \
+  for (stats_timer_start_t _stats_timer_start = stats_timer_start(timer); _stats_timer_start; stats_timer_stop(timer, &_stats_timer_start))
+
 struct stats_timer {
   uint64_t reset, update;
   uint32_t count;
@@ -96,5 +99,23 @@ static inline float stats_timer_utilization(const struct stats_timer *timer)
   }
 }
 
-#define WITH_STATS_TIMER(timer) \
-  for (stats_timer_start_t _stats_timer_start = stats_timer_start(timer); _stats_timer_start; stats_timer_stop(timer, &_stats_timer_start))
+
+struct stats_timer_metrics {
+  float interval;
+  float rate;
+  float util;
+};
+
+/*
+ * Compute metrics between old -> new.
+ *
+ * Returns zero values if new is invalid.
+ * Returns values from new if old is invalid.
+ */
+struct stats_timer_metrics stats_timer_diff_metrics(const struct stats_timer *old, const struct stats_timer *new);
+
+/*
+ * Compute moving averge between old + new / 2.
+ */
+struct stats_timer_metrics stats_timer_metrics_average(const struct stats_timer_metrics *old, const struct stats_timer_metrics *new);
+

@@ -13,7 +13,7 @@
 struct dma_desc;
 
 #if CONFIG_IDF_TARGET_ESP32
-  #define I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF       (1 << 0)
+  #define I2S_OUT_TASK_NOTIFY_BIT_DMA_OUT       (1 << 0)
   #define I2S_OUT_TASK_NOTIFY_BIT_DMA_DONE      (1 << 1)
   #define I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE      (1 << 2)
 #endif
@@ -59,17 +59,17 @@ struct i2s_out {
 
   unsigned dma_data_count, dma_repeat_count;
 
-  // pointer to software-owned dma_data_desc used for write()
+  // software-owned dma_data_desc used for write()
   struct dma_desc *dma_write_desc;
 
-  // pointer to previous hardware-owned dma_data_desc, now available for write() - updated by ISR
-  struct dma_desc *dma_eof_desc;
+  // current hardware-owned dma desc (data, repeat, end, NULL) - updated by ISR
+  struct dma_desc *dma_out_desc;
 
   bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()
   bool dma_done;
   bool i2s_done;
 
-  TaskHandle_t dma_eof_task; // task waiting for dma_eof_desc to update
+  TaskHandle_t dma_out_task; // task waiting for dma_out_desc to update
   TaskHandle_t dma_done_task; // task waiting for dma_done to be set
   TaskHandle_t i2s_done_task; // task waiting for i2s_done to be set
 };

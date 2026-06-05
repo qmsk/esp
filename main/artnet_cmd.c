@@ -1,5 +1,6 @@
 #include "artnet.h"
 #include "artnet_state.h"
+#include "artnet_status.h"
 
 #include <artnet.h>
 #include "artnet_config.h"
@@ -19,11 +20,11 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return 1;
   }
 
+  struct artnet_status artnet_status = get_artnet_status(artnet);
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
   size_t inputs_size = ARTNET_INPUTS_MAX, outputs_size = ARTNET_OUTPUTS_MAX;
-  bool sync_state = artnet_is_sync_state(artnet);
   int err;
 
   printf("Config:\n");
@@ -56,7 +57,8 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return err;
   }
 
-  printf("Sync: %s\n", sync_state ? "true" : "false");
+  printf("Status:\n");
+  printf("\tSync Mode: %s\n", artnet_status.sync_mode ? "true" : "false");
   printf("\n");
 
   printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);

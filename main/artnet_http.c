@@ -1,5 +1,6 @@
 #include "artnet.h"
 #include "artnet_state.h"
+#include "artnet_status.h"
 #include "http_routes.h"
 #include "http_handlers.h"
 
@@ -115,7 +116,7 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
 {
   struct artnet *artnet = ctx;
   struct artnet_options options = artnet_get_options(artnet);
-  bool sync_state = artnet_is_sync_state(artnet);
+  struct artnet_status artnet_status = get_artnet_status(artnet);
 
   return JSON_WRITE_OBJECT(w,
         JSON_WRITE_MEMBER_OBJECT(w, "info",
@@ -137,8 +138,8 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
         ||  JSON_WRITE_MEMBER_STRING(w, "short_name", options.metadata.short_name)
         ||  JSON_WRITE_MEMBER_STRING(w, "long_name", options.metadata.long_name)
         )
-    ||  JSON_WRITE_MEMBER_OBJECT(w, "state",
-          JSON_WRITE_MEMBER_BOOL(w, "sync", sync_state)
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "status",
+          JSON_WRITE_MEMBER_BOOL(w, "sync_mode", artnet_status.sync_mode)
         )
     ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w, artnet))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet))

@@ -32,7 +32,7 @@
           <dd>{{ artnet.info.long_name }}</dd>
 
           <dt>Sync Mode</dt>
-          <dd>{{ artnet.state.sync }}</dd>
+          <dd>{{ artnet.status.sync_mode }}</dd>
         </dl>
       </template>
 

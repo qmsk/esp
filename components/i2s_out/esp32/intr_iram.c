@@ -9,6 +9,7 @@
 // we may miss some EOF ISR for intermediate DMA descriptors, ensure we unblock i2s_out_dma_wait() on owner up to eof_desc
 static void i2s_out_intr_dma_eof_desc(struct i2s_out *i2s_out, struct dma_desc *eof_desc, BaseType_t *pxHigherPriorityTaskWoken)
 {
+  // update dma_eof_desc
   if (i2s_out->dma_eof_desc) {
     for (struct dma_desc *desc = eof_desc; desc > i2s_out->dma_eof_desc; desc--) {
       if (desc != eof_desc) {
@@ -18,12 +19,18 @@ static void i2s_out_intr_dma_eof_desc(struct i2s_out *i2s_out, struct dma_desc *
       i2s_dma_desc_reset(desc);
     }
   } else {
-    i2s_dma_desc_reset(eof_desc);
+    for (struct dma_desc *desc = eof_desc; desc >= i2s_out->dma_out_desc; desc--) {
+      if (desc != eof_desc) {
+        LOG_ISR_WARN("miss desc=%p owner=%u len=%u", desc, desc->owner, desc->len);
+      }
+
+      i2s_dma_desc_reset(desc);
+    }
   }
 
-  // unblock wait()
   i2s_out->dma_eof_desc = eof_desc;
-
+  
+  // unblock wait()
   if (i2s_out->dma_eof_task) {
     xTaskNotifyFromISR(i2s_out->dma_eof_task, I2S_OUT_TASK_NOTIFY_BIT_DMA_EOF, eSetBits, pxHigherPriorityTaskWoken);
 

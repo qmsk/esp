@@ -111,7 +111,7 @@ static void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
   if (!i2s_out->dma_done) {
     // XXX: ignore if fired before dma_done, will be re-enabled
     // XXX: may indicate a timing glitch in the output data?
-    LOG_ISR_ERROR("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+    LOG_ISR_WARN("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
   } else {
     LOG_ISR_DEBUG("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
 

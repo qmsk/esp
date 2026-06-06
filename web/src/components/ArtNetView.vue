@@ -102,8 +102,10 @@
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
-              <th>Tick</th>
-              <th>Seq</th>
+              <th>DMX</th>
+              <th>Sequence Missing</th>
+              <th>Sequence Duplicate</th>
+              <th>Overflow</th>
             </tr>
           </thead>
           <tbody>
@@ -112,8 +114,10 @@
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
-              <td>{{ output.state.tick_ms | interval('ms') }}</td>
-              <td>{{ output.state.seq }}</td>
+              <td>{{ output.metrics.dmx_counter | counterMetrics }}</td>
+              <td>{{ output.metrics.seq_skip_counter | counterMetrics }}</td>
+              <td>{{ output.metrics.seq_drop_counter | counterMetrics }}</td>
+              <td>{{ output.metrics.overflow_counter | counterMetrics }}</td>
             </tr>
           </tbody>
         </table>

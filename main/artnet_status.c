@@ -26,6 +26,7 @@ static void update_stats_counter_metrics(struct stats_counter *baseline, const s
 void update_artnet_status(struct artnet *artnet)
 {
   struct artnet_stats artnet_stats;
+  unsigned artnet_output_coumt = artnet_get_output_count(artnet);
 
   artnet_get_stats(artnet, &artnet_stats);
 
@@ -34,6 +35,17 @@ void update_artnet_status(struct artnet *artnet)
   update_stats_counter_metrics(&artnet_status_stats.recv_dmx_counter, &artnet_stats.recv_dmx, &artnet_status_metrics.recv_dmx_counter);
   update_stats_counter_metrics(&artnet_status_stats.recv_sync_counter, &artnet_stats.recv_sync, &artnet_status_metrics.recv_sync_counter);
   update_stats_counter_metrics(&artnet_status_stats.dmx_discard_counter, &artnet_stats.dmx_discard, &artnet_status_metrics.dmx_discard_counter);
+
+  for (unsigned i = 0; i < artnet_output_coumt; i++) {
+    struct artnet_output_stats artnet_output_stats;
+
+    artnet_get_output_stats(artnet, i, &artnet_output_stats);
+
+    update_stats_counter_metrics(&artnet_status_stats.outputs[i].dmx_counter, &artnet_output_stats.dmx_recv, &artnet_status_metrics.outputs[i].dmx_counter);
+    update_stats_counter_metrics(&artnet_status_stats.outputs[i].seq_skip_counter, &artnet_output_stats.seq_skip, &artnet_status_metrics.outputs[i].seq_skip_counter);
+    update_stats_counter_metrics(&artnet_status_stats.outputs[i].seq_drop_counter, &artnet_output_stats.seq_drop, &artnet_status_metrics.outputs[i].seq_drop_counter);
+    update_stats_counter_metrics(&artnet_status_stats.outputs[i].overflow_counter, &artnet_output_stats.queue_overwrite, &artnet_status_metrics.outputs[i].overflow_counter);
+  }
 }
 
 struct artnet_status get_artnet_status(struct artnet *artnet)

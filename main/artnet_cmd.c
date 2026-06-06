@@ -102,11 +102,12 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: seq %3u @ %d ms\n", i,
+    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: dmx %6.1f/s (%.0fs) (seq %3u @ %dms)\n", i,
       artnet_address_net(options->address),
       artnet_address_subnet(options->address),
       artnet_address_universe(options->address),
       options->name,
+      status.metrics.outputs[i].dmx_counter.rate, status.metrics.outputs[i].dmx_counter.interval,
       state.seq,
       state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );

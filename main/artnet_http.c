@@ -73,7 +73,7 @@ static int artnet_api_write_inputs_array(struct json_writer *w, void *ctx)
   return 0;
 }
 
-static int artnet_api_write_output_object(struct json_writer *w, const struct artnet_output_options *options, const struct artnet_output_state *state)
+static int artnet_api_write_output_object(struct json_writer *w, const struct artnet_output_options *options, const struct artnet_output_state *state, const struct artnet_status_output_metrics *metrics)
 {
   TickType_t tick = xTaskGetTickCount();
 
@@ -87,13 +87,18 @@ static int artnet_api_write_output_object(struct json_writer *w, const struct ar
           ||  JSON_WRITE_MEMBER_UINT(w, "tick_ms", TICK_MS(tick, state->tick))
           ||  JSON_WRITE_MEMBER_UINT(w, "seq", state->seq)
         )
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "metrics",
+              JSON_WRITE_MEMBER_OBJECT(w, "dmx_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->dmx_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "seq_skip_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->seq_skip_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "seq_drop_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->seq_drop_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "overflow_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->overflow_counter))
+        )
   );
 }
 
 
-static int artnet_api_write_outputs_array(struct json_writer *w, void *ctx)
+static int artnet_api_write_outputs_array(struct json_writer *w, struct artnet *artnet, const struct artnet_status *status)
 {
-  struct artnet *artnet = ctx;
   struct artnet_output_options options;
   struct artnet_output_state state;
   int err;
@@ -104,7 +109,7 @@ static int artnet_api_write_outputs_array(struct json_writer *w, void *ctx)
       state = (struct artnet_output_state) {};
     }
 
-    if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_output_object(w, &options, &state)))) {
+    if ((err = JSON_WRITE_OBJECT(w, artnet_api_write_output_object(w, &options, &state, &status->metrics.outputs[index])))) {
       return err;
     }
   }
@@ -126,8 +131,9 @@ static int artnet_api_write_inputs(struct json_writer *w, void *ctx)
 static int artnet_api_write_outputs(struct json_writer *w, void *ctx)
 {
   struct artnet *artnet = ctx;
+  struct artnet_status status = get_artnet_status(artnet);
 
-  return JSON_WRITE_ARRAY(w, artnet_api_write_outputs_array(w, artnet));
+  return JSON_WRITE_ARRAY(w, artnet_api_write_outputs_array(w, artnet, &status));
 }
 
 static int artnet_api_write(struct json_writer *w, void *ctx)
@@ -167,7 +173,7 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
           ||  JSON_WRITE_MEMBER_OBJECT(w, "dmx_discard_counter", artnet_api_write_object_status_counter_metrics(w, &status.metrics.dmx_discard_counter))
         )
     ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w, artnet))
-    ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet, &status))
   );
 }
 

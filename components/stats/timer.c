@@ -2,17 +2,29 @@
 
 struct stats_timer_metrics stats_timer_diff_metrics(const struct stats_timer *old, const struct stats_timer *new)
 {
-  if ((old && old->update > 0) && (new && new->update > old->update)) {
+  if ((old && old->update > 0) && (new && new->update == old->update)) {
+    // increasing interval if updates stop
+    return (struct stats_timer_metrics) {
+      .interval = (float)(esp_timer_get_time() - old->update) / 1000000.0f,
+    };
+  } else if ((old && old->update > 0) && (new && new->update > old->update)) {
+    // incremental update
     return (struct stats_timer_metrics) {
       .interval = (float)(new->update - old->update) / 1000000.0f,
       .rate = ((float) (new->count - old->count)) / ((float)(new->update - old->update) / 1000000.0f),
       .util = ((float) (new->total - old->total)) / ((float)(new->update - old->update)),
     };
   } else if (!(old && old->update) && (new && new->update > new->reset)) {
+    // initial update
     return (struct stats_timer_metrics) {
       .interval = (float)(new->update - new->reset) / 1000000.0f,
       .rate = ((float) (new->count)) / ((float)(new->update - new->reset) / 1000000.0f),
       .util = ((float) (new->total)) / ((float)(new->update - new->reset)),
+    };
+  } else if (!(old && old->update) && (new && new->reset)) {
+    // increasing interval until first update
+    return (struct stats_timer_metrics) {
+      .interval = (float)(esp_timer_get_time() - new->reset) / 1000000.0f,
     };
   } else {
     return (struct stats_timer_metrics) {};

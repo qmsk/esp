@@ -15,6 +15,7 @@ struct artnet_status_stats {
     struct stats_counter dmx_counter;
     struct stats_counter seq_miss_counter;
     struct stats_counter seq_drop_counter;
+    struct stats_counter update_counter;
     struct stats_counter overflow_counter;
   } outputs[ARTNET_OUTPUTS_MAX];
 };
@@ -30,6 +31,7 @@ struct artnet_status_metrics {
     struct stats_counter_metrics dmx_counter;
     struct stats_counter_metrics seq_miss_counter;
     struct stats_counter_metrics seq_drop_counter;
+    struct stats_counter_metrics update_counter;
     struct stats_counter_metrics overflow_counter;
   } outputs[ARTNET_OUTPUTS_MAX];
 };

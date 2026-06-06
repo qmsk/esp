@@ -9,7 +9,7 @@ static void init_output_stats(struct artnet_output_stats *stats)
   stats_counter_init(&stats->seq_miss);
   stats_counter_init(&stats->seq_drop);
   stats_counter_init(&stats->seq_resync);
-  stats_counter_init(&stats->queue_overwrite);
+  stats_counter_init(&stats->queue_overflow);
 }
 
 int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options)
@@ -141,7 +141,7 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
   stats->seq_miss = stats_counter_copy(&output->stats.seq_miss);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
   stats->seq_resync = stats_counter_copy(&output->stats.seq_resync);
-  stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
+  stats->queue_overflow = stats_counter_copy(&output->stats.queue_overflow);
 
   return 0;
 }
@@ -210,7 +210,7 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
-    stats_counter_increment(&output->stats.queue_overwrite);
+    stats_counter_increment(&output->stats.queue_overflow);
 
     xQueueOverwrite(output->queue, dmx);
   }

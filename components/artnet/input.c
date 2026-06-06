@@ -5,7 +5,7 @@
 static void init_input_stats(struct artnet_input_stats *stats)
 {
   stats_counter_init(&stats->dmx_recv);
-  stats_counter_init(&stats->queue_overwrite);
+  stats_counter_init(&stats->queue_overflow);
 }
 
 int artnet_add_input(struct artnet *artnet, struct artnet_input **inputp, struct artnet_input_options options)
@@ -59,7 +59,7 @@ void artnet_input_dmx(struct artnet_input *input, const struct artnet_dmx *dmx)
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(input->queue, dmx, 0) == errQUEUE_FULL) {
-    stats_counter_increment(&input->stats.queue_overwrite);
+    stats_counter_increment(&input->stats.queue_overflow);
 
     xQueueOverwrite(input->queue, dmx);
   }
@@ -163,7 +163,7 @@ int artnet_get_input_stats(struct artnet *artnet, int index, struct artnet_input
   struct artnet_input *input = &artnet->input_ports[index];
 
   stats->dmx_recv = stats_counter_copy(&input->stats.dmx_recv);
-  stats->queue_overwrite = stats_counter_copy(&input->stats.queue_overwrite);
+  stats->queue_overflow = stats_counter_copy(&input->stats.queue_overflow);
 
   return 0;
 }

@@ -162,8 +162,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Input %d: \n", i);
 
-    print_stats_counter("DMX",    "received",   &input_stats.dmx_recv);
-    print_stats_counter("Queue",  "overflowed", &input_stats.queue_overwrite);
+    print_stats_counter("DMX",    "receive",  &input_stats.dmx_recv);
+    print_stats_counter("Queue",  "overflow", &input_stats.queue_overflow);
 
     printf("\n");
   }
@@ -181,12 +181,12 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Output %d: \n", i);
 
-    print_stats_counter("DMX",    "received",   &output_stats.dmx_recv);
-    print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
-    print_stats_counter("Seq",    "missed",     &output_stats.seq_miss);
-    print_stats_counter("Seq",    "dropped",    &output_stats.seq_drop);
-    print_stats_counter("Seq",    "resynced",   &output_stats.seq_resync);
-    print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);
+    print_stats_counter("DMX",    "receive",  &output_stats.dmx_recv);
+    print_stats_counter("DMX",    "sync",     &output_stats.dmx_sync);
+    print_stats_counter("Seq",    "miss",     &output_stats.seq_miss);
+    print_stats_counter("Seq",    "drop",     &output_stats.seq_drop);
+    print_stats_counter("Seq",    "resync",   &output_stats.seq_resync);
+    print_stats_counter("Queue",  "overflow", &output_stats.queue_overflow);
 
     printf("\n");
   }

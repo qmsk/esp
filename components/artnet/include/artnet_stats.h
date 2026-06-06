@@ -38,7 +38,7 @@ struct artnet_input_stats {
   struct stats_counter dmx_recv;
 
   /* Output queue overflowed, previous packet overwritten */
-  struct stats_counter queue_overwrite;
+  struct stats_counter queue_overflow;
 };
 
 struct artnet_output_stats {
@@ -58,7 +58,7 @@ struct artnet_output_stats {
   struct stats_counter seq_resync;
 
   /* Output queue overflowed, previous packet overwritten */
-  struct stats_counter queue_overwrite;
+  struct stats_counter queue_overflow;
 };
 
 /*

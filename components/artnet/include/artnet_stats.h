@@ -42,9 +42,6 @@ struct artnet_input_stats {
 };
 
 struct artnet_output_stats {
-  /* Received ArtSync packets */
-  struct stats_counter sync_recv;
-
   /* Received ArtDMX packets */
   struct stats_counter dmx_recv;
 

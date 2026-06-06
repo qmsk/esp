@@ -4,7 +4,6 @@
 
 static void init_output_stats(struct artnet_output_stats *stats)
 {
-  stats_counter_init(&stats->sync_recv);
   stats_counter_init(&stats->dmx_recv);
   stats_counter_init(&stats->dmx_sync);
   stats_counter_init(&stats->seq_miss);
@@ -137,7 +136,6 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
 
   struct artnet_output *output = &artnet->output_ports[index];
 
-  stats->sync_recv = stats_counter_copy(&output->stats.sync_recv);
   stats->dmx_recv = stats_counter_copy(&output->stats.dmx_recv);
   stats->dmx_sync = stats_counter_copy(&output->stats.dmx_sync);
   stats->seq_miss = stats_counter_copy(&output->stats.seq_miss);
@@ -264,8 +262,6 @@ int artnet_sync_outputs(struct artnet *artnet)
       // sync not supported
       continue;
     }
-
-    stats_counter_increment(&output->stats.sync_recv);
 
     if (output->options.event_group != event_group) {
       xEventGroupSetBits(output->options.event_group, output->options.sync_event_bit);

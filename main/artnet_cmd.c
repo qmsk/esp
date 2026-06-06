@@ -181,7 +181,6 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Output %d: \n", i);
 
-    print_stats_counter("Sync",   "received",   &output_stats.sync_recv);
     print_stats_counter("DMX",    "received",   &output_stats.dmx_recv);
     print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
     print_stats_counter("Seq",    "missed",     &output_stats.seq_miss);

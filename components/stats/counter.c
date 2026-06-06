@@ -19,7 +19,7 @@ struct stats_counter_metrics stats_counter_diff_metrics(const struct stats_count
 
 struct stats_counter_metrics stats_counter_metrics_average(const struct stats_counter_metrics *old, const struct stats_counter_metrics *new)
 {
-  if ((old && old->interval) && (new && new->interval)) {
+  if ((old && old->interval) && new) {
     return (struct stats_counter_metrics) {
       .interval = (old->interval + new->interval) / 2,
       .rate = (old->rate + new->rate) / 2,

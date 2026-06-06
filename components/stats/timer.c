@@ -21,7 +21,7 @@ struct stats_timer_metrics stats_timer_diff_metrics(const struct stats_timer *ol
 
 struct stats_timer_metrics stats_timer_metrics_average(const struct stats_timer_metrics *old, const struct stats_timer_metrics *new)
 {
-  if ((old && old->interval) && (new && new->interval)) {
+  if ((old && old->interval) && new) {
     return (struct stats_timer_metrics) {
       .interval = (old->interval + new->interval) / 2,
       .rate = (old->rate + new->rate) / 2,

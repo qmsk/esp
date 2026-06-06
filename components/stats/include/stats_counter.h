@@ -46,3 +46,11 @@ static inline float stats_counter_seconds_passed(const struct stats_counter *cou
     return 0.0f;
   }
 }
+
+struct stats_counter_metrics {
+  float interval;
+  float rate;
+};
+
+struct stats_counter_metrics stats_counter_diff_metrics(const struct stats_counter *old, const struct stats_counter *new);
+struct stats_counter_metrics stats_counter_metrics_average(const struct stats_counter_metrics *old, const struct stats_counter_metrics *new);

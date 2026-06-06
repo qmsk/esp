@@ -179,11 +179,11 @@
 <template>
   <main id="main-view">
     <div class="view centered">
-      <div class="header">
-        <h1>Status</h1>
+      <h1>
+        Status
         <progress v-show="loading">Loading...</progress>
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </div>
+      </h1>
 
       <div class="row" v-if="status">
         <div id="user-power" class="user-item">

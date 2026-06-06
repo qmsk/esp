@@ -4,8 +4,10 @@
 <template>
   <main id="files-view">
     <div class="view centered">
-      <h1>Files</h1>
-      <progress v-show="loading">Loading...</progress>
+      <h1>
+        Files
+        <progress v-show="loading">Loading...</progress>
+      </h1>
 
       <files-node v-if="vfsArray" v-for="vfs in vfsArray" :key="vfs.path"
         :vfs="vfs"

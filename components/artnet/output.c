@@ -4,13 +4,14 @@
 
 static void init_output_stats(struct artnet_output_stats *stats)
 {
-  stats_counter_init(&stats->sync_recv);
   stats_counter_init(&stats->dmx_recv);
-  stats_counter_init(&stats->dmx_sync);
-  stats_counter_init(&stats->seq_skip);
+  stats_counter_init(&stats->seq_zero);
+  stats_counter_init(&stats->seq_good);
+  stats_counter_init(&stats->seq_miss);
   stats_counter_init(&stats->seq_drop);
   stats_counter_init(&stats->seq_resync);
-  stats_counter_init(&stats->queue_overwrite);
+  stats_counter_init(&stats->queue_update);
+  stats_counter_init(&stats->queue_overflow);
 }
 
 int artnet_add_output(struct artnet *artnet, struct artnet_output **outputp, struct artnet_output_options options)
@@ -137,13 +138,14 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
 
   struct artnet_output *output = &artnet->output_ports[index];
 
-  stats->sync_recv = stats_counter_copy(&output->stats.sync_recv);
   stats->dmx_recv = stats_counter_copy(&output->stats.dmx_recv);
-  stats->dmx_sync = stats_counter_copy(&output->stats.dmx_sync);
-  stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
+  stats->seq_zero = stats_counter_copy(&output->stats.seq_zero);
+  stats->seq_good = stats_counter_copy(&output->stats.seq_good);
+  stats->seq_miss = stats_counter_copy(&output->stats.seq_miss);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
   stats->seq_resync = stats_counter_copy(&output->stats.seq_resync);
-  stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
+  stats->queue_update = stats_counter_copy(&output->stats.queue_update);
+  stats->queue_overflow = stats_counter_copy(&output->stats.queue_overflow);
 
   return 0;
 }
@@ -173,15 +175,20 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
 
   stats_counter_increment(&output->stats.dmx_recv);
 
-  if (dmx->seq == 0 || output->state.seq == 0) {
+  if (output->state.seq == 0) {
     // init or reset
+
+  } else if (dmx->seq == 0) {
+    // disabled
+    stats_counter_increment(&output->stats.seq_zero);
 
   } else if (dmx->seq == artnet_seq_next(output->state.seq)) {
     // in-order
+    stats_counter_increment(&output->stats.seq_good);
 
   } else if (dmx->seq > output->state.seq || output->state.seq - dmx->seq >= 128) {
-    // skipped
-    stats_counter_increment(&output->stats.seq_skip);
+    // missed
+    stats_counter_increment(&output->stats.seq_miss);
 
   } else if (output->state.tick < tick && (tick - output->state.tick) > ARTNET_SEQ_TICKS) {
     LOG_WARN("resync address=%04x seq=%d < %d on timeout", output->options.address, dmx->seq, output->state.seq);
@@ -194,35 +201,32 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   } else {
     LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, dmx->seq, output->state.seq);
 
+    // dropping
     stats_counter_increment(&output->stats.seq_drop);
 
     // do NOT update output->state.tick, in order to resync on timeout
     return;
   }
 
-  // advance
-  if (dmx->seq) {
-    output->state.seq = dmx->seq;
-  } else {
-    output->state.seq++;
-  }
-
+  // update
+  output->state.seq = dmx->seq;
   output->state.tick = tick;
 
   // attempt normal send first, before overwriting for overflow stats
   if (xQueueSend(output->queue, dmx, 0) == errQUEUE_FULL) {
-    stats_counter_increment(&output->stats.queue_overwrite);
+    stats_counter_increment(&output->stats.queue_overflow);
 
     xQueueOverwrite(output->queue, dmx);
+  } else {
+    stats_counter_increment(&output->stats.queue_update);
   }
 
   if (output->options.output_events) {
     xEventGroupSetBits(output->options.output_events, output->options.output_event_bit);
   }
 
-  if (artnet_sync_state(output->artnet)) {
+  if (artnet_is_sync_state(output->artnet)) {
     // wait for hard sync
-    stats_counter_increment(&output->stats.dmx_sync);
   } else if (output->options.event_group && output->options.dmx_event_bit) {
     // sync each update
     xEventGroupSetBits(output->options.event_group, output->options.dmx_event_bit);
@@ -263,8 +267,6 @@ int artnet_sync_outputs(struct artnet *artnet)
       // sync not supported
       continue;
     }
-
-    stats_counter_increment(&output->stats.sync_recv);
 
     if (output->options.event_group != event_group) {
       xEventGroupSetBits(output->options.event_group, output->options.sync_event_bit);

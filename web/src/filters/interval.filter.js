@@ -30,7 +30,7 @@ const map = new Map([
     }
 
     if (parts.length > 0) {
-      return parts.join('');
+      return parts.slice(0, 2).join('');
     } else {
       return value + 's';
     }

@@ -1,5 +1,6 @@
 #include "artnet.h"
 #include "artnet_state.h"
+#include "artnet_status.h"
 
 #include <artnet.h>
 #include "artnet_config.h"
@@ -19,6 +20,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return 1;
   }
 
+  struct artnet_status status = get_artnet_status(artnet);
   struct artnet_options options = artnet_get_options(artnet);
   unsigned input_count = artnet_get_input_count(artnet);
   unsigned output_count = artnet_get_output_count(artnet);
@@ -43,6 +45,7 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("\tUDP: port=%u\n", options.port);
   printf("\tShort name: %s\n", options.metadata.short_name);
   printf("\tLong name: %s\n", options.metadata.long_name);
+  printf("\n");
 
   if ((err = artnet_get_inputs(artnet, artnet_input_options, &inputs_size))) {
     LOG_ERROR("artnet_get_inputs");
@@ -54,7 +57,18 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
     return err;
   }
 
+  printf("Status:\n");
+  printf("\tSync Mode : %s\n", status.sync_mode ? "true" : "false");
   printf("\n");
+
+  printf("Metrics:\n");
+  printf("\tRecv      : %6.1f/s @ %6.1f%% (%.0fs)\n", status.metrics.recv_timer.rate, status.metrics.recv_timer.util * 100.0f, status.metrics.recv_timer.interval);
+  printf("\tRecv Poll : %6.1f/s           (%.0fs)\n", status.metrics.recv_poll_counter.rate, status.metrics.recv_poll_counter.interval);
+  printf("\tRecv DMX  : %6.1f/s           (%.0fs)\n", status.metrics.recv_dmx_counter.rate, status.metrics.recv_dmx_counter.interval);
+  printf("\tRecv Sync : %6.1f/s           (%.0fs)\n", status.metrics.recv_sync_counter.rate, status.metrics.recv_sync_counter.interval);
+  printf("\tDMX Disc  : %6.1f/s           (%.0fs)\n", status.metrics.dmx_discard_counter.rate, status.metrics.dmx_discard_counter.interval);
+  printf("\n");
+
   printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);
 
   for (int i = 0; i < inputs_size && i < ARTNET_INPUTS_MAX; i++) {
@@ -88,11 +102,12 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
       continue;
     }
 
-    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: seq %3u @ %d ms\n", i,
+    printf("\t%2d: net %3u subnet %2u universe %2u -> %-16.16s: dmx %6.1f/s (%.0fs) (seq %3u @ %dms)\n", i,
       artnet_address_net(options->address),
       artnet_address_subnet(options->address),
       artnet_address_universe(options->address),
       options->name,
+      status.metrics.outputs[i].dmx_counter.rate, status.metrics.outputs[i].dmx_counter.interval,
       state.seq,
       state.tick ? (tick - state.tick) * portTICK_RATE_MS : 0
     );
@@ -147,8 +162,8 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Input %d: \n", i);
 
-    print_stats_counter("DMX",    "received",   &input_stats.dmx_recv);
-    print_stats_counter("Queue",  "overflowed", &input_stats.queue_overwrite);
+    print_stats_counter("DMX",    "receive",  &input_stats.dmx_recv);
+    print_stats_counter("Queue",  "overflow", &input_stats.queue_overflow);
 
     printf("\n");
   }
@@ -166,13 +181,14 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("Output %d: \n", i);
 
-    print_stats_counter("Sync",   "received",   &output_stats.sync_recv);
-    print_stats_counter("DMX",    "received",   &output_stats.dmx_recv);
-    print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
-    print_stats_counter("Seq",    "skipped",    &output_stats.seq_skip);
-    print_stats_counter("Seq",    "dropped",    &output_stats.seq_drop);
-    print_stats_counter("Seq",    "resynced",   &output_stats.seq_resync);
-    print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);
+    print_stats_counter("DMX",    "receive",  &output_stats.dmx_recv);
+    print_stats_counter("Seq",    "zero",     &output_stats.seq_zero);
+    print_stats_counter("Seq",    "good",     &output_stats.seq_good);
+    print_stats_counter("Seq",    "miss",     &output_stats.seq_miss);
+    print_stats_counter("Seq",    "drop",     &output_stats.seq_drop);
+    print_stats_counter("Seq",    "resync",   &output_stats.seq_resync);
+    print_stats_counter("Queue",  "update",   &output_stats.queue_update);
+    print_stats_counter("Queue",  "overflow", &output_stats.queue_overflow);
 
     printf("\n");
   }

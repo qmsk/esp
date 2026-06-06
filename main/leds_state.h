@@ -2,6 +2,7 @@
 
 #include <leds.h>
 #include "leds.h"
+#include "leds_status.h"
 #include "user.h"
 
 #include <freertos/FreeRTOS.h>
@@ -27,6 +28,9 @@ struct leds_state {
   struct leds_test_state *test;
   struct leds_artnet_state *artnet;
   struct leds_sequence_state *sequence;
+
+  struct leds_status_timers status_timers;
+  struct leds_status_timer_metrics status_timer_metrics;
 };
 
 extern struct leds_state leds_states[LEDS_COUNT];

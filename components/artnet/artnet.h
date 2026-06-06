@@ -89,5 +89,3 @@ struct artnet {
 
   struct artnet_stats stats;
 };
-
-bool artnet_sync_state (struct artnet *artnet);

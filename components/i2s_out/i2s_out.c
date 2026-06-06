@@ -28,9 +28,11 @@ int i2s_out_init(struct i2s_out *i2s_out, i2s_port_t port)
   }
 #endif
 
-  #if CONFIG_IDF_TARGET_ESP32
-    portMUX_INITIALIZE(&i2s_out->mux);
-  #endif
+#if CONFIG_IDF_TARGET_ESP32
+  portMUX_INITIALIZE(&i2s_out->mux);
+#endif
+
+  i2s_out_stats_reset(&i2s_out->stats);
 
   return 0;
 }
@@ -74,6 +76,16 @@ error:
   free(i2s_out);
 
   return err;
+}
+
+void i2s_out_reset_stats(struct i2s_out *i2s_out)
+{
+  i2s_out_stats_reset(&i2s_out->stats);
+}
+
+struct i2s_out_stats i2s_out_stats(struct i2s_out *i2s_out)
+{
+  return i2s_out_stats_copy(&i2s_out->stats);
 }
 
 int i2s_out_open(struct i2s_out *i2s_out, const struct i2s_out_options *options, TickType_t timeout)

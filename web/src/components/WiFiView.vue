@@ -10,8 +10,10 @@
 <template>
   <main id="wifi-view">
     <div class="view centered">
-      <h1>WiFi</h1>
-      <progress v-show="loading">Loading...</progress>
+      <h1>
+        WiFi
+        <progress v-show="loading">Loading...</progress>
+      </h1>
 
       <template v-if="wifi && !wifi.ap">
         <h2>AP <span class="state">(Disabled)</span></h2>

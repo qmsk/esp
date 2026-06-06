@@ -19,7 +19,7 @@ struct artnet_stats {
   /* Received ArtSync packets */
   struct stats_counter recv_sync;
 
-  /* Received ArtPoll packets */
+  /* Received unknown packets */
   struct stats_counter recv_unknown;
 
   /* Received packets, rejected as invalid */
@@ -38,30 +38,36 @@ struct artnet_input_stats {
   struct stats_counter dmx_recv;
 
   /* Output queue overflowed, previous packet overwritten */
-  struct stats_counter queue_overwrite;
+  struct stats_counter queue_overflow;
 };
 
 struct artnet_output_stats {
-  /* Received ArtSync packets */
-  struct stats_counter sync_recv;
-
   /* Received ArtDMX packets */
   struct stats_counter dmx_recv;
 
   /* Received ArtDMX packets in sync mode */
   struct stats_counter dmx_sync;
 
-  /* Received ArtDMX packets with seq larger than expected */
-  struct stats_counter seq_skip;
+  /* Received ArtDMX packets without seq */
+  struct stats_counter seq_zero;
 
-  /* Dropped ArtDMX packets with seq smaller than expected */
+  /* Received ArtDMX packets with expected seq */
+  struct stats_counter seq_good;
+
+  /* Received ArtDMX packets with seq larger than expected, missed packets */
+  struct stats_counter seq_miss;
+
+  /* Received ArtDMX packets with seq smaller than expected, dropping packet */
   struct stats_counter seq_drop;
 
   /* Received ArtDMX packets with seq resynced after timeout */
   struct stats_counter seq_resync;
 
+  /* Output queue updated */
+  struct stats_counter queue_update;
+
   /* Output queue overflowed, previous packet overwritten */
-  struct stats_counter queue_overwrite;
+  struct stats_counter queue_overflow;
 };
 
 /*

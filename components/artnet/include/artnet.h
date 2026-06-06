@@ -297,6 +297,11 @@ int artnet_get_input_state(struct artnet *artnet, int index, struct artnet_input
 int artnet_get_output_state(struct artnet *artnet, int index, struct artnet_output_state *state);
 
 /**
+ * Return if node is expecting ArtSync.
+ */
+bool artnet_is_sync_state (struct artnet *artnet);
+
+/**
  * Sync all artnet outputs.
  *
  * This only applies to outputs with an associated `struct artnet_output_options` `event_group`.

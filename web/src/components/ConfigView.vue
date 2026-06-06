@@ -70,8 +70,10 @@
 <template>
   <main id="config-view" class="split">
     <div class="view">
-      <h1>Configuration</h1>
-      <progress v-show="loading">Loading...</progress>
+      <h1>
+        Configuration
+        <progress v-show="loading">Loading...</progress>
+      </h1>
 
       <template v-if="config">
         <form id="config" method="post" @submit.prevent="submit">

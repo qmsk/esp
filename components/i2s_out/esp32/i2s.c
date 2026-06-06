@@ -131,6 +131,9 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
+  // track active time
+  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
+
   taskENTER_CRITICAL(&i2s_out->mux);
 
   // NOTE: there seems to always be three extra BCK cycles at the start of TX
@@ -138,6 +141,9 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   //      possibly if DMA is slow, and the FIFO does not yet contain the new data?
   //      let's hope that the EOF frame is always zeroes, and zero bytes at the start are harmless...
   i2s_ll_tx_start(i2s_out->dev);
+
+  i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+  i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 }
@@ -151,13 +157,8 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
-  i2s_done = i2s_out->i2s_done;
-
-  if (!i2s_done) {
+  if (!(i2s_done = i2s_out->i2s_done)) {
     i2s_out->i2s_done_task = xTaskGetCurrentTaskHandle();
-
-    i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
-    i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   }
 
   taskEXIT_CRITICAL(&i2s_out->mux);
@@ -187,6 +188,9 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
   LOG_DEBUG("");
 
   taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
+  i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
   i2s_ll_tx_stop(i2s_out->dev);
 

@@ -7,11 +7,11 @@
 <template>
   <main id="artnet-view">
     <div class="view centered">
-      <div class="header">
-        <h1>Art-Net</h1>
+      <h1>
+        Art-Net
         <progress v-show="loading">Loading...</progress>
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </div>
+      </h1>
 
       <template v-if="artnet && artnet.info">
         <h2>Info</h2>
@@ -30,6 +30,34 @@
 
           <dt>Long Name</dt>
           <dd>{{ artnet.info.long_name }}</dd>
+        </dl>
+      </template>
+
+      <template v-if="artnet && artnet.status">
+        <h2>Status</h2>
+        <dl>
+          <dt>Sync Mode</dt>
+          <dd>{{ artnet.status.sync_mode }}</dd>
+        </dl>
+      </template>
+
+      <template v-if="artnet && artnet.metrics">
+        <h2>Metrics</h2>
+        <dl>
+          <dt>Recv</dt>
+          <dd><TimerMetric :timerMetric="artnet.metrics.recv_timer" /></dd>
+
+          <dt>Recv (Poll)</dt>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_poll_counter" /></dd>
+
+          <dt>Recv (DMX)</dt>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_dmx_counter" /></dd>
+
+          <dt>Recv (Sync)</dt>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_sync_counter" /></dd>
+
+          <dt>DMX (Discard)</dt>
+          <dd><CounterMetric :counterMetric="artnet.metrics.dmx_discard_counter" /></dd>
         </dl>
       </template>
 
@@ -74,8 +102,12 @@
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
-              <th>Tick</th>
-              <th>Seq</th>
+              <th>Last</th>
+              <th>DMX</th>
+              <th>Seq Miss</th>
+              <th>Seq Drop</th>
+              <th>Update</th>
+              <th>Overflow</th>
             </tr>
           </thead>
           <tbody>
@@ -85,7 +117,11 @@
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
               <td>{{ output.state.tick_ms | interval('ms') }}</td>
-              <td>{{ output.state.seq }}</td>
+              <td><CounterMetric :counterMetric="output.metrics.dmx_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.seq_miss_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.seq_drop_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.update_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.overflow_counter" /></td>
             </tr>
           </tbody>
         </table>
@@ -94,7 +130,14 @@
   </main>
 </template>
 <script>
+import CounterMetric from "./CounterMetric"
+import TimerMetric from "./TimerMetric"
+
 export default {
+  components: {
+    CounterMetric,
+    TimerMetric,
+  },
   data: () => ({
     loading: true,
     loadingInputs: false,

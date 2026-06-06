@@ -19,11 +19,11 @@
       </a>
     </nav>
     <div class="view centered">
-      <div class="header">
-        <h1>LEDS ({{ activeID }})</h1>
+      <h1>
+        LEDS ({{ activeID }})
         <progress v-show="loading">Loading...</progress>
         <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </div>
+      </h1>
 
       <template v-if="options">
         <h2>Options</h2>
@@ -84,7 +84,12 @@
       </template>
 
       <template v-if="status">
-        <h2>Status</h2>
+        <h2>
+          Status
+
+          <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
+        </h2>
+
         <dl>
           <dt>Active</dt>
           <dd>{{ status.active }}</dd>
@@ -97,6 +102,12 @@
 
           <dt>Art-Net Updated</dt>
           <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
+
+          <dt>Task</dt>
+          <dd><TimerMetric :timerMetric="status.metrics.task" /></dd>
+
+          <dt>Interface</dt>
+          <dd><TimerMetric :timerMetric="status.metrics.interface" /></dd>
         </dl>
       </template>
 
@@ -150,7 +161,12 @@
   </main>
 </template>
 <script>
+import TimerMetric from "./TimerMetric"
+
 export default {
+  components: {
+    TimerMetric,
+  },
   data: () => ({
     loading: true,
     loadingStatus: false,

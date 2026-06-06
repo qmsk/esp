@@ -9,6 +9,7 @@ struct artnet_status_stats {
   struct stats_counter recv_poll_counter;
   struct stats_counter recv_dmx_counter;
   struct stats_counter recv_sync_counter;
+  struct stats_counter dmx_discard_counter;
 };
 
 struct artnet_status_metrics {
@@ -16,6 +17,7 @@ struct artnet_status_metrics {
   struct stats_counter_metrics recv_poll_counter;
   struct stats_counter_metrics recv_dmx_counter;
   struct stats_counter_metrics recv_sync_counter;
+  struct stats_counter_metrics dmx_discard_counter;
 };
 
 struct artnet_status {

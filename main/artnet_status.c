@@ -33,6 +33,7 @@ void update_artnet_status(struct artnet *artnet)
   update_stats_counter_metrics(&artnet_status_stats.recv_poll_counter, &artnet_stats.recv_poll, &artnet_status_metrics.recv_poll_counter);
   update_stats_counter_metrics(&artnet_status_stats.recv_dmx_counter, &artnet_stats.recv_dmx, &artnet_status_metrics.recv_dmx_counter);
   update_stats_counter_metrics(&artnet_status_stats.recv_sync_counter, &artnet_stats.recv_sync, &artnet_status_metrics.recv_sync_counter);
+  update_stats_counter_metrics(&artnet_status_stats.dmx_discard_counter, &artnet_stats.dmx_discard, &artnet_status_metrics.dmx_discard_counter);
 }
 
 struct artnet_status get_artnet_status(struct artnet *artnet)

@@ -55,6 +55,9 @@
 
           <dt>Recv (Sync)</dt>
           <dd>{{ artnet.metrics.recv_sync_counter | counterMetrics }}</dd>
+
+          <dt>DMX (Discard)</dt>
+          <dd>{{ artnet.metrics.dmx_discard_counter | counterMetrics }}</dd>
         </dl>
       </template>
 

@@ -60,12 +60,13 @@ int artnet_cmd_info(int argc, char **argv, void *ctx)
   printf("Status:\n");
   printf("\tSync Mode : %s\n", status.sync_mode ? "true" : "false");
   printf("\n");
-  
+
   printf("Metrics:\n");
   printf("\tRecv      : %6.1f/s @ %6.1f%% (%.0fs)\n", status.metrics.recv_timer.rate, status.metrics.recv_timer.util * 100.0f, status.metrics.recv_timer.interval);
   printf("\tRecv Poll : %6.1f/s           (%.0fs)\n", status.metrics.recv_poll_counter.rate, status.metrics.recv_poll_counter.interval);
   printf("\tRecv DMX  : %6.1f/s           (%.0fs)\n", status.metrics.recv_dmx_counter.rate, status.metrics.recv_dmx_counter.interval);
   printf("\tRecv Sync : %6.1f/s           (%.0fs)\n", status.metrics.recv_sync_counter.rate, status.metrics.recv_sync_counter.interval);
+  printf("\tDMX Disc  : %6.1f/s           (%.0fs)\n", status.metrics.dmx_discard_counter.rate, status.metrics.dmx_discard_counter.interval);
   printf("\n");
 
   printf("Inputs: count=%u / max=%d\n", input_count, ARTNET_INPUTS_MAX);

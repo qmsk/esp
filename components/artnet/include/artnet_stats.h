@@ -48,6 +48,12 @@ struct artnet_output_stats {
   /* Received ArtDMX packets in sync mode */
   struct stats_counter dmx_sync;
 
+  /* Received ArtDMX packets without seq */
+  struct stats_counter seq_zero;
+
+  /* Received ArtDMX packets with expected seq */
+  struct stats_counter seq_good;
+
   /* Received ArtDMX packets with seq larger than expected, missed packets */
   struct stats_counter seq_miss;
 
@@ -56,6 +62,9 @@ struct artnet_output_stats {
 
   /* Received ArtDMX packets with seq resynced after timeout */
   struct stats_counter seq_resync;
+
+  /* Output queue updated */
+  struct stats_counter queue_update;
 
   /* Output queue overflowed, previous packet overwritten */
   struct stats_counter queue_overflow;

@@ -182,10 +182,12 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
     printf("Output %d: \n", i);
 
     print_stats_counter("DMX",    "receive",  &output_stats.dmx_recv);
-    print_stats_counter("DMX",    "sync",     &output_stats.dmx_sync);
+    print_stats_counter("Seq",    "zero",     &output_stats.seq_zero);
+    print_stats_counter("Seq",    "good",     &output_stats.seq_good);
     print_stats_counter("Seq",    "miss",     &output_stats.seq_miss);
     print_stats_counter("Seq",    "drop",     &output_stats.seq_drop);
     print_stats_counter("Seq",    "resync",   &output_stats.seq_resync);
+    print_stats_counter("Queue",  "update",   &output_stats.queue_update);
     print_stats_counter("Queue",  "overflow", &output_stats.queue_overflow);
 
     printf("\n");

@@ -104,10 +104,10 @@
           <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
 
           <dt>Task</dt>
-          <dd>{{ status.metrics.task.rate | rate }} @ {{ status.metrics.task.util | percentage }} / {{ status.metrics.task.interval | interval }}</dd>
+          <dd>{{ status.metrics.task | timerMetrics }}</dd>
 
           <dt>Interface</dt>
-          <dd>{{ status.metrics.interface.rate | rate }} @ {{ status.metrics.interface.util | percentage }} / {{ status.metrics.interface.interval | interval }}</dd>
+          <dd>{{ status.metrics.interface | timerMetrics }}</dd>
         </dl>
       </template>
 

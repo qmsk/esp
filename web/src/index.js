@@ -11,11 +11,13 @@ import LedsView from "./components/LedsView"
 import SystemView from "./components/SystemView"
 import WiFiView from "./components/WiFiView"
 
+import counterMetricsFilter from "./filters/counterMetrics.filter"
 import fileSizeFilter from "./filters/fileSize.filter"
 import fileTimeFilter from "./filters/fileTime.filter"
 import intervalFilter from "./filters/interval.filter";
 import percentageFilter from "./filters/percentage.filter"
 import rateFilter from "./filters/rate.filter"
+import timerMetricsFilter from "./filters/timerMetrics.filter"
 import timestampFilter from "./filters/timestamp.filter"
 
 // global error handlers
@@ -35,11 +37,13 @@ window.addEventListener("unhandledrejection", (event) => {
 
 Vue.use(VueRouter);
 
+Vue.filter('counterMetrics', counterMetricsFilter);
 Vue.filter('fileSize', fileSizeFilter);
 Vue.filter('fileTime', fileTimeFilter);
 Vue.filter('interval', intervalFilter);
 Vue.filter('percentage', percentageFilter);
 Vue.filter('rate', rateFilter);
+Vue.filter('timerMetrics', timerMetricsFilter);
 Vue.filter('timestamp', timestampFilter);
 
 const router = new VueRouter({

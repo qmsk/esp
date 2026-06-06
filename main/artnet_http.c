@@ -89,7 +89,7 @@ static int artnet_api_write_output_object(struct json_writer *w, const struct ar
         )
     ||  JSON_WRITE_MEMBER_OBJECT(w, "metrics",
               JSON_WRITE_MEMBER_OBJECT(w, "dmx_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->dmx_counter))
-          ||  JSON_WRITE_MEMBER_OBJECT(w, "seq_skip_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->seq_skip_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "seq_miss_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->seq_miss_counter))
           ||  JSON_WRITE_MEMBER_OBJECT(w, "seq_drop_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->seq_drop_counter))
           ||  JSON_WRITE_MEMBER_OBJECT(w, "overflow_counter", artnet_api_write_object_status_counter_metrics(w, &metrics->overflow_counter))
         )

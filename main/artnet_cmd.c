@@ -184,7 +184,7 @@ int artnet_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_counter("Sync",   "received",   &output_stats.sync_recv);
     print_stats_counter("DMX",    "received",   &output_stats.dmx_recv);
     print_stats_counter("DMX",    "synced",     &output_stats.dmx_sync);
-    print_stats_counter("Seq",    "skipped",    &output_stats.seq_skip);
+    print_stats_counter("Seq",    "missed",     &output_stats.seq_miss);
     print_stats_counter("Seq",    "dropped",    &output_stats.seq_drop);
     print_stats_counter("Seq",    "resynced",   &output_stats.seq_resync);
     print_stats_counter("Queue",  "overflowed", &output_stats.queue_overwrite);

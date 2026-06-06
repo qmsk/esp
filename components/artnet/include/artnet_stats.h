@@ -51,10 +51,10 @@ struct artnet_output_stats {
   /* Received ArtDMX packets in sync mode */
   struct stats_counter dmx_sync;
 
-  /* Received ArtDMX packets with seq larger than expected */
-  struct stats_counter seq_skip;
+  /* Received ArtDMX packets with seq larger than expected, missed packets */
+  struct stats_counter seq_miss;
 
-  /* Dropped ArtDMX packets with seq smaller than expected */
+  /* Received ArtDMX packets with seq smaller than expected, dropping packet */
   struct stats_counter seq_drop;
 
   /* Received ArtDMX packets with seq resynced after timeout */

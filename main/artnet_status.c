@@ -42,7 +42,7 @@ void update_artnet_status(struct artnet *artnet)
     artnet_get_output_stats(artnet, i, &artnet_output_stats);
 
     update_stats_counter_metrics(&artnet_status_stats.outputs[i].dmx_counter, &artnet_output_stats.dmx_recv, &artnet_status_metrics.outputs[i].dmx_counter);
-    update_stats_counter_metrics(&artnet_status_stats.outputs[i].seq_skip_counter, &artnet_output_stats.seq_skip, &artnet_status_metrics.outputs[i].seq_skip_counter);
+    update_stats_counter_metrics(&artnet_status_stats.outputs[i].seq_miss_counter, &artnet_output_stats.seq_miss, &artnet_status_metrics.outputs[i].seq_miss_counter);
     update_stats_counter_metrics(&artnet_status_stats.outputs[i].seq_drop_counter, &artnet_output_stats.seq_drop, &artnet_status_metrics.outputs[i].seq_drop_counter);
     update_stats_counter_metrics(&artnet_status_stats.outputs[i].overflow_counter, &artnet_output_stats.queue_overwrite, &artnet_status_metrics.outputs[i].overflow_counter);
   }

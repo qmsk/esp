@@ -7,7 +7,7 @@ static void init_output_stats(struct artnet_output_stats *stats)
   stats_counter_init(&stats->sync_recv);
   stats_counter_init(&stats->dmx_recv);
   stats_counter_init(&stats->dmx_sync);
-  stats_counter_init(&stats->seq_skip);
+  stats_counter_init(&stats->seq_miss);
   stats_counter_init(&stats->seq_drop);
   stats_counter_init(&stats->seq_resync);
   stats_counter_init(&stats->queue_overwrite);
@@ -140,7 +140,7 @@ int artnet_get_output_stats(struct artnet *artnet, int index, struct artnet_outp
   stats->sync_recv = stats_counter_copy(&output->stats.sync_recv);
   stats->dmx_recv = stats_counter_copy(&output->stats.dmx_recv);
   stats->dmx_sync = stats_counter_copy(&output->stats.dmx_sync);
-  stats->seq_skip = stats_counter_copy(&output->stats.seq_skip);
+  stats->seq_miss = stats_counter_copy(&output->stats.seq_miss);
   stats->seq_drop = stats_counter_copy(&output->stats.seq_drop);
   stats->seq_resync = stats_counter_copy(&output->stats.seq_resync);
   stats->queue_overwrite = stats_counter_copy(&output->stats.queue_overwrite);
@@ -180,8 +180,8 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
     // in-order
 
   } else if (dmx->seq > output->state.seq || output->state.seq - dmx->seq >= 128) {
-    // skipped
-    stats_counter_increment(&output->stats.seq_skip);
+    // missed
+    stats_counter_increment(&output->stats.seq_miss);
 
   } else if (output->state.tick < tick && (tick - output->state.tick) > ARTNET_SEQ_TICKS) {
     LOG_WARN("resync address=%04x seq=%d < %d on timeout", output->options.address, dmx->seq, output->state.seq);
@@ -194,6 +194,7 @@ void artnet_output_dmx(struct artnet_output *output, struct artnet_dmx *dmx)
   } else {
     LOG_WARN("drop address=%04x seq=%d < %d", output->options.address, dmx->seq, output->state.seq);
 
+    // dropping
     stats_counter_increment(&output->stats.seq_drop);
 
     // do NOT update output->state.tick, in order to resync on timeout

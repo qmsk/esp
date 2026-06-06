@@ -103,8 +103,8 @@
               <th>Subnet</th>
               <th>Universe</th>
               <th>DMX</th>
-              <th>Sequence Missing</th>
-              <th>Sequence Duplicate</th>
+              <th>Seq Miss</th>
+              <th>Seq Drop</th>
               <th>Overflow</th>
             </tr>
           </thead>
@@ -115,7 +115,7 @@
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
               <td><CounterMetric :counterMetric="output.metrics.dmx_counter" /></td>
-              <td><CounterMetric :counterMetric="output.metrics.seq_skip_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.seq_miss_counter" /></td>
               <td><CounterMetric :counterMetric="output.metrics.seq_drop_counter" /></td>
               <td><CounterMetric :counterMetric="output.metrics.overflow_counter" /></td>
             </tr>

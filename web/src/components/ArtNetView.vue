@@ -38,9 +38,23 @@
         <dl>
           <dt>Sync Mode</dt>
           <dd>{{ artnet.status.sync_mode }}</dd>
+        </dl>
+      </template>
 
+      <template v-if="artnet && artnet.metrics">
+        <h2>Metrics</h2>
+        <dl>
           <dt>Recv</dt>
-          <dd>{{ artnet.metrics.recv_timer.rate | rate }} @ {{ artnet.metrics.recv_timer.util | percentage }} / {{ artnet.metrics.recv_timer.interval | interval }}</dd>
+          <dd>{{ artnet.metrics.recv_timer | timerMetrics }}</dd>
+
+          <dt>Recv (Poll)</dt>
+          <dd>{{ artnet.metrics.recv_poll_counter | counterMetrics }}</dd>
+
+          <dt>Recv (DMX)</dt>
+          <dd>{{ artnet.metrics.recv_dmx_counter | counterMetrics }}</dd>
+
+          <dt>Recv (Sync)</dt>
+          <dd>{{ artnet.metrics.recv_sync_counter | counterMetrics }}</dd>
         </dl>
       </template>
 

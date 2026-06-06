@@ -19,7 +19,7 @@ struct artnet_stats {
   /* Received ArtSync packets */
   struct stats_counter recv_sync;
 
-  /* Received ArtPoll packets */
+  /* Received unknown packets */
   struct stats_counter recv_unknown;
 
   /* Received packets, rejected as invalid */

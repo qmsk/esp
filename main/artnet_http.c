@@ -23,6 +23,14 @@ static int artnet_api_write_object_status_timer_metrics(struct json_writer *w, c
   );
 }
 
+static int artnet_api_write_object_status_counter_metrics(struct json_writer *w, const struct stats_counter_metrics *metrics)
+{
+  return (
+        JSON_WRITE_MEMBER_FLOAT(w, "interval", metrics->interval)
+    ||  JSON_WRITE_MEMBER_FLOAT(w, "rate", metrics->rate)
+  );
+}
+
 static int artnet_api_write_input_object(struct json_writer *w, const struct artnet_input_options *options, const struct artnet_input_state *state)
 {
   TickType_t tick = xTaskGetTickCount();
@@ -153,6 +161,9 @@ static int artnet_api_write(struct json_writer *w, void *ctx)
         )
     ||  JSON_WRITE_MEMBER_OBJECT(w, "metrics",
               JSON_WRITE_MEMBER_OBJECT(w, "recv_timer", artnet_api_write_object_status_timer_metrics(w, &status.metrics.recv_timer))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "recv_poll_counter", artnet_api_write_object_status_counter_metrics(w, &status.metrics.recv_poll_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "recv_dmx_counter", artnet_api_write_object_status_counter_metrics(w, &status.metrics.recv_dmx_counter))
+          ||  JSON_WRITE_MEMBER_OBJECT(w, "recv_sync_counter", artnet_api_write_object_status_counter_metrics(w, &status.metrics.recv_sync_counter))
         )
     ||  JSON_WRITE_MEMBER_ARRAY(w, "inputs", artnet_api_write_inputs_array(w, artnet))
     ||  JSON_WRITE_MEMBER_ARRAY(w, "outputs", artnet_api_write_outputs_array(w, artnet))

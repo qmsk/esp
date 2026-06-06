@@ -45,19 +45,19 @@
         <h2>Metrics</h2>
         <dl>
           <dt>Recv</dt>
-          <dd>{{ artnet.metrics.recv_timer | timerMetrics }}</dd>
+          <dd><TimerMetric :timerMetric="artnet.metrics.recv_timer" /></dd>
 
           <dt>Recv (Poll)</dt>
-          <dd>{{ artnet.metrics.recv_poll_counter | counterMetrics }}</dd>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_poll_counter" /></dd>
 
           <dt>Recv (DMX)</dt>
-          <dd>{{ artnet.metrics.recv_dmx_counter | counterMetrics }}</dd>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_dmx_counter" /></dd>
 
           <dt>Recv (Sync)</dt>
-          <dd>{{ artnet.metrics.recv_sync_counter | counterMetrics }}</dd>
+          <dd><CounterMetric :counterMetric="artnet.metrics.recv_sync_counter" /></dd>
 
           <dt>DMX (Discard)</dt>
-          <dd>{{ artnet.metrics.dmx_discard_counter | counterMetrics }}</dd>
+          <dd><CounterMetric :counterMetric="artnet.metrics.dmx_discard_counter" /></dd>
         </dl>
       </template>
 
@@ -114,10 +114,10 @@
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
-              <td>{{ output.metrics.dmx_counter | counterMetrics }}</td>
-              <td>{{ output.metrics.seq_skip_counter | counterMetrics }}</td>
-              <td>{{ output.metrics.seq_drop_counter | counterMetrics }}</td>
-              <td>{{ output.metrics.overflow_counter | counterMetrics }}</td>
+              <td><CounterMetric :counterMetric="output.metrics.dmx_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.seq_skip_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.seq_drop_counter" /></td>
+              <td><CounterMetric :counterMetric="output.metrics.overflow_counter" /></td>
             </tr>
           </tbody>
         </table>
@@ -126,7 +126,14 @@
   </main>
 </template>
 <script>
+import CounterMetric from "./CounterMetric"
+import TimerMetric from "./TimerMetric"
+
 export default {
+  components: {
+    CounterMetric,
+    TimerMetric,
+  },
   data: () => ({
     loading: true,
     loadingInputs: false,

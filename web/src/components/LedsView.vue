@@ -104,10 +104,10 @@
           <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
 
           <dt>Task</dt>
-          <dd>{{ status.metrics.task | timerMetrics }}</dd>
+          <dd><TimerMetric :timerMetric="status.metrics.task" /></dd>
 
           <dt>Interface</dt>
-          <dd>{{ status.metrics.interface | timerMetrics }}</dd>
+          <dd><TimerMetric :timerMetric="status.metrics.interface" /></dd>
         </dl>
       </template>
 
@@ -161,7 +161,12 @@
   </main>
 </template>
 <script>
+import TimerMetric from "./TimerMetric"
+
 export default {
+  components: {
+    TimerMetric,
+  },
   data: () => ({
     loading: true,
     loadingStatus: false,

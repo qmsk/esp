@@ -102,6 +102,7 @@
               <th>Net</th>
               <th>Subnet</th>
               <th>Universe</th>
+              <th>Last</th>
               <th>DMX</th>
               <th>Seq Miss</th>
               <th>Seq Drop</th>
@@ -115,6 +116,7 @@
               <td>{{ output.net }}</td>
               <td>{{ output.subnet }}</td>
               <td>{{ output.universe }}</td>
+              <td>{{ output.state.tick_ms | interval('ms') }}</td>
               <td><CounterMetric :counterMetric="output.metrics.dmx_counter" /></td>
               <td><CounterMetric :counterMetric="output.metrics.seq_miss_counter" /></td>
               <td><CounterMetric :counterMetric="output.metrics.seq_drop_counter" /></td>

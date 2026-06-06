@@ -99,7 +99,6 @@ static inline float stats_timer_utilization(const struct stats_timer *timer)
   }
 }
 
-
 struct stats_timer_metrics {
   float interval;
   float rate;

@@ -28,7 +28,9 @@ struct leds_state {
   struct leds_test_state *test;
   struct leds_artnet_state *artnet;
   struct leds_sequence_state *sequence;
-  struct leds_static_state *static_;
+  struct leds_static_state {
+    struct leds_color color;
+  } static_;
 
   struct leds_status_timers status_timers;
   struct leds_status_timer_metrics status_timer_metrics;

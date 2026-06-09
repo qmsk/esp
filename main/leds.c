@@ -108,7 +108,7 @@ int init_leds()
     }
 
     if (config->static_enabled) {
-      if ((err = init_leds_static(state, config))) {
+      if ((err = config_leds_static(state, config))) {
         LOG_ERROR("leds%d: init_leds_static", i + 1);
         return err;
       }

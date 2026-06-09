@@ -38,16 +38,11 @@ static struct leds_color config_leds_color(struct config_color config_color, enu
   }
 }
 
-int init_leds_static(struct leds_state *state, const struct leds_config *config)
+int config_leds_static(struct leds_state *state, const struct leds_config *config)
 {
-  if (!(state->static_ = calloc(1, sizeof(*state->static_)))) {
-    LOG_ERROR("calloc");
-    return -1;
-  }
+  state->static_.color = config_leds_color(config->static_color, leds_parameter_type_for_protocol(leds_protocol(state->leds)));
 
-  state->static_->color = config_leds_color(config->static_color, leds_parameter_type_for_protocol(leds_protocol(state->leds)));
-
-  LOG_INFO("color=%02x%02x%02x.%02x", state->static_->color.r, state->static_->color.g, state->static_->color.b, state->static_->color.parameter);
+  LOG_INFO("color=%02x%02x%02x.%02x", state->static_.color.r, state->static_.color.g, state->static_.color.b, state->static_.color.parameter);
 
   // required to start initial tick
   notify_leds_task(state, 1 << LEDS_EVENT_STATIC_BIT);
@@ -73,9 +68,9 @@ bool leds_static_active(struct leds_state *state, EventBits_t bits)
 
 int leds_static_update(struct leds_state *state, EventBits_t bits)
 {
-  LOG_INFO("color=%02x%02x%02x.%02x", state->static_->color.r, state->static_->color.g, state->static_->color.b, state->static_->color.parameter);
+  LOG_INFO("color=%02x%02x%02x.%02x", state->static_.color.r, state->static_.color.g, state->static_.color.b, state->static_.color.parameter);
 
-  if (leds_set_all(state->leds, state->static_->color)) {
+  if (leds_set_all(state->leds, state->static_.color)) {
     LOG_ERROR("leds_set_all");
     return -1;
   }

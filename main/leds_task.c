@@ -69,7 +69,7 @@ static EventBits_t leds_task_wait(struct leds_state *state)
     }
   }
 
-  if (state->static_ && (tick = leds_static_wait(state))) {
+  if ((tick = leds_static_wait(state))) {
     if (tick < wait_tick) {
       wait_tick = tick;
     }
@@ -122,7 +122,6 @@ static void leds_main(void *ctx)
 
     loop_start = stats_timer_start(&stats->loop);
 
-
     if (state->sequence && leds_sequence_active(state, event_bits)) {
       LOG_DEBUG("sequence");
 
@@ -165,7 +164,7 @@ static void leds_main(void *ctx)
       }
     }
 
-    if (state->static_ && leds_static_active(state, event_bits)) {
+    if (leds_static_active(state, event_bits)) {
       LOG_DEBUG("static");
 
       WITH_STATS_TIMER(&stats->static_) {

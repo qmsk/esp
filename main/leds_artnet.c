@@ -152,7 +152,7 @@ static void leds_artnet_sync_reset(struct leds_state *state)
   }
 }
 
-void leds_artnet_timeout_reset(struct leds_state *state)
+static void leds_artnet_timeout_reset(struct leds_state *state)
 {
   const struct leds_config *config = state->config;
 
@@ -161,6 +161,11 @@ void leds_artnet_timeout_reset(struct leds_state *state)
   } else {
     state->artnet->timeout_tick = 0;
   }
+}
+
+void leds_artnet_timeout_clear(struct leds_state *state)
+{
+  state->artnet->timeout_tick = 0;
 }
 
 TickType_t leds_artnet_wait(struct leds_state *state)
@@ -174,7 +179,7 @@ TickType_t leds_artnet_wait(struct leds_state *state)
     return state->artnet->sync_tick;
   }
 
-  if (state->artnet->timeout_tick && !leds_test_active(state, 0)) {
+  if (state->artnet->timeout_tick) {
     // use loss-of-signal timeout
     return state->artnet->timeout_tick;
   }
@@ -358,8 +363,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
         LOG_WARN("leds_artnet_timeout");
       }
 
-      // repeat
-      leds_artnet_timeout_reset(state);
+      leds_artnet_timeout_clear(state);
     }
   }
 

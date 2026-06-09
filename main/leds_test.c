@@ -176,7 +176,7 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
   }
 
   if (state->artnet) {
-    leds_artnet_timeout_reset(state);
+    leds_artnet_timeout_clear(state);
   }
 
   return 1;

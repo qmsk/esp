@@ -29,7 +29,7 @@ unsigned count_leds_artnet_outputs();
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config);
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config);
 
-void leds_artnet_timeout_reset(struct leds_state *state);
+void leds_artnet_timeout_clear(struct leds_state *state);
 
 /* Return next tick for possible artnet timeout */
 TickType_t leds_artnet_wait(struct leds_state *state);

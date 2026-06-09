@@ -1,5 +1,6 @@
 #include "leds_static.h"
 #include "leds_task.h"
+#include "leds_test.h"
 #include "leds_artnet.h"
 
 #include <logging.h>
@@ -70,12 +71,18 @@ int leds_static_update(struct leds_state *state, EventBits_t bits)
 {
   LOG_INFO("color=%02x%02x%02x.%02x", state->static_.color.r, state->static_.color.g, state->static_.color.b, state->static_.color.parameter);
 
+  if (state->test) {
+    // clear any test mode output
+    leds_test_clear(state);
+  }
+
   if (leds_set_all(state->leds, state->static_.color)) {
     LOG_ERROR("leds_set_all");
     return -1;
   }
 
   if (state->artnet) {
+    // inhibit artnet timeout
     leds_artnet_timeout_clear(state);
   }
 

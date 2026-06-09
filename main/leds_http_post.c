@@ -1,6 +1,7 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
+#include "leds_test.h"
 #include "http_routes.h"
 #include "http_handlers.h"
 
@@ -146,15 +147,22 @@ int leds_api_post(struct http_request *request, struct http_response *response, 
 
 /* POST /api/leds/test */
 struct leds_api_test_params {
-  int index;
+  struct leds_state *state;
   enum leds_test_mode mode;
+  bool auto_mode;
 };
 
 int leds_api_test_params_set(struct leds_api_test_params *params, const char *key, const char *value)
 {
   if (strcmp(key, "index") == 0) {
-    if (sscanf(value, "%d", &params->index) <= 0) {
+    unsigned index;
+
+    if (sscanf(value, "%d", &index) <= 0) {
       return HTTP_UNPROCESSABLE_ENTITY;
+    } else if (index <= 0 || index > LEDS_COUNT) {
+      return HTTP_UNPROCESSABLE_ENTITY;
+    } else {
+      params->state = &leds_states[index - 1];
     }
   } else if (strcmp(key, "mode") == 0) {
     int mode;
@@ -163,6 +171,14 @@ int leds_api_test_params_set(struct leds_api_test_params *params, const char *ke
       return HTTP_UNPROCESSABLE_ENTITY;
     } else {
       params->mode = mode;
+    }
+  } else if (strcmp(key, "auto") == 0) {
+    if (strcmp(value, "true") == 0) {
+      params->auto_mode = true;
+    } else if (strcmp(value, "false") == 0) {
+      params->auto_mode = false;
+    } else {
+      return HTTP_UNPROCESSABLE_ENTITY;
     }
   } else {
     return HTTP_UNPROCESSABLE_ENTITY;
@@ -220,22 +236,15 @@ int leds_api_test_post(struct http_request *request, struct http_response *respo
       return HTTP_UNSUPPORTED_MEDIA_TYPE;
   }
 
-  // decode
-  struct leds_state *state;
-
-  if (params.index <= 0 || params.index > LEDS_COUNT) {
-    LOG_WARN("invalid index=%d", params.index);
+  // TODO: clear?
+  if (!params.state) {
+    LOG_WARN("missing index");
     return HTTP_UNPROCESSABLE_ENTITY;
-  } else {
-    state = &leds_states[params.index - 1];
-  }
-
-  // XXX: may block for some time
-  if ((err = test_leds_mode(state, params.mode)) < 0) {
-    LOG_ERROR("test_leds");
+  } else if ((err = set_leds_test(state, params.mode, params.auto_mode)) < 0) {
+    LOG_ERROR("set_leds_test");
     return HTTP_INTERNAL_SERVER_ERROR;
   } else if (err) {
-    LOG_WARN("test_leds");
+    LOG_WARN("set_leds_test");
     return HTTP_CONFLICT;
   }
 

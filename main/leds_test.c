@@ -87,6 +87,64 @@ void reset_leds_test()
   }
 }
 
+int set_leds_test(struct leds_state *state, enum leds_test_mode mode, bool auto_mode)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  state->test->mode = mode;
+  state->test->frame = 0;
+  state->test->auto_mode = auto_mode;
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int step_leds_test(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  if (state->test->mode >= TEST_MODE_BLACK) {
+    // cycle
+    state->test->mode = 0;
+  }
+
+  state->test->mode++;
+  state->test->frame = 0;
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int clear_leds_test(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  // will be reset to 0 by leds_test_update()
+  state->test->mode = TEST_MODE_BLACK;
+  state->test->auto_mode = false;
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
 static void leds_test_reset(struct leds_state *state)
 {
   state->test->mode = 0;

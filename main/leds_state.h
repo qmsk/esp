@@ -77,6 +77,3 @@ int update_leds(struct leds_state *state, enum user_activity leds_activity);
  * Variant of update_leds() that turns off all LEDs, and does NOT flash the status leds.
  */
 int clear_leds(struct leds_state *state);
-
-int test_leds_mode(struct leds_state *state, enum leds_test_mode mode);
-int test_leds(struct leds_state *state);

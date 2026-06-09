@@ -144,14 +144,22 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       continue;
     }
 
-    if ((err = leds_clear_all(state->leds))) {
-      LOG_ERROR("leds_set_all");
-      return err;
-    }
+    if (state->test) {
+      if ((err = clear_leds_test(state))) {
+        LOG_ERROR("clear_leds_test");
+        return err;
+      }
+    } else {
+      // XXX: unsafe
+      if ((err = leds_clear_all(state->leds))) {
+        LOG_ERROR("leds_set_all");
+        return err;
+      }
 
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
-      return err;
+      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
+        LOG_ERROR("update_leds");
+        return err;
+      }
     }
   }
 
@@ -263,37 +271,36 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
 
 int leds_cmd_test(int argc, char **argv, void *ctx)
 {
-  const struct leds_config *config;
-  struct leds_state *state;
-  unsigned leds_id;
   const char *mode_arg = NULL;
   enum leds_test_mode mode = 0;
   int err;
 
-  if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
-    return err;
+  if (argc == 1){
 
-  if (argc > 2 && (err = cmd_arg_str(argc, argv, 2, &mode_arg)))
+  } else if ((err = cmd_arg_str(argc, argv, 1, &mode_arg))) {
     return err;
-
-  if ((err = lookup_leds(leds_id, &config, &state))) {
-    return err;
-  }
-
-  if (mode_arg && (mode = config_enum_to_value(leds_test_mode_enum, mode_arg)) < 0) {
+  } else if ((mode = config_enum_to_value(leds_test_mode_enum, mode_arg)) < 0) {
     LOG_ERROR("invalid mode=%s", mode_arg);
     return -1;
   }
 
-  if (mode) {
-    if ((err = test_leds_mode(state, mode))) {
-      LOG_ERROR("test_leds_mode");
-      return err;
+  for (int i = 0; i < LEDS_COUNT; i++) {
+    struct leds_state *state = &leds_states[i];
+
+    if (!state->leds || !state->test) {
+      continue;
     }
-  } else {
-    if ((err = test_leds(state))) {
-      LOG_ERROR("test_leds");
-      return err;
+
+    if (mode) {
+      if ((err = set_leds_test(state, mode, false))) {
+        LOG_ERROR("set_leds_test");
+        return err;
+      }
+    } else {
+      if ((err = step_leds_test(state))) {
+        LOG_ERROR("step_leds_test");
+        return err;
+      }
     }
   }
 
@@ -429,11 +436,11 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 const struct cmd leds_commands[] = {
   { "info",     leds_cmd_info,                                          .describe = "Show LED info" },
   { "status",   leds_cmd_status,                                        .describe = "Show LED status" },
-  { "clear",    leds_cmd_clear,                                         .describe = "Clear all output values" },
+  { "clear",    leds_cmd_clear,                                         .describe = "Clear test patterns" },
   { "static",   leds_cmd_static,  .usage = "RGB [A]",                   .describe = "Set static LEDs color" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
-  { "test",     leds_cmd_test,    .usage = "LEDS-ID [MODE]",            .describe = "Output test patterns" },
+  { "test",     leds_cmd_test,    .usage = "[MODE]",                    .describe = "Output test patterns" },
   { "stats",    leds_cmd_stats,   .usage = "[reset]",                   .describe = "Show/reset LED stats" },
   { }
 };

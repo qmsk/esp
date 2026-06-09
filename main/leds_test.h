@@ -27,6 +27,11 @@ void auto_leds_test();
 /* Clear test modes */
 void reset_leds_test();
 
+/* Set test mode */
+int set_leds_test(struct leds_state *state, enum leds_test_mode mode, bool auto_mode);
+int step_leds_test(struct leds_state *state);
+int clear_leds_test(struct leds_state *state);
+
 /* Clear test mode */
 void leds_test_clear(struct leds_state *state);
 

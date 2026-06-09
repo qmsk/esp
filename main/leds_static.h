@@ -4,6 +4,7 @@
 
 int config_leds_static(struct leds_state *state, const struct leds_config *config);
 
+int set_leds_static(struct leds_state *state, struct leds_color color);
 
 /* Return next tick */
 TickType_t leds_static_wait(struct leds_state *state);

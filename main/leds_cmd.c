@@ -1,5 +1,6 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_static.h"
 #include "leds_status.h"
 #include "leds_artnet.h"
 #include "leds_test.h"
@@ -157,7 +158,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
   return 0;
 }
 
-int leds_cmd_all(int argc, char **argv, void *ctx)
+int leds_cmd_static(int argc, char **argv, void *ctx)
 {
   int rgb, a = 0xff, w = 0;
   int err;
@@ -196,13 +197,8 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
         break;
     }
 
-    if ((err = leds_set_all(state->leds, leds_color))) {
-      LOG_ERROR("leds_set_all");
-      return err;
-    }
-
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
+    if ((err = set_leds_static(state, leds_color))) {
+      LOG_ERROR("set_leds_static");
       return err;
     }
   }
@@ -434,7 +430,7 @@ const struct cmd leds_commands[] = {
   { "info",     leds_cmd_info,                                          .describe = "Show LED info" },
   { "status",   leds_cmd_status,                                        .describe = "Show LED status" },
   { "clear",    leds_cmd_clear,                                         .describe = "Clear all output values" },
-  { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
+  { "static",   leds_cmd_static,  .usage = "RGB [A]",                   .describe = "Set static LEDs color" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
   { "test",     leds_cmd_test,    .usage = "LEDS-ID [MODE]",            .describe = "Output test patterns" },

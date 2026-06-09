@@ -51,6 +51,17 @@ int config_leds_static(struct leds_state *state, const struct leds_config *confi
   return 0;
 }
 
+int set_leds_static(struct leds_state *state, struct leds_color color)
+{
+  LOG_INFO("color=%02x%02x%02x.%02x", color.r, color.g, color.b, color.parameter);
+
+  state->static_.color = color;
+
+  notify_leds_task(state, 1 << LEDS_EVENT_STATIC_BIT);
+
+  return 0;
+}
+
 TickType_t leds_static_wait(struct leds_state *state)
 {
   return 0; // it's static, duh

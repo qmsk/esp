@@ -1,6 +1,7 @@
 #include "leds_artnet.h"
 #include "leds_sequence.h"
 #include "leds_state.h"
+#include "leds_static.h"
 #include "leds_stats.h"
 #include "leds_task.h"
 #include "leds_test.h"
@@ -68,6 +69,12 @@ static EventBits_t leds_task_wait(struct leds_state *state)
     }
   }
 
+  if (state->static_ && (tick = leds_static_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
+    }
+  }
+
   // how long to wait for
   TickType_t wait_ticks = portMAX_DELAY;
   tick = xTaskGetTickCount();
@@ -87,11 +94,12 @@ static EventBits_t leds_task_wait(struct leds_state *state)
   const bool wait_for_all_bits = false;
   EventBits_t event_bits = xEventGroupWaitBits(state->event_group, LEDS_EVENT_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 
-  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d", state->index + 1,
+  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d static=%d", state->index + 1,
     !!(event_bits & (1 << LEDS_EVENT_TEST_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT)),
-    !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT))
+    !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_STATIC_BIT))
   );
 
   return event_bits;
@@ -113,6 +121,7 @@ static void leds_main(void *ctx)
     bool update_timeout = false;
 
     loop_start = stats_timer_start(&stats->loop);
+
 
     if (state->sequence && leds_sequence_active(state, event_bits)) {
       LOG_DEBUG("sequence");
@@ -152,6 +161,16 @@ static void leds_main(void *ctx)
       WITH_STATS_TIMER(&stats->test) {
         if (leds_test_update(state, event_bits)) {
           update_activity = USER_ACTIVITY_LEDS_TEST;
+        }
+      }
+    }
+
+    if (state->static_ && leds_static_active(state, event_bits)) {
+      LOG_DEBUG("static");
+
+      WITH_STATS_TIMER(&stats->static_) {
+        if (leds_static_update(state, event_bits)) {
+          update_activity = USER_ACTIVITY_LEDS_STATIC;
         }
       }
     }

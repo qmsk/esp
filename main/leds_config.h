@@ -178,6 +178,9 @@ struct leds_config {
   uint16_t sequence_leds_group;
   uint16_t sequence_leds_segment;
   uint16_t sequence_leds_offset;
+
+  bool static_enabled;
+  struct config_color static_color;
 };
 
 extern struct leds_config leds_configs[LEDS_COUNT];

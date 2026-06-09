@@ -406,6 +406,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "test",     &stats->test);
     print_stats_timer("task", "artnet",   &stats->artnet);
     print_stats_timer("task", "sequence", &stats->sequence);
+    print_stats_timer("task", "static",   &stats->static_);
     print_stats_timer("task", "update",   &stats->update);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);

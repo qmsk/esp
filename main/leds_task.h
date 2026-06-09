@@ -5,13 +5,14 @@
 
 #include <artnet.h>
 
-#define LEDS_EVENT_BITS         0x0f
+#define LEDS_EVENT_BITS         0x1f
 
 enum leds_event_bit {
     LEDS_EVENT_TEST_BIT         = 0,
     LEDS_EVENT_ARTNET_DMX_BIT   = 1,
     LEDS_EVENT_ARTNET_SYNC_BIT  = 2,
     LEDS_EVENT_SEQUENCE_BIT     = 3,
+    LEDS_EVENT_STATIC_BIT       = 4,
 };
 
 int init_leds_task(struct leds_state *state, const struct leds_config *config);

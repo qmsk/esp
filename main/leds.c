@@ -1,7 +1,8 @@
 #include "leds.h"
 #include "leds_artnet.h"
-#include "leds_state.h"
 #include "leds_config.h"
+#include "leds_state.h"
+#include "leds_static.h"
 #include "leds_stats.h"
 #include "leds_sequence.h"
 #include "leds_task.h"
@@ -102,6 +103,13 @@ int init_leds()
     if (config->sequence_enabled) {
       if ((err = config_leds_sequence(state, config))) {
         LOG_ERROR("leds%d: config_leds_sequence", i + 1);
+        return err;
+      }
+    }
+
+    if (config->static_enabled) {
+      if ((err = init_leds_static(state, config))) {
+        LOG_ERROR("leds%d: init_leds_static", i + 1);
         return err;
       }
     }

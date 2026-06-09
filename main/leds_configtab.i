@@ -261,5 +261,14 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .uint16_type = { .value = &LEDS_CONFIG.sequence_leds_offset },
   },
 
+  { CONFIG_TYPE_BOOL, "static_enabled",
+    .description = "Output static color",
+    .bool_type = { .value = &LEDS_CONFIG.static_enabled },
+  },
+  { CONFIG_TYPE_COLOR, "static_color",
+    .description = "LED color format for sequence channels",
+    .color_type = { .value = &LEDS_CONFIG.static_color },
+  },
+
   {}
 };

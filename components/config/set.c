@@ -169,8 +169,38 @@ static int config_set_color(const struct config_path path, unsigned index, const
   const struct configtab *tab = path.tab;
   int r = 0, g = 0, b = 0, a = 0;
 
-  if (sscanf(str, "%2x%2x%2x%2x", &r, &g, &b, &a) < 4) {
-    return -1;
+  switch (strlen(str)) {
+    case 3:
+      a = 0xff;
+
+      if (sscanf(str, "%1x%1x%1x", &r, &g, &b) < 3) {
+        return -1;
+      }
+
+      r = (r << 4) | r;
+      g = (g << 4) | g;
+      b = (b << 4) | b;
+
+      break;
+
+    case 6:
+      a = 0xff;
+      
+      if (sscanf(str, "%2x%2x%2x", &r, &g, &b) < 3) {
+        return -1;
+      }
+
+      break;
+
+    case 8:
+      if (sscanf(str, "%2x%2x%2x%2x", &r, &g, &b, &a) < 4) {
+        return -1;
+      }
+
+      break;
+    
+    default:
+      return -1;
   }
 
   tab->color_type.value[index] = (struct config_color) { r, g, b, a };

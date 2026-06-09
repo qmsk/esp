@@ -30,6 +30,13 @@ static int config_api_write_file_value(struct json_writer *w, const struct confi
   }
 }
 
+static int config_api_write_color_value(struct json_writer *w, const struct configtab *tab, unsigned index)
+{
+  struct config_color c = tab->color_type.value[index];
+
+  return json_write_raw(w, "\"%02x%02x%02x%02x\"", c.r, c.g, c.b, c.a);
+}
+
 static int config_api_write_configtab_value(struct json_writer *w, const struct configtab *tab, unsigned index)
 {
 
@@ -48,6 +55,9 @@ static int config_api_write_configtab_value(struct json_writer *w, const struct 
 
     case CONFIG_TYPE_FILE:
       return config_api_write_file_value(w, tab, index);
+
+    case CONFIG_TYPE_COLOR:
+      return config_api_write_color_value(w, tab, index);
 
     default:
       LOG_ERROR("unknown type=%d", tab->type);
@@ -166,6 +176,13 @@ static int config_api_write_configtab_members_file(struct json_writer *w, const 
   );
 }
 
+static int config_api_write_configtab_members_color(struct json_writer *w, const struct configtab *tab)
+{
+  return (
+        config_api_write_configtab_type_members(w, tab, "color")
+  );
+}
+
 static int config_api_write_configtab_members(struct json_writer *w, const struct config_path *path)
 {
   const struct configtab *tab = path->tab;
@@ -181,6 +198,8 @@ static int config_api_write_configtab_members(struct json_writer *w, const struc
       return config_api_write_configtab_members_enum(w, tab);
     case CONFIG_TYPE_FILE:
       return config_api_write_configtab_members_file(w, tab);
+    case CONFIG_TYPE_COLOR:
+      return config_api_write_configtab_members_color(w, tab);
     default:
       return 0;
   }

@@ -165,6 +165,10 @@ static void print_configtab(const struct config_path path)
 
       break;
 
+    case CONFIG_TYPE_COLOR:
+      printf("<RRGGBBAA>");
+      break;
+
     default:
       printf("???");
       break;

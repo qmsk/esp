@@ -36,6 +36,7 @@ enum config_type {
   CONFIG_TYPE_BOOL,
   CONFIG_TYPE_ENUM,
   CONFIG_TYPE_FILE,
+  CONFIG_TYPE_COLOR,
 };
 
 struct config_enum {
@@ -50,6 +51,10 @@ struct config_enum {
 struct config_file_path {
   const char *prefix;
   const char *suffix;
+};
+
+struct config_color {
+  uint8_t r, g, b, a;
 };
 
 struct configmod;
@@ -119,6 +124,11 @@ struct configtab {
       size_t size;
       const struct config_file_path *paths;
     } file_type;
+
+    struct {
+      struct config_color *value;
+      struct config_color default_value;
+    } color_type;
   };
 };
 

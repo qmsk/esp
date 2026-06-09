@@ -30,8 +30,8 @@ static struct leds_color config_leds_color(struct config_color config_color, enu
         .g = config_color.g,
         .b = config_color.b,
       
-        // XXX: totally wrong
-        .white = config_color.a,
+        // TODO: fully transparent = only white, 50% = colors + 100% white?
+        .white = (255 - config_color.a),
       };
 
     default:

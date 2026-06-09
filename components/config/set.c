@@ -167,7 +167,7 @@ static int config_set_file(const struct config_path path, unsigned index, const 
 static int config_set_color(const struct config_path path, unsigned index, const char *str)
 {
   const struct configtab *tab = path.tab;
-  int r, g, b, a;
+  int r = 0, g = 0, b = 0, a = 0;
 
   if (sscanf(str, "%2x%2x%2x%2x", &r, &g, &b, &a) < 4) {
     return -1;

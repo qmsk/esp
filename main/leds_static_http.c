@@ -20,20 +20,8 @@ struct leds_api_static_params {
 
 int leds_api_static_params_set(struct leds_api_static_params *params, const char *key, const char *value)
 {
-  if (strcmp(key, "index") == 0) {
-    unsigned index;
-
-    if (sscanf(value, "%d", &index) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (index <= 0 || index > LEDS_COUNT) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      params->state = &leds_states[index - 1];
-    }
-
-    if (!params->state->leds) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    }
+  if (strcmp(key, "leds") == 0) {
+    return leds_api_leds_parse(&params->state, value);
   } else if (strcmp(key, "color") == 0) {
     if (!params->state) {
       return HTTP_UNPROCESSABLE_ENTITY;
@@ -65,7 +53,7 @@ int leds_api_static_read_form_params(struct http_request *request, struct leds_a
   }
 
   if (!params->state) {
-    LOG_WARN("missing index");
+    LOG_WARN("missing leds=");
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 

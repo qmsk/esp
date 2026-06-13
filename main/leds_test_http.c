@@ -1,4 +1,5 @@
 #include "leds.h"
+#include "leds_api.h"
 #include "leds_state.h"
 #include "leds_test.h"
 #include "http_routes.h"
@@ -57,16 +58,8 @@ struct leds_api_test_params {
 
 int leds_api_test_params_set(struct leds_api_test_params *params, const char *key, const char *value)
 {
-  if (strcmp(key, "index") == 0) {
-    unsigned index;
-
-    if (sscanf(value, "%d", &index) <= 0) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (index <= 0 || index > LEDS_COUNT) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      params->state = &leds_states[index - 1];
-    }
+  if (strcmp(key, "leds") == 0) {
+    return leds_api_leds_parse(&params->state, value);
   } else if (strcmp(key, "mode") == 0) {
     int mode;
 
@@ -108,6 +101,11 @@ int leds_api_test_read_form_params(struct http_request *request, struct leds_api
     return err;
   }
 
+  if (!params->state) {
+    LOG_WARN("missing leds=");
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
   return 0;
 }
 
@@ -140,10 +138,7 @@ int leds_api_test_post(struct http_request *request, struct http_response *respo
   }
 
   // TODO: clear?
-  if (!params.state) {
-    LOG_WARN("missing index");
-    return HTTP_UNPROCESSABLE_ENTITY;
-  } else if ((err = set_leds_test(state, params.mode, params.auto_mode)) < 0) {
+  if ((err = set_leds_test(state, params.mode, params.auto_mode)) < 0) {
     LOG_ERROR("set_leds_test");
     return HTTP_INTERNAL_SERVER_ERROR;
   } else if (err) {

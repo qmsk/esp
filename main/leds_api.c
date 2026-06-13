@@ -2,6 +2,32 @@
 
 #include <logging.h>
 #include <http/http_types.h>
+#include <string.h>
+
+int leds_api_leds_parse(struct leds_state **statep, const char *value)
+{
+  struct leds_state *state;
+  int index;
+
+  if (sscanf(value, "leds%d", &index) <= 0) {
+    LOG_WARN("invalid leds=%s", value);
+    return HTTP_UNPROCESSABLE_ENTITY;
+  } else if (index <= 0 || index > LEDS_COUNT) {
+    LOG_WARN("invalid leds=%s index", value);
+    return HTTP_UNPROCESSABLE_ENTITY;
+  } else {
+    state = &leds_states[index - 1];
+  }
+
+  if (!state || !state->leds) {
+    LOG_WARN("disabled leds=%s", value);
+    return HTTP_UNPROCESSABLE_ENTITY;
+  }
+
+  *statep = state;
+
+  return 0;
+}
 
 int leds_api_write_color(struct json_writer *w, struct leds_color c, enum leds_parameter_type parameter_type)
 {

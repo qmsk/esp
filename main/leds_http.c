@@ -165,22 +165,11 @@ struct leds_api_query {
 int leds_api_query(struct http_request *request, struct leds_api_query *query)
 {
   char *key, *value;
-  int index;
   int err;
 
   while (!(err = http_request_query(request, &key, &value))) {
     if (strcmp(key, "leds") == 0) {
-      if (sscanf(value, "leds%d", &index) <= 0) {
-        LOG_WARN("invalid ?leds=%s", value);
-        return HTTP_UNPROCESSABLE_ENTITY;
-      } else if (index > 0 && index <= LEDS_COUNT) {
-        query->state = &leds_states[index - 1];
-      } else {
-        LOG_WARN("invalid ?leds=%s", value);
-        return HTTP_UNPROCESSABLE_ENTITY;
-      }
-
-      return 0;
+      return leds_api_leds_parse(&query->state, value);
     }
   }
 
@@ -190,7 +179,7 @@ int leds_api_query(struct http_request *request, struct leds_api_query *query)
   }
 
   if (!query->state) {
-    LOG_WARN("missing ?leds=...");
+    LOG_WARN("missing leds=...");
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 

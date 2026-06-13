@@ -160,6 +160,10 @@ fieldset input[type="file"] {
   margin: auto 0;
 }
 
+fieldset input[type="color"] {
+  background: none;
+}
+
 fieldset div.actions button {
   width: 1.8em;
   height: 1.8em;

@@ -156,6 +156,9 @@ export default new Vuex.Store({
 
       commit('updateLedsStatus', {id, status});
     },
+    async postLedsStatic({ commit }, {leds, color}) {
+      const status = await ledsService.postStatic(leds, color);
+    },
 
     /* VFS */
     async loadVFS({ commit }) {

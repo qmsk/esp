@@ -18,145 +18,158 @@
         {{ id }}
       </a>
     </nav>
-    <div class="view centered">
-      <h1>
-        LEDS ({{ activeID }})
-        <progress v-show="loading">Loading...</progress>
-        <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
-      </h1>
+    <div class="view split">
+      <div class="view centered">
+        <h1 v-if="activeID">
+          LEDS ({{ activeID }})
+          <progress v-show="loading">Loading...</progress>
+          <button @click="load"><span :class="{spin: true, active: loading}">&#10227;</span></button>
+        </h1>
 
-      <template v-if="options">
-        <h2>Options</h2>
-        <dl>
-          <dt>Interface</dt>
-          <dd>{{ options.interface }}</dd>
+        <template v-if="options">
+          <h2>Options</h2>
+          <dl>
+            <dt>Interface</dt>
+            <dd>{{ options.interface }}</dd>
 
-          <dt>Protocol</dt>
-          <dd>{{ options.protocol }}</dd>
+            <dt>Protocol</dt>
+            <dd>{{ options.protocol }}</dd>
 
-          <dt>Parameter Type</dt>
-          <dd>{{ options.parameter_type }}</dd>
+            <dt>Parameter Type</dt>
+            <dd>{{ options.parameter_type }}</dd>
 
-          <dt>Count</dt>
-          <dd>{{ options.count }}</dd>
+            <dt>Count</dt>
+            <dd>{{ options.count }}</dd>
 
-          <dt>Limit Total</dt>
-          <dd>{{ options.limit_total }}</dd>
+            <dt>Limit Total</dt>
+            <dd>{{ options.limit_total }}</dd>
 
-          <dt>Limit Group</dt>
-          <dd>{{ options.limit_group }}</dd>
+            <dt>Limit Group</dt>
+            <dd>{{ options.limit_group }}</dd>
 
-          <dt>Limit Groups</dt>
-          <dd>{{ options.limit_groups }}</dd>
-        </dl>
-      </template>
+            <dt>Limit Groups</dt>
+            <dd>{{ options.limit_groups }}</dd>
+          </dl>
+        </template>
 
-      <template v-if="artnet">
-        <h2>Art-Net</h2>
-        <dl>
-          <dt>Net</dt>
-          <dd>{{ artnet.net }}</dd>
+        <template v-if="artnet">
+          <h2>Art-Net</h2>
+          <dl>
+            <dt>Net</dt>
+            <dd>{{ artnet.net }}</dd>
 
-          <dt>Sub-Net</dt>
-          <dd>{{ artnet.sub_net }}</dd>
+            <dt>Sub-Net</dt>
+            <dd>{{ artnet.sub_net }}</dd>
 
-          <dt>Universe Start</dt>
-          <dd>{{ artnet.universe_start }}</dd>
+            <dt>Universe Start</dt>
+            <dd>{{ artnet.universe_start }}</dd>
 
-          <dt>Universe Count</dt>
-          <dd>{{ artnet.universe_count }}</dd>
+            <dt>Universe Count</dt>
+            <dd>{{ artnet.universe_count }}</dd>
 
-          <dt>Universe LEDs</dt>
-          <dd>{{ artnet.universe_leds }}</dd>
+            <dt>Universe LEDs</dt>
+            <dd>{{ artnet.universe_leds }}</dd>
 
-          <dt>LEDs Segment</dt>
-          <dd>{{ artnet.leds_segment }}</dd>
+            <dt>LEDs Segment</dt>
+            <dd>{{ artnet.leds_segment }}</dd>
 
-          <dt>LEDs Group</dt>
-          <dd>{{ artnet.leds_group }}</dd>
+            <dt>LEDs Group</dt>
+            <dd>{{ artnet.leds_group }}</dd>
 
-          <dt>LEDs Format</dt>
-          <dd>{{ artnet.leds_format }}</dd>
+            <dt>LEDs Format</dt>
+            <dd>{{ artnet.leds_format }}</dd>
 
-          <dt>DMX Timeout</dt>
-          <dd>{{ artnet.dmx_timeout_ms }}</dd>
-        </dl>
-      </template>
+            <dt>DMX Timeout</dt>
+            <dd>{{ artnet.dmx_timeout_ms }}</dd>
+          </dl>
+        </template>
 
-      <template v-if="status">
-        <h2>
-          Status
+        <template v-if="status">
+          <h2>
+            Status
 
-          <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
-        </h2>
-
-        <dl>
-          <dt>Active</dt>
-          <dd>{{ status.active }}</dd>
-
-          <dt>Test Mode</dt>
-          <dd>{{ status.test_mode }}</dd>
-
-          <dt>Updated</dt>
-          <dd>{{ status.update_ms | interval('ms') }}</dd>
-
-          <dt>Art-Net Updated</dt>
-          <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
-
-          <dt>Task</dt>
-          <dd><TimerMetric :timerMetric="status.metrics.task" /></dd>
-
-          <dt>Interface</dt>
-          <dd><TimerMetric :timerMetric="status.metrics.interface" /></dd>
-        </dl>
-      </template>
-
-      <template v-if="status">
-        <table class="limits">
-          <caption>
-            Limits
             <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
-          </caption>
-          <thead>
-            <tr>
-              <th>Group</th>
-              <th>Count</th>
-              <th>Power</th>
-              <th>Limit</th>
-              <th>Utilization</th>
-              <th>Applied</th>
-              <th>Output</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(limit, index) in status.limit_groups">
-              <td class="name">Group {{ index }}</td>
-              <td>{{ limit.count }}</td>
-              <td>{{ limit | limitPower | percentage }}</td>
-              <td>{{ limit | limitConfig | percentage }}</td>
-              <td>{{ limit | limitUtil | percentage }}</td>
-              <td>{{ limit | limitApplied | percentage }}</td>
-              <td>{{ limit | limitOutput | percentage }}</td>
-              <td>
-                <meter min="0" :low="0" optimum="0" :high="limit.limit" :max="limit.count" :value="limit.power" :title="limit | limitUtil | percentage"></meter>
-              </td>
-            </tr>
-            <tr>
-              <td class="name">Total</td>
-              <td>{{ status.limit_total.count }}</td>
-              <td>{{ status.limit_total | limitPower | percentage }}</td>
-              <td>{{ status.limit_total | limitConfig | percentage }}</td>
-              <td>{{ status.limit_total | limitUtil | percentage }}</td>
-              <td>{{ status.limit_total | limitApplied | percentage }}</td>
-              <td>{{ status.limit_total | limitOutput | percentage }}</td>
-              <td>
-                <meter min="0" :low="0" optimum="0" :high="status.limit_total.limit" :max="status.limit_total.count" :value="status.limit_total.power" :title="status.limit_total | limitUtil | percentage"></meter>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </template>
+          </h2>
+
+          <dl>
+            <dt>Active</dt>
+            <dd>{{ status.active }}</dd>
+
+            <dt>Test Mode</dt>
+            <dd>{{ status.test_mode }}</dd>
+
+            <dt>Updated</dt>
+            <dd>{{ status.update_ms | interval('ms') }}</dd>
+
+            <dt>Art-Net Updated</dt>
+            <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>
+
+            <dt>Task</dt>
+            <dd><TimerMetric :timerMetric="status.metrics.task" /></dd>
+
+            <dt>Interface</dt>
+            <dd><TimerMetric :timerMetric="status.metrics.interface" /></dd>
+          </dl>
+        </template>
+
+        <template v-if="status">
+          <table class="limits">
+            <caption>
+              Limits
+              <button @click="loadStatus"><span :class="{spin: true, active: loadingStatus}">&#10227;</span></button>
+            </caption>
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Count</th>
+                <th>Power</th>
+                <th>Limit</th>
+                <th>Utilization</th>
+                <th>Applied</th>
+                <th>Output</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(limit, index) in status.limit_groups">
+                <td class="name">Group {{ index }}</td>
+                <td>{{ limit.count }}</td>
+                <td>{{ limit | limitPower | percentage }}</td>
+                <td>{{ limit | limitConfig | percentage }}</td>
+                <td>{{ limit | limitUtil | percentage }}</td>
+                <td>{{ limit | limitApplied | percentage }}</td>
+                <td>{{ limit | limitOutput | percentage }}</td>
+                <td>
+                  <meter min="0" :low="0" optimum="0" :high="limit.limit" :max="limit.count" :value="limit.power" :title="limit | limitUtil | percentage"></meter>
+                </td>
+              </tr>
+              <tr>
+                <td class="name">Total</td>
+                <td>{{ status.limit_total.count }}</td>
+                <td>{{ status.limit_total | limitPower | percentage }}</td>
+                <td>{{ status.limit_total | limitConfig | percentage }}</td>
+                <td>{{ status.limit_total | limitUtil | percentage }}</td>
+                <td>{{ status.limit_total | limitApplied | percentage }}</td>
+                <td>{{ status.limit_total | limitOutput | percentage }}</td>
+                <td>
+                  <meter min="0" :low="0" optimum="0" :high="status.limit_total.limit" :max="status.limit_total.count" :value="status.limit_total.power" :title="status.limit_total | limitUtil | percentage"></meter>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
+      </div>
+      <div class="controls">
+        <h2  v-if="static">Static</h2>
+        <fieldset class="actions" v-if="static">
+          <label for="color">Color</label>
+          <input type="color" name="color" :value="'#' + staticColor" @input="postStaticColor">
+          <progress v-show="applyingStatic">Applying...</progress>
+
+          <button type="submit">Save</button>
+        </fieldset>
+
+      </div>
     </div>
   </main>
 </template>
@@ -170,7 +183,9 @@ export default {
   data: () => ({
     loading: true,
     loadingStatus: false,
-    selectedID: null
+    selectedID: null,
+    applyingStatic: false,
+    staticColor: null,
   }),
   created() {
     this.load();
@@ -208,6 +223,11 @@ export default {
     status() {
       if (this.activeLeds) {
         return this.activeLeds.status;
+      }
+    },
+    static() {
+      if (this.activeLeds) {
+        return this.activeLeds.static;
       }
     },
   },
@@ -257,6 +277,8 @@ export default {
       } finally {
         this.loading = false;
       }
+
+      this.staticColor = this.static.color;
     },
     async loadStatus() {
       this.loadingStatus = true;
@@ -269,6 +291,24 @@ export default {
     },
     selectID(id) {
       this.selectedID = id;
+    },
+    async postStaticColor() {
+      let type = event.target.type;
+      let value = event.target.value;
+
+      if (type == "color") {
+        // strip # prefix
+        value = value.substring(1);
+      }
+
+      this.staticColor = value;
+      this.applyingStatic = true;
+
+      try {
+        await this.$store.dispatch('postLedsStatic', { leds: this.activeID, color: this.staticColor });
+      } finally {
+        this.applyingStatic = false;
+      }
     },
   }
 }

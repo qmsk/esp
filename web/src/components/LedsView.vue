@@ -164,9 +164,9 @@
         <fieldset class="actions" v-if="static">
           <label for="color">Color</label>
           <input type="color" name="color" :value="'#' + staticColor" @input="postStaticColor">
-          <progress v-show="applyingStatic">Applying...</progress>
+          <progress v-show="applyingStatic || savingStatic">Applying...</progress>
 
-          <button type="submit">Save</button>
+          <button @click="saveStaticColor">Save</button>
         </fieldset>
 
       </div>
@@ -185,6 +185,7 @@ export default {
     loadingStatus: false,
     selectedID: null,
     applyingStatic: false,
+    savingStatic: false,
     staticColor: null,
   }),
   created() {
@@ -308,6 +309,19 @@ export default {
         await this.$store.dispatch('postLedsStatic', { leds: this.activeID, color: this.staticColor });
       } finally {
         this.applyingStatic = false;
+      }
+    },
+    async saveStaticColor() {
+      this.savingStatic = true;
+
+      try {
+        await this.$store.dispatch('setConfig', {
+          modname: this.activeID,
+          tabname: 'static_color',
+          value: this.staticColor 
+        });
+      } finally {
+        this.savingStatic = false;
       }
     },
   }

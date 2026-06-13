@@ -100,6 +100,18 @@ export default new Vuex.Store({
     async uploadConfig({ commit }, file) {
       const configState = await configService.upload(file);
     },
+    async setConfig({ state, commit }, { modname, tabname, value }) {
+      try {
+        const configState = await configService.set(modname, tabname, value);
+
+        commit('updateConfigState', configState);
+      } catch (error) {
+        if (error.name == "APIError" && error.data) {
+          commit('updateConfigState', error.data);
+        }
+        throw error;
+      }
+    },
 
     /* system */
     async loadSystem({ commit }) {

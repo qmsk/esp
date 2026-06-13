@@ -1,4 +1,5 @@
 #include "leds.h"
+#include "leds_api.h"
 #include "leds_config.h"
 #include "leds_state.h"
 #include "leds_static.h"
@@ -19,8 +20,6 @@ struct leds_api_static_params {
 
 int leds_api_static_params_set(struct leds_api_static_params *params, const char *key, const char *value)
 {
-  struct config_color config_color;
-
   if (strcmp(key, "index") == 0) {
     unsigned index;
 
@@ -36,12 +35,10 @@ int leds_api_static_params_set(struct leds_api_static_params *params, const char
       return HTTP_UNPROCESSABLE_ENTITY;
     }
   } else if (strcmp(key, "color") == 0) {
-    if (config_color_parse(&config_color, value)) {
+    if (!params->state) {
       return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (!params->state) {
+    } else if (leds_api_color_parse(&params->color, leds_parameter_type_for_protocol(leds_protocol(params->state->leds)), value)) {
       return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      params->color = config_leds_color(config_color, leds_parameter_type_for_protocol(leds_protocol(params->state->leds)));
     }
   } else {
     return HTTP_UNPROCESSABLE_ENTITY;

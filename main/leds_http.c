@@ -1,4 +1,5 @@
 #include "leds.h"
+#include "leds_api.h"
 #include "leds_state.h"
 #include "leds_status.h"
 #include "leds_artnet.h"
@@ -15,21 +16,6 @@
 #include <string.h>
 
 #define TICK_MS(current_tick, tick) (tick ? (current_tick - tick) * portTICK_RATE_MS : 0)
-
-static int leds_api_write_leds_color(struct json_writer *w, struct leds_color c, enum leds_parameter_type parameter_type)
-{
-  switch (parameter_type) {
-    case LEDS_PARAMETER_NONE:
-      return json_write_raw(w, "\"%02x%02x%02x\"", c.r, c.g, c.b);
-
-    case LEDS_PARAMETER_DIMMER:
-    case LEDS_PARAMETER_WHITE:
-      return json_write_raw(w, "\"%02x%02x%02x.%02x\"", c.r, c.g, c.b, c.parameter);
-
-    default:
-      LOG_FATAL("%d", parameter_type);
-  }
-}
 
 static int leds_api_write_object_options(struct json_writer *w, struct leds_state *state)
 {
@@ -121,7 +107,7 @@ static int leds_api_write_object(struct json_writer *w, struct leds_state *state
     ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "static",
-          JSON_WRITE_MEMBER(w, "color", leds_api_write_leds_color(w, state->static_.color, leds_parameter_type_for_protocol(leds_protocol(state->leds))))
+          JSON_WRITE_MEMBER(w, "color", leds_api_write_color(w, state->static_.color, leds_parameter_type_for_protocol(leds_protocol(state->leds))))
         )
     ||  (state->artnet ? JSON_WRITE_MEMBER_OBJECT(w, "artnet", leds_api_write_object_artnet(w, state)) : 0)
   );

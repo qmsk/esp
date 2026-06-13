@@ -1,4 +1,5 @@
 #include "leds.h"
+#include "leds_api.h"
 #include "leds_config.h"
 #include "leds_state.h"
 #include "leds_test.h"
@@ -14,30 +15,6 @@ struct leds_api_req {
   struct leds_state *state;
 };
 
-int leds_api_color_parse(struct leds_color *color, enum leds_parameter_type parameter_type, const char *value)
-{
-  int rgb;
-  int parameter = leds_parameter_default_for_type(parameter_type);
-
-  if (!value) {
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  if (sscanf(value, "%x.%x", &rgb, &parameter) <= 0) {
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  if (parameter < 0 || parameter > UINT8_MAX) {
-    return HTTP_UNPROCESSABLE_ENTITY;
-  }
-
-  color->r = (rgb >> 16) & 0xFF;
-  color->g = (rgb >>  8) & 0xFF;
-  color->b = (rgb >>  0) & 0xFF;
-  color->parameter = parameter;
-
-  return 0;
-}
 
 int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *value)
 {

@@ -49,12 +49,8 @@ void user_config_release()
 }
 
 /* test */
-static bool user_test_held = false;
-
 void user_test_press()
 {
-  user_test_held = false;
-
   LOG_INFO("trigger test mode");
 
   trigger_leds_test();
@@ -62,22 +58,14 @@ void user_test_press()
 
 void user_test_hold()
 {
-  if (!user_test_held) {
-    LOG_INFO("auto test mode");
+  LOG_INFO("auto test mode");
 
-    auto_leds_test();
-  }
-
-  user_test_held = true;
+  auto_leds_test();
 }
 
 void user_test_release()
 {
-  if (user_test_held) {
-    LOG_INFO("reset test mode");
+  LOG_INFO("reset test mode");
 
-    reset_leds_test();
-  }
-
-  user_test_held = false;
+  reset_leds_test();
 }

@@ -262,11 +262,11 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
 
   { CONFIG_TYPE_BOOL, "static_enabled",
-    .description = "Output static color",
+    .description = "Output static color at boot",
     .bool_type = { .value = &LEDS_CONFIG.static_enabled },
   },
   { CONFIG_TYPE_COLOR, "static_color",
-    .description = "LED color format for sequence channels",
+    .description = "Static color to output at boot",
     .color_type = { .value = &LEDS_CONFIG.static_color },
   },
 

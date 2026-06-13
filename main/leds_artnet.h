@@ -22,6 +22,8 @@ struct leds_artnet_state {
   TickType_t sync_tick; // tick for soft sync
 
   TickType_t timeout_tick; // tick for forced reset
+
+  bool update_clean; // leds has not been updated by anything other than artnet
 };
 
 unsigned count_leds_artnet_outputs();
@@ -29,7 +31,8 @@ unsigned count_leds_artnet_outputs();
 int init_leds_artnet(struct leds_state *state, int index, const struct leds_config *config);
 int start_leds_artnet(struct leds_state *state, const struct leds_config *config);
 
-void leds_artnet_timeout_clear(struct leds_state *state);
+/* Leds output has been dirtied by non-artnet sources, and must be cleared for art-net output */
+void leds_artnet_update_override(struct leds_state *state);
 
 /* Return next tick for possible artnet timeout */
 TickType_t leds_artnet_wait(struct leds_state *state);

@@ -33,8 +33,8 @@ int set_leds_test_auto(struct leds_state *state);
 int set_leds_test_next(struct leds_state *state);
 int clear_leds_test(struct leds_state *state);
 
-/* Clear test mode */
-void leds_test_clear(struct leds_state *state);
+/* LEDS output updated by other sources */
+void leds_test_update_override(struct leds_state *state);
 
 /* Return next tick for test mode */
 TickType_t leds_test_wait(struct leds_state *state);

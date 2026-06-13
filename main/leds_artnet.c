@@ -281,6 +281,27 @@ bool leds_artnet_active(struct leds_state *state, EventBits_t event_bits)
   return false;
 }
 
+void leds_artnet_update_override(struct leds_state *state)
+{
+  state->artnet->update_clean = false;
+
+  // do not wait for artnet data
+  leds_artnet_timeout_clear(state);
+  leds_artnet_sync_clear(state);
+}
+
+static void leds_artnet_clean(struct leds_state *state)
+{
+  if (!state->artnet->update_clean) {
+    // incoming artnet data overrides any other type of output, ensure leds for any missing universes are cleared
+    if (leds_clear_all(state->leds)) {
+      LOG_ERROR("leds_clear_all");
+    }
+
+    state->artnet->update_clean = true;
+  }
+}
+
 int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 {
   struct leds_stats *stats = &leds_stats[state->index];
@@ -306,18 +327,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   // wait until either artnet-sync or (non-sync) dmx to not trigger soft-sync on partial data in artnet sync mode
   if (dmx || sync || miss) {
-    // TODO: sequence?
-    if (state->test) {
-      // override test mode
-      leds_test_clear(state);
-    }
-
-    if (state->update_state != LEDS_UPDATE_ARTNET) {
-      // incoming artnet data overrides any other output, even with missing universes
-      if (leds_clear_all(state->leds)) {
-        LOG_ERROR("leds_clear_all");
-      }
-    }
+    leds_artnet_clean(state);
 
     // set output from artnet universe
     for (unsigned index = 0; index < state->artnet->universe_count; index++) {
@@ -433,6 +443,9 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
 
   // activate timeout, delayed output update at boot
   leds_artnet_timeout_reset(state);
+
+  // cleared if leds is updated by anything else
+  state->artnet->update_clean = true;
 
   return 0;
 }

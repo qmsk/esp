@@ -105,6 +105,23 @@ static EventBits_t leds_task_wait(struct leds_state *state)
   return event_bits;
 }
 
+static void leds_update_state(struct leds_state *state, enum leds_update_state update_state)
+{
+  if (update_state == state->update_state) {
+    return;
+  }
+
+  if (update_state != LEDS_UPDATE_TEST && state->test) {
+    leds_test_update_override(state);
+  }
+
+  if (update_state != LEDS_UPDATE_ARTNET && state->artnet) {
+    leds_artnet_update_override(state);
+  }
+
+  state->update_state = update_state;
+}
+
 static void leds_main(void *ctx)
 {
   struct leds_state *state = ctx;
@@ -123,6 +140,8 @@ static void leds_main(void *ctx)
     loop_start = stats_timer_start(&stats->loop);
 
     if (leds_static_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_STATIC);
+
       LOG_DEBUG("static");
 
       WITH_STATS_TIMER(&stats->static_) {
@@ -130,11 +149,11 @@ static void leds_main(void *ctx)
           update_activity = USER_ACTIVITY_LEDS_STATIC;
         }
       }
-
-      state->update_state = LEDS_UPDATE_STATIC;
     }
 
     if (state->test && leds_test_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_TEST);
+
       LOG_DEBUG("test");
 
       WITH_STATS_TIMER(&stats->test) {
@@ -142,11 +161,11 @@ static void leds_main(void *ctx)
           update_activity = USER_ACTIVITY_LEDS_TEST;
         }
       }
-
-      state->update_state = LEDS_UPDATE_TEST;
     }
 
     if (state->sequence && leds_sequence_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_SEQUENCE);
+
       LOG_DEBUG("sequence");
 
       WITH_STATS_TIMER(&stats->sequence) {
@@ -154,11 +173,11 @@ static void leds_main(void *ctx)
           update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
         }
       }
-
-      state->update_state = LEDS_UPDATE_SEQUENCE;
     }
 
     if (state->artnet && leds_artnet_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_ARTNET);
+
       LOG_DEBUG("artnet");
 
       WITH_STATS_TIMER(&stats->artnet) {
@@ -178,8 +197,6 @@ static void leds_main(void *ctx)
             LOG_ERROR("leds_artnet_update");
         }
       }
-      
-      state->update_state = LEDS_UPDATE_ARTNET;
     }
 
     if (leds_update_active(state)) {

@@ -155,11 +155,16 @@ int clear_leds_test(struct leds_state *state)
   return 0;
 }
 
-void leds_test_clear(struct leds_state *state)
+static void leds_test_clear(struct leds_state *state)
 {
   state->test->mode = 0;
   state->test->frame = 0;
   state->test->frame_tick = 0;
+}
+
+void leds_test_update_override(struct leds_state *state)
+{
+  leds_test_clear(state);
 }
 
 TickType_t leds_test_wait(struct leds_state *state)
@@ -241,10 +246,6 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
     LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> stop", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
     state->test->frame_tick = 0;
-  }
-
-  if (state->artnet) {
-    leds_artnet_timeout_clear(state);
   }
 
   return 1;

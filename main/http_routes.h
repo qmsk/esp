@@ -46,6 +46,9 @@ int leds_api_post(struct http_request *request, struct http_response *response, 
 int leds_api_test_get(struct http_request *request, struct http_response *response, void *ctx);
 int leds_api_test_post(struct http_request *request, struct http_response *response, void *ctx);
 
+/* leds_static_http.c */
+int leds_api_static_post(struct http_request *request, struct http_response *response, void *ctx);
+
 /* user_http.c */
 int user_api_get_status(struct http_request *request, struct http_response *response, void *ctx);
 int user_api_post_button(struct http_request *request, struct http_response *response, void *ctx);

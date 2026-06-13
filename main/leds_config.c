@@ -131,7 +131,6 @@ const struct config_enum leds_test_mode_enum[] = {
   { "RGBW_RGB",       .value = TEST_MODE_RGBW_RGB      },
   { "RGB_BLACK",      .value = TEST_MODE_RGB_BLACK     },
   { "RAINBOW",        .value = TEST_MODE_RAINBOW       },
-  { "BLACK",          .value = TEST_MODE_BLACK         },
   {}
 };
 

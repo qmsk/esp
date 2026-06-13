@@ -379,10 +379,9 @@ enum leds_test_mode {
   TEST_MODE_RGB_BLACK,
 
   TEST_MODE_RAINBOW,
-  TEST_MODE_BLACK,
 };
 
-#define TEST_MODE_COUNT (TEST_MODE_BLACK + 1)
+#define TEST_MODE_COUNT (TEST_MODE_RAINBOW)
 
 int leds_new(struct leds **ledsp, const struct leds_options *options);
 

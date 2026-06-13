@@ -272,26 +272,3 @@ int update_leds(struct leds_state *state, enum user_activity leds_activity)
 
   return 0;
 }
-
-int clear_leds(struct leds_state *state)
-{
-  int err;
-
-  if ((err = check_leds_interface(state))) {
-    return err;
-  }
-
-  if ((err = leds_clear_all(state->leds))) {
-    LOG_ERROR("leds_set_all");
-    return err;
-  }
-
-  if ((err = leds_tx(state->leds))) {
-    LOG_ERROR("leds_tx");
-    return err;
-  }
-
-  clear_leds_active(state);
-
-  return 0;
-}

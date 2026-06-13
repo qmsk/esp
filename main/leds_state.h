@@ -81,8 +81,3 @@ int reset_leds(struct leds_state *state);
  * Update LEDs output with given USER_ACTIVITY_LEDS_* source.
  */
 int update_leds(struct leds_state *state, enum user_activity leds_activity);
-
-/*
- * Variant of update_leds() that turns off all LEDs, and does NOT flash the status leds.
- */
-int clear_leds(struct leds_state *state);

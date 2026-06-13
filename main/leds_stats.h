@@ -28,7 +28,8 @@ struct leds_stats {
 
   struct stats_timer static_;
   
-  struct stats_timer update;
+  struct stats_timer output;
+  struct stats_counter update;
   struct stats_counter update_timeout;
 
 };

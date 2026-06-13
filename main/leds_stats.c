@@ -22,7 +22,7 @@ void init_leds_stats()
     stats_timer_init(&stats->artnet);
     stats_timer_init(&stats->sequence);
     stats_timer_init(&stats->static_);
-    stats_timer_init(&stats->update);
+    stats_timer_init(&stats->output);
 
     stats_counter_init(&stats->artnet_timeout);
     stats_counter_init(&stats->artnet_sync);
@@ -30,6 +30,7 @@ void init_leds_stats()
     stats_counter_init(&stats->sync_timeout);
     stats_counter_init(&stats->sync_missed);
     stats_counter_init(&stats->sync_full);
+    stats_counter_init(&stats->update);
     stats_counter_init(&stats->update_timeout);
   }
 }

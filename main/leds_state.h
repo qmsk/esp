@@ -78,6 +78,6 @@ int setup_leds(struct leds_state *state);
 int reset_leds(struct leds_state *state);
 
 /*
- * Update LEDs output with given USER_ACTIVITY_LEDS_* source.
+ * Update LEDs output.
  */
-int update_leds(struct leds_state *state, enum user_activity leds_activity);
+int output_leds(struct leds_state *state);

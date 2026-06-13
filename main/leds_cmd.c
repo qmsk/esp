@@ -3,6 +3,7 @@
 #include "leds_static.h"
 #include "leds_status.h"
 #include "leds_artnet.h"
+#include "leds_task.h"
 #include "leds_test.h"
 #include "leds_config.h"
 #include "leds_stats.h"
@@ -410,7 +411,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "artnet",   &stats->artnet);
     print_stats_timer("task", "sequence", &stats->sequence);
     print_stats_timer("task", "static",   &stats->static_);
-    print_stats_timer("task", "update",   &stats->update);
+    print_stats_timer("task", "output",   &stats->output);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
     print_stats_counter("artnet", "sync",    &stats->artnet_sync);
@@ -418,6 +419,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_counter("sync",   "timeout", &stats->sync_timeout);
     print_stats_counter("sync",   "missed",  &stats->sync_missed);
     print_stats_counter("sync",   "full",    &stats->sync_full);
+    print_stats_counter("update", "",        &stats->update);
     print_stats_counter("update", "timeout", &stats->update_timeout);
     printf("\n");
   }

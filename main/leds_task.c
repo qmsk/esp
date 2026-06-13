@@ -22,7 +22,16 @@ static TickType_t leds_update_wait(struct leds_state *state)
 }
 
 
-static bool leds_update_active(struct leds_state *state)
+static bool leds_update_active(struct leds_state *state, EventBits_t bits)
+{
+  if (bits & (1 << LEDS_EVENT_UPDATE_BIT)) {
+    return true;
+  }
+
+  return false;
+}
+
+static bool leds_update_timeout_expired(struct leds_state *state)
 {
   // not configured
   if (!state->config->update_timeout) {
@@ -94,12 +103,13 @@ static EventBits_t leds_task_wait(struct leds_state *state)
   const bool wait_for_all_bits = false;
   EventBits_t event_bits = xEventGroupWaitBits(state->event_group, LEDS_EVENT_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 
-  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d static=%d", state->index + 1,
+  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d static=%d update=%d", state->index + 1,
     !!(event_bits & (1 << LEDS_EVENT_TEST_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT)),
-    !!(event_bits & (1 << LEDS_EVENT_STATIC_BIT))
+    !!(event_bits & (1 << LEDS_EVENT_STATIC_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_UPDATE_BIT))
   );
 
   return event_bits;
@@ -134,8 +144,7 @@ static void leds_main(void *ctx)
 
   for(stats_timer_start_t loop_start;; stats_timer_stop(&stats->loop, &loop_start)) {
     EventBits_t event_bits = leds_task_wait(state);
-    enum user_activity update_activity = 0;
-    bool update_timeout = false;
+    bool update = false;
 
     loop_start = stats_timer_start(&stats->loop);
 
@@ -146,7 +155,9 @@ static void leds_main(void *ctx)
 
       WITH_STATS_TIMER(&stats->static_) {
         if (leds_static_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_STATIC;
+          user_activity(USER_ACTIVITY_LEDS_STATIC);
+
+          update = true;
         }
       }
     }
@@ -158,7 +169,9 @@ static void leds_main(void *ctx)
 
       WITH_STATS_TIMER(&stats->test) {
         if (leds_test_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_TEST;
+          user_activity(USER_ACTIVITY_LEDS_TEST);
+
+          update = true;
         }
       }
     }
@@ -170,7 +183,9 @@ static void leds_main(void *ctx)
 
       WITH_STATS_TIMER(&stats->sequence) {
         if (leds_sequence_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
+          user_activity(USER_ACTIVITY_LEDS_SEQUENCE);
+
+          update = true;
         }
       }
     }
@@ -186,11 +201,15 @@ static void leds_main(void *ctx)
             break;
           
           case LEDS_ARTNET_UPDATE:
-            update_activity = USER_ACTIVITY_LEDS_ARTNET;
+            user_activity(USER_ACTIVITY_LEDS_ARTNET);
+
+            update = true;
             break;
           
           case LEDS_ARTNET_UPDATE_TIMEOUT:
-            update_activity = USER_ACTIVITY_LEDS_ARTNET_TIMEOUT;
+            user_activity(USER_ACTIVITY_LEDS_ARTNET_TIMEOUT);
+
+            update = true;
             break;
           
           default:
@@ -199,23 +218,31 @@ static void leds_main(void *ctx)
       }
     }
 
-    if (leds_update_active(state)) {
+    if (leds_update_active(state, event_bits)) {
+      LOG_DEBUG("update");
+
+      // external
+      update = true;
+
+      stats_counter_increment(&stats->update);
+
+    } else if (leds_update_timeout_expired(state)) {
       LOG_DEBUG("update timeout");
 
       // update without activity
-      update_timeout = true;
+      update = true;
 
       stats_counter_increment(&stats->update_timeout);
     }
 
-    if (update_activity || update_timeout) {
+    if (update) {
       LOG_DEBUG("update");
       
       state->update_tick = xTaskGetTickCount();
 
-      WITH_STATS_TIMER(&stats->update) {
-        if (update_leds(state, update_activity)) {
-          LOG_WARN("leds%d: update_leds", state->index + 1);
+      WITH_STATS_TIMER(&stats->output) {
+        if (output_leds(state)) {
+          LOG_WARN("leds%d: output_leds", state->index + 1);
           user_alert(USER_ALERT_ERROR_LEDS);
           reset_leds(state);
         }
@@ -285,4 +312,20 @@ void notify_leds_tasks(EventBits_t bits)
 
     notify_leds_task(state, bits);
   }
+}
+
+int update_leds(struct leds_state *state, enum user_activity activity)
+{
+  if (!state->event_group) {
+    LOG_WARN("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
+
+  if (activity) {
+    user_activity(activity);
+  }
+
+  xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);
+
+  return 0;
 }

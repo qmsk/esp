@@ -17,6 +17,7 @@ void init_leds_stats()
   for (unsigned i = 0; i < LEDS_COUNT; i++) {
     struct leds_stats *stats = &leds_stats[i];
 
+    stats_timer_init(&stats->update);
     stats_timer_init(&stats->loop);
     stats_timer_init(&stats->test);
     stats_timer_init(&stats->artnet);
@@ -30,7 +31,6 @@ void init_leds_stats()
     stats_counter_init(&stats->sync_timeout);
     stats_counter_init(&stats->sync_missed);
     stats_counter_init(&stats->sync_full);
-    stats_counter_init(&stats->update);
     stats_counter_init(&stats->update_timeout);
   }
 }

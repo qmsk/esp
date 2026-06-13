@@ -458,6 +458,7 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("leds%u:\n", i + 1);
 
+    print_stats_timer("update", "",       &stats->update);
     print_stats_timer("task", "loop",     &stats->loop);
     print_stats_timer("task", "test",     &stats->test);
     print_stats_timer("task", "artnet",   &stats->artnet);
@@ -471,7 +472,6 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_counter("sync",   "timeout", &stats->sync_timeout);
     print_stats_counter("sync",   "missed",  &stats->sync_missed);
     print_stats_counter("sync",   "full",    &stats->sync_full);
-    print_stats_counter("update", "",        &stats->update);
     print_stats_counter("update", "timeout", &stats->update_timeout);
     printf("\n");
   }

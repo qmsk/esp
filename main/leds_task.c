@@ -236,8 +236,6 @@ static void leds_main(void *ctx)
       // external
       update = true;
 
-      stats_counter_increment(&stats->update);
-
     } else if (leds_update_timeout_expired(state)) {
       LOG_DEBUG("update timeout");
 
@@ -331,6 +329,8 @@ void notify_leds_tasks(EventBits_t bits)
 // TODO: start/stop update timer?
 int start_leds_update(struct leds_state *state, enum leds_update_state update_state)
 {
+  struct leds_stats *stats = &leds_stats[state->index];
+
   if (!state->mutex || !state->event_group) {
     LOG_WARN("leds%d: not initialized", state->index + 1);
     return -1;
@@ -355,6 +355,10 @@ int start_leds_update(struct leds_state *state, enum leds_update_state update_st
     return -1;
   }
 
+  assert(!state->update_start);
+
+  state->update_start = stats_timer_start(&stats->update);
+
   leds_update_state(state, update_state);
 
   return 0;
@@ -362,6 +366,12 @@ int start_leds_update(struct leds_state *state, enum leds_update_state update_st
 
 void end_leds_update(struct leds_state *state)
 {
+  struct leds_stats *stats = &leds_stats[state->index];
+
+  assert(state->update_start);
+
+  stats_timer_stop(&stats->update, &state->update_start);
+
   xSemaphoreGiveRecursive(state->mutex);
 
   xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);

@@ -11,6 +11,7 @@ struct leds_sequence_stats {
 };
 
 struct leds_stats {
+  struct stats_timer update;
   struct stats_timer loop;
 
   struct stats_timer test;
@@ -29,7 +30,6 @@ struct leds_stats {
   struct stats_timer static_;
   
   struct stats_timer output;
-  struct stats_counter update;
   struct stats_counter update_timeout;
 
 };

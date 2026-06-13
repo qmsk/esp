@@ -34,6 +34,7 @@ struct leds_state {
   struct leds *leds;
   TickType_t update_tick;
   enum leds_update_state update_state;
+  stats_timer_start_t update_start;
 
   xTaskHandle task;
   EventGroupHandle_t event_group;

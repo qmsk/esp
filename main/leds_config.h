@@ -195,6 +195,8 @@ extern const struct config_file_path leds_sequence_paths[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
 
+struct leds_color config_leds_color(struct config_color config_color, enum leds_parameter_type parameter_type);
+
 unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config);
 unsigned config_leds_artnet_universe_count(const struct leds_config *config);
 

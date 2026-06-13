@@ -349,3 +349,37 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
 
   return 0;
 }
+
+struct leds_color config_leds_color(const struct config_color config_color, enum leds_parameter_type parameter_type)
+{
+  switch (parameter_type) {
+    case LEDS_PARAMETER_NONE:
+      return (struct leds_color) {
+        .r = config_color.r * config_color.a / 255,
+        .g = config_color.g * config_color.a / 255,
+        .b = config_color.b * config_color.a / 255,
+      };
+
+    case LEDS_PARAMETER_DIMMER:
+      return (struct leds_color) {
+        .r = config_color.r,
+        .g = config_color.g,
+        .b = config_color.b,
+
+        .dimmer = config_color.a,
+      };
+
+    case LEDS_PARAMETER_WHITE:
+      return (struct leds_color) {
+        .r = config_color.r,
+        .g = config_color.g,
+        .b = config_color.b,
+      
+        // TODO: fully transparent = only white, 50% = colors + 100% white?
+        .white = (255 - config_color.a),
+      };
+
+    default:
+      LOG_FATAL("parameter_type=%d", parameter_type);
+  }
+}

@@ -162,6 +162,7 @@ fieldset input[type="file"] {
 
 fieldset input[type="color"] {
   background: none;
+  padding: 0;
 }
 
 fieldset div.actions button {

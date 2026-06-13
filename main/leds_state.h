@@ -15,12 +15,21 @@ struct leds_test_state;
 struct leds_artnet_state;
 struct leds_sequence_state;
 
+enum leds_update_state {
+  LEDS_UPDATE_NONE,
+  LEDS_UPDATE_STATIC,
+  LEDS_UPDATE_TEST,
+  LEDS_UPDATE_SEQUENCE,
+  LEDS_UPDATE_ARTNET,
+};
+
 struct leds_state {
   int index;
   const struct leds_config *config;
 
   struct leds *leds;
   TickType_t update_tick;
+  enum leds_update_state update_state;
 
   xTaskHandle task;
   EventGroupHandle_t event_group;

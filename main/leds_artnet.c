@@ -286,13 +286,6 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
   bool update = false;
   bool timeout = false;
 
-  if (state->test) {
-    if (dmx || sync) {
-      // clear any test mode output
-      leds_test_clear(state);
-    }
-  }
-
   if (state->artnet->sync_missed) {
     LOG_DEBUG("event_bits=%08x + sync_missed=%08x", event_bits, state->artnet->sync_missed);
 
@@ -305,6 +298,18 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   // wait until either artnet-sync or (non-sync) dmx to not trigger soft-sync on partial data in artnet sync mode
   if (dmx || sync || miss) {
+    if (state->test) {
+      // disable test mode
+      leds_test_clear(state);
+    }
+
+    if (state->update_state != LEDS_UPDATE_ARTNET) {
+      // incoming artnet data overrides any other output, even with missing universes
+      if (leds_clear_all(state->leds)) {
+        LOG_ERROR("leds_clear_all");
+      }
+    }
+
     // set output from artnet universe
     for (unsigned index = 0; index < state->artnet->universe_count; index++) {
       if (!(data_bits & (1 << index))) {

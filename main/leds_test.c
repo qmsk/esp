@@ -155,25 +155,11 @@ int clear_leds_test(struct leds_state *state)
   return 0;
 }
 
-static void leds_test_reset(struct leds_state *state)
+void leds_test_clear(struct leds_state *state)
 {
   state->test->mode = 0;
   state->test->frame = 0;
   state->test->frame_tick = 0;
-}
-
-void leds_test_clear(struct leds_state *state)
-{
-  if (!state->test->mode) {
-    return;
-  }
-
-  // incoming artnet data overrides test mode
-  if (leds_clear_all(state->leds)) {
-    LOG_WARN("leds_clear_all");
-  }
-
-  leds_test_reset(state);
 }
 
 TickType_t leds_test_wait(struct leds_state *state)
@@ -211,7 +197,7 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
       LOG_WARN("leds_clear_all");
     }
 
-    leds_test_reset(state);
+    leds_test_clear(state);
 
     return 1;
 

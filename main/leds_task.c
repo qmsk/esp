@@ -122,6 +122,30 @@ static void leds_main(void *ctx)
 
     loop_start = stats_timer_start(&stats->loop);
 
+    if (leds_static_active(state, event_bits)) {
+      LOG_DEBUG("static");
+
+      WITH_STATS_TIMER(&stats->static_) {
+        if (leds_static_update(state, event_bits)) {
+          update_activity = USER_ACTIVITY_LEDS_STATIC;
+        }
+      }
+
+      state->update_state = LEDS_UPDATE_STATIC;
+    }
+
+    if (state->test && leds_test_active(state, event_bits)) {
+      LOG_DEBUG("test");
+
+      WITH_STATS_TIMER(&stats->test) {
+        if (leds_test_update(state, event_bits)) {
+          update_activity = USER_ACTIVITY_LEDS_TEST;
+        }
+      }
+
+      state->update_state = LEDS_UPDATE_TEST;
+    }
+
     if (state->sequence && leds_sequence_active(state, event_bits)) {
       LOG_DEBUG("sequence");
 
@@ -130,6 +154,8 @@ static void leds_main(void *ctx)
           update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
         }
       }
+
+      state->update_state = LEDS_UPDATE_SEQUENCE;
     }
 
     if (state->artnet && leds_artnet_active(state, event_bits)) {
@@ -152,26 +178,8 @@ static void leds_main(void *ctx)
             LOG_ERROR("leds_artnet_update");
         }
       }
-    }
-
-    if (state->test && leds_test_active(state, event_bits)) {
-      LOG_DEBUG("test");
-
-      WITH_STATS_TIMER(&stats->test) {
-        if (leds_test_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_TEST;
-        }
-      }
-    }
-
-    if (leds_static_active(state, event_bits)) {
-      LOG_DEBUG("static");
-
-      WITH_STATS_TIMER(&stats->static_) {
-        if (leds_static_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_STATIC;
-        }
-      }
+      
+      state->update_state = LEDS_UPDATE_ARTNET;
     }
 
     if (leds_update_active(state)) {

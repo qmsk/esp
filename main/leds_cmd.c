@@ -297,8 +297,8 @@ int leds_cmd_test(int argc, char **argv, void *ctx)
         return err;
       }
     } else {
-      if ((err = step_leds_test(state))) {
-        LOG_ERROR("step_leds_test");
+      if ((err = set_leds_test_next(state))) {
+        LOG_ERROR("set_leds_test_next");
         return err;
       }
     }

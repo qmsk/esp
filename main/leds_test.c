@@ -33,17 +33,9 @@ void trigger_leds_test()
       continue;
     }
 
-    if (state->test->mode >= TEST_MODE_BLACK) {
-      // cycle
-      state->test->mode = 0;
+    if (set_leds_test_next(state)) {
+      LOG_ERROR("set_leds_test_next");
     }
-
-    state->test->mode++;
-    state->test->frame = 0;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
   }
 }
 
@@ -56,15 +48,9 @@ void auto_leds_test()
       continue;
     }
 
-    if (!state->test->mode) {
-      state->test->mode++;
+    if (set_leds_test_auto(state)) {
+      LOG_ERROR("set_leds_test_auto");
     }
-
-    state->test->auto_mode = true;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
   }
 }
 
@@ -77,13 +63,9 @@ void reset_leds_test()
       continue;
     }
 
-    // will be reset to 0 by leds_test_update()
-    state->test->mode = TEST_MODE_BLACK;
-    state->test->auto_mode = false;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+    if (clear_leds_test(state)) {
+      LOG_ERROR("clear_leds_test");
+    }
   }
 }
 
@@ -105,7 +87,27 @@ int set_leds_test(struct leds_state *state, enum leds_test_mode mode, bool auto_
   return 0;
 }
 
-int step_leds_test(struct leds_state *state)
+int set_leds_test_auto(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  state->test->auto_mode = true;
+
+  if (!state->test->mode) {
+    state->test->mode++;
+  }
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int set_leds_test_next(struct leds_state *state)
 {
   if (!state->test) {
     LOG_ERROR("disabled");
@@ -233,7 +235,7 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
 
     state->test->mode++;
     state->test->frame = 0;
-    
+
   } else {
     // pause
     LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> pause", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);

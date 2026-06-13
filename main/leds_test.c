@@ -217,6 +217,8 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
     return 0;
   }
 
+  // TODO: disable sequence?
+
   if ((frame_ticks = leds_set_test(state->leds, state->test->mode, state->test->frame)) < 0) {
     LOG_ERROR("leds_set_test");
     return -1;

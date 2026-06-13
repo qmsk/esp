@@ -178,6 +178,7 @@ static void leds_artnet_timeout(struct leds_state *state)
   LOG_INFO("leds%d: timeout", state->index + 1);
 
   // TODO: flash user alert?
+  // TODO: fallback to static, sequence?
 
   if (leds_clear_all(state->leds)) {
     LOG_WARN("leds_clear_all");
@@ -298,8 +299,9 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
   // wait until either artnet-sync or (non-sync) dmx to not trigger soft-sync on partial data in artnet sync mode
   if (dmx || sync || miss) {
+    // TODO: sequence?
     if (state->test) {
-      // disable test mode
+      // override test mode
       leds_test_clear(state);
     }
 
@@ -369,6 +371,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
     leds_artnet_timeout(state);
     leds_artnet_timeout_clear(state);
+    // TODO: sync clear?
   }
   
   // return

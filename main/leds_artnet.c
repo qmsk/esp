@@ -152,6 +152,13 @@ static void leds_artnet_sync_reset(struct leds_state *state)
   }
 }
 
+void leds_artnet_sync_clear(struct leds_state *state)
+{
+  state->artnet->sync_bits = 0;
+  state->artnet->sync_missed = 0;
+  state->artnet->sync_tick = 0;
+}
+
 static void leds_artnet_timeout_reset(struct leds_state *state)
 {
   const struct leds_config *config = state->config;
@@ -371,7 +378,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
 
     leds_artnet_timeout(state);
     leds_artnet_timeout_clear(state);
-    // TODO: sync clear?
+    leds_artnet_sync_clear(state);
   }
   
   // return

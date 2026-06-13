@@ -69,6 +69,20 @@ void reset_leds_test()
   }
 }
 
+static void leds_test_next_mode(struct leds_state *state)
+{
+  if (state->test->mode >= TEST_MODE_COUNT) {
+    // cycle
+    state->test->mode = 1;
+  } else {
+    // next;
+    state->test->mode++;
+  }
+  
+  state->test->frame = 0;
+  state->test->frame_tick = 0;
+}
+
 int set_leds_test(struct leds_state *state, enum leds_test_mode mode, bool auto_mode)
 {
   if (!state->test) {
@@ -96,8 +110,8 @@ int set_leds_test_auto(struct leds_state *state)
 
   state->test->auto_mode = true;
 
-  if (!state->test->mode) {
-    state->test->mode++;
+  if (!state->test->mode || !state->test->frame_tick) {
+    leds_test_next_mode(state);
   }
 
   LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
@@ -114,15 +128,7 @@ int set_leds_test_next(struct leds_state *state)
     return -1;
   }
 
-  if (state->test->mode >= TEST_MODE_COUNT) {
-    // cycle
-    state->test->mode = 1;
-  } else {
-    // next;
-    state->test->mode++;
-  }
-
-  state->test->frame = 0;
+  leds_test_next_mode(state);
 
   LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
 
@@ -240,12 +246,11 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
     // advance to next mode
     LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> next mode", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
-    state->test->mode++;
-    state->test->frame = 0;
+    leds_test_next_mode(state);
 
   } else {
-    // pause
-    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> pause", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+    // stop
+    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> stop", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
     state->test->frame_tick = 0;
   }

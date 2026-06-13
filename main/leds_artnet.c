@@ -163,9 +163,25 @@ static void leds_artnet_timeout_reset(struct leds_state *state)
   }
 }
 
+static bool leds_artnet_timeout_expired(struct leds_state *state)
+{
+  return state->artnet->timeout_tick && xTaskGetTickCount() >= state->artnet->timeout_tick;
+}
+
 void leds_artnet_timeout_clear(struct leds_state *state)
 {
   state->artnet->timeout_tick = 0;
+}
+
+static void leds_artnet_timeout(struct leds_state *state)
+{
+  LOG_INFO("leds%d: timeout", state->index + 1);
+
+  // TODO: flash user alert?
+
+  if (leds_clear_all(state->leds)) {
+    LOG_WARN("leds_clear_all");
+  }
 }
 
 TickType_t leds_artnet_wait(struct leds_state *state)
@@ -222,25 +238,6 @@ static int leds_artnet_set(struct leds_state *state, unsigned index, struct artn
 
   if ((err = leds_set_format(state->leds, config->artnet_leds_format, data, len, params))) {
     LOG_WARN("leds_set_format");
-    return err;
-  }
-
-  return 0;
-}
-
-static int leds_artnet_timeout(struct leds_state *state)
-{
-  struct leds_stats *stats = &leds_stats[state->index];
-  int err;
-
-  LOG_INFO("leds%d: timeout", state->index + 1);
-
-  stats_counter_increment(&stats->artnet_timeout);
-
-  // TODO: flash user alert?
-
-  if ((err = leds_clear_all(state->leds))) {
-    LOG_WARN("leds_clear_all");
     return err;
   }
 
@@ -341,6 +338,7 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     }
   }
 
+  // update?
   if (sync) {
     // hard art-net sync
     stats_counter_increment(&stats->artnet_sync);
@@ -351,26 +349,24 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     update = true;
   }
 
-  // timeouts
-  if (dmx || sync) {
-    state->artnet->dmx_tick = xTaskGetTickCount();
-    leds_artnet_timeout_reset(state);
-  } else if (state->artnet->timeout_tick) {
-    if (xTaskGetTickCount() >= state->artnet->timeout_tick) {
-      timeout = true;
-
-      if (leds_artnet_timeout(state)) {
-        LOG_WARN("leds_artnet_timeout");
-      }
-
-      leds_artnet_timeout_clear(state);
-    }
-  }
-
   if (update) {
     leds_artnet_sync_reset(state);
   }
 
+  // timeout?
+  if (dmx || sync) {
+    state->artnet->dmx_tick = xTaskGetTickCount();
+
+    leds_artnet_timeout_reset(state);
+
+  } else if (leds_artnet_timeout_expired(state)) {
+    timeout = true;
+
+    leds_artnet_timeout(state);
+    leds_artnet_timeout_clear(state);
+  }
+  
+  // return
   if (timeout) {
     return LEDS_ARTNET_UPDATE_TIMEOUT;
   } else if (update) {
@@ -420,6 +416,7 @@ int init_leds_artnet(struct leds_state *state, int index, const struct leds_conf
     return -1;
   }
 
+  // activate timeout, delayed output update at boot
   leds_artnet_timeout_reset(state);
 
   return 0;

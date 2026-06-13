@@ -72,12 +72,7 @@ int config_get(const struct config_path path, unsigned index, char *buf, size_t 
       }
 
     case CONFIG_TYPE_COLOR:
-      if (snprintf(buf, size, "%02x%02x%02x%02x",
-          tab->color_type.value[index].r,
-          tab->color_type.value[index].g,
-          tab->color_type.value[index].b,
-          tab->color_type.value[index].a
-      ) >= size) {
+      if (config_color_str(buf, size, tab->color_type.value[index])) {
         return -1;
       } else {
         break;

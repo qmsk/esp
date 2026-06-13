@@ -46,3 +46,12 @@ int config_color_parse(struct config_color *color, const char *value)
 
   return 0;
 }
+
+int config_color_str(char *buf, size_t size, struct config_color color)
+{
+  if (snprintf(buf, size, "%02x%02x%02x%02x", color.r, color.g, color.b, color.a) >= size) {
+    return -1;
+  }
+
+  return 0;
+}

@@ -177,8 +177,11 @@ int config_file_walk(const struct config_file_path *paths, int (*func)(const str
 
 FILE *config_file_open(const struct config_file_path *paths, const char *value);
 
-/* Color*/
+/* Color */
+#define CONFIG_COLOR_BUF_SIZE (8+1)
+
 int config_color_parse(struct config_color *color, const char *value);
+int config_color_str(char *buf, size_t size, struct config_color color);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tablep);
 int configtab_lookup(const struct configmod *module, unsigned index, const struct configtab *table, const char *name, const struct configtab **tabp);

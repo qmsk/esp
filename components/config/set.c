@@ -167,7 +167,6 @@ static int config_set_file(const struct config_path path, unsigned index, const 
 static int config_set_color(const struct config_path path, unsigned index, const char *str)
 {
   const struct configtab *tab = path.tab;
-  int err;
 
   return config_color_parse(&tab->color_type.value[index], str);
 }

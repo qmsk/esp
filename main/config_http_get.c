@@ -32,9 +32,13 @@ static int config_api_write_file_value(struct json_writer *w, const struct confi
 
 static int config_api_write_color_value(struct json_writer *w, const struct configtab *tab, unsigned index)
 {
-  struct config_color c = tab->color_type.value[index];
+  char buf[CONFIG_COLOR_BUF_SIZE];
 
-  return json_write_raw(w, "\"%02x%02x%02x%02x\"", c.r, c.g, c.b, c.a);
+  if (config_color_str(buf, sizeof(buf), tab->color_type.value[index])) {
+    return -1;
+  }
+
+  return json_write_string(w, buf);
 }
 
 static int config_api_write_configtab_value(struct json_writer *w, const struct configtab *tab, unsigned index)

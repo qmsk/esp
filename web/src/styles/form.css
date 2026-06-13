@@ -223,6 +223,7 @@ fieldset.actions label {
 fieldset.actions button {
   grid-column: 2;
 
+  margin: 0.5em 1em;
   padding: 0.5em 1em;
 
   background-color: #133337;

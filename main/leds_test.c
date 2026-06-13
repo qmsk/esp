@@ -116,7 +116,7 @@ int set_leds_test_next(struct leds_state *state)
 
   if (state->test->mode >= TEST_MODE_COUNT) {
     // cycle
-    state->test->mode = 0;
+    state->test->mode = 1;
   } else {
     // next;
     state->test->mode++;

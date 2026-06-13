@@ -32,11 +32,14 @@ export default class ConfigService {
     return response.data
   }
 
-  async set(modname, tabname, value) {
+  async set(entries) {
     let data = new URLSearchParams();
-    let name = '[' + modname + ']' + tabname;
 
-    data.append(name, value);
+    for (let e of entries) {
+      let name = '[' + e.modname + ']' + e.tabname;
+
+      data.append(name, e.value);
+    }
 
     const response = await this.apiService.post('/api/config', data);
 

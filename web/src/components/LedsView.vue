@@ -315,11 +315,10 @@ export default {
       this.savingStatic = true;
 
       try {
-        await this.$store.dispatch('setConfig', {
-          modname: this.activeID,
-          tabname: 'static_color',
-          value: this.staticColor 
-        });
+        await this.$store.dispatch('setConfig', [
+          { modname: this.activeID, tabname: 'static_enabled', value: true },
+          { modname: this.activeID, tabname: 'static_color', value: this.staticColor },
+        ]);
       } finally {
         this.savingStatic = false;
       }

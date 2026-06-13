@@ -114,6 +114,11 @@ int set_leds_test_auto(struct leds_state *state)
     leds_test_next_mode(state);
   }
 
+  if (state->test->mode == TEST_MODE_CHASE) {
+    // CHASE mode will never end
+    leds_test_next_mode(state);
+  }
+
   LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
 
   notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);

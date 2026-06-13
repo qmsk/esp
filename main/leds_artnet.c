@@ -384,6 +384,8 @@ int leds_artnet_update(struct leds_state *state, EventBits_t event_bits)
     leds_artnet_timeout_reset(state);
 
   } else if (leds_artnet_timeout_expired(state)) {
+    stats_counter_increment(&stats->artnet_timeout);
+
     timeout = true;
 
     leds_artnet_timeout(state);

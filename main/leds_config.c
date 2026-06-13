@@ -350,7 +350,7 @@ int config_leds(struct leds_state *state, const struct leds_config *config)
   return 0;
 }
 
-struct leds_color config_leds_color(const struct config_color config_color, enum leds_parameter_type parameter_type)
+struct leds_color config_leds_color(struct config_color config_color, enum leds_parameter_type parameter_type)
 {
   switch (parameter_type) {
     case LEDS_PARAMETER_NONE:

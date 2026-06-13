@@ -400,7 +400,7 @@ unsigned leds_count(struct leds *leds);
 /*
  * Set all LEDs off.
  */
-int leds_clear_all(struct leds *leds);
+void leds_clear_all(struct leds *leds);
 
 /*
  * @param index 0-based index

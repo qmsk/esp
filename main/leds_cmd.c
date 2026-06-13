@@ -152,10 +152,7 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       }
     } else {
       // XXX: unsafe
-      if ((err = leds_clear_all(state->leds))) {
-        LOG_ERROR("leds_set_all");
-        return err;
-      }
+      _leds_cmd_clear(state);
 
       if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
         LOG_ERROR("update_leds");

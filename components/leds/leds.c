@@ -101,7 +101,7 @@ unsigned leds_count(struct leds *leds)
   return leds->options.count;
 }
 
-int leds_clear_all(struct leds *leds)
+void leds_clear_all(struct leds *leds)
 {
   struct leds_color color = {}; // all off
 
@@ -110,8 +110,6 @@ int leds_clear_all(struct leds *leds)
   for (unsigned i = 0; i < leds->options.count; i++) {
     leds->pixels[i] = color;
   }
-
-  return 0;
 }
 
 int leds_set(struct leds *leds, unsigned index, struct leds_color color)

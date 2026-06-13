@@ -203,9 +203,7 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
   if (!state->test->mode) {
     LOG_DEBUG("clear mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
-    if (leds_clear_all(state->leds)) {
-      LOG_WARN("leds_clear_all");
-    }
+    leds_clear_all(state->leds);
 
     leds_test_clear(state);
 

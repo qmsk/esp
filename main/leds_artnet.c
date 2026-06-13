@@ -187,9 +187,7 @@ static void leds_artnet_timeout(struct leds_state *state)
   // TODO: flash user alert?
   // TODO: fallback to static, sequence?
 
-  if (leds_clear_all(state->leds)) {
-    LOG_WARN("leds_clear_all");
-  }
+  leds_clear_all(state->leds);
 }
 
 TickType_t leds_artnet_wait(struct leds_state *state)
@@ -294,9 +292,7 @@ static void leds_artnet_clean(struct leds_state *state)
 {
   if (!state->artnet->update_clean) {
     // incoming artnet data overrides any other type of output, ensure leds for any missing universes are cleared
-    if (leds_clear_all(state->leds)) {
-      LOG_ERROR("leds_clear_all");
-    }
+    leds_clear_all(state->leds);
 
     state->artnet->update_clean = true;
   }

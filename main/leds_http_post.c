@@ -53,7 +53,9 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
       return ret;
     }
 
-    return leds_set_all(leds, color);
+    leds_set_all(leds, color);
+
+    return 0;
 
   } else if (sscanf(key, "%u", &index) > 0) {
     if ((ret = leds_api_color_parse(&color, parameter_type, value))) {

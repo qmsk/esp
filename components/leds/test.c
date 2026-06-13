@@ -35,9 +35,7 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
   }
 
   // black
-  if ((err = leds_set_all(leds, (struct leds_color){ }))) {
-    return err;
-  }
+  leds_clear_all(leds);
 
   if ((err = leds_set(leds, frame % count, color))) {
     return err;
@@ -48,8 +46,6 @@ int leds_test_chase_frame(struct leds *leds, unsigned frame, struct leds_color c
 
 int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color color)
 {
-  int err;
-
   switch (leds_parameter_type(leds)) {
     case LEDS_PARAMETER_NONE:
       break;
@@ -62,9 +58,7 @@ int leds_test_color_frame(struct leds *leds, unsigned frame, struct leds_color c
       break;
   }
 
-  if ((err = leds_set_all(leds, color))) {
-    return err;
-  }
+  leds_set_all(leds, color);
 
   if (frame < TEST_MODE_COLOR_FRAMES) {
     return TEST_FRAME_TICKS;
@@ -152,18 +146,6 @@ int leds_test_rainbow_frame(struct leds *leds, unsigned frame)
   }
 
   return TEST_FRAME_TICKS;
-}
-
-int leds_test_black_frame(struct leds *leds, unsigned frame)
-{
-  int err;
-
-  // black
-  if ((err = leds_set_all(leds, (struct leds_color){ }))) {
-    return err;
-  }
-
-  return 0;
 }
 
 /*

@@ -13,7 +13,7 @@
       <a
         v-for="id in ledsKeys"
         :class="{active: id == activeID}"
-        @click="switchActive(id)"
+        @click="selectID(id)"
       >
         {{ id }}
       </a>
@@ -170,7 +170,7 @@ export default {
   data: () => ({
     loading: true,
     loadingStatus: false,
-    activeID: "leds1",
+    selectedID: null
   }),
   created() {
     this.load();
@@ -181,8 +181,17 @@ export default {
         return [...this.$store.state.leds.keys()];
       }
     },
+    activeID() {
+      if (this.selectedID) {
+        return this.selectedID;
+      } else if (this.$store.state.leds && this.$store.state.leds.size > 0) {
+        return this.$store.state.leds.keys().next().value;
+      } else {
+        return null;
+      }
+    },
     activeLeds() {
-      if (this.$store.state.leds) {
+      if (this.$store.state.leds && this.activeID) {
         return this.$store.state.leds.get(this.activeID);
       }
     },
@@ -258,8 +267,8 @@ export default {
         this.loadingStatus = false;
       }
     },
-    switchActive(id) {
-      this.activeID = id;
+    selectID(id) {
+      this.selectedID = id;
     },
   }
 }

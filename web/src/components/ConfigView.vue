@@ -149,7 +149,7 @@
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
 
-                  <input v-if="tab.type == 'color'" type="color" alpha
+                  <input v-if="tab.type == 'color'" type="color"
                     :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
                     :value="'#' + value"
                     @input="syncInput"

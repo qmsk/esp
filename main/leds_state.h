@@ -8,6 +8,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 
 struct leds_config;
 
@@ -21,12 +22,15 @@ enum leds_update_state {
   LEDS_UPDATE_TEST,
   LEDS_UPDATE_SEQUENCE,
   LEDS_UPDATE_ARTNET,
+  LEDS_UPDATE_CMD,
+  LEDS_UPDATE_HTTP,
 };
 
 struct leds_state {
   int index;
   const struct leds_config *config;
-
+  SemaphoreHandle_t mutex;
+  
   struct leds *leds;
   TickType_t update_tick;
   enum leds_update_state update_state;
@@ -81,3 +85,9 @@ int reset_leds(struct leds_state *state);
  * Update LEDs output.
  */
 int output_leds(struct leds_state *state);
+
+/* Lock LEDs for out-of-task update */
+int start_leds_update(struct leds_state *state, enum leds_update_state update_state);
+
+/* Release LEDS and trigger task */
+void end_leds_update(struct leds_state *state);

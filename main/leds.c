@@ -76,6 +76,11 @@ int init_leds()
       continue;
     }
 
+    if (!(state->mutex = xSemaphoreCreateRecursiveMutex())) {
+      LOG_ERROR("xSemaphoreCreateRecursiveMutex");
+      return -1;
+    }
+
     if ((err = config_leds(state, config))) {
       LOG_ERROR("leds%d: config_leds", i+1);
       return err;

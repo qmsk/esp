@@ -21,6 +21,3 @@ int start_leds_task(struct leds_state *state, const struct leds_config *config);
 
 void notify_leds_task(struct leds_state *state, EventBits_t bits);
 void notify_leds_tasks(EventBits_t bits);
-
-/* Trigger task for leds output update */
-int update_leds(struct leds_state *state, enum user_activity activity);

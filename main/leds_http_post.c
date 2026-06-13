@@ -11,12 +11,11 @@
 
 #include <string.h>
 
-struct leds_api_req {
+struct leds_api_params {
   struct leds_state *state;
 };
 
-
-int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *value)
+int leds_api_state_parse(struct leds_api_params *params, const char *key, const char *value)
 {
   struct leds *leds = NULL;
   enum leds_parameter_type parameter_type = 0;
@@ -24,28 +23,30 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
   unsigned index;
   int ret;
 
-  // XXX: will only update last state
-  if (strcmp(key, "id") == 0) {
-    if (sscanf(value, "%d", &index) <= 0) {
+  if (strcmp(key, "leds") == 0) {
+    if (params->state) {
+      LOG_WARN("duplicate leds=");
       return HTTP_UNPROCESSABLE_ENTITY;
-    } else if (index <= 0 || index > LEDS_COUNT) {
-      return HTTP_UNPROCESSABLE_ENTITY;
-    } else {
-      req->state = &leds_states[index - 1];
+    } else if ((ret = leds_api_leds_parse(&params->state, value))) {
+      LOG_WARN("leds_api_leds_parse");
+      return ret;
     }
-
+    
+    if ((ret = start_leds_update(params->state, LEDS_UPDATE_HTTP))) {
+      LOG_ERROR("start_leds_update");
+      params->state = NULL;
+      return ret;
+    }
+    
     return 0;
 
-  } else if (!req->state) {
-    LOG_WARN("missing id= in request");
+  } else if (!params->state) {
+    LOG_WARN("missing leds= in request");
     return HTTP_UNPROCESSABLE_ENTITY;
 
-  } else if (!req->state->leds) {
-    LOG_WARN("disabled id= in request");
-    return HTTP_UNPROCESSABLE_ENTITY;
   } else {
-    leds = req->state->leds;
-    parameter_type = leds_parameter_type(req->state->leds);
+    leds = params->state->leds;
+    parameter_type = leds_parameter_type(params->state->leds);
   }
 
   if (strcmp(key, "all") == 0) {
@@ -71,17 +72,18 @@ int leds_api_state_parse(struct leds_api_req *req, const char *key, const char *
 
 int leds_api_form(struct http_request *request, struct http_response *response)
 {
-  struct leds_api_req req = {};
+  struct leds_api_params params = {};
   char *key, *value;
   int err;
 
+  // leds_api_state_parse() will implicitly start_leds_update(), we must end_leds_update()
   while (!(err = http_request_form(request, &key, &value))) {
-    if ((err = leds_api_state_parse(&req, key, value)) < 0) {
+    if ((err = leds_api_state_parse(&params, key, value)) < 0) {
       LOG_ERROR("leds_api_state_parse");
-      return err;
+      goto error;
     } else if (err) {
-      LOG_WARN("leds_api_state_parse: %s=%s", key, value ? value : "");
-      return err;
+      LOG_WARN("leds_api_state_parse: %s=%s -> %d", key, value ? value : "", err);
+      goto error;
     }
   }
 
@@ -90,17 +92,14 @@ int leds_api_form(struct http_request *request, struct http_response *response)
     return err;
   }
 
-  if (req.state && req.state->leds) {
-    if ((err = update_leds(req.state, USER_ACTIVITY_LEDS_HTTP)) < 0) {
-      LOG_ERROR("update_leds");
-      return HTTP_INTERNAL_SERVER_ERROR;
-    } else if (err) {
-      LOG_WARN("update_leds");
-      return HTTP_CONFLICT;
-    }
+  err = HTTP_NO_CONTENT;
+
+error:
+  if (params.state) {
+    end_leds_update(params.state);
   }
 
-  return HTTP_NO_CONTENT;
+  return err;
 }
 
 int leds_api_post(struct http_request *request, struct http_response *response, void *ctx)

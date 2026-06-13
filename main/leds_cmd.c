@@ -16,6 +16,8 @@
 
 #include <string.h>
 
+#define CMD_LEDS_MUTEX_TIMEOUT (1000 / portTICK_RATE_MS)
+
 int leds_cmd_info(int argc, char **argv, void *ctx)
 {
   for (int i = 0; i < LEDS_COUNT; i++) {
@@ -145,20 +147,14 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       continue;
     }
 
-    if (state->test) {
-      if ((err = clear_leds_test(state))) {
-        LOG_ERROR("clear_leds_test");
-        return err;
-      }
-    } else {
-      // XXX: unsafe
-      _leds_cmd_clear(state);
-
-      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-        LOG_ERROR("update_leds");
-        return err;
-      }
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
+      continue;
     }
+
+    leds_clear_all(state->leds);
+
+    end_leds_update(state);
   }
 
   return 0;
@@ -212,6 +208,58 @@ int leds_cmd_static(int argc, char **argv, void *ctx)
   return 0;
 }
 
+int leds_cmd_all(int argc, char **argv, void *ctx)
+{
+  int rgb, a = 0xff, w = 0;
+  int err;
+
+  if ((err = cmd_arg_int(argc, argv, 1, &rgb)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &a)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
+    return err;
+
+  struct leds_color leds_color = {
+    .r = (rgb >> 16) & 0xFF,
+    .g = (rgb >>  8) & 0xFF,
+    .b = (rgb >>  0) & 0xFF,
+  };
+
+  for (int i = 0; i < LEDS_COUNT; i++) {
+    const struct leds_config *config = &leds_configs[i];
+    struct leds_state *state = &leds_states[i];
+
+    if (!config->enabled || !state->leds) {
+      continue;
+    }
+
+    switch (leds_parameter_type(state->leds)) {
+      case LEDS_PARAMETER_NONE:
+        break;
+
+      case LEDS_PARAMETER_DIMMER:
+        leds_color.dimmer = a;
+        break;
+
+      case LEDS_PARAMETER_WHITE:
+        leds_color.white = w;
+        break;
+    }
+
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
+      continue;
+    }
+
+    leds_set_all(state->leds, leds_color);
+
+    end_leds_update(state);
+  }
+
+  return 0;
+}
+
 int leds_cmd_set(int argc, char **argv, void *ctx)
 {
   const struct leds_config *config;
@@ -254,17 +302,20 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
       break;
   }
 
+  if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+    LOG_ERROR("start_leds_update");
+    return -1;
+  }
+
   if ((err = leds_set(state->leds, index, leds_color))) {
-    LOG_ERROR("leds_set");
-    return err;
+    LOG_WARN("leds_set");
+    goto error;
   }
 
-  if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-    LOG_ERROR("update_leds");
-    return err;
-  }
+error:
+  end_leds_update(state);
 
-  return 0;
+  return err;
 }
 
 int leds_cmd_test(int argc, char **argv, void *ctx)
@@ -320,10 +371,12 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
       return err;
     }
+
+    end_leds_update(state);
   } else {
     for (int i = 0; i < LEDS_COUNT; i++) {
       const struct leds_config *config = &leds_configs[i];
@@ -333,10 +386,12 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
         continue;
       }
 
-      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-        LOG_ERROR("update_leds");
+      if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+        LOG_ERROR("start_leds_update");
         return err;
       }
+
+      end_leds_update(state);
     }
   }
 
@@ -437,6 +492,7 @@ const struct cmd leds_commands[] = {
   { "status",   leds_cmd_status,                                        .describe = "Show LED status" },
   { "clear",    leds_cmd_clear,                                         .describe = "Clear test patterns" },
   { "static",   leds_cmd_static,  .usage = "RGB [A]",                   .describe = "Set static LEDs color" },
+  { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
   { "test",     leds_cmd_test,    .usage = "[MODE]",                    .describe = "Output test patterns" },

@@ -11,6 +11,8 @@
 
 #include <logging.h>
 
+#define LEDS_MUTEX_TIMEOUT (1000 / portTICK_RATE_MS)
+
 static TickType_t leds_update_wait(struct leds_state *state)
 {
   if (state->config->update_timeout && state->update_tick) {
@@ -99,6 +101,8 @@ static EventBits_t leds_task_wait(struct leds_state *state)
 
   LOG_DEBUG("leds%d: wait_tick=%d wait_ticks=%d", state->index + 1, wait_tick, wait_ticks);
 
+  xSemaphoreGiveRecursive(state->mutex);
+
   const bool clear_on_exit = true;
   const bool wait_for_all_bits = false;
   EventBits_t event_bits = xEventGroupWaitBits(state->event_group, LEDS_EVENT_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
@@ -111,6 +115,10 @@ static EventBits_t leds_task_wait(struct leds_state *state)
     !!(event_bits & (1 << LEDS_EVENT_STATIC_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_UPDATE_BIT))
   );
+
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_FATAL("xSemaphoreTakeRecursive: timeout");
+  }
 
   return event_bits;
 }
@@ -136,6 +144,10 @@ static void leds_main(void *ctx)
 {
   struct leds_state *state = ctx;
   struct leds_stats *stats = &leds_stats[state->index];
+
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_FATAL("xSemaphoreTakeRecursive: timeout");
+  }
 
   if (setup_leds(state)) {
     LOG_ERROR("setup_leds");
@@ -251,6 +263,8 @@ static void leds_main(void *ctx)
   }
 
 error:
+  xSemaphoreGiveRecursive(state->mutex);
+
   user_alert(USER_ALERT_ERROR_LEDS);
   LOG_ERROR("task=%p stopped", state->task);
   state->task = NULL;
@@ -314,18 +328,41 @@ void notify_leds_tasks(EventBits_t bits)
   }
 }
 
-int update_leds(struct leds_state *state, enum user_activity activity)
+// TODO: start/stop update timer?
+int start_leds_update(struct leds_state *state, enum leds_update_state update_state)
 {
-  if (!state->event_group) {
+  if (!state->mutex || !state->event_group) {
     LOG_WARN("leds%d: not initialized", state->index + 1);
     return -1;
   }
 
-  if (activity) {
-    user_activity(activity);
+  switch (update_state) {
+    case LEDS_UPDATE_CMD:
+      user_activity(USER_ACTIVITY_LEDS_CMD);
+      break;
+
+    case LEDS_UPDATE_HTTP:
+      user_activity(USER_ACTIVITY_LEDS_HTTP);
+      break;
+    
+    default:
+      LOG_ERROR("update_state=%d", update_state);
+      return -1;
   }
 
-  xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  leds_update_state(state, update_state);
 
   return 0;
+}
+
+void end_leds_update(struct leds_state *state)
+{
+  xSemaphoreGiveRecursive(state->mutex);
+
+  xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);
 }

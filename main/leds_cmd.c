@@ -378,7 +378,7 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       LOG_ERROR("start_leds_update");
       return err;
     }
-    
+
     // no-op update
 
     end_leds_update(state);
@@ -465,13 +465,14 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 
     printf("leds%u:\n", i + 1);
 
-    print_stats_timer("update", "",       &stats->update);
     print_stats_timer("task", "loop",     &stats->loop);
     print_stats_timer("task", "test",     &stats->test);
     print_stats_timer("task", "artnet",   &stats->artnet);
     print_stats_timer("task", "sequence", &stats->sequence);
     print_stats_timer("task", "static",   &stats->static_);
     print_stats_timer("task", "output",   &stats->output);
+    print_stats_timer("cmd",  "update",   &stats->update_cmd);
+    print_stats_timer("http", "update",   &stats->update_http);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
     print_stats_counter("artnet", "sync",    &stats->artnet_sync);

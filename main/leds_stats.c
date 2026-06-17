@@ -17,13 +17,14 @@ void init_leds_stats()
   for (unsigned i = 0; i < LEDS_COUNT; i++) {
     struct leds_stats *stats = &leds_stats[i];
 
-    stats_timer_init(&stats->update);
     stats_timer_init(&stats->loop);
     stats_timer_init(&stats->test);
     stats_timer_init(&stats->artnet);
     stats_timer_init(&stats->sequence);
     stats_timer_init(&stats->static_);
     stats_timer_init(&stats->output);
+    stats_timer_init(&stats->update_cmd);
+    stats_timer_init(&stats->update_http);
 
     stats_counter_init(&stats->artnet_timeout);
     stats_counter_init(&stats->artnet_sync);

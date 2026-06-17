@@ -335,12 +335,23 @@ int start_leds_update(struct leds_state *state, enum leds_update_state update_st
     return -1;
   }
 
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  leds_update_state(state, update_state);
+
+  assert(!state->update_start);
+
   switch (update_state) {
     case LEDS_UPDATE_CMD:
+      state->update_start = stats_timer_start(&stats->update_cmd);
       user_activity(USER_ACTIVITY_LEDS_CMD);
       break;
 
     case LEDS_UPDATE_HTTP:
+      state->update_start = stats_timer_start(&stats->update_http);
       user_activity(USER_ACTIVITY_LEDS_HTTP);
       break;
     
@@ -348,17 +359,6 @@ int start_leds_update(struct leds_state *state, enum leds_update_state update_st
       LOG_ERROR("update_state=%d", update_state);
       return -1;
   }
-
-  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
-    LOG_ERROR("xSemaphoreTakeRecursive");
-    return -1;
-  }
-
-  assert(!state->update_start);
-
-  state->update_start = stats_timer_start(&stats->update);
-
-  leds_update_state(state, update_state);
 
   return 0;
 }
@@ -369,7 +369,19 @@ void end_leds_update(struct leds_state *state)
 
   assert(state->update_start);
 
-  stats_timer_stop(&stats->update, &state->update_start);
+  switch(state->update_state) {
+    case LEDS_UPDATE_CMD:
+      stats_timer_stop(&stats->update_cmd, &state->update_start);
+      break;
+
+    case LEDS_UPDATE_HTTP:
+      stats_timer_stop(&stats->update_http, &state->update_start);
+      break;
+
+    default:
+      LOG_ERROR("update_state=%d", state->update_state);
+      break;
+  }
 
   xSemaphoreGiveRecursive(state->mutex);
 

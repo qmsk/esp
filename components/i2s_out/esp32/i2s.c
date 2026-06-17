@@ -190,11 +190,11 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
+  i2s_ll_tx_stop(i2s_out->dev);
+
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
-  i2s_ll_tx_stop(i2s_out->dev);
-  
   i2s_out->i2s_start = false;
 
   taskEXIT_CRITICAL(&i2s_out->mux);

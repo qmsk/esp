@@ -3,6 +3,11 @@
 #include <hal/i2s_ll.h>
 #include <soc/i2s_reg.h>
 
+static inline bool i2s_intr_enabled(i2s_dev_t *hw, uint32_t mask)
+{
+    return hw->int_ena.val & mask;
+}
+
 static inline void i2s_intr_enable(i2s_dev_t *hw, uint32_t mask)
 {
     hw->int_ena.val |= mask;

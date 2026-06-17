@@ -93,9 +93,13 @@ static void i2s_intr_out_eof_handler(struct i2s_out *i2s_out, BaseType_t *pxHigh
     i2s_out_intr_dma_out_desc(i2s_out, eof_desc, pxHigherPriorityTaskWoken);
     i2s_out_intr_dma_done(i2s_out, pxHigherPriorityTaskWoken);
 
-    // XXX: ensure tx rempty intr is enabled, in case it fired during DMA and was disabled?
-    i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
-    i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
+    if (i2s_out->i2s_start && !i2s_intr_enabled(i2s_out->dev, I2S_TX_REMPTY_INT_ENA)) {
+      LOG_ISR_WARN("re-enable tx rempty interrupt");
+
+      // XXX: ensure tx rempty intr is enabled, in case it fired prematurely during DMA and was disabled?
+      i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
+      i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
+    }
 
   } else {
     LOG_ISR_ERROR("unknown desc=%p owner=%u len=%u", eof_desc, eof_desc->owner, eof_desc->len);

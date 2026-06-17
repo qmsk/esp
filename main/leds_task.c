@@ -101,7 +101,9 @@ static EventBits_t leds_task_wait(struct leds_state *state)
 
   LOG_DEBUG("leds%d: wait_tick=%d wait_ticks=%d", state->index + 1, wait_tick, wait_ticks);
 
-  xSemaphoreGiveRecursive(state->mutex);
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
 
   const bool clear_on_exit = true;
   const bool wait_for_all_bits = false;
@@ -261,7 +263,9 @@ static void leds_main(void *ctx)
   }
 
 error:
-  xSemaphoreGiveRecursive(state->mutex);
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
 
   user_alert(USER_ALERT_ERROR_LEDS);
   LOG_ERROR("task=%p stopped", state->task);
@@ -383,7 +387,9 @@ void end_leds_update(struct leds_state *state)
       break;
   }
 
-  xSemaphoreGiveRecursive(state->mutex);
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
 
   xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);
 }

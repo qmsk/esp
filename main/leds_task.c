@@ -326,7 +326,6 @@ void notify_leds_tasks(EventBits_t bits)
   }
 }
 
-// TODO: start/stop update timer?
 int start_leds_update(struct leds_state *state, enum leds_update_state update_state)
 {
   struct leds_stats *stats = &leds_stats[state->index];

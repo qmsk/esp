@@ -172,6 +172,7 @@ int leds_cmd_static(int argc, char **argv, void *ctx)
   if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
     return err;
 
+  // TODO: use leds_api_color_parse()?
   struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
@@ -220,6 +221,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
   if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
     return err;
 
+  // TODO: use leds_api_color_parse()?
   struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
@@ -283,6 +285,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
+  // TODO: use leds_api_color_parse()?
   struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
@@ -375,6 +378,8 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       LOG_ERROR("start_leds_update");
       return err;
     }
+    
+    // no-op update
 
     end_leds_update(state);
   } else {
@@ -390,6 +395,8 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
         LOG_ERROR("start_leds_update");
         return err;
       }
+
+      // no-op update
 
       end_leds_update(state);
     }

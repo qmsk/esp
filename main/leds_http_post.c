@@ -15,7 +15,7 @@ struct leds_api_params {
   struct leds_state *state;
 };
 
-int leds_api_state_parse(struct leds_api_params *params, const char *key, const char *value)
+int leds_api_params_parse(struct leds_api_params *params, const char *key, const char *value)
 {
   struct leds *leds = NULL;
   enum leds_parameter_type parameter_type = 0;
@@ -63,14 +63,19 @@ int leds_api_state_parse(struct leds_api_params *params, const char *key, const 
       return ret;
     }
 
-    return leds_set(leds, index, color);
+    if ((ret = leds_set(leds, index, color))) {
+      LOG_WARN("leds_set leds%d index=%u", params->state->index + 1, index);
+      return HTTP_UNPROCESSABLE_ENTITY;
+    }
+
+    return 0;
 
   } else {
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 }
 
-int leds_api_form(struct http_request *request, struct http_response *response)
+int leds_api_post_form(struct http_request *request, struct http_response *response)
 {
   struct leds_api_params params = {};
   char *key, *value;
@@ -78,11 +83,11 @@ int leds_api_form(struct http_request *request, struct http_response *response)
 
   // leds_api_state_parse() will implicitly start_leds_update(), we must end_leds_update()
   while (!(err = http_request_form(request, &key, &value))) {
-    if ((err = leds_api_state_parse(&params, key, value)) < 0) {
-      LOG_ERROR("leds_api_state_parse");
+    if ((err = leds_api_params_parse(&params, key, value)) < 0) {
+      LOG_ERROR("leds_api_params_parse");
       goto error;
     } else if (err) {
-      LOG_WARN("leds_api_state_parse: %s=%s -> %d", key, value ? value : "", err);
+      LOG_WARN("leds_api_params_parse: %s=%s -> %d", key, value ? value : "", err);
       goto error;
     }
   }
@@ -114,7 +119,7 @@ int leds_api_post(struct http_request *request, struct http_response *response, 
 
   switch (headers->content_type) {
     case HTTP_CONTENT_TYPE_APPLICATION_X_WWW_FORM_URLENCODED:
-      return leds_api_form(request, response);
+      return leds_api_post_form(request, response);
 
     default:
       LOG_WARN("Unknown Content-Type");

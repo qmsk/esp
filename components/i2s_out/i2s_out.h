@@ -71,6 +71,8 @@ struct i2s_out {
 
   bool dma_start; // initialized by i2s_out_dma_setup(), set by i2s_out_dma_start(), cleared by i2s_out_dma_stop()
   bool dma_done;
+
+  bool i2s_start; // set by i2s_out_i2s_start(), cleared by i2s_out_i2s_stop()
   bool i2s_done;
 
   TaskHandle_t dma_out_task; // task waiting for dma_out_desc to update

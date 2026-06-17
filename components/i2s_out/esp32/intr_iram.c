@@ -110,10 +110,17 @@ static void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
+  if (!i2s_out->i2s_start) {
+    // XXX: ignore if fired before i2s_out_i2s_start()
+    LOG_ISR_WARN("tx rempty i2s_start=%d dma_done=%u i2s_done=%u", i2s_out->i2s_start, i2s_out->dma_done, i2s_out->i2s_done);
+
+    return;
+  }
+
   if (!i2s_out->dma_done) {
     // XXX: ignore if fired before dma_done, will be re-enabled
     // XXX: may indicate a timing glitch in the output data?
-    LOG_ISR_WARN("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+    LOG_ISR_WARN("tx rempty i2s_start=%d dma_done=%u i2s_done=%u", i2s_out->i2s_start, i2s_out->dma_done, i2s_out->i2s_done);
 
     return;
   }
@@ -121,7 +128,7 @@ static void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
   if (i2s_out->i2s_done) {
     // XXX: ignore if fired again
     // XXX: unknown why this might happen
-    LOG_ISR_WARN("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+    LOG_ISR_WARN("tx rempty i2s_start=%d dma_done=%u i2s_done=%u", i2s_out->i2s_start, i2s_out->dma_done, i2s_out->i2s_done);
 
     return;
   }

@@ -117,6 +117,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   );
 
   // reset event state
+  i2s_out->i2s_start = false;
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
@@ -131,10 +132,10 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
-  // track active time
-  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
-
   taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_out->i2s_start = true;
+  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
 
   // NOTE: there seems to always be three extra BCK cycles at the start of TX
   // XXX: occasionally, some trailing bits of the last TX will get transmitted first...
@@ -193,6 +194,8 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
   i2s_ll_tx_stop(i2s_out->dev);
+  
+  i2s_out->i2s_start = false;
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 

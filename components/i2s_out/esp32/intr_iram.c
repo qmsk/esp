@@ -52,7 +52,9 @@ static void i2s_out_intr_i2s_done(struct i2s_out *i2s_out, BaseType_t *pxHigherP
   }
 
   // stats
-  stats_timer_stop(&i2s_out->stats.out_timer, &i2s_out->stats_out_timer_start);
+  if (i2s_out->stats_out_timer_start) {
+    stats_timer_stop(&i2s_out->stats.out_timer, &i2s_out->stats_out_timer_start);
+  }
 }
 
 static void i2s_intr_out_dscr_err_handler(struct i2s_out *i2s_out)
@@ -112,11 +114,21 @@ static void i2s_intr_tx_rempty_handler(struct i2s_out *i2s_out, BaseType_t *pxHi
     // XXX: ignore if fired before dma_done, will be re-enabled
     // XXX: may indicate a timing glitch in the output data?
     LOG_ISR_WARN("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
-  } else {
-    LOG_ISR_DEBUG("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
 
-    i2s_out_intr_i2s_done(i2s_out, pxHigherPriorityTaskWoken);
+    return;
   }
+
+  if (i2s_out->i2s_done) {
+    // XXX: ignore if fired again
+    // XXX: unknown why this might happen
+    LOG_ISR_WARN("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+
+    return;
+  }
+
+  LOG_ISR_DEBUG("tx rempty dma_done=%u i2s_done=%u", i2s_out->dma_done, i2s_out->i2s_done);
+
+  i2s_out_intr_i2s_done(i2s_out, pxHigherPriorityTaskWoken);
 }
 
 void i2s_intr_handler(void *arg)

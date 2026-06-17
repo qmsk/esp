@@ -164,7 +164,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   if (i2s_done) {
-    LOG_DEBUG("done");
+    LOG_DEBUG("done i2s_out=%d", i2s_out->i2s_done);
 
     return 0;
   } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, &bits, timeout)) {  
@@ -177,7 +177,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 
     return -1;
   } else {
-    LOG_DEBUG("wait -> done");
+    LOG_DEBUG("wait bits=%08x i2s_out=%d", bits, i2s_out->i2s_done);
 
     return 0;
   }
@@ -199,4 +199,5 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
   // reset event state
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
+  i2s_out->stats_out_timer_start = 0;
 }

@@ -178,8 +178,13 @@ TickType_t leds_test_wait(struct leds_state *state)
     return 0;
   }
 
-  // tick for next test frame
-  return state->test->frame_tick;
+  if (state->test->frame_tick) {
+    // wait for next test frame
+    return state->test->frame_tick;
+  }
+
+  // idle
+  return 0;
 }
 
 bool leds_test_active(struct leds_state *state, EventBits_t bits)
@@ -219,7 +224,7 @@ int leds_test_update(struct leds_state *state, EventBits_t bits)
 
     return 0;
 
-  } else if (state->test->frame_tick < tick) {
+  } else if (state->test->frame_tick > tick) {
     LOG_DEBUG("wait mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
     return 0;

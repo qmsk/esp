@@ -72,6 +72,7 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
 
   return (
         JSON_WRITE_MEMBER_BOOL(w, "active", status.active)
+    ||  JSON_WRITE_MEMBER_STRING(w, "update_state", config_enum_to_string(leds_update_state_enum, status.update_state))
     ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", status.update_tick)
     ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", TICK_MS(status.tick, status.update_tick))
     ||  JSON_WRITE_MEMBER_UINT(w, "artnet_dmx_ms", status.artnet ? TICK_MS(status.tick, status.artnet_dmx_tick) : 0)

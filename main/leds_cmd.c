@@ -75,7 +75,9 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     printf("leds%d:\n", i + 1);
 
     printf("\tActive    : %s\n", status.active ? "true" : "false");
-    printf("\tUpdate    : %dms\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
+    printf("\tUpdate:\n");
+    printf("\t\tState   : %s\n", config_enum_to_string(leds_update_state_enum, status.update_state));
+    printf("\t\tTick    : %dms ago\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
     printf("\tTask      : %6.1f/s @ %5.1f%% (%.0fs)\n", status.metrics.task.rate, status.metrics.task.util * 100.0f, status.metrics.task.interval);
     printf("\tInterface : %6.1f/s @ %5.1f%% (%.0fs)\n", status.metrics.interface.rate, status.metrics.interface.util * 100.0f, status.metrics.interface.interval);
     if (status.test) {
@@ -84,7 +86,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     }
     if (status.artnet) {
       printf("\tArt-Net:\n");
-      printf("\t\tUpdate    : %dms\n", status.artnet_dmx_tick ? (status.tick - status.artnet_dmx_tick) * portTICK_RATE_MS : 0);
+      printf("\t\tDMX Tick : %dms ago\n", status.artnet_dmx_tick ? (status.tick - status.artnet_dmx_tick) * portTICK_RATE_MS : 0);
     }
 
     printf("\tLimit:\n");

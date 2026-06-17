@@ -1,8 +1,8 @@
 #pragma once
 
+#include <stats_timer.h>
 #include <leds.h>
 #include "leds.h"
-#include "leds_status.h"
 #include "user.h"
 
 #include <freertos/FreeRTOS.h>
@@ -24,6 +24,16 @@ enum leds_update_state {
   LEDS_UPDATE_ARTNET,
   LEDS_UPDATE_CMD,
   LEDS_UPDATE_HTTP,
+};
+
+struct leds_status_timers {
+  struct stats_timer task;
+  struct stats_timer interface;
+};
+
+struct leds_status_timer_metrics {
+  struct stats_timer_metrics task;
+  struct stats_timer_metrics interface;
 };
 
 struct leds_state {

@@ -95,11 +95,11 @@
             <dt>Active</dt>
             <dd>{{ status.active }}</dd>
 
+            <dt>Updated</dt>
+            <dd>{{ status.update_state }} @ <sub>{{ status.update_ms | interval('ms') }}</sub></dd>
+
             <dt>Test Mode</dt>
             <dd>{{ status.test_mode }}</dd>
-
-            <dt>Updated</dt>
-            <dd>{{ status.update_ms | interval('ms') }}</dd>
 
             <dt>Art-Net Updated</dt>
             <dd>{{ status.artnet_dmx_ms | interval('ms') }}</dd>

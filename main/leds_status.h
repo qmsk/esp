@@ -3,24 +3,14 @@
 #include <stats_timer.h>
 #include <leds_status.h>
 #include "leds_config.h"
-
-struct leds_state;
-
-struct leds_status_timers {
-  struct stats_timer task;
-  struct stats_timer interface;
-};
-
-struct leds_status_timer_metrics {
-  struct stats_timer_metrics task;
-  struct stats_timer_metrics interface;
-};
+#include "leds_state.h"
 
 struct leds_status {
     TickType_t tick;
 
     bool active;
     TickType_t update_tick;
+    enum leds_update_state update_state;
 
     bool test;
     enum leds_test_mode test_mode;
@@ -34,5 +24,7 @@ struct leds_status {
 
     struct leds_status_timer_metrics metrics;
 };
+
+extern const struct config_enum leds_update_state_enum[];
 
 void get_leds_status(struct leds_state *leds, struct leds_status *status);

@@ -262,7 +262,7 @@ const struct configtab LEDS_CONFIGTAB[] = {
   },
 
   { CONFIG_TYPE_BOOL, "static_enabled",
-    .description = "Output static color at boot",
+    .description = "Output static color at boot. Default false, LEDs hold their value over a reboot until the first update/timeout.",
     .bool_type = { .value = &LEDS_CONFIG.static_enabled },
   },
   { CONFIG_TYPE_COLOR, "static_color",

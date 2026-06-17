@@ -249,7 +249,8 @@ static void leds_main(void *ctx)
 
     if (update) {
       LOG_DEBUG("update");
-      
+
+      // TODO: rename to output_tick, output_timeout?
       state->update_tick = xTaskGetTickCount();
 
       WITH_STATS_TIMER(&stats->output) {

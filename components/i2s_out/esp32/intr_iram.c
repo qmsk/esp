@@ -54,6 +54,8 @@ static void i2s_out_intr_i2s_done(struct i2s_out *i2s_out, BaseType_t *pxHigherP
   // stats
   if (i2s_out->stats_out_timer_start) {
     stats_timer_stop(&i2s_out->stats.out_timer, &i2s_out->stats_out_timer_start);
+  } else {
+    LOG_ISR_WARN("invalid stats_out_timer_start");
   }
 }
 

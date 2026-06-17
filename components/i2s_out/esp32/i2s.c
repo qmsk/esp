@@ -143,6 +143,7 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   //      let's hope that the EOF frame is always zeroes, and zero bytes at the start are harmless...
   i2s_ll_tx_start(i2s_out->dev);
 
+  // can only be enabled once tx is running, will otherwise always fire immediately
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
 

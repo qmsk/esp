@@ -11,7 +11,7 @@ static void i2s_out_intr_dma_out_desc(struct i2s_out *i2s_out, struct dma_desc *
 {
   // update dma_out_desc and reset descs for write
   for (struct dma_desc *desc = i2s_out->dma_out_desc; (desc != NULL) && (desc != eof_desc); desc = desc->next) {
-    LOG_ISR_WARN("missed desc=%p owner=%u len=%u", desc, desc->owner, desc->len);
+    LOG_ISR_INFO("missed desc=%p owner=%u len=%u", desc, desc->owner, desc->len);
 
     i2s_dma_desc_reset(desc);
   }

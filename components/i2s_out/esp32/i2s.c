@@ -117,6 +117,7 @@ int i2s_out_i2s_setup(struct i2s_out *i2s_out, const struct i2s_out_options *opt
   );
 
   // reset event state
+  i2s_out->i2s_start = false;
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
@@ -131,10 +132,10 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
 
-  // track active time
-  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
-
   taskENTER_CRITICAL(&i2s_out->mux);
+
+  i2s_out->i2s_start = true;
+  i2s_out->stats_out_timer_start = stats_timer_start(&i2s_out->stats.out_timer);
 
   // NOTE: there seems to always be three extra BCK cycles at the start of TX
   // XXX: occasionally, some trailing bits of the last TX will get transmitted first...
@@ -142,6 +143,7 @@ void i2s_out_i2s_start(struct i2s_out *i2s_out)
   //      let's hope that the EOF frame is always zeroes, and zero bytes at the start are harmless...
   i2s_ll_tx_start(i2s_out->dev);
 
+  // can only be enabled once tx is running, will otherwise always fire immediately
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
   i2s_intr_enable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
 
@@ -164,7 +166,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   if (i2s_done) {
-    LOG_DEBUG("done");
+    LOG_DEBUG("done i2s_out=%d", i2s_out->i2s_done);
 
     return 0;
   } else if (!xTaskNotifyWait(0, I2S_OUT_TASK_NOTIFY_BIT_I2S_DONE, &bits, timeout)) {  
@@ -177,7 +179,7 @@ int i2s_out_i2s_flush(struct i2s_out *i2s_out, TickType_t timeout)
 
     return -1;
   } else {
-    LOG_DEBUG("wait -> done");
+    LOG_DEBUG("wait bits=%08x i2s_out=%d", bits, i2s_out->i2s_done);
 
     return 0;
   }
@@ -189,14 +191,17 @@ void i2s_out_i2s_stop(struct i2s_out *i2s_out)
 
   taskENTER_CRITICAL(&i2s_out->mux);
 
+  i2s_ll_tx_stop(i2s_out->dev);
+
   i2s_intr_disable(i2s_out->dev, I2S_TX_REMPTY_INT_ENA);
   i2s_intr_clear(i2s_out->dev, I2S_TX_REMPTY_INT_CLR);
 
-  i2s_ll_tx_stop(i2s_out->dev);
+  i2s_out->i2s_start = false;
 
   taskEXIT_CRITICAL(&i2s_out->mux);
 
   // reset event state
   i2s_out->i2s_done = false;
   i2s_out->i2s_done_task = NULL;
+  i2s_out->stats_out_timer_start = 0;
 }

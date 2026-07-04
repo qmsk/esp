@@ -101,7 +101,7 @@ unsigned leds_count(struct leds *leds)
   return leds->options.count;
 }
 
-int leds_clear_all(struct leds *leds)
+void leds_clear_all(struct leds *leds)
 {
   struct leds_color color = {}; // all off
 
@@ -110,8 +110,6 @@ int leds_clear_all(struct leds *leds)
   for (unsigned i = 0; i < leds->options.count; i++) {
     leds->pixels[i] = color;
   }
-
-  return 0;
 }
 
 int leds_set(struct leds *leds, unsigned index, struct leds_color color)
@@ -129,7 +127,7 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
   return 0;
 }
 
-int leds_set_all(struct leds *leds, struct leds_color color)
+void leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);
 
@@ -138,8 +136,6 @@ int leds_set_all(struct leds *leds, struct leds_color color)
   for (unsigned i = 0; i < leds->options.count; i++) {
     leds->pixels[i] = color;
   }
-
-  return 0;
 }
 
 unsigned leds_count_active(struct leds *leds)

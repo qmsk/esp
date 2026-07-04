@@ -36,6 +36,7 @@ enum config_type {
   CONFIG_TYPE_BOOL,
   CONFIG_TYPE_ENUM,
   CONFIG_TYPE_FILE,
+  CONFIG_TYPE_COLOR,
 };
 
 struct config_enum {
@@ -50,6 +51,10 @@ struct config_enum {
 struct config_file_path {
   const char *prefix;
   const char *suffix;
+};
+
+struct config_color {
+  uint8_t r, g, b, a;
 };
 
 struct configmod;
@@ -119,6 +124,11 @@ struct configtab {
       size_t size;
       const struct config_file_path *paths;
     } file_type;
+
+    struct {
+      struct config_color *value;
+      struct config_color default_value;
+    } color_type;
   };
 };
 
@@ -166,6 +176,12 @@ int config_file_check(const struct config_file_path *paths, const char *value);
 int config_file_walk(const struct config_file_path *paths, int (*func)(const struct config_file_path *path, const char *name, void *ctx), void *ctx);
 
 FILE *config_file_open(const struct config_file_path *paths, const char *value);
+
+/* Color */
+#define CONFIG_COLOR_BUF_SIZE (8+1)
+
+int config_color_parse(struct config_color *color, const char *value);
+int config_color_str(char *buf, size_t size, struct config_color color);
 
 int configmod_lookup(const struct configmod *modules, const char *name, const struct configmod **modp, unsigned *indexp, const struct configtab **tablep);
 int configtab_lookup(const struct configmod *module, unsigned index, const struct configtab *table, const char *name, const struct configtab **tabp);

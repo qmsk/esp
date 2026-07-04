@@ -5,6 +5,17 @@
 #include "leds_artnet.h"
 #include "leds.h"
 
+const struct config_enum leds_update_state_enum[] = {
+  { "NONE",     .value = LEDS_UPDATE_NONE     },
+  { "STATIC",   .value = LEDS_UPDATE_STATIC   },
+  { "TEST",     .value = LEDS_UPDATE_TEST     },
+  { "SEQUENCE", .value = LEDS_UPDATE_SEQUENCE },
+  { "ARTNET",   .value = LEDS_UPDATE_ARTNET   },
+  { "CMD",      .value = LEDS_UPDATE_CMD      },
+  { "HTTP",     .value = LEDS_UPDATE_HTTP     },
+  {}
+};
+
 static struct stats_timer get_leds_task_timer(struct leds_state *state)
 {
   const struct leds_stats *stats = &leds_stats[state->index];
@@ -57,6 +68,7 @@ void get_leds_status(struct leds_state *state, struct leds_status *status)
 
   status->tick = xTaskGetTickCount();
   status->update_tick = state->update_tick;
+  status->update_state = state->update_state;
   status->active = leds_is_active(state->leds);
 
   if ((status->test = !!state->test)) {

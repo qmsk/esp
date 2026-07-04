@@ -1,6 +1,7 @@
 #include "leds_artnet.h"
 #include "leds_sequence.h"
 #include "leds_state.h"
+#include "leds_static.h"
 #include "leds_stats.h"
 #include "leds_task.h"
 #include "leds_test.h"
@@ -9,6 +10,8 @@
 #include "user.h"
 
 #include <logging.h>
+
+#define LEDS_MUTEX_TIMEOUT (1000 / portTICK_RATE_MS)
 
 static TickType_t leds_update_wait(struct leds_state *state)
 {
@@ -21,7 +24,16 @@ static TickType_t leds_update_wait(struct leds_state *state)
 }
 
 
-static bool leds_update_active(struct leds_state *state)
+static bool leds_update_active(struct leds_state *state, EventBits_t bits)
+{
+  if (bits & (1 << LEDS_EVENT_UPDATE_BIT)) {
+    return true;
+  }
+
+  return false;
+}
+
+static bool leds_update_timeout_expired(struct leds_state *state)
 {
   // not configured
   if (!state->config->update_timeout) {
@@ -68,6 +80,12 @@ static EventBits_t leds_task_wait(struct leds_state *state)
     }
   }
 
+  if ((tick = leds_static_wait(state))) {
+    if (tick < wait_tick) {
+      wait_tick = tick;
+    }
+  }
+
   // how long to wait for
   TickType_t wait_ticks = portMAX_DELAY;
   tick = xTaskGetTickCount();
@@ -83,24 +101,55 @@ static EventBits_t leds_task_wait(struct leds_state *state)
 
   LOG_DEBUG("leds%d: wait_tick=%d wait_ticks=%d", state->index + 1, wait_tick, wait_ticks);
 
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
+
   const bool clear_on_exit = true;
   const bool wait_for_all_bits = false;
   EventBits_t event_bits = xEventGroupWaitBits(state->event_group, LEDS_EVENT_BITS, clear_on_exit, wait_for_all_bits, wait_ticks);
 
-  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d", state->index + 1,
+  LOG_DEBUG("leds%d: test=%d artnet_dmx=%d artnet_sync=%d sequence=%d static=%d update=%d", state->index + 1,
     !!(event_bits & (1 << LEDS_EVENT_TEST_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_DMX_BIT)),
     !!(event_bits & (1 << LEDS_EVENT_ARTNET_SYNC_BIT)),
-    !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT))
+    !!(event_bits & (1 << LEDS_EVENT_SEQUENCE_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_STATIC_BIT)),
+    !!(event_bits & (1 << LEDS_EVENT_UPDATE_BIT))
   );
 
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_FATAL("xSemaphoreTakeRecursive: timeout");
+  }
+
   return event_bits;
+}
+
+static void leds_update_state(struct leds_state *state, enum leds_update_state update_state)
+{
+  if (update_state == state->update_state) {
+    return;
+  }
+
+  if (update_state != LEDS_UPDATE_TEST && state->test) {
+    leds_test_update_override(state);
+  }
+
+  if (update_state != LEDS_UPDATE_ARTNET && state->artnet) {
+    leds_artnet_update_override(state);
+  }
+
+  state->update_state = update_state;
 }
 
 static void leds_main(void *ctx)
 {
   struct leds_state *state = ctx;
   struct leds_stats *stats = &leds_stats[state->index];
+
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_FATAL("xSemaphoreTakeRecursive: timeout");
+  }
 
   if (setup_leds(state)) {
     LOG_ERROR("setup_leds");
@@ -109,22 +158,55 @@ static void leds_main(void *ctx)
 
   for(stats_timer_start_t loop_start;; stats_timer_stop(&stats->loop, &loop_start)) {
     EventBits_t event_bits = leds_task_wait(state);
-    enum user_activity update_activity = 0;
-    bool update_timeout = false;
+    bool update = false;
 
     loop_start = stats_timer_start(&stats->loop);
 
+    if (leds_static_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_STATIC);
+
+      LOG_DEBUG("static");
+
+      WITH_STATS_TIMER(&stats->static_) {
+        if (leds_static_update(state, event_bits)) {
+          user_activity(USER_ACTIVITY_LEDS_STATIC);
+
+          update = true;
+        }
+      }
+    }
+
+    if (state->test && leds_test_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_TEST);
+
+      LOG_DEBUG("test");
+
+      WITH_STATS_TIMER(&stats->test) {
+        if (leds_test_update(state, event_bits)) {
+          user_activity(USER_ACTIVITY_LEDS_TEST);
+
+          update = true;
+        }
+      }
+    }
+
     if (state->sequence && leds_sequence_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_SEQUENCE);
+
       LOG_DEBUG("sequence");
 
       WITH_STATS_TIMER(&stats->sequence) {
         if (leds_sequence_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_SEQUENCE;
+          user_activity(USER_ACTIVITY_LEDS_SEQUENCE);
+
+          update = true;
         }
       }
     }
 
     if (state->artnet && leds_artnet_active(state, event_bits)) {
+      leds_update_state(state, LEDS_UPDATE_ARTNET);
+
       LOG_DEBUG("artnet");
 
       WITH_STATS_TIMER(&stats->artnet) {
@@ -133,11 +215,15 @@ static void leds_main(void *ctx)
             break;
           
           case LEDS_ARTNET_UPDATE:
-            update_activity = USER_ACTIVITY_LEDS_ARTNET;
+            user_activity(USER_ACTIVITY_LEDS_ARTNET);
+
+            update = true;
             break;
           
           case LEDS_ARTNET_UPDATE_TIMEOUT:
-            update_activity = USER_ACTIVITY_LEDS_ARTNET_TIMEOUT;
+            user_activity(USER_ACTIVITY_LEDS_ARTNET_TIMEOUT);
+
+            update = true;
             break;
           
           default:
@@ -146,33 +232,30 @@ static void leds_main(void *ctx)
       }
     }
 
-    if (state->test && leds_test_active(state, event_bits)) {
-      LOG_DEBUG("test");
+    if (leds_update_active(state, event_bits)) {
+      LOG_DEBUG("update");
 
-      WITH_STATS_TIMER(&stats->test) {
-        if (leds_test_update(state, event_bits)) {
-          update_activity = USER_ACTIVITY_LEDS_TEST;
-        }
-      }
-    }
+      // external
+      update = true;
 
-    if (leds_update_active(state)) {
+    } else if (leds_update_timeout_expired(state)) {
       LOG_DEBUG("update timeout");
 
       // update without activity
-      update_timeout = true;
+      update = true;
 
       stats_counter_increment(&stats->update_timeout);
     }
 
-    if (update_activity || update_timeout) {
+    if (update) {
       LOG_DEBUG("update");
-      
+
+      // TODO: rename to output_tick, output_timeout?
       state->update_tick = xTaskGetTickCount();
 
-      WITH_STATS_TIMER(&stats->update) {
-        if (update_leds(state, update_activity)) {
-          LOG_WARN("leds%d: update_leds", state->index + 1);
+      WITH_STATS_TIMER(&stats->output) {
+        if (output_leds(state)) {
+          LOG_WARN("leds%d: output_leds", state->index + 1);
           user_alert(USER_ALERT_ERROR_LEDS);
           reset_leds(state);
         }
@@ -181,6 +264,10 @@ static void leds_main(void *ctx)
   }
 
 error:
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
+
   user_alert(USER_ALERT_ERROR_LEDS);
   LOG_ERROR("task=%p stopped", state->task);
   state->task = NULL;
@@ -242,4 +329,68 @@ void notify_leds_tasks(EventBits_t bits)
 
     notify_leds_task(state, bits);
   }
+}
+
+int start_leds_update(struct leds_state *state, enum leds_update_state update_state)
+{
+  struct leds_stats *stats = &leds_stats[state->index];
+
+  if (!state->mutex || !state->event_group) {
+    LOG_WARN("leds%d: not initialized", state->index + 1);
+    return -1;
+  }
+
+  if (!xSemaphoreTakeRecursive(state->mutex, LEDS_MUTEX_TIMEOUT)) {
+    LOG_ERROR("xSemaphoreTakeRecursive");
+    return -1;
+  }
+
+  leds_update_state(state, update_state);
+
+  assert(!state->update_start);
+
+  switch (update_state) {
+    case LEDS_UPDATE_CMD:
+      state->update_start = stats_timer_start(&stats->update_cmd);
+      user_activity(USER_ACTIVITY_LEDS_CMD);
+      break;
+
+    case LEDS_UPDATE_HTTP:
+      state->update_start = stats_timer_start(&stats->update_http);
+      user_activity(USER_ACTIVITY_LEDS_HTTP);
+      break;
+    
+    default:
+      LOG_ERROR("update_state=%d", update_state);
+      return -1;
+  }
+
+  return 0;
+}
+
+void end_leds_update(struct leds_state *state)
+{
+  struct leds_stats *stats = &leds_stats[state->index];
+
+  assert(state->update_start);
+
+  switch(state->update_state) {
+    case LEDS_UPDATE_CMD:
+      stats_timer_stop(&stats->update_cmd, &state->update_start);
+      break;
+
+    case LEDS_UPDATE_HTTP:
+      stats_timer_stop(&stats->update_http, &state->update_start);
+      break;
+
+    default:
+      LOG_ERROR("update_state=%d", state->update_state);
+      break;
+  }
+
+  if (!xSemaphoreGiveRecursive(state->mutex)) {
+    LOG_FATAL("xSemaphoreGiveRecursive: mutex not locked by task");
+  }
+
+  xEventGroupSetBits(state->event_group, 1 << LEDS_EVENT_UPDATE_BIT);
 }

@@ -1,4 +1,5 @@
 #include "leds.h"
+#include "leds_api.h"
 #include "leds_state.h"
 #include "leds_status.h"
 #include "leds_artnet.h"
@@ -71,6 +72,7 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
 
   return (
         JSON_WRITE_MEMBER_BOOL(w, "active", status.active)
+    ||  JSON_WRITE_MEMBER_STRING(w, "update_state", config_enum_to_string(leds_update_state_enum, status.update_state))
     ||  JSON_WRITE_MEMBER_UINT(w, "update_tick", status.update_tick)
     ||  JSON_WRITE_MEMBER_UINT(w, "update_ms", TICK_MS(status.tick, status.update_tick))
     ||  JSON_WRITE_MEMBER_UINT(w, "artnet_dmx_ms", status.artnet ? TICK_MS(status.tick, status.artnet_dmx_tick) : 0)
@@ -105,6 +107,9 @@ static int leds_api_write_object(struct json_writer *w, struct leds_state *state
         JSON_WRITE_MEMBER_UINT(w, "index", state->index + 1)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
+    ||  JSON_WRITE_MEMBER_OBJECT(w, "static",
+          JSON_WRITE_MEMBER(w, "color", leds_api_write_color(w, state->static_.color, leds_parameter_type_for_protocol(leds_protocol(state->leds))))
+        )
     ||  (state->artnet ? JSON_WRITE_MEMBER_OBJECT(w, "artnet", leds_api_write_object_artnet(w, state)) : 0)
   );
 }
@@ -161,22 +166,11 @@ struct leds_api_query {
 int leds_api_query(struct http_request *request, struct leds_api_query *query)
 {
   char *key, *value;
-  int index;
   int err;
 
   while (!(err = http_request_query(request, &key, &value))) {
     if (strcmp(key, "leds") == 0) {
-      if (sscanf(value, "leds%d", &index) <= 0) {
-        LOG_WARN("invalid ?leds=%s", value);
-        return HTTP_UNPROCESSABLE_ENTITY;
-      } else if (index > 0 && index <= LEDS_COUNT) {
-        query->state = &leds_states[index - 1];
-      } else {
-        LOG_WARN("invalid ?leds=%s", value);
-        return HTTP_UNPROCESSABLE_ENTITY;
-      }
-
-      return 0;
+      return leds_api_leds_parse(&query->state, value);
     }
   }
 
@@ -186,7 +180,7 @@ int leds_api_query(struct http_request *request, struct leds_api_query *query)
   }
 
   if (!query->state) {
-    LOG_WARN("missing ?leds=...");
+    LOG_WARN("missing leds=...");
     return HTTP_UNPROCESSABLE_ENTITY;
   }
 
@@ -218,44 +212,6 @@ int leds_api_get_status(struct http_request *request, struct http_response *resp
 
   if ((err = write_http_response_json(response, leds_api_write_status, &query))) {
     LOG_WARN("write_http_response_json -> leds_api_write_status");
-    return err;
-  }
-
-  return 0;
-}
-
-/* GET /api/leds/test */
-static int leds_api_write_test_array(struct json_writer *w)
-{
-  int err;
-
-  for (const struct config_enum *e = leds_test_mode_enum; e->name; e++) {
-    if ((err = JSON_WRITE_OBJECT(w,
-      JSON_WRITE_MEMBER_STRING(w, "mode", e->name)
-    ))) {
-      return err;
-    }
-  }
-
-  return 0;
-}
-
-static int leds_api_write_test(struct json_writer *w, void *ctx)
-{
-  return JSON_WRITE_ARRAY(w, leds_api_write_test_array(w));
-}
-
-int leds_api_test_get(struct http_request *request, struct http_response *response, void *ctx)
-{
-  int err;
-
-  if ((err = http_request_headers(request, NULL))) {
-    LOG_WARN("http_request_headers");
-    return err;
-  }
-
-  if ((err = write_http_response_json(response, leds_api_write_test, NULL))) {
-    LOG_WARN("write_http_response_json -> leds_api_write_test");
     return err;
   }
 

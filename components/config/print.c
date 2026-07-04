@@ -69,6 +69,17 @@ int config_print(const struct config_path path, unsigned index, FILE *file)
     }
     break;
 
+  case CONFIG_TYPE_COLOR:
+    if (fprintf(file, "%02x%02x%02x%02x",
+        tab->color_type.value[index].r,
+        tab->color_type.value[index].g,
+        tab->color_type.value[index].b,
+        tab->color_type.value[index].a
+    ) < 0) {
+      return -1;
+    }
+    break;
+
   default:
     LOG_ERROR("invalid type=%d", tab->type);
     return -1;

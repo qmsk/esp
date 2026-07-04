@@ -41,6 +41,10 @@ int configtab_reset(const struct config_path path)
       memset(tab->file_type.value, 0, tab->file_type.size);
       break;
 
+    case CONFIG_TYPE_COLOR:
+      *tab->color_type.value = tab->color_type.default_value;
+      break;
+
     default:
       LOG_ERROR("invalid type=%d", tab->type);
       return -1;

@@ -33,17 +33,9 @@ void trigger_leds_test()
       continue;
     }
 
-    if (state->test->mode >= TEST_MODE_BLACK) {
-      // cycle
-      state->test->mode = 0;
+    if (set_leds_test_next(state)) {
+      LOG_ERROR("set_leds_test_next");
     }
-
-    state->test->mode++;
-    state->test->frame = 0;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
   }
 }
 
@@ -56,15 +48,9 @@ void auto_leds_test()
       continue;
     }
 
-    if (!state->test->mode) {
-      state->test->mode++;
+    if (set_leds_test_auto(state)) {
+      LOG_ERROR("set_leds_test_auto");
     }
-
-    state->test->auto_mode = true;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
   }
 }
 
@@ -77,35 +63,113 @@ void reset_leds_test()
       continue;
     }
 
-    // will be reset to 0 by leds_test_update()
-    state->test->mode = TEST_MODE_BLACK;
-    state->test->auto_mode = false;
-
-    LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
-
-    notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+    if (clear_leds_test(state)) {
+      LOG_ERROR("clear_leds_test");
+    }
   }
 }
 
-static void leds_test_reset(struct leds_state *state)
+static void leds_test_next_mode(struct leds_state *state)
+{
+  if (state->test->mode >= TEST_MODE_COUNT) {
+    // cycle
+    state->test->mode = 1;
+  } else {
+    // next;
+    state->test->mode++;
+  }
+  
+  state->test->frame = 0;
+  state->test->frame_tick = 0;
+}
+
+int set_leds_test(struct leds_state *state, enum leds_test_mode mode, bool auto_mode)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  state->test->mode = mode;
+  state->test->frame = 0;
+  state->test->auto_mode = auto_mode;
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int set_leds_test_auto(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  state->test->auto_mode = true;
+
+  if (!state->test->mode || !state->test->frame_tick) {
+    leds_test_next_mode(state);
+  }
+
+  if (state->test->mode == TEST_MODE_CHASE) {
+    // CHASE mode will never end
+    leds_test_next_mode(state);
+  }
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int set_leds_test_next(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  leds_test_next_mode(state);
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+int clear_leds_test(struct leds_state *state)
+{
+  if (!state->test) {
+    LOG_ERROR("disabled");
+    return -1;
+  }
+
+  // will be reset to 0 by leds_test_update()
+  state->test->mode = TEST_MODE_NONE;
+  state->test->auto_mode = false;
+
+  LOG_DEBUG("mode=%d auto_mode=%d", state->test->mode, state->test->auto_mode);
+
+  notify_leds_task(state, 1 << LEDS_EVENT_TEST_BIT);
+
+  return 0;
+}
+
+static void leds_test_clear(struct leds_state *state)
 {
   state->test->mode = 0;
   state->test->frame = 0;
   state->test->frame_tick = 0;
 }
 
-void leds_test_clear(struct leds_state *state)
+void leds_test_update_override(struct leds_state *state)
 {
-  if (!state->test->mode) {
-    return;
-  }
-
-  // incoming artnet data overrides test mode
-  if (leds_clear_all(state->leds)) {
-    LOG_WARN("leds_clear_all");
-  }
-
-  leds_test_reset(state);
+  leds_test_clear(state);
 }
 
 TickType_t leds_test_wait(struct leds_state *state)
@@ -114,10 +178,14 @@ TickType_t leds_test_wait(struct leds_state *state)
     return 0;
   }
 
-  // tick for next test frame
-  return state->test->frame_tick;
-}
+  if (state->test->frame_tick) {
+    // wait for next test frame
+    return state->test->frame_tick;
+  }
 
+  // idle
+  return 0;
+}
 
 bool leds_test_active(struct leds_state *state, EventBits_t bits)
 {
@@ -134,49 +202,58 @@ bool leds_test_active(struct leds_state *state, EventBits_t bits)
 
 int leds_test_update(struct leds_state *state, EventBits_t bits)
 {
+  TickType_t tick = xTaskGetTickCount();
   int frame_ticks;
 
-  if (state->test->frame == 0) {
-    state->test->frame_tick = xTaskGetTickCount();
+  if (!state->test->mode) {
+    LOG_DEBUG("clear mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
-    LOG_INFO("test mode=%d", state->test->mode);
-  } else if (state->test->frame_tick) {
+    leds_clear_all(state->leds);
 
-  } else {
-    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> idle", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+    leds_test_clear(state);
+
+    return 1;
+
+  } else if (state->test->frame == 0) {
+    state->test->frame_tick = tick;
+
+    LOG_DEBUG("start mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+
+  } else if (!state->test->frame_tick) {
+    LOG_DEBUG("idle mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+
+    return 0;
+
+  } else if (state->test->frame_tick > tick) {
+    LOG_DEBUG("wait mode=%d auto=%d frame=%d frame_tick=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
     return 0;
   }
 
+  // TODO: disable sequence?
+
   if ((frame_ticks = leds_set_test(state->leds, state->test->mode, state->test->frame)) < 0) {
     LOG_ERROR("leds_set_test");
     return -1;
+
   } else if (frame_ticks) {
     // tick for next frame
-    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> wait frame_ticks=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick, frame_ticks);
+    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> next frame_ticks=%d", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick, frame_ticks);
 
     state->test->frame++;
     state->test->frame_tick += frame_ticks;
-  } else if (state->test->mode == TEST_MODE_BLACK) {
-    // end
-    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> reset", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
-    leds_test_reset(state);
   } else if (state->test->auto_mode) {
     // advance to next mode
     LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> next mode", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
-    state->test->mode++;
-    state->test->frame = 0;
+    leds_test_next_mode(state);
+
   } else {
-    // pause
-    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> pause", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
+    // stop
+    LOG_DEBUG("mode=%d auto=%d frame=%d frame_tick=%d -> stop", state->test->mode, state->test->auto_mode, state->test->frame, state->test->frame_tick);
 
     state->test->frame_tick = 0;
-  }
-
-  if (state->artnet) {
-    leds_artnet_timeout_reset(state);
   }
 
   return 1;

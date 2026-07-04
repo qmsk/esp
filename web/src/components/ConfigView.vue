@@ -148,6 +148,15 @@
                     <option value="" :selected="!value"></option>
                     <option v-for="v in tab.file_values" :value="v" :selected="value == v">{{ v }}</option>
                   </select>
+
+                  <input v-if="tab.type == 'color'" type="color"
+                    :id="mod.name + '-' + tab.name" :name="fieldName(mod, tab)" :data-index="index"
+                    :value="'#' + value"
+                    @input="syncInput"
+                    :class="{ invalid: fieldErrors(mod, tab) }"
+                    :readonly="tab.readonly"
+                  >
+
                 </template>
               </div>
 
@@ -266,8 +275,14 @@ export default {
     },
     syncInput(event) {
       let name = event.target.name;
+      let type = event.target.type;
       let value = event.target.value;
       let index = event.target.dataset.index;
+
+      if (type == "color") {
+        // strip # prefix
+        value = value.substring(1); 
+      }
 
       // TODO: null vs ""?
       // TODO: 0 vs "0"?

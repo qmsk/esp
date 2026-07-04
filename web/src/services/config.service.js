@@ -1,3 +1,26 @@
+
+// normalize config API value from HTML formdata based on configtab type
+function normalizeFormValue(type, value) {
+  if (type == 'color') {
+    return value.substring(1);
+  } else if (type == 'bool' && !value) {
+    // explicitly set unchecked bool values to false
+    return 'false';
+  } else {
+    return value;
+  }
+}
+
+// normalize config API value from HTML formdata based on configtab type
+function normalizeFormValues(type, values) {
+  if (type == 'color') {
+    return values.map((v) => normalizeFormValue(type, v));
+  } else {
+    // exclude empty values
+    return values.filter((v) => v && v != "");
+  }
+}
+  
 export default class ConfigService {
   constructor(apiService) {
     this.apiService = apiService;
@@ -7,6 +30,20 @@ export default class ConfigService {
     const response = await this.apiService.get('/api/config');
 
     return response.data
+  }
+
+  async set(entries) {
+    let data = new URLSearchParams();
+
+    for (let e of entries) {
+      let name = '[' + e.modname + ']' + e.tabname;
+
+      data.append(name, e.value);
+    }
+
+    const response = await this.apiService.post('/api/config', data);
+
+    return response.data;
   }
 
   async post(config, formdata) {
@@ -23,19 +60,11 @@ export default class ConfigService {
           // clear to override existing values
           data.append(name, "");
 
-          for (let value of formdata.getAll(name)) {
-            // exclude empty values
-            if (value && value != "")  {
-              data.append(name, value);
-            }
+          for (let value of normalizeFormValues(tab.type, formdata.getAll(name))) {
+            data.append(name, value);
           }
         } else {
-          let value = formdata.get(name);
-
-          // explicitly set unchecked bool values to false
-          if (tab.type == "bool" && !value) {
-            value = "false";
-          }
+          let value = normalizeFormValue(tab.type, formdata.get(name));
 
           data.append(name, value);
         }

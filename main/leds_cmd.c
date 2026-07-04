@@ -1,7 +1,9 @@
 #include "leds.h"
 #include "leds_state.h"
+#include "leds_static.h"
 #include "leds_status.h"
 #include "leds_artnet.h"
+#include "leds_task.h"
 #include "leds_test.h"
 #include "leds_config.h"
 #include "leds_stats.h"
@@ -13,6 +15,8 @@
 #include <stats_print.h>
 
 #include <string.h>
+
+#define CMD_LEDS_MUTEX_TIMEOUT (1000 / portTICK_RATE_MS)
 
 int leds_cmd_info(int argc, char **argv, void *ctx)
 {
@@ -71,7 +75,9 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     printf("leds%d:\n", i + 1);
 
     printf("\tActive    : %s\n", status.active ? "true" : "false");
-    printf("\tUpdate    : %dms\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
+    printf("\tUpdate:\n");
+    printf("\t\tState   : %s\n", config_enum_to_string(leds_update_state_enum, status.update_state));
+    printf("\t\tTick    : %dms ago\n", status.update_tick ? (status.tick - status.update_tick) * portTICK_RATE_MS : 0);
     printf("\tTask      : %6.1f/s @ %5.1f%% (%.0fs)\n", status.metrics.task.rate, status.metrics.task.util * 100.0f, status.metrics.task.interval);
     printf("\tInterface : %6.1f/s @ %5.1f%% (%.0fs)\n", status.metrics.interface.rate, status.metrics.interface.util * 100.0f, status.metrics.interface.interval);
     if (status.test) {
@@ -80,7 +86,7 @@ int leds_cmd_status(int argc, char **argv, void *ctx)
     }
     if (status.artnet) {
       printf("\tArt-Net:\n");
-      printf("\t\tUpdate    : %dms\n", status.artnet_dmx_tick ? (status.tick - status.artnet_dmx_tick) * portTICK_RATE_MS : 0);
+      printf("\t\tDMX Tick : %dms ago\n", status.artnet_dmx_tick ? (status.tick - status.artnet_dmx_tick) * portTICK_RATE_MS : 0);
     }
 
     printf("\tLimit:\n");
@@ -143,21 +149,20 @@ int leds_cmd_clear(int argc, char **argv, void *ctx)
       continue;
     }
 
-    if ((err = leds_clear_all(state->leds))) {
-      LOG_ERROR("leds_set_all");
-      return err;
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
+      continue;
     }
 
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
-      return err;
-    }
+    leds_clear_all(state->leds);
+
+    end_leds_update(state);
   }
 
   return 0;
 }
 
-int leds_cmd_all(int argc, char **argv, void *ctx)
+int leds_cmd_static(int argc, char **argv, void *ctx)
 {
   int rgb, a = 0xff, w = 0;
   int err;
@@ -169,6 +174,7 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
   if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
     return err;
 
+  // TODO: use leds_api_color_parse()?
   struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
@@ -196,15 +202,63 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
         break;
     }
 
-    if ((err = leds_set_all(state->leds, leds_color))) {
-      LOG_ERROR("leds_set_all");
+    if ((err = set_leds_static(state, leds_color))) {
+      LOG_ERROR("set_leds_static");
       return err;
+    }
+  }
+
+  return 0;
+}
+
+int leds_cmd_all(int argc, char **argv, void *ctx)
+{
+  int rgb, a = 0xff, w = 0;
+  int err;
+
+  if ((err = cmd_arg_int(argc, argv, 1, &rgb)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &a)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_int(argc, argv, 2, &w)))
+    return err;
+
+  // TODO: use leds_api_color_parse()?
+  struct leds_color leds_color = {
+    .r = (rgb >> 16) & 0xFF,
+    .g = (rgb >>  8) & 0xFF,
+    .b = (rgb >>  0) & 0xFF,
+  };
+
+  for (int i = 0; i < LEDS_COUNT; i++) {
+    const struct leds_config *config = &leds_configs[i];
+    struct leds_state *state = &leds_states[i];
+
+    if (!config->enabled || !state->leds) {
+      continue;
     }
 
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
-      return err;
+    switch (leds_parameter_type(state->leds)) {
+      case LEDS_PARAMETER_NONE:
+        break;
+
+      case LEDS_PARAMETER_DIMMER:
+        leds_color.dimmer = a;
+        break;
+
+      case LEDS_PARAMETER_WHITE:
+        leds_color.white = w;
+        break;
     }
+
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
+      continue;
+    }
+
+    leds_set_all(state->leds, leds_color);
+
+    end_leds_update(state);
   }
 
   return 0;
@@ -233,6 +287,7 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
     return err;
   }
 
+  // TODO: use leds_api_color_parse()?
   struct leds_color leds_color = {
     .r = (rgb >> 16) & 0xFF,
     .g = (rgb >>  8) & 0xFF,
@@ -252,52 +307,54 @@ int leds_cmd_set(int argc, char **argv, void *ctx)
       break;
   }
 
+  if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+    LOG_ERROR("start_leds_update");
+    return -1;
+  }
+
   if ((err = leds_set(state->leds, index, leds_color))) {
-    LOG_ERROR("leds_set");
-    return err;
+    LOG_WARN("leds_set");
+    goto error;
   }
 
-  if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-    LOG_ERROR("update_leds");
-    return err;
-  }
+error:
+  end_leds_update(state);
 
-  return 0;
+  return err;
 }
 
 int leds_cmd_test(int argc, char **argv, void *ctx)
 {
-  const struct leds_config *config;
-  struct leds_state *state;
-  unsigned leds_id;
   const char *mode_arg = NULL;
   enum leds_test_mode mode = 0;
   int err;
 
-  if ((err = cmd_arg_uint(argc, argv, 1, &leds_id)))
-    return err;
+  if (argc == 1){
 
-  if (argc > 2 && (err = cmd_arg_str(argc, argv, 2, &mode_arg)))
+  } else if ((err = cmd_arg_str(argc, argv, 1, &mode_arg))) {
     return err;
-
-  if ((err = lookup_leds(leds_id, &config, &state))) {
-    return err;
-  }
-
-  if (mode_arg && (mode = config_enum_to_value(leds_test_mode_enum, mode_arg)) < 0) {
+  } else if ((mode = config_enum_to_value(leds_test_mode_enum, mode_arg)) < 0) {
     LOG_ERROR("invalid mode=%s", mode_arg);
     return -1;
   }
 
-  if (mode) {
-    if ((err = test_leds_mode(state, mode))) {
-      LOG_ERROR("test_leds_mode");
-      return err;
+  for (int i = 0; i < LEDS_COUNT; i++) {
+    struct leds_state *state = &leds_states[i];
+
+    if (!state->leds || !state->test) {
+      continue;
     }
-  } else {
-    if ((err = test_leds(state))) {
-      LOG_ERROR("test_leds");
-      return err;
+
+    if (mode) {
+      if ((err = set_leds_test(state, mode, false))) {
+        LOG_ERROR("set_leds_test");
+        return err;
+      }
+    } else {
+      if ((err = set_leds_test_next(state))) {
+        LOG_ERROR("set_leds_test_next");
+        return err;
+      }
     }
   }
 
@@ -319,10 +376,14 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
       return err;
     }
 
-    if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-      LOG_ERROR("update_leds");
+    if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+      LOG_ERROR("start_leds_update");
       return err;
     }
+
+    // no-op update
+
+    end_leds_update(state);
   } else {
     for (int i = 0; i < LEDS_COUNT; i++) {
       const struct leds_config *config = &leds_configs[i];
@@ -332,10 +393,14 @@ int leds_cmd_update(int argc, char **argv, void *ctx)
         continue;
       }
 
-      if ((err = update_leds(state, USER_ACTIVITY_LEDS_CMD))) {
-        LOG_ERROR("update_leds");
+      if ((err = start_leds_update(state, LEDS_UPDATE_CMD))) {
+        LOG_ERROR("start_leds_update");
         return err;
       }
+
+      // no-op update
+
+      end_leds_update(state);
     }
   }
 
@@ -406,7 +471,10 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
     print_stats_timer("task", "test",     &stats->test);
     print_stats_timer("task", "artnet",   &stats->artnet);
     print_stats_timer("task", "sequence", &stats->sequence);
-    print_stats_timer("task", "update",   &stats->update);
+    print_stats_timer("task", "static",   &stats->static_);
+    print_stats_timer("task", "output",   &stats->output);
+    print_stats_timer("cmd",  "update",   &stats->update_cmd);
+    print_stats_timer("http", "update",   &stats->update_http);
     printf("\n");
     print_stats_counter("artnet", "timeout", &stats->artnet_timeout);
     print_stats_counter("artnet", "sync",    &stats->artnet_sync);
@@ -432,11 +500,12 @@ int leds_cmd_stats(int argc, char **argv, void *ctx)
 const struct cmd leds_commands[] = {
   { "info",     leds_cmd_info,                                          .describe = "Show LED info" },
   { "status",   leds_cmd_status,                                        .describe = "Show LED status" },
-  { "clear",    leds_cmd_clear,                                         .describe = "Clear all output values" },
+  { "clear",    leds_cmd_clear,                                         .describe = "Clear test patterns" },
+  { "static",   leds_cmd_static,  .usage = "RGB [A]",                   .describe = "Set static LEDs color" },
   { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
-  { "test",     leds_cmd_test,    .usage = "LEDS-ID [MODE]",            .describe = "Output test patterns" },
+  { "test",     leds_cmd_test,    .usage = "[MODE]",                    .describe = "Output test patterns" },
   { "stats",    leds_cmd_stats,   .usage = "[reset]",                   .describe = "Show/reset LED stats" },
   { }
 };

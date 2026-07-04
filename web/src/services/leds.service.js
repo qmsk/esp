@@ -13,5 +13,8 @@ export default class LedsService {
 
       return response.data;
     }
+    async postStatic(leds, color) {
+      const response = await this.apiService.post('/api/leds/static', new URLSearchParams({ leds, color }));
+    }
   }
   

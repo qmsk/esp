@@ -160,6 +160,11 @@ fieldset input[type="file"] {
   margin: auto 0;
 }
 
+fieldset input[type="color"] {
+  background: none;
+  padding: 0;
+}
+
 fieldset div.actions button {
   width: 1.8em;
   height: 1.8em;
@@ -223,6 +228,7 @@ fieldset.actions label {
 fieldset.actions button {
   grid-column: 2;
 
+  margin: 0.5em 1em;
   padding: 0.5em 1em;
 
   background-color: #133337;

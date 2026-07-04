@@ -130,7 +130,7 @@ nav a.tabbed-active {
 
 /* View */
 @media (orientation: landscape) {
-  main.split {
+  .split {
     padding: 0;
   
     display: flex;
@@ -143,13 +143,13 @@ nav a.tabbed-active {
     padding: 1em 20%;
   }
 
-  main.split .view {
+  .split .view {
     padding: 1em;
   }
 }
 
 @media (orientation: portrait) {
-  main.split {
+  .split {
     padding: 0;
   
     display: flex;
@@ -162,16 +162,16 @@ nav a.tabbed-active {
     padding: 1em;
   }
 
-  main.split .view {
+  .split .view {
     padding: 0.5em;
   }
 }
 
-main.split .view {
+.split .view {
   flex: 2;
 }
 
-main.split .controls {
+.split .controls {
   flex: 1;
 }
 

@@ -379,10 +379,9 @@ enum leds_test_mode {
   TEST_MODE_RGB_BLACK,
 
   TEST_MODE_RAINBOW,
-  TEST_MODE_BLACK,
 };
 
-#define TEST_MODE_COUNT (TEST_MODE_BLACK + 1)
+#define TEST_MODE_COUNT (TEST_MODE_RAINBOW)
 
 int leds_new(struct leds **ledsp, const struct leds_options *options);
 
@@ -401,7 +400,7 @@ unsigned leds_count(struct leds *leds);
 /*
  * Set all LEDs off.
  */
-int leds_clear_all(struct leds *leds);
+void leds_clear_all(struct leds *leds);
 
 /*
  * @param index 0-based index
@@ -414,7 +413,7 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color);
  * @param global 5-bit global brightness 0-31
  * @param b, g, r 8-bit RGB value
  */
-int leds_set_all(struct leds *leds, struct leds_color color);
+void leds_set_all(struct leds *leds, struct leds_color color);
 
 /*
  * Decode LED colors from binary data, using given format.

@@ -71,6 +71,13 @@ int config_get(const struct config_path path, unsigned index, char *buf, size_t 
         break;
       }
 
+    case CONFIG_TYPE_COLOR:
+      if (config_color_str(buf, size, tab->color_type.value[index])) {
+        return -1;
+      } else {
+        break;
+      }
+
     default:
       LOG_ERROR("invalid type=%d", tab->type);
       return -1;

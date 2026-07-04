@@ -261,5 +261,14 @@ const struct configtab LEDS_CONFIGTAB[] = {
     .uint16_type = { .value = &LEDS_CONFIG.sequence_leds_offset },
   },
 
+  { CONFIG_TYPE_BOOL, "static_enabled",
+    .description = "Output static color at boot. Default false, LEDs hold their value over a reboot until the first update/timeout.",
+    .bool_type = { .value = &LEDS_CONFIG.static_enabled },
+  },
+  { CONFIG_TYPE_COLOR, "static_color",
+    .description = "Static color to output at boot",
+    .color_type = { .value = &LEDS_CONFIG.static_color },
+  },
+
   {}
 };

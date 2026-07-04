@@ -100,6 +100,18 @@ export default new Vuex.Store({
     async uploadConfig({ commit }, file) {
       const configState = await configService.upload(file);
     },
+    async setConfig({ state, commit }, entries) {
+      try {
+        const configState = await configService.set(entries);
+
+        commit('updateConfigState', configState);
+      } catch (error) {
+        if (error.name == "APIError" && error.data) {
+          commit('updateConfigState', error.data);
+        }
+        throw error;
+      }
+    },
 
     /* system */
     async loadSystem({ commit }) {
@@ -155,6 +167,9 @@ export default new Vuex.Store({
       const status = await ledsService.getStatus(id);
 
       commit('updateLedsStatus', {id, status});
+    },
+    async postLedsStatic({ commit }, {leds, color}) {
+      const status = await ledsService.postStatic(leds, color);
     },
 
     /* VFS */

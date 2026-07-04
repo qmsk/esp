@@ -1,7 +1,8 @@
 #include "leds.h"
 #include "leds_artnet.h"
-#include "leds_state.h"
 #include "leds_config.h"
+#include "leds_state.h"
+#include "leds_static.h"
 #include "leds_stats.h"
 #include "leds_sequence.h"
 #include "leds_task.h"
@@ -75,6 +76,11 @@ int init_leds()
       continue;
     }
 
+    if (!(state->mutex = xSemaphoreCreateRecursiveMutex())) {
+      LOG_ERROR("xSemaphoreCreateRecursiveMutex");
+      return -1;
+    }
+
     if ((err = config_leds(state, config))) {
       LOG_ERROR("leds%d: config_leds", i+1);
       return err;
@@ -102,6 +108,13 @@ int init_leds()
     if (config->sequence_enabled) {
       if ((err = config_leds_sequence(state, config))) {
         LOG_ERROR("leds%d: config_leds_sequence", i + 1);
+        return err;
+      }
+    }
+
+    if (config->static_enabled) {
+      if ((err = config_leds_static(state, config))) {
+        LOG_ERROR("leds%d: init_leds_static", i + 1);
         return err;
       }
     }
@@ -243,7 +256,7 @@ void clear_leds_active(struct leds_state *state)
   clear_atx_psu_bit(ATX_PSU_BIT_LEDS1 + state->index);
 }
 
-int update_leds(struct leds_state *state, enum user_activity leds_activity)
+int output_leds(struct leds_state *state)
 {
   int err;
 
@@ -253,91 +266,9 @@ int update_leds(struct leds_state *state, enum user_activity leds_activity)
     return err;
   }
 
-  if (leds_activity) {
-    user_activity(leds_activity);
-  }
-
   if ((err = leds_tx(state->leds))) {
     LOG_ERROR("leds_tx");
     return err;
-  }
-
-  return 0;
-}
-
-int clear_leds(struct leds_state *state)
-{
-  int err;
-
-  if ((err = check_leds_interface(state))) {
-    return err;
-  }
-
-  if ((err = leds_clear_all(state->leds))) {
-    LOG_ERROR("leds_set_all");
-    return err;
-  }
-
-  if ((err = leds_tx(state->leds))) {
-    LOG_ERROR("leds_tx");
-    return err;
-  }
-
-  clear_leds_active(state);
-
-  return 0;
-}
-
-int test_leds_mode(struct leds_state *state, enum leds_test_mode mode)
-{
-  int err = 0;
-
-  LOG_INFO("mode=%d", mode);
-
-  if ((err = check_leds_interface(state))) {
-    return err;
-  }
-
-  force_leds_active(state);
-  user_activity(USER_ACTIVITY_LEDS);
-
-  // animate
-  TickType_t tick = xTaskGetTickCount();
-  int ticks;
-
-  for (unsigned frame = 0; ; frame++) {
-    if ((ticks = leds_set_test(state->leds, mode, frame)) < 0) {
-      LOG_ERROR("leds%d: leds_set_test(%d, %u)", state->index + 1, mode, frame);
-      goto error;
-    }
-
-    if ((err = leds_tx(state->leds))) {
-      LOG_ERROR("leds%d: leds_tx", state->index + 1);
-      goto error;
-    }
-
-    if (ticks) {
-      vTaskDelayUntil(&tick, ticks);
-    } else {
-      break;
-    }
-  }
-
-error:
-  update_leds_active(state);
-
-  return err;
-}
-
-int test_leds(struct leds_state *state)
-{
-  int err;
-
-  for (enum leds_test_mode mode = 0; mode < TEST_MODE_COUNT; mode++) {
-    if ((err = test_leds_mode(state, mode))) {
-      LOG_ERROR("leds%d: test_leds", state->index + 1);
-      return err;
-    }
   }
 
   return 0;

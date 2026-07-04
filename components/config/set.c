@@ -43,6 +43,10 @@ int config_clear(const struct config_path path)
         memset(tab->file_type.value, 0, tab->file_type.size);
         break;
 
+      case CONFIG_TYPE_COLOR:
+        *tab->color_type.value = tab->color_type.default_value;
+        break;
+
       default:
         LOG_ERROR("invalid type=%d", tab->type);
         return -1;
@@ -160,6 +164,13 @@ static int config_set_file(const struct config_path path, unsigned index, const 
   return 0;
 }
 
+static int config_set_color(const struct config_path path, unsigned index, const char *str)
+{
+  const struct configtab *tab = path.tab;
+
+  return config_color_parse(&tab->color_type.value[index], str);
+}
+
 int config_set(const struct config_path path, const char *value)
 {
   const struct configtab *tab = path.tab;
@@ -200,6 +211,9 @@ int config_set(const struct config_path path, const char *value)
 
     case CONFIG_TYPE_FILE:
       return config_set_file(path, index, value);
+
+    case CONFIG_TYPE_COLOR:
+      return config_set_color(path, index, value);
 
     default:
       LOG_ERROR("invalid type=%d", tab->type);

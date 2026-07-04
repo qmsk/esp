@@ -10,7 +10,7 @@
 // when held for >5s
 #define USER_LEDS_CONFIG_HOLD_THRESHOLD (5000 / portTICK_RATE_MS)
 
-// when held for >1s
+// when held for >500ms
 #define USER_LEDS_TEST_HOLD_THRESHOLD (500 / portTICK_RATE_MS)
 
 xTaskHandle user_events_task;
@@ -73,31 +73,45 @@ void on_user_config_input(struct user_leds_input input)
 
 void on_user_test_input(struct user_leds_input input)
 {
+  static bool hold = false;
+
   switch (input.event) {
     case USER_LEDS_INPUT_PRESS:
       LOG_INFO("press");
+
       user_test_press();
+
+      hold = false;
 
       break;
 
     case USER_LEDS_INPUT_HOLD:
-      if (input.hold > USER_LEDS_TEST_HOLD_THRESHOLD) {
+      if (hold) {
+        LOG_INFO("hold (repeat)");
+
+      } else if (input.hold > USER_LEDS_TEST_HOLD_THRESHOLD) {
         LOG_INFO("hold");
+
         user_test_hold();
+
+        hold = true;
+
       } else {
-        LOG_INFO("wait");
+        LOG_INFO("hold (wait)");
       }
 
       break;
 
     case USER_LEDS_INPUT_RELEASE:
-      if (input.hold > USER_LEDS_TEST_HOLD_THRESHOLD) {
+      if (hold) {
         LOG_INFO("release (hold)");
+
+        user_test_release();
+
+        hold = false;
       } else {
         LOG_INFO("release (press)");
       }
-
-      user_test_release();
 
       break;
   }

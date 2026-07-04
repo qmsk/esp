@@ -178,6 +178,9 @@ struct leds_config {
   uint16_t sequence_leds_group;
   uint16_t sequence_leds_segment;
   uint16_t sequence_leds_offset;
+
+  bool static_enabled;
+  struct config_color static_color;
 };
 
 extern struct leds_config leds_configs[LEDS_COUNT];
@@ -191,6 +194,8 @@ extern const struct config_enum leds_parameter_enum[];
 extern const struct config_file_path leds_sequence_paths[];
 
 int config_leds(struct leds_state *state, const struct leds_config *config);
+
+struct leds_color config_leds_color(struct config_color config_color, enum leds_parameter_type parameter_type);
 
 unsigned config_leds_artnet_universe_leds_count(const struct leds_config *config);
 unsigned config_leds_artnet_universe_count(const struct leds_config *config);

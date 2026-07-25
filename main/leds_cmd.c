@@ -269,17 +269,29 @@ static int _leds_cmd_get(struct leds_state *state, unsigned index, unsigned coun
   enum leds_parameter_type parameter_type = leds_parameter_type(state->leds);
   unsigned size = leds_count(state->leds);
 
+  if (index) {
+    index -= 1;
+  }
+
   if (count) {
-  
+    
   } else if (index < size) {
     count = size - index;
   } else {
     count = 0;
   }
 
+  if (index > size) {
+    index = size - 1;
+  }
+
+  if (index + count > size) {
+    count = size - index;
+  }
+
   unsigned col = 0;
 
-  for (unsigned i = index; i < count; i++) {
+  for (unsigned i = index; i < index + count; i++) {
     struct leds_color c;
 
     if (leds_get(state->leds, i, &c)) {

@@ -33,7 +33,11 @@
 
     padding: 2px;
     line-height: 20px;
+    font-size: 10px;
     text-align: center;
+
+    background-color: var(--pixel-color);
+    color: contrast-color(var(--pixel-color));
   }
 
 </style>
@@ -199,7 +203,7 @@
           <div class="leds-pixels">
             <div class="leds-pixel" v-for="c, i in state"
               :title="'#' + c"
-              :style="{backgroundColor: '#' + c}"
+              :style="{'--pixel-color': '#' + c}"
             >{{ i }}</div>
           </div>
 

@@ -2,6 +2,11 @@
 
 #include <logging.h>
 
+static inline uint8_t u8max(uint8_t a, uint8_t b)
+{
+  return a > b ? a : b;
+}
+
 uint8_t leds_parameter_default_for_type(enum leds_parameter_type parameter_type)
 {
   switch (parameter_type) {
@@ -73,4 +78,36 @@ struct leds_color leds_color_intensity (struct leds_color color, enum leds_param
   }
 
   return color;
+}
+
+struct leds_color leds_color_max (struct leds_color c1, struct leds_color c2, enum leds_parameter_type parameter_type)
+{
+  switch (parameter_type) {
+    case LEDS_PARAMETER_NONE:
+      return (struct leds_color) {
+        .r  = u8max(c1.r, c2.r),
+        .g  = u8max(c1.g, c2.g),
+        .b  = u8max(c1.b, c2.b),
+      };
+
+    case LEDS_PARAMETER_DIMMER:
+      return (struct leds_color) {
+        .r  = u8max(c1.r, c2.r),
+        .g  = u8max(c1.g, c2.g),
+        .b  = u8max(c1.b, c2.b),
+
+        .dimmer  = u8max(c1.dimmer, c2.dimmer), // TODO: what makes the most sense?
+      };
+
+    case LEDS_PARAMETER_WHITE:
+      return (struct leds_color) {
+        .r  = u8max(c1.r, c2.r),
+        .g  = u8max(c1.g, c2.g),
+        .b  = u8max(c1.b, c2.b),
+        .w  = u8max(c1.w, c2.w),
+      };
+    
+    default:
+      LOG_FATAL("%d", parameter_type);
+  }
 }

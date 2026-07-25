@@ -358,6 +358,7 @@ struct leds_color {
 
 bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
 struct leds_color leds_color_intensity (struct leds_color color, enum leds_parameter_type parameter_type, uint8_t intensity);
+struct leds_color leds_color_max (struct leds_color c1, struct leds_color c2, enum leds_parameter_type parameter_type);
 
 enum leds_test_mode {
   TEST_MODE_NONE  = 0,

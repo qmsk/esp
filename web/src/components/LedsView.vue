@@ -6,6 +6,36 @@
     text-align: right;
   }
 
+  div.leds-pixels {
+    border: 1px solid #bbb;
+
+    padding: 1em;
+
+    display: flex;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-content: flex-start;
+    align-items: center;
+
+    gap: 5px;
+  }
+
+  div.leds-pixel {
+    width: 24px;
+    height: 24px;
+
+    flex: 0 0 auto;
+
+    border: 1px solid #444;
+    border-radius: 2px;
+
+    padding: 2px;
+    line-height: 20px;
+    text-align: center;
+  }
+
 </style>
 <template>
   <main id="leds-view" class="tabbed">
@@ -158,6 +188,23 @@
             </tbody>
           </table>
         </template>
+
+        <template v-if="state">
+          <h2>
+            State
+
+            <button @click="loadState"><span :class="{spin: true, active: loadingState}">&#10227;</span></button>
+          </h2>
+
+          <div class="leds-pixels">
+            <div class="leds-pixel" v-for="c, i in state"
+              :title="'#' + c"
+              :style="{backgroundColor: '#' + c}"
+            >{{ i }}</div>
+          </div>
+
+        </template>
+
       </div>
       <div class="controls">
         <h2  v-if="static">Static</h2>
@@ -183,6 +230,7 @@ export default {
   data: () => ({
     loading: true,
     loadingStatus: false,
+    loadingState: false,
     selectedID: null,
     applyingStatic: false,
     savingStatic: false,
@@ -224,6 +272,11 @@ export default {
     status() {
       if (this.activeLeds) {
         return this.activeLeds.status;
+      }
+    },
+    state() {
+      if (this.activeLeds) {
+        return this.activeLeds.state;
       }
     },
     static() {
@@ -288,6 +341,15 @@ export default {
         await this.$store.dispatch('loadLedsStatus', this.activeID);
       } finally {
         this.loadingStatus = false;
+      }
+    },
+    async loadState() {
+      this.loadingState = true;
+
+      try {
+        await this.$store.dispatch('loadLedsState', this.activeID);
+      } finally {
+        this.loadingState = false;
       }
     },
     selectID(id) {

@@ -407,10 +407,13 @@ void leds_clear_all(struct leds *leds);
 
 /*
  * @param index 0-based index
- * @param global 5-bit global brightness 0-31
- * @param b, g, r 8-bit RGB value
  */
 int leds_set(struct leds *leds, unsigned index, struct leds_color color);
+
+/*
+ * @param index 0-based index
+ */
+int leds_get(struct leds *leds, unsigned index, struct leds_color *color);
 
 /*
  * @param global 5-bit global brightness 0-31

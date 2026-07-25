@@ -127,6 +127,20 @@ int leds_set(struct leds *leds, unsigned index, struct leds_color color)
   return 0;
 }
 
+int leds_get(struct leds *leds, unsigned index, struct leds_color *color)
+{
+  LOG_DEBUG("[%03d]", index);
+  
+  if (index >= leds->options.count) {
+    LOG_DEBUG("index %u >= count %u", index, leds->options.count);
+    return -1;
+  }
+
+  *color = leds->pixels[index];
+
+  return 0;
+}
+
 void leds_set_all(struct leds *leds, struct leds_color color)
 {
   LOG_DEBUG("[%03d] %02x:%02x%02x%02x", leds->options.count, color.parameter, color.r, color.g, color.b);

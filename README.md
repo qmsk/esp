@@ -377,6 +377,7 @@ Configuration parameters supported by each mode.
 | `RGBxI`   | x        | x      |         | 509           |
 | `BGRxI`   | x        | x      |         | 509           |
 | `GRBxI`   | x        | x      |         | 509           |
+| `RGB2xI`  | x        | x      |         | 506           |
 | `RGBWxI`  | x        | x      |         | 508           |
 | `RGBxxI`  | x        | x      | x       | +++           |
 
@@ -446,6 +447,20 @@ All pixels within the group use the same color, but their intensity can be contr
 
 | 1 | 2 | 3 | 4 |  5  | ... | 4+N | ... | ... | ... | ... | ... | ... |
 | R | G | B | W | I_1 | I_2 | ... | I_N |  R  |  G  |  B  |  W  | I_1 |
+
+There can be multiple groups per Art-Net universe.
+
+### `RGB2xI`
+
+There are two sets of RGB channels (foregroud and background) for each group of consecutive LEDs, with an intensity channel for each pixel within the group.
+The background color RGB channels control all pixels within each group.
+All pixels within the group use the same foreground color, but their intensity can be controlled individually.
+The background and per-pixel foreground RGB channels are mixed using the `MAX` (i.e. HTP) function.
+
+For example, with `artnet_leds_group = 20`:
+
+|  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  | ... |  26  | ...
+| BgR | BgG | BgB | FgR | FgG | FgB | I_1 | I_2 | ... | I_20 | ...
 
 There can be multiple groups per Art-Net universe.
 

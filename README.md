@@ -359,6 +359,125 @@ To recover from a broken configuration, either press and hold the FLASH button, 
 
     ESPPORT=/dev/ttyUSB? docker compose run --rm config-reset
 
+## Art-Net Modes
+
+Supported Art-Net modes for LEDs.
+
+### Configuration
+
+Configuration parameters supported by each mode.
+
+| Mode 		| Segment? | Group? | Offset? | LEDs/universe |
+| --------- | -------- | ------ | ------- | ------------- |
+| `RGB`     | x        |        |         | 170           |
+| `BGR`     | x        |        |         | 170           |
+| `GRB`     | x        |        |         | 170           |
+| `RGBA`    | x        |        |         | 128           |
+| `RGBW`    | x        |        |         | 128           |
+| `RGBxI`   | x        | x      |         | 509           |
+| `BGRxI`   | x        | x      |         | 509           |
+| `GRBxI`   | x        | x      |         | 509           |
+| `RGB2xI`  | x        | x      |         | 506           |
+| `RGBWxI`  | x        | x      |         | 508           |
+| `RGBxxI`  | x        | x      | x       | +++           |
+
+#### Segments
+
+All formats support the `artnet_leds_segment` configuration parameter.
+
+Each segment of consecutive native LED pixels uses the same values, reducing the number of Art-Net channels/universes required.
+
+e.g. a 240×RGB/m pixel LED strip with `segments=6` behaves as a 40×RGB/m LED strip, with each segment of 6 LEDs using the same values.
+
+#### Groups
+
+All formats support the `artnet_leds_group` configuration parameter, but it has a special meaning for the various `x` formats.
+
+Generally, groups of consecutive LEDs are patched within a single Art-Net universe, fitting as many whole groups as possible.
+
+For example, with e.g. `format = RGB`, `count = 300` and `group = 60`, the first Art-Net universe controls the first 60 × 2 = 120 LEDs (360 DMX channels), and the next 60 LEDs are controlled by the next Art-Net universe.
+
+### `RGB`
+
+| 1 | 2 | 3 | ... | 508 | 509 | 510 |
+| R | G | B | ... | R   | G   | B   |
+
+### `BGR`
+
+| 1 | 2 | 3 | ... | 508 | 509 | 510 |
+| B | G | R | ... | B   | G   | R   |
+
+### `GRB`
+
+| 1 | 2 | 3 | ... | 508 | 509 | 510 |
+| G | R | B | ... | G   | R   | B   |
+
+### `RGBA`
+
+Only supported for LED protocols with a native dimmer channel, e.g. APA102/P9813.
+
+| 1 | 2 | 3 | 4 | ... | 509 | 510 | 511 | 512 |
+| R | G | B | A | ... | R   | G   | B   | A   |
+
+### `RGBW`
+
+Only supported for LED protocols with a native white channel, e.g. SK6812.
+
+| 1 | 2 | 3 | 4 | ... | 509 | 510 | 511 | 512 |
+| R | G | B | W | ... | R   | G   | B   | W   |
+
+### `RGBxI`, `BGRxI`, `GRBxI`
+
+There is one set of RGB channels for each group of consecutive LEDs, with an intensity channel for each pixel within the group.
+All pixels within the group use the same color, but their intensity can be controlled individually.
+
+For example, with `artnet_leds_group = 20`:
+
+| 1 | 2 | 3 |  4  |  5  | ... | 23   | 24 | 25 | 26 | 27  | ... | 43   | ...
+| R | G | B | I_1 | I_2 | ... | I_20 |  R |  G |  B | I_1 | ... | I_20 | ...
+
+There can be multiple groups per Art-Net universe.
+
+The `RGBxI`, `BGRxI`, `GRBxI` variants change the order of the color channels at the start of each set of channels.
+
+### `RGBWxI`
+
+There is one set of RGBW channels for each group of consecutive LEDs, with an intensity channel for each pixel within the group.
+All pixels within the group use the same color, but their intensity can be controlled individually.
+
+| 1 | 2 | 3 | 4 |  5  | ... | 4+N | ... | ... | ... | ... | ... | ... |
+| R | G | B | W | I_1 | I_2 | ... | I_N |  R  |  G  |  B  |  W  | I_1 |
+
+There can be multiple groups per Art-Net universe.
+
+### `RGB2xI`
+
+There are two sets of RGB channels (foregroud and background) for each group of consecutive LEDs, with an intensity channel for each pixel within the group.
+The background color RGB channels control all pixels within each group.
+All pixels within the group use the same foreground color, but their intensity can be controlled individually.
+The background and per-pixel foreground RGB channels are mixed using the `MAX` (i.e. HTP) function.
+
+For example, with `artnet_leds_group = 20`:
+
+|  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  | ... |  26  | ...
+| BgR | BgG | BgB | FgR | FgG | FgB | I_1 | I_2 | ... | I_20 | ...
+
+There can be multiple groups per Art-Net universe.
+
+### `RGBxxI`
+
+There are separate RGB channels for each pixel within each group of consecutive LEDs, with an intensity channel for all pixels within each group.
+Each pixel within all of the groups can be controlled individually, but each group uses the same colors, and only the total group-level intensity can be controlled separately.
+
+For example, with `artnet_leds_group = 150`, a total of 62 × 150 = 9300 pixels can be controlled per Art-Net universe.
+
+|  1  |  2  |  3  | ... |  448  |  449  |  450  | 451 | 452 | ... | 512  |
+| R_1 | G_1 | B_1 | ... | R_150 | G_150 | B_150 | I_1 | I_2 | ... | I_62 |
+
+There can only be one set of groups per Art-Net universe. Use `artnet_dmx_leds` to limit the total number of LEDs per universe, with separate RGB colors for each universe.
+
+The `artnet_leds_offset` configuration parameter can be used to select which intensity parameter to start from, when using a single Art-Net universe for multiple LED controllers. For example, with two controllers of 16 × 150 = 2400 pixels each, with the first controller using `offset = 1` and the second controller using `offset = 17`, both controllers will use the same 150 × RGB channels at the start of the universe, but different per-group intensity channels.
+
 # Components
 
 ## `uart1`

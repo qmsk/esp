@@ -86,6 +86,26 @@ static int leds_api_write_object_status(struct json_writer *w, struct leds_state
   );
 }
 
+static int leds_api_write_array_state(struct json_writer *w, struct leds_state *state)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(state->leds);
+  unsigned count = leds_count(state->leds);
+  struct leds_color c;
+  int err;
+
+  for (unsigned i = 0; i < count; i++) {
+    if ((err = leds_get(state->leds, i, &c))) {
+      return err;
+    }
+
+    if ((err = leds_api_write_color(w, c, parameter_type))) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
 static int leds_api_write_object_artnet(struct json_writer *w, struct leds_state *state)
 {
   return (
@@ -107,6 +127,7 @@ static int leds_api_write_object(struct json_writer *w, struct leds_state *state
         JSON_WRITE_MEMBER_UINT(w, "index", state->index + 1)
     ||  JSON_WRITE_MEMBER_OBJECT(w, "options", leds_api_write_object_options(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "status", leds_api_write_object_status(w, state))
+    ||  JSON_WRITE_MEMBER_ARRAY(w, "state", leds_api_write_array_state(w, state))
     ||  JSON_WRITE_MEMBER_OBJECT(w, "static",
           JSON_WRITE_MEMBER(w, "color", leds_api_write_color(w, state->static_.color, leds_parameter_type_for_protocol(leds_protocol(state->leds))))
         )
@@ -216,4 +237,35 @@ int leds_api_get_status(struct http_request *request, struct http_response *resp
   }
 
   return 0;
+}
+
+static int leds_api_write_state(struct json_writer *w, void *ctx)
+{
+  struct leds_api_query *query = ctx;
+
+  return JSON_WRITE_ARRAY(w, leds_api_write_array_state(w, query->state));
+}
+
+int leds_api_get_state(struct http_request *request, struct http_response *response, void *ctx)
+{
+  struct leds_api_query query = {};
+  int err;
+
+  if ((err = http_request_headers(request, NULL))) {
+    LOG_WARN("http_request_headers");
+    return err;
+  }
+
+  if ((err = leds_api_query(request, &query))) {
+    LOG_WARN("leds_api_query");
+    return err;
+  }
+
+  if ((err = write_http_response_json(response, leds_api_write_state, &query))) {
+    LOG_WARN("write_http_response_json -> leds_api_write_state");
+    return err;
+  }
+
+  return 0;
+
 }

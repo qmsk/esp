@@ -118,6 +118,8 @@ enum leds_format {
   LEDS_FORMAT_GRBXI, // (<GRB> + GROUP * <I>)...
   LEDS_FORMAT_RGBWXI, // (<RGBW> + GROUP * <I>)...
 
+  LEDS_FORMAT_RGB2XI, // (<RGB> + <RGB> + GROUP * <I>)...
+
   LEDS_FORMAT_RGBXXI, // GROUP * <RGB> + <I>[OFFSET]...
 };
 
@@ -358,6 +360,7 @@ struct leds_color {
 
 bool leds_color_active (struct leds_color color, enum leds_parameter_type parameter_type);
 struct leds_color leds_color_intensity (struct leds_color color, enum leds_parameter_type parameter_type, uint8_t intensity);
+struct leds_color leds_color_max (struct leds_color c1, struct leds_color c2, enum leds_parameter_type parameter_type);
 
 enum leds_test_mode {
   TEST_MODE_NONE  = 0,
@@ -404,10 +407,13 @@ void leds_clear_all(struct leds *leds);
 
 /*
  * @param index 0-based index
- * @param global 5-bit global brightness 0-31
- * @param b, g, r 8-bit RGB value
  */
 int leds_set(struct leds *leds, unsigned index, struct leds_color color);
+
+/*
+ * @param index 0-based index
+ */
+int leds_get(struct leds *leds, unsigned index, struct leds_color *color);
 
 /*
  * @param global 5-bit global brightness 0-31

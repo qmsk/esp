@@ -26,6 +26,9 @@ unsigned leds_format_count(size_t len, enum leds_format format, unsigned group)
     case LEDS_FORMAT_RGBWXI:
       return len / (4 + group) * group;
 
+    case LEDS_FORMAT_RGB2XI:
+      return len / (6 + group) * group;
+
     case LEDS_FORMAT_RGBXXI:
       return (len - 3 * group) * group;
 
@@ -239,6 +242,43 @@ void leds_set_format_rgbwxi(struct leds *leds, const uint8_t *data, size_t len, 
   }
 }
 
+
+void leds_set_format_rgb2xi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(leds);
+  uint8_t parameter_default = leds_parameter_default(leds);
+
+  LOG_DEBUG("len=%u index=%u count=%u segment=%u group=%u", len, params.index, params.count, params.segment, params.group);
+
+  size_t off = 0;
+
+  for (unsigned g = 0; g * params.group < params.count && len >= off + 6 + params.group; g++) {
+    struct leds_color bg_color = {}, fg_color = {};
+
+    bg_color.r = data[off++];
+    bg_color.g = data[off++];
+    bg_color.b = data[off++];
+    bg_color.parameter = parameter_default;
+
+    fg_color.r = data[off++];
+    fg_color.g = data[off++];
+    fg_color.b = data[off++];
+    fg_color.parameter = parameter_default;
+
+    LOG_DEBUG("\tg=%u off=%u bg=%02x%02x%02x fg=%02x%02x%02x", g, off,
+      bg_color.r, bg_color.g, bg_color.b,
+      fg_color.r, fg_color.g, fg_color.b
+    );
+
+    for (unsigned i = 0; i < params.group && g * params.group + i < params.count; i++) {
+      uint8_t intensity = data[off++];
+      struct leds_color pixel_color = leds_color_intensity(fg_color, parameter_type, intensity);
+
+      set_leds_pixels(leds, (g * params.group + i), params, leds_color_max(bg_color, pixel_color, parameter_type));
+    }
+  }
+}
+
 void leds_set_format_rgbxxi(struct leds *leds, const uint8_t *data, size_t len, struct leds_format_params params)
 {
   enum leds_parameter_type parameter_type = leds_parameter_type(leds);
@@ -328,6 +368,10 @@ int leds_set_format(struct leds *leds, enum leds_format format, const void *data
 
     case LEDS_FORMAT_RGBWXI:
       leds_set_format_rgbwxi(leds, data, len, params);
+      return 0;
+
+    case LEDS_FORMAT_RGB2XI:
+      leds_set_format_rgb2xi(leds, data, len, params);
       return 0;
 
     case LEDS_FORMAT_RGBXXI:

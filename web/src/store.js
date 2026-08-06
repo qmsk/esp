@@ -168,6 +168,11 @@ export default new Vuex.Store({
 
       commit('updateLedsStatus', {id, status});
     },
+    async loadLedsState({ commit }, id) {
+      const ledsState = await ledsService.getState(id);
+
+      commit('updateLedsState', {id, ledsState});
+    },
     async postLedsStatic({ commit }, {leds, color}) {
       const status = await ledsService.postStatic(leds, color);
     },
@@ -259,6 +264,12 @@ export default new Vuex.Store({
       // no reactive map support
       let leds = new Map(state.leds);
       leds.get(id).status = status;
+      state.leds = leds;
+    },
+    updateLedsState(state, {id, ledsState}) {
+      // no reactive map support
+      let leds = new Map(state.leds);
+      leds.get(id).state = ledsState;
       state.leds = leds;
     },
 

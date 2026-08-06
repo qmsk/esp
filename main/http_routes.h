@@ -40,6 +40,7 @@ int artnet_api_outputs_handler(struct http_request *request, struct http_respons
 /* leds_http.c */
 int leds_api_get(struct http_request *request, struct http_response *response, void *ctx);
 int leds_api_get_status(struct http_request *request, struct http_response *response, void *ctx);
+int leds_api_get_state(struct http_request *request, struct http_response *response, void *ctx);
 int leds_api_post(struct http_request *request, struct http_response *response, void *ctx);
 
 /* leds_test_http.c */

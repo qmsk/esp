@@ -264,6 +264,112 @@ int leds_cmd_all(int argc, char **argv, void *ctx)
   return 0;
 }
 
+static int _leds_cmd_get(struct leds_state *state, unsigned index, unsigned count)
+{
+  enum leds_parameter_type parameter_type = leds_parameter_type(state->leds);
+  unsigned size = leds_count(state->leds);
+
+  if (index) {
+    index -= 1;
+  }
+
+  if (count) {
+    
+  } else if (index < size) {
+    count = size - index;
+  } else {
+    count = 0;
+  }
+
+  if (index > size) {
+    index = size - 1;
+  }
+
+  if (index + count > size) {
+    count = size - index;
+  }
+
+  unsigned col = 0;
+
+  for (unsigned i = index; i < index + count; i++) {
+    struct leds_color c;
+
+    if (leds_get(state->leds, i, &c)) {
+      break;
+    }
+
+    if (col % 8 == 0) {
+      printf("[%4d]", i);
+    }
+
+    switch (parameter_type) {
+      case LEDS_PARAMETER_NONE:
+        printf(" %02x%02x%02x", c.r, c.g, c.b);
+        break;
+
+      case LEDS_PARAMETER_DIMMER:
+      case LEDS_PARAMETER_WHITE:
+        printf(" %02x%02x%02x.%02x", c.r, c.g, c.b, c.parameter);
+        break;
+
+      default:
+        LOG_FATAL("%d", parameter_type);
+    }
+
+    col++;
+
+    if (col % 8 == 0) {
+      printf("\n");
+    }
+  }
+
+  if (col % 8 != 0) {
+    printf("\n");
+  }
+
+  return 0;
+}
+
+int leds_cmd_get(int argc, char **argv, void *ctx)
+{
+  const struct leds_config *config;
+  struct leds_state *state;
+  unsigned leds_id = 0, index = 0, count = 0;
+  int err = 0;
+
+  if ((argc > 1) && (err = cmd_arg_uint(argc, argv, 1, &leds_id)))
+    return err;
+  if ((argc > 2) && (err = cmd_arg_uint(argc, argv, 2, &index)))
+    return err;
+  if ((argc > 3) && (err = cmd_arg_uint(argc, argv, 3, &count)))
+    return err;
+
+  if (leds_id) {
+    if ((err = lookup_leds(leds_id, &config, &state))) {
+      return err;
+    }
+
+    if ((err = _leds_cmd_get(state, index, count))) {
+      return err;
+    }
+  } else {
+    for (int i = 0; i < LEDS_COUNT; i++) {
+      struct leds_state *state = &leds_states[i];
+
+      if (!state->leds) {
+        continue;
+      }
+
+      if ((err = _leds_cmd_get(state, index, count))) {
+        return err;
+      }
+    }
+  }
+
+  return err;
+}
+
+
 int leds_cmd_set(int argc, char **argv, void *ctx)
 {
   const struct leds_config *config;
@@ -503,6 +609,7 @@ const struct cmd leds_commands[] = {
   { "clear",    leds_cmd_clear,                                         .describe = "Clear test patterns" },
   { "static",   leds_cmd_static,  .usage = "RGB [A]",                   .describe = "Set static LEDs color" },
   { "all",      leds_cmd_all,     .usage = "RGB [A]",                   .describe = "Set all output pixels to value" },
+  { "get",      leds_cmd_get,     .usage = "[LEDS-ID] [INDEX] [COUNT]", .describe = "Dump pixel RGB values" },
   { "set",      leds_cmd_set,     .usage = "LEDS-ID LED-INDEX RGB [A]", .describe = "Set one output pixel to value" },
   { "update",   leds_cmd_update,  .usage = "[LEDS-ID]",                 .describe = "Refresh one or all LED outputs" },
   { "test",     leds_cmd_test,    .usage = "[MODE]",                    .describe = "Output test patterns" },

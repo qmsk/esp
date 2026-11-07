@@ -47,7 +47,11 @@
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 
     phy_config.phy_addr = CONFIG_ETH_PHY_ADDR;
+#if defined(CONFIG_ETH_PHY_RESET_GPIO_NUM)
     phy_config.reset_gpio_num = CONFIG_ETH_PHY_RESET_GPIO_NUM;
+#else
+    phy_config.reset_gpio_num = -1;
+#endif
     phy_config.autonego_timeout_ms = 0; // skip blocking wait for autonegotation complete in esp_eth_start()
 
     LOG_INFO("lan87xx: phy_addr=%d reset_gpio_num=%d",

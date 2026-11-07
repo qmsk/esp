@@ -235,20 +235,41 @@ menu "qmsk-esp-eth"
       string "IPv4 gateway"
       default "0.0.0.0"
 
+  choice ETH_MAC_MDC_GPIO
+      depends on ETH_ENABLED
+      prompt "ETH MAC MDC GPIO"
+
+      default ETH_MAC_MDC_GPIO23 if ETH_BOARD_WT32_ETH01
+      default ETH_MAC_MDC_GPIO23 if ETH_BOARD_QMSK_ESP32_LAN87XX
+
+      config ETH_MAC_MDC_GPIO23
+          bool "GPIO23"
+
+  endchoice
+
   config ETH_MAC_MDC_GPIO_NUM
       depends on ETH_ENABLED
       int
+      
+      default 23 if ETH_MAC_MDC_GPIO23
 
-      default 23  if ETH_BOARD_WT32_ETH01
-      default 23  if ETH_BOARD_QMSK_ESP32_LAN87XX
-      default 23
+  choice ETH_MAC_MDIO_GPIO
+      depends on ETH_ENABLED
+      prompt "ETH MAC MDIO GPIO"
+
+      default ETH_MAC_MDIO_GPIO18 if ETH_BOARD_WT32_ETH01
+      default ETH_MAC_MDIO_GPIO18 if ETH_BOARD_QMSK_ESP32_LAN87XX
+
+      config ETH_MAC_MDIO_GPIO18
+          bool "GPIO18"
+
+  endchoice
 
   config ETH_MAC_MDIO_GPIO_NUM
       depends on ETH_ENABLED
       int
 
-      default 18  if ETH_BOARD_WT32_ETH01
-      default 18  if ETH_BOARD_QMSK_ESP32_LAN87XX
+      default 18 if ETH_MAC_MDIO_GPIO18
       default 18
 
   config ETH_PHY_LAN87XX
@@ -267,12 +288,47 @@ menu "qmsk-esp-eth"
       default  1  if ETH_BOARD_QMSK_ESP32_LAN87XX
       default -1
 
+  choice ETH_PHY_RESET_GPIO
+      depends on ETH_ENABLED
+      prompt "ETH PHY RESET GPIO"
+
+      default ETH_PHY_RESET_GPIO16 if ETH_BOARD_WT32_ETH01
+      default ETH_PHY_RESET_GPIO_NONE
+
+      config ETH_PHY_RESET_GPIO_NONE
+          bool ""
+
+      config ETH_PHY_RESET_GPIO16
+          bool "GPIO16"
+
+  endchoice
+
   config ETH_PHY_RESET_GPIO_NUM
       depends on ETH_ENABLED
       int
 
-      default  16 if ETH_BOARD_WT32_ETH01
-      default -1
+      default 16 if ETH_PHY_RESET_GPIO16
+
+  choice ETH_PHY_INTR_GPIO
+      depends on ETH_ENABLED
+      prompt "ETH PHY INTR GPIO"
+
+      default ETH_PHY_INTR_GPIO39 if ETH_BOARD_QMSK_ESP32_LAN87XX
+      default ETH_PHY_INTR_GPIO_NONE
+
+      config ETH_PHY_INTR_GPIO_NONE
+          bool "NONE"
+
+      config ETH_PHY_INTR_GPIO39
+          bool "GPIO39"
+
+  endchoice
+
+  config ETH_PHY_INTR_GPIO_NUM
+      depends on ETH_ENABLED
+      int
+
+      default 39 if ETH_PHY_INTR_GPIO39
 endmenu
 
 menu "qmsk-esp-i2c"

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include <gpio.h>
+
 #include <freertos/FreeRTOS.h>
 
 #define CONFIG_FILE_EXT "ini"
@@ -37,6 +39,7 @@ enum config_type {
   CONFIG_TYPE_ENUM,
   CONFIG_TYPE_FILE,
   CONFIG_TYPE_COLOR,
+  CONFIG_TYPE_GPIO,
 };
 
 struct config_enum {
@@ -55,6 +58,25 @@ struct config_file_path {
 
 struct config_color {
   uint8_t r, g, b, a;
+};
+
+#define CONFIG_GPIO_INPUT       (0x01)
+#define CONFIG_GPIO_OUTPUT      (0x02)
+
+struct config_gpio {
+  enum gpio_type type;
+
+  gpio_pin_t pin;
+
+  const char *name;
+
+  /* Migrate from old name */
+  const char *alias;
+
+  /* Not available for config use */
+  bool reserved;
+
+  unsigned flags;  // CONFIG_GPIO_*
 };
 
 struct configmod;
@@ -129,6 +151,14 @@ struct configtab {
       struct config_color *value;
       struct config_color default_value;
     } color_type;
+
+    struct {
+      enum gpio_type *type;
+      gpio_pin_t *pin;
+
+      const struct config_gpio *gpios;
+      unsigned flags;
+    } gpio_type;
   };
 };
 
@@ -150,7 +180,7 @@ struct config {
   const char *path;
 
   const struct configmod *modules;
-  
+
   char filename[CONFIG_PATH_SIZE];
   enum config_state state;
   TickType_t tick;

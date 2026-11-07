@@ -508,3 +508,7 @@ menu "qmsk-esp-usb-pd-sink"
     default 0
 
 endmenu
+
+menu "qmsk-esp-gpio"
+  rsource "gpio.Kconfig"
+endmenu

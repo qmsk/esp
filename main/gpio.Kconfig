@@ -1,0 +1,763 @@
+menu "gpio0"
+  choice ESP32_GPIO0_FUNC
+    prompt "Function"
+    default ESP32_GPIO0_FUNC_EMAC_TX_CLK if ETH_RMII_CLK_INPUT || ETH_RMII_CLK_OUTPUT_GPIO0
+    default ESP32_GPIO0_FUNC_GPIO
+
+    config ESP32_GPIO0_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO0_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO0_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO0_FUNC_EMAC_TX_CLK
+      bool "EMAC_TX_CLK"
+  endchoice
+
+  config ESP32_GPIO0_NAME
+    string "Name"
+
+    default "EMAC_TX_CLK" if ESP32_GPIO0_FUNC_EMAC_TX_CLK
+    default "GPIO0"
+
+  config ESP32_GPIO0_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO0_FUNC_EMAC_TX_CLK
+endmenu
+
+menu "gpio1"
+  choice ESP32_GPIO1_FUNC
+    prompt "Function"
+    default ESP32_GPIO1_FUNC_U0TXD
+
+    config ESP32_GPIO1_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO1_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO1_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO1_FUNC_U0TXD
+      bool "U0TXD"
+  endchoice
+
+  config ESP32_GPIO1_NAME
+    string "Name"
+
+    default "U0TXD" if ESP32_GPIO1_FUNC_U0TXD
+    default "GPIO1"
+
+  config ESP32_GPIO1_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO1_FUNC_U0TXD
+endmenu
+
+menu "gpio2"
+  choice ESP32_GPIO2_FUNC
+    prompt "Function"
+    default ESP32_GPIO2_FUNC_GPIO
+
+    config ESP32_GPIO2_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO2_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO2_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO2_NAME
+    string "Name"
+
+    default "GPIO2"
+
+  config ESP32_GPIO2_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio3"
+  choice ESP32_GPIO3_FUNC
+    prompt "Function"
+    default ESP32_GPIO3_FUNC_U0RXD
+
+    config ESP32_GPIO3_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO3_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO3_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO3_FUNC_U0RXD
+      bool "U0RXD"
+  endchoice
+
+  config ESP32_GPIO3_NAME
+    string "Name"
+
+    default "U0RXD" if ESP32_GPIO3_FUNC_U0RXD
+    default "GPIO3"
+
+  config ESP32_GPIO3_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO3_FUNC_U0RXD
+endmenu
+
+menu "gpio4"
+  choice ESP32_GPIO4_FUNC
+    prompt "Function"
+    default ESP32_GPIO4_FUNC_GPIO
+
+    config ESP32_GPIO4_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO4_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO4_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO4_NAME
+    string "Name"
+
+    default "GPIO4"
+
+  config ESP32_GPIO4_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio5"
+  choice ESP32_GPIO5_FUNC
+    prompt "Function"
+    default ESP32_GPIO5_FUNC_GPIO
+
+    config ESP32_GPIO5_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO5_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO5_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO5_NAME
+    string "Name"
+
+    default "GPIO5"
+
+  config ESP32_GPIO5_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio6"
+  choice ESP32_GPIO6_FUNC
+    prompt "Function"
+    default ESP32_GPIO6_FUNC_SD_CLK
+
+    config ESP32_GPIO6_FUNC_SD_CLK
+      bool "SD_CLK"
+  endchoice
+
+  config ESP32_GPIO6_NAME
+    string "Name"
+
+    default "SD_CLK" if ESP32_GPIO6_FUNC_SD_CLK
+
+  config ESP32_GPIO6_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO6_FUNC_SD_CLK
+endmenu
+
+menu "gpio7"
+  choice ESP32_GPIO7_FUNC
+    prompt "Function"
+    default ESP32_GPIO7_FUNC_SD_DATA0
+
+    config ESP32_GPIO7_FUNC_SD_DATA0
+      bool "SD_DATA0"
+  endchoice
+
+  config ESP32_GPIO7_NAME
+    string "Name"
+
+    default "SD_DATA_0" if ESP32_GPIO7_FUNC_SD_DATA0
+
+  config ESP32_GPIO7_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO7_FUNC_SD_DATA0
+endmenu
+
+menu "gpio8"
+  choice ESP32_GPIO8_FUNC
+    prompt "Function"
+    default ESP32_GPIO8_FUNC_SD_DATA1
+
+    config ESP32_GPIO8_FUNC_SD_DATA1
+      bool "SD_DATA1"
+  endchoice
+
+  config ESP32_GPIO8_NAME
+    string "Name"
+
+    default "SD_DATA_1" if ESP32_GPIO8_FUNC_SD_DATA1
+
+  config ESP32_GPIO8_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO8_FUNC_SD_DATA1
+endmenu
+
+menu "gpio9"
+  choice ESP32_GPIO9_FUNC
+    prompt "Function"
+    default ESP32_GPIO9_FUNC_SD_DATA2
+
+    config ESP32_GPIO9_FUNC_SD_DATA2
+      bool "SD_DATA2"
+  endchoice
+
+  config ESP32_GPIO9_NAME
+    string "Name"
+
+    default "SD_DATA_2" if ESP32_GPIO9_FUNC_SD_DATA2
+
+  config ESP32_GPIO9_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO9_FUNC_SD_DATA2
+endmenu
+
+menu "gpio10"
+  choice ESP32_GPIO10_FUNC
+    prompt "Function"
+    default ESP32_GPIO10_FUNC_SD_DATA3
+
+    config ESP32_GPIO10_FUNC_SD_DATA3
+      bool "SD_DATA3"
+  endchoice
+
+  config ESP32_GPIO10_NAME
+    string "Name"
+
+    default "SD_DATA_3" if ESP32_GPIO10_FUNC_SD_DATA3
+
+  config ESP32_GPIO10_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO10_FUNC_SD_DATA3
+endmenu
+
+menu "gpio11"
+  choice ESP32_GPIO11_FUNC
+    prompt "Function"
+    default ESP32_GPIO11_FUNC_SD_CMD
+
+    config ESP32_GPIO11_FUNC_SD_CMD
+      bool "SD_CMD"
+  endchoice
+
+  config ESP32_GPIO11_NAME
+    string "Name"
+
+    default "SD_CMD" if ESP32_GPIO11_FUNC_SD_CMD
+
+  config ESP32_GPIO11_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO11_FUNC_SD_CMD
+endmenu
+
+menu "gpio12"
+  choice ESP32_GPIO12_FUNC
+    prompt "Function"
+    default ESP32_GPIO12_FUNC_GPIO
+
+    config ESP32_GPIO12_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO12_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO12_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO12_FUNC_MTDI
+      bool "MTDI"
+  endchoice
+
+  config ESP32_GPIO12_NAME
+    string "Name"
+
+    default "MTDI" if ESP32_GPIO12_FUNC_MTDI
+    default "GPIO12"
+
+  config ESP32_GPIO12_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO12_FUNC_MTDI
+endmenu
+
+menu "gpio13"
+  choice ESP32_GPIO13_FUNC
+    prompt "Function"
+    default ESP32_GPIO13_FUNC_GPIO
+
+    config ESP32_GPIO13_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO13_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO13_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO13_FUNC_MTCK
+      bool "MTCK"
+  endchoice
+
+  config ESP32_GPIO13_NAME
+    string "Name"
+
+    default "MTCK" if ESP32_GPIO13_FUNC_MTCK
+    default "GPIO13"
+
+  config ESP32_GPIO13_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO13_FUNC_MTCK
+endmenu
+
+menu "gpio14"
+  choice ESP32_GPIO14_FUNC
+    prompt "Function"
+    default ESP32_GPIO14_FUNC_GPIO
+
+    config ESP32_GPIO14_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO14_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO14_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO14_FUNC_MTMS
+      bool "MTMS"
+  endchoice
+
+  config ESP32_GPIO14_NAME
+    string "Name"
+
+    default "MTMS" if ESP32_GPIO14_FUNC_MTMS
+    default "GPIO14"
+
+  config ESP32_GPIO14_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO14_FUNC_MTMS
+endmenu
+
+menu "gpio15"
+  choice ESP32_GPIO15_FUNC
+    prompt "Function"
+    default ESP32_GPIO15_FUNC_GPIO
+
+    config ESP32_GPIO15_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO15_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO15_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO15_FUNC_MTDO
+      bool "MTDO"
+  endchoice
+
+  config ESP32_GPIO15_NAME
+    string "Name"
+
+    default "MTDO" if ESP32_GPIO15_FUNC_MTDO
+    default "GPIO15"
+
+  config ESP32_GPIO15_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO15_FUNC_MTDO
+endmenu
+
+menu "gpio16"
+  choice ESP32_GPIO16_FUNC
+    prompt "Function"
+    default ESP32_GPIO16_FUNC_GPIO_OUTPUT if ETH_PHY_RESET_GPIO16
+    default ESP32_GPIO16_FUNC_GPIO
+
+    config ESP32_GPIO16_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO16_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO16_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO16_NAME
+    string "Name"
+
+    default "ETH_PHY_RESET" if ETH_PHY_RESET_GPIO16
+    default "GPIO16"
+
+  config ESP32_GPIO16_RESERVED
+    bool "Reserved"
+
+    default y if ETH_PHY_RESET_GPIO16
+endmenu
+
+menu "gpio17"
+  choice ESP32_GPIO17_FUNC
+    prompt "Function"
+    default ESP32_GPIO17_FUNC_GPIO
+
+    config ESP32_GPIO17_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO17_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO17_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO17_NAME
+    string "Name"
+
+    default "GPIO17"
+
+  config ESP32_GPIO17_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio18"
+  choice ESP32_GPIO18_FUNC
+    prompt "Function"
+    default ESP32_GPIO18_FUNC_GPIO if ETH_MAC_MDIO_GPIO18
+    default ESP32_GPIO18_FUNC_GPIO
+
+    config ESP32_GPIO18_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO18_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO18_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO18_NAME
+    string "Name"
+
+    default "ETH_MAC_MDIO" if ETH_MAC_MDIO_GPIO18
+    default "GPIO18"
+
+  config ESP32_GPIO18_RESERVED
+    bool "Reserved"
+
+    default y if ETH_MAC_MDIO_GPIO18
+endmenu
+
+menu "gpio19"
+  choice ESP32_GPIO19_FUNC
+    prompt "Function"
+    default ESP32_GPIO19_FUNC_EMAC_TXD0 if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO19_FUNC_GPIO
+
+    config ESP32_GPIO19_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO19_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO19_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO19_FUNC_EMAC_TXD0
+      bool "EMAC_TXD0"
+  endchoice
+
+  config ESP32_GPIO19_NAME
+    string "Name"
+
+    default "EMAC_TXD0" if ESP32_GPIO19_FUNC_EMAC_TXD0
+    default "GPIO19"
+
+  config ESP32_GPIO19_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO19_FUNC_EMAC_TXD0
+endmenu
+
+menu "gpio21"
+  choice ESP32_GPIO21_FUNC
+    prompt "Function"
+    default ESP32_GPIO21_FUNC_EMAC_TX_EN if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO21_FUNC_GPIO
+
+    config ESP32_GPIO21_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO21_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO21_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO21_FUNC_EMAC_TX_EN
+      bool "EMAC_TX_EN"
+  endchoice
+
+  config ESP32_GPIO21_NAME
+    string "Name"
+
+    default "EMAC_TX_EN" if ESP32_GPIO21_FUNC_EMAC_TX_EN
+    default "GPIO21"
+
+  config ESP32_GPIO21_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO21_FUNC_EMAC_TX_EN
+endmenu
+
+menu "gpio22"
+  choice ESP32_GPIO22_FUNC
+    prompt "Function"
+    default ESP32_GPIO22_FUNC_EMAC_TXD1 if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO22_FUNC_GPIO
+
+    config ESP32_GPIO22_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO22_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO22_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO22_FUNC_EMAC_TXD1
+      bool "EMAC_TXD1"
+  endchoice
+
+  config ESP32_GPIO22_NAME
+    string "Name"
+
+    default "EMAC_TXD1" if ESP32_GPIO22_FUNC_EMAC_TXD1
+    default "GPIO22"
+
+  config ESP32_GPIO22_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO22_FUNC_EMAC_TXD1
+endmenu
+
+menu "gpio23"
+  choice ESP32_GPIO23_FUNC
+    prompt "Function"
+    default ESP32_GPIO23_FUNC_GPIO_OUTPUT if ETH_MAC_MDC_GPIO23
+    default ESP32_GPIO23_FUNC_GPIO
+
+    config ESP32_GPIO23_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO23_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO23_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO23_NAME
+    string "Name"
+
+    default "ETH_MAC_MDC" if ETH_MAC_MDC_GPIO23
+    default "GPIO23"
+
+  config ESP32_GPIO23_RESERVED
+    bool "Reserved"
+
+    default y if ETH_MAC_MDC_GPIO23
+endmenu
+
+menu "gpio25"
+  choice ESP32_GPIO25_FUNC
+    prompt "Function"
+    default ESP32_GPIO25_FUNC_EMAC_RXD0 if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO25_FUNC_GPIO
+
+    config ESP32_GPIO25_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO25_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO25_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO25_FUNC_EMAC_RXD0
+      bool "EMAC_RXD0"
+  endchoice
+
+  config ESP32_GPIO25_NAME
+    string "Name"
+
+    default "EMAC_RXD0" if ESP32_GPIO25_FUNC_EMAC_RXD0
+    default "GPIO25"
+
+  config ESP32_GPIO25_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO25_FUNC_EMAC_RXD0
+endmenu
+
+menu "gpio26"
+  choice ESP32_GPIO26_FUNC
+    prompt "Function"
+    default ESP32_GPIO26_FUNC_EMAC_RXD1 if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO26_FUNC_GPIO
+
+    config ESP32_GPIO26_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO26_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO26_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO26_FUNC_EMAC_RXD1
+      bool "EMAC_RXD1"
+  endchoice
+
+  config ESP32_GPIO26_NAME
+    string "Name"
+
+    default "EMAC_RXD1" if ESP32_GPIO26_FUNC_EMAC_RXD1
+    default "GPIO26"
+
+  config ESP32_GPIO26_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO26_FUNC_EMAC_RXD1
+endmenu
+
+menu "gpio27"
+  choice ESP32_GPIO27_FUNC
+    prompt "Function"
+    default ESP32_GPIO27_FUNC_EMAC_RX_DV if ETH_PHY_INTERFACE_RMII
+    default ESP32_GPIO27_FUNC_GPIO
+
+    config ESP32_GPIO27_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO27_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO27_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+    config ESP32_GPIO27_FUNC_EMAC_RX_DV
+      bool "EMAC_RX_DV"
+  endchoice
+
+  config ESP32_GPIO27_NAME
+    string "Name"
+
+    default "EMAC_RX_DV" if ESP32_GPIO27_FUNC_EMAC_RX_DV
+    default "GPIO27"
+
+  config ESP32_GPIO27_RESERVED
+    bool "Reserved"
+
+    default y if ESP32_GPIO27_FUNC_EMAC_RX_DV
+endmenu
+
+menu "gpio32"
+  choice ESP32_GPIO32_FUNC
+    prompt "Function"
+    default ESP32_GPIO32_FUNC_GPIO
+
+    config ESP32_GPIO32_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO32_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO32_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO32_NAME
+    string "Name"
+
+    default "GPIO32"
+
+  config ESP32_GPIO32_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio33"
+  choice ESP32_GPIO33_FUNC
+    prompt "Function"
+    default ESP32_GPIO33_FUNC_GPIO
+
+    config ESP32_GPIO33_FUNC_GPIO
+      bool "GPIO"
+    config ESP32_GPIO33_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+    config ESP32_GPIO33_FUNC_GPIO_OUTPUT
+      bool "GPIO (output)"
+  endchoice
+
+  config ESP32_GPIO33_NAME
+    string "Name"
+
+    default "GPIO33"
+
+  config ESP32_GPIO33_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio34"
+  choice ESP32_GPIO34_FUNC
+    prompt "Function"
+    default ESP32_GPIO34_FUNC_GPIO_INPUT
+
+    config ESP32_GPIO34_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+  endchoice
+
+  config ESP32_GPIO34_NAME
+    string "Name"
+
+    default "GPIO34"
+
+  config ESP32_GPIO34_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio35"
+  choice ESP32_GPIO35_FUNC
+    prompt "Function"
+    default ESP32_GPIO35_FUNC_GPIO_INPUT
+
+    config ESP32_GPIO35_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+  endchoice
+
+  config ESP32_GPIO35_NAME
+    string "Name"
+
+    default "GPIO35"
+
+  config ESP32_GPIO35_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio36"
+  choice ESP32_GPIO36_FUNC
+    prompt "Function"
+    default ESP32_GPIO36_FUNC_GPIO_INPUT
+
+    config ESP32_GPIO36_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+  endchoice
+
+  config ESP32_GPIO36_NAME
+    string "Name"
+
+    default "GPIO36"
+
+  config ESP32_GPIO36_RESERVED
+    bool "Reserved"
+endmenu
+
+menu "gpio39"
+  choice ESP32_GPIO39_FUNC
+    prompt "Function"
+    default ESP32_GPIO39_FUNC_GPIO_INPUT if ETH_PHY_INTR_GPIO39
+    default ESP32_GPIO39_FUNC_GPIO_INPUT
+
+    config ESP32_GPIO39_FUNC_GPIO_INPUT
+      bool "GPIO (input)"
+  endchoice
+
+  config ESP32_GPIO39_NAME
+    string "Name"
+
+    default "ETH_PHY_INTR" if ETH_PHY_INTR_GPIO39
+    default "GPIO39"
+
+  config ESP32_GPIO39_RESERVED
+    bool "Reserved"
+
+    default y if ETH_PHY_INTR_GPIO39
+endmenu

@@ -1,6 +1,6 @@
 #include "dmx.h"
 #include "dmx_config.h"
-#include "gpio_type.h"
+#include "gpio_config.h"
 
 #include <artnet.h>
 #include <gpio.h>

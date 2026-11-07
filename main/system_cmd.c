@@ -1,4 +1,5 @@
 #include "system.h"
+#include "gpio_config.h"
 
 #include <logging.h>
 #include <system.h>
@@ -223,6 +224,26 @@ static int system_interfaces_cmd(int argc, char **argv, void *ctx)
   return 0;
 }
 
+#define SYSTEM_GPIO_FMT "%30s %30s %2d %s\n"
+
+static int system_gpio_cmd(int argc, char **argv, void *ctx)
+{
+  printf("%-16s %4s : %-32s %8s %8s %8s\n", "TYPE", "PIN", "NAME", "RESERVED", "INPUT?", "OUTPUT?");
+
+  for (const struct config_gpio *gpio = config_gpios; gpio->name; gpio++) {
+    printf("%-16s %4d : %-32s %8s %8s %8s\n",
+      config_enum_to_string(gpio_type_enum, gpio->type),
+      gpio->pin,
+      gpio->name,
+      gpio->reserved ? "RESERVED" : "",
+      (gpio->flags & CONFIG_GPIO_INPUT)   ? "[input]" : "",
+      (gpio->flags & CONFIG_GPIO_OUTPUT)  ? "[output]" : ""
+    );
+  }
+
+  return 0;
+}
+
 static int system_restart_cmd(int argc, char **argv, void *ctx)
 {
   system_restart();
@@ -235,6 +256,7 @@ static const struct cmd system_commands[] = {
   { "partitions", system_partitions_cmd,  .describe = "Print system partitions" },
   { "tasks",      system_tasks_cmd  ,     .describe = "Print system tasks" },
   { "interfaces", system_interfaces_cmd,  .describe = "Print system network interfaces" },
+  { "gpio",       system_gpio_cmd,        .describe = "Print system gpios" },
   { "restart",    system_restart_cmd,     .describe = "Restart system" },
   {}
 };

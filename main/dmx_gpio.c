@@ -41,6 +41,10 @@ int init_dmx_input_gpio()
 #endif
 
   switch(dmx_input_gpio_options.type) {
+    case GPIO_TYPE_NONE:
+      LOG_ERROR("dmx-output: gpio type not selected");
+      return -1;
+
     case GPIO_TYPE_HOST:
       LOG_INFO("dmx-input: gpio host: out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
         GPIO_PINS_ARGS(dmx_input_gpio_options.out_pins),
@@ -117,6 +121,10 @@ int init_dmx_output_gpio()
 #endif
 
   switch(dmx_output_gpio_options.type) {
+    case GPIO_TYPE_NONE:
+      LOG_ERROR("dmx-output: gpio type not selected");
+      return -1;
+
     case GPIO_TYPE_HOST:
       LOG_INFO("dmx-output: gpio host: out_pins=" GPIO_PINS_FMT " inverted_pins=" GPIO_PINS_FMT,
         GPIO_PINS_ARGS(dmx_output_gpio_options.out_pins),

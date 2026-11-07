@@ -36,6 +36,7 @@
 #define GPIO_PINS_NONE ((gpio_pins_t)(0))
 
 enum gpio_type {
+  GPIO_TYPE_NONE,
   GPIO_TYPE_HOST,
 #if GPIO_I2C_ENABLED
   GPIO_TYPE_I2C,

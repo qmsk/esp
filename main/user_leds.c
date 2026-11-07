@@ -178,6 +178,10 @@ int init_user_leds()
 #endif
 
   switch(user_leds_gpio.type) {
+    case GPIO_TYPE_NONE:
+      LOG_ERROR("none gpio");
+      return -1;
+
     case GPIO_TYPE_HOST:
       LOG_INFO("host gpio");
       break;

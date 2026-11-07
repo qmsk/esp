@@ -1,7 +1,7 @@
 #include "leds.h"
 #include "leds_config.h"
 #include "leds_state.h"
-#include "gpio_type.h"
+#include "gpio_config.h"
 
 #include <gpio.h>
 
@@ -55,7 +55,7 @@
       interfaces_enabled[interface] = true;
 
       // options
-      if ((err = set_gpio_type(&leds_gpio_options[interface], config->gpio_type))) {
+      if ((err = config_gpio_type(&leds_gpio_options[interface], config->gpio_type))) {
         LOG_ERROR("leds%d: invalid gpio_type=%d", i + 1, config->gpio_type);
         return err;
       }

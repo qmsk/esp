@@ -1,5 +1,5 @@
 #include "atx_psu_gpio.h"
-#include "gpio_type.h"
+#include "gpio_config.h"
 #include "i2c_gpio.h"
 
 #include <logging.h>
@@ -8,7 +8,7 @@ int config_atx_psu_gpio(const struct atx_psu_config *config, struct gpio_options
 {
   int err;
 
-  if ((err = set_gpio_type(gpio_options, config->gpio_type))) {
+  if ((err = config_gpio_type(gpio_options, config->gpio_type))) {
     LOG_ERROR("invalid gpio_type=%d", config->gpio_type);
     return err;
   }

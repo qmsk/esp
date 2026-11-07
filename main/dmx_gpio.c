@@ -1,7 +1,7 @@
 #include "dmx.h"
 #include "dmx_config.h"
 #include "dmx_state.h"
-#include "gpio_type.h"
+#include "gpio_config.h"
 #include "i2c_gpio.h"
 
 #include <gpio.h>
@@ -19,7 +19,7 @@ int init_dmx_input_gpio()
     return 0;
   }
 
-  if ((err = set_gpio_type(&dmx_input_gpio_options, config->gpio_type))) {
+  if ((err = config_gpio_type(&dmx_input_gpio_options, config->gpio_type))) {
     LOG_ERROR("dmx-input: invalid gpio_type=%d", config->gpio_type);
     return err;
   }
@@ -87,7 +87,7 @@ int init_dmx_output_gpio()
       enabled = true;
     }
 
-    if ((err = set_gpio_type(&dmx_output_gpio_options, config->gpio_type))) {
+    if ((err = config_gpio_type(&dmx_output_gpio_options, config->gpio_type))) {
       LOG_ERROR("dmx-output%d: invalid gpio_type=%d", i + 1, config->gpio_type);
       return err;
     }

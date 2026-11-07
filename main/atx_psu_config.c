@@ -1,5 +1,5 @@
 #include "atx_psu_config.h"
-#include "gpio_type.h"
+#include "gpio_config.h"
 
 #include <atx_psu.h>
 #include <gpio.h>

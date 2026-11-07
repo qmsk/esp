@@ -1,4 +1,5 @@
 #include "system.h"
+#include "gpio_config.h"
 
 #include <logging.h>
 #include <system.h>
